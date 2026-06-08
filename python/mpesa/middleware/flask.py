@@ -6,7 +6,7 @@ def create_flask_blueprint(webhook_manager: WebhookManager, secret: str = "", mp
     try:
         from flask import Blueprint, abort, jsonify, request
     except ImportError:
-        raise ImportError("flask is required. Install with: pip install yourdudeken-mpesa-sdk[flask]")
+        raise ImportError("flask is required. Install with: pip install daraja-sdk-py[flask]")
 
     bp = Blueprint("mpesa", __name__, url_prefix="/mpesa")
 

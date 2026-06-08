@@ -15,7 +15,7 @@ def create_fastapi_router(webhook_manager: WebhookManager, secret: str = "", mpe
     try:
         from fastapi import APIRouter, HTTPException, Request
     except ImportError:
-        raise ImportError("fastapi is required. Install with: pip install yourdudeken-mpesa-sdk[fastapi]")
+        raise ImportError("fastapi is required. Install with: pip install daraja-sdk-py[fastapi]")
 
     from mpesa import __version__
 

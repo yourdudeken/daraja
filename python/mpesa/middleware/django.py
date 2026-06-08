@@ -8,7 +8,7 @@ def create_django_view(webhook_manager: WebhookManager, secret: str = ""):
         from django.views.decorators.csrf import csrf_exempt
         from django.views.decorators.http import require_POST
     except ImportError:
-        raise ImportError("django is required. Install with: pip install yourdudeken-mpesa-sdk[django]")
+        raise ImportError("django is required. Install with: pip install daraja-sdk-py[django]")
 
     @csrf_exempt
     @require_POST
@@ -53,7 +53,7 @@ def create_django_health_view(mpesa_client):
     try:
         from django.http import JsonResponse
     except ImportError:
-        raise ImportError("django is required. Install with: pip install yourdudeken-mpesa-sdk[django]")
+        raise ImportError("django is required. Install with: pip install daraja-sdk-py[django]")
 
     def health(request):
         import time

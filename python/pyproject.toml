@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "yourdudeken-mpesa-sdk"
+name = "daraja-sdk-py"
 version = "0.2.0"
 description = "Production-grade Python SDK for Safaricom M-Pesa Daraja API"
 readme = "README.md"
