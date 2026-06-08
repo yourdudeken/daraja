@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft-07/schema",
-  "description": "Standard M-Pesa result codes per API type",
+  "description": "Standard Safaricom M-Pesa Daraja result codes per API type",
   "stk_push": {
     "0": "The service request is processed successfully.",
     "1032": "Request cancelled by user",

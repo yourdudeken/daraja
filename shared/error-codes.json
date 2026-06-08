@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft-07/schema",
-  "description": "Standard M-Pesa API error codes",
+  "description": "Standard Safaricom M-Pesa Daraja error codes",
   "errors": {
     "400.002.02": {
       "message": "Bad Request – Invalid {field}",
