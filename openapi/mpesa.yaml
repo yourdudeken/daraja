@@ -1,13 +1,13 @@
 openapi: 3.1.0
 info:
-  title: M-Pesa Daraja API
+  title: Safaricom M-Pesa Daraja API
   description: |
     Comprehensive SDK ecosystem for Safaricom M-Pesa Daraja APIs.
     This specification serves as the single source of truth for all SDK implementations.
   version: 3.0.0
   contact:
-    name: M-Pesa SDK Team
-    url: https://github.com/yourdudeken/mpesa-sdk
+    name: Safaricom M-Pesa Daraja SDK Team
+    url: https://github.com/yourdudeken/daraja-sdk
   license:
     name: MIT
     url: https://opensource.org/licenses/MIT
