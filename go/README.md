@@ -5,7 +5,7 @@ Production-grade Go SDK for Safaricom M-Pesa Daraja API.
 ## Installation
 
 ```bash
-go get github.com/yourdudeken/mpesa-sdk/go
+go get github.com/yourdudeken/daraja-sdk/go
 ```
 
 ## Quick Start
@@ -18,8 +18,8 @@ import (
     "fmt"
     "os"
 
-    "github.com/yourdudeken/mpesa-sdk/go/client"
-    "github.com/yourdudeken/mpesa-sdk/go/types"
+    "github.com/yourdudeken/daraja-sdk/go/client"
+    "github.com/yourdudeken/daraja-sdk/go/types"
 )
 
 func main() {

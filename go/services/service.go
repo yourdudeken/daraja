@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/yourdudeken/mpesa-sdk/go/client"
-	svctypes "github.com/yourdudeken/mpesa-sdk/go/services/types"
-	"github.com/yourdudeken/mpesa-sdk/go/types"
+	"github.com/yourdudeken/daraja-sdk/go/client"
+	svctypes "github.com/yourdudeken/daraja-sdk/go/services/types"
+	"github.com/yourdudeken/daraja-sdk/go/types"
 )
 
 type Service struct {

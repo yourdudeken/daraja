@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/yourdudeken/mpesa-sdk/go/types"
+	"github.com/yourdudeken/daraja-sdk/go/types"
 )
 
 type DeliveryRecord struct {

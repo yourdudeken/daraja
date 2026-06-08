@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/yourdudeken/mpesa-sdk/go/types"
+	"github.com/yourdudeken/daraja-sdk/go/types"
 )
 
 func TestNewClient(t *testing.T) {

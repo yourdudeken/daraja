@@ -10,8 +10,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/yourdudeken/mpesa-sdk/go/client"
-	"github.com/yourdudeken/mpesa-sdk/go/webhooks"
+	"github.com/yourdudeken/daraja-sdk/go/client"
+	"github.com/yourdudeken/daraja-sdk/go/webhooks"
 )
 
 const version = "0.2.0"

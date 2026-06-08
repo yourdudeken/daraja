@@ -7,7 +7,7 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/yourdudeken/mpesa-sdk/go/client"
+	"github.com/yourdudeken/daraja-sdk/go/client"
 )
 
 const version = "0.2.0"

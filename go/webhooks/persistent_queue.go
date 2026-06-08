@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/yourdudeken/mpesa-sdk/go/types"
+	"github.com/yourdudeken/daraja-sdk/go/types"
 	_ "modernc.org/sqlite"
 )
 

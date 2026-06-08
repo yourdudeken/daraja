@@ -7,7 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/yourdudeken/mpesa-sdk/go/types"
+	"github.com/yourdudeken/daraja-sdk/go/types"
 )
 
 func mockAuthHandler(token string) http.HandlerFunc {

@@ -15,7 +15,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/yourdudeken/mpesa-sdk/go/types"
+	"github.com/yourdudeken/daraja-sdk/go/types"
 )
 
 func GenerateTimestamp() string {

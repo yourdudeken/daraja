@@ -1,7 +1,7 @@
 package types
 
 import (
-	"github.com/yourdudeken/mpesa-sdk/go/types"
+	"github.com/yourdudeken/daraja-sdk/go/types"
 )
 
 type STKPushResult struct {
