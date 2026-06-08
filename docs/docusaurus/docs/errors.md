@@ -32,7 +32,7 @@ import {
   MpesaAPIError,
   WebhookVerificationError,
   isMpesaError,
-} from '@yourdudeken/mpesa-sdk/errors';
+} from '@daraja-sdk/ts/errors';
 
 try {
   await mpesa.stkPush.initiate(request);
@@ -74,7 +74,7 @@ except MpesaError as e:
 ## Go
 
 ```go
-import "github.com/yourdudeken/mpesa-sdk/go/errors"
+import "github.com/yourdudeken/daraja-sdk/go/errors"
 
 resp, err := mpesa.STKPush(ctx, req)
 if err != nil {

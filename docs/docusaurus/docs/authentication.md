@@ -20,7 +20,7 @@ All SDKs manage token lifecycle transparently:
 ### TypeScript
 
 ```typescript
-import { Mpesa } from '@yourdudeken/mpesa-sdk';
+import { Mpesa } from '@daraja-sdk/ts';
 
 const mpesa = new Mpesa({
   consumerKey: process.env.MPESA_CONSUMER_KEY!,
@@ -45,8 +45,8 @@ client = Mpesa({
 
 ```go
 import (
-    "github.com/yourdudeken/mpesa-sdk/go/client"
-    "github.com/yourdudeken/mpesa-sdk/go/types"
+    "github.com/yourdudeken/daraja-sdk/go/client"
+    "github.com/yourdudeken/daraja-sdk/go/types"
 )
 
 mpesa := client.NewClient(types.MpesaConfig{

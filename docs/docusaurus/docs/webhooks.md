@@ -21,7 +21,7 @@ M-Pesa APIs are asynchronous. Results are sent to your callback URLs via webhook
 ## TypeScript
 
 ```typescript
-import { WebhookManager } from '@yourdudeken/mpesa-sdk';
+import { WebhookManager } from '@daraja-sdk/ts';
 
 const webhooks = new WebhookManager({ passkey: process.env.MPESA_PASSKEY });
 
@@ -64,7 +64,7 @@ async def callback(request: Request):
 ## Go
 
 ```go
-import "github.com/yourdudeken/mpesa-sdk/go/webhooks"
+import "github.com/yourdudeken/daraja-sdk/go/webhooks"
 
 wh := webhooks.NewManager()
 

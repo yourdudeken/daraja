@@ -144,7 +144,7 @@ See [Batch Requests Guide](../resilience/batch-requests) for detailed documentat
 The SDK will throw a `TimeoutError` when a request exceeds the configured timeout.
 
 ```typescript
-import { TimeoutError } from '@yourdudeken/mpesa-sdk';
+import { TimeoutError } from '@daraja-sdk/ts';
 
 try {
   await mpesa.stkPush.initiate({...});
@@ -160,7 +160,7 @@ try {
 When a 429 response is received, the SDK reads the `Retry-After` header and throws a `RateLimitError` with the retry duration:
 
 ```typescript
-import { RateLimitError } from '@yourdudeken/mpesa-sdk';
+import { RateLimitError } from '@daraja-sdk/ts';
 
 try {
   await mpesa.stkPush.initiate({...});

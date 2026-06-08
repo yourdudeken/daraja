@@ -7,7 +7,7 @@ sidebar_position: 1
 ## Installation
 
 ```bash
-pip install yourdudeken-mpesa-sdk
+pip install daraja-sdk-py
 ```
 
 Requires Python 3.11+.

@@ -221,7 +221,7 @@ If DLQ items accumulate:
 Enable comprehensive audit logging:
 
 ```typescript
-import { Logger } from '@yourdudeken/mpesa-sdk';
+import { Logger } from '@daraja-sdk/ts';
 
 const logger = new Logger({
   level: 'info',

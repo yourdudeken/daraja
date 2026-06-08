@@ -87,7 +87,7 @@ resp, err := mpesa.PullTransactions(ctx, types.PullTransactionsRequest{
 Not directly available via client; use the services layer:
 
 ```go
-import "github.com/yourdudeken/mpesa-sdk/go/services"
+import "github.com/yourdudeken/daraja-sdk/go/services"
 
 svc := services.NewService(mpesa)
 info, err := svc.QueryOrgInfo(ctx, services.QueryOrgInfoInput{

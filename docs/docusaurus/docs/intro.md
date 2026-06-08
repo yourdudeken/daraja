@@ -41,15 +41,15 @@ sidebar_position: 1
 
 | Language | Package | Version |
 |----------|---------|--------|
-| TypeScript | `@yourdudeken/mpesa-sdk` | ![npm](https://img.shields.io/npm/v/@yourdudeken/mpesa-sdk) |
-| Python | `yourdudeken-mpesa-sdk` | ![pypi](https://img.shields.io/pypi/v/yourdudeken-mpesa-sdk) |
-| Go | `github.com/yourdudeken/mpesa-sdk/go` | ![go](https://img.shields.io/github/v/tag/yourdudeken/mpesa-sdk?filter=go/v*.*.*) |
+| TypeScript | `@daraja-sdk/ts` | ![npm](https://img.shields.io/npm/v/@daraja-sdk/ts) |
+| Python | `daraja-sdk-py` | ![pypi](https://img.shields.io/pypi/v/daraja-sdk-py) |
+| Go | `github.com/yourdudeken/daraja-sdk/go` | ![go](https://img.shields.io/github/v/tag/yourdudeken/mpesa-sdk?filter=go/v*.*.*) |
 
 ## Quick Comparison
 
 ### TypeScript
 ```typescript
-import { Mpesa } from '@yourdudeken/mpesa-sdk';
+import { Mpesa } from '@daraja-sdk/ts';
 
 const mpesa = new Mpesa({
   consumerKey: process.env.MPESA_CONSUMER_KEY,
@@ -98,8 +98,8 @@ response = client.stk_push({
 ### Go
 ```go
 import (
-    "github.com/yourdudeken/mpesa-sdk/go/client"
-    "github.com/yourdudeken/mpesa-sdk/go/types"
+    "github.com/yourdudeken/daraja-sdk/go/client"
+    "github.com/yourdudeken/daraja-sdk/go/types"
 )
 
 mpesa := client.NewClient(types.MpesaConfig{

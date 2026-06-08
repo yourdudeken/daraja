@@ -30,7 +30,7 @@ npm install @opentelemetry/exporter-jaeger @opentelemetry/exporter-trace-otlp-ht
 import { NodeSDK } from '@opentelemetry/sdk-node';
 import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentations-node';
 import { JaegerExporter } from '@opentelemetry/exporter-jaeger';
-import { Mpesa } from '@yourdudeken/mpesa-sdk';
+import { Mpesa } from '@daraja-sdk/ts';
 
 // Initialize OpenTelemetry
 const sdk = new NodeSDK({
@@ -101,8 +101,8 @@ import (
     "go.opentelemetry.io/otel"
     "go.opentelemetry.io/otel/exporters/jaeger/jaegergrpc"
     "go.opentelemetry.io/otel/sdk/trace"
-    "github.com/yourdudeken/mpesa-sdk/go/client"
-    "github.com/yourdudeken/mpesa-sdk/go/types"
+    "github.com/yourdudeken/daraja-sdk/go/client"
+    "github.com/yourdudeken/daraja-sdk/go/types"
 )
 
 func initTracer() (*trace.TracerProvider, error) {

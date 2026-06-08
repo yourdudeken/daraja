@@ -7,13 +7,13 @@ sidebar_position: 1
 ## Installation
 
 ```bash
-npm install @yourdudeken/mpesa-sdk axios
+npm install @daraja-sdk/ts axios
 ```
 
 ## Quick Start
 
 ```typescript
-import { Mpesa } from '@yourdudeken/mpesa-sdk';
+import { Mpesa } from '@daraja-sdk/ts';
 
 const mpesa = new Mpesa({
   consumerKey: process.env.MPESA_CONSUMER_KEY!,
@@ -70,7 +70,7 @@ console.log(response.CheckoutRequestID);
 ## Module Exports
 
 ```typescript
-import { Mpesa } from '@yourdudeken/mpesa-sdk';           // Main client
+import { Mpesa } from '@daraja-sdk/ts';           // Main client
 import { MpesaError } from 'mpesa-sdk/errors'; // Error types
 import { WebhookManager } from 'mpesa-sdk/webhooks'; // Webhook handling
 import type { STKPushRequest } from 'mpesa-sdk/types'; // Type definitions
@@ -81,7 +81,7 @@ import type { STKPushRequest } from 'mpesa-sdk/types'; // Type definitions
 ### Express
 
 ```typescript
-import { createExpressMiddleware } from '@yourdudeken/mpesa-sdk';
+import { createExpressMiddleware } from '@daraja-sdk/ts';
 
 app.use('/mpesa/webhook', createExpressMiddleware({
   webhookManager,
@@ -92,7 +92,7 @@ app.use('/mpesa/webhook', createExpressMiddleware({
 ### Fastify
 
 ```typescript
-import { createFastifyPlugin } from '@yourdudeken/mpesa-sdk';
+import { createFastifyPlugin } from '@daraja-sdk/ts';
 
 fastify.register(createFastifyPlugin({
   webhookManager,

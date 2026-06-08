@@ -7,7 +7,7 @@ sidebar_position: 2
 ## TypeScript
 
 ```bash
-npm install @yourdudeken/mpesa-sdk
+npm install @daraja-sdk/ts
 ```
 
 **Peer dependency:** Requires `axios` (v1.7+).
@@ -19,7 +19,7 @@ npm install axios
 ## Python
 
 ```bash
-pip install yourdudeken-mpesa-sdk
+pip install daraja-sdk-py
 ```
 
 Requires Python 3.11+.
@@ -27,7 +27,7 @@ Requires Python 3.11+.
 ## Go
 
 ```bash
-go get github.com/yourdudeken/mpesa-sdk/go
+go get github.com/yourdudeken/daraja-sdk/go
 ```
 
 Requires Go 1.25+.

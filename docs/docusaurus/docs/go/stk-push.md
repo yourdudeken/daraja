@@ -9,7 +9,7 @@ Initiate and query STK Push prompts sent to customer phones.
 ## Initiate STK Push
 
 ```go
-import "github.com/yourdudeken/mpesa-sdk/go/types"
+import "github.com/yourdudeken/daraja-sdk/go/types"
 
 resp, err := mpesa.STKPush(ctx, types.STKPushRequest{
     BusinessShortCode: 174379,
@@ -38,7 +38,7 @@ status, err := mpesa.STKQuery(ctx, types.STKQueryRequest{
 The SDK automatically generates the `Password` field using your shortcode, passkey, and current timestamp.
 
 ```go
-import "github.com/yourdudeken/mpesa-sdk/go/client"
+import "github.com/yourdudeken/daraja-sdk/go/client"
 
 timestamp := client.GenerateTimestamp()
 password := client.GeneratePassword(174379, "your-passkey", timestamp)

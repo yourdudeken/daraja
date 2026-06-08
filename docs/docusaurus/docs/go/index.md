@@ -7,7 +7,7 @@ sidebar_position: 1
 ## Installation
 
 ```bash
-go get github.com/yourdudeken/mpesa-sdk/go
+go get github.com/yourdudeken/daraja-sdk/go
 ```
 
 Requires Go 1.22+.
@@ -23,8 +23,8 @@ import (
     "log"
     "os"
 
-    "github.com/yourdudeken/mpesa-sdk/go/client"
-    "github.com/yourdudeken/mpesa-sdk/go/types"
+    "github.com/yourdudeken/daraja-sdk/go/client"
+    "github.com/yourdudeken/daraja-sdk/go/types"
 )
 
 func main() {
@@ -97,7 +97,7 @@ resp, err := mpesa.STKPush(ctx, req)
 ## Webhook Handling
 
 ```go
-import "github.com/yourdudeken/mpesa-sdk/go/webhooks"
+import "github.com/yourdudeken/daraja-sdk/go/webhooks"
 
 wh := webhooks.NewManager()
 

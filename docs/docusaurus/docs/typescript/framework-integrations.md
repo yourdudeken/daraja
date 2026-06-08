@@ -10,7 +10,7 @@ Integrate M-Pesa SDK with your favorite framework.
 
 ```typescript
 import express from 'express';
-import { Mpesa, createExpressMiddleware, WebhookManager } from '@yourdudeken/mpesa-sdk';
+import { Mpesa, createExpressMiddleware, WebhookManager } from '@daraja-sdk/ts';
 
 const app = express();
 app.use(express.json());
@@ -30,7 +30,7 @@ app.listen(3000);
 
 ```typescript
 import Fastify from 'fastify';
-import { Mpesa, createFastifyPlugin, WebhookManager } from '@yourdudeken/mpesa-sdk';
+import { Mpesa, createFastifyPlugin, WebhookManager } from '@daraja-sdk/ts';
 
 const fastify = Fastify({ logger: true });
 const webhooks = new WebhookManager();
@@ -92,9 +92,9 @@ package main
 
 import (
     "github.com/gin-gonic/gin"
-    "github.com/yourdudeken/mpesa-sdk/go/client"
-    "github.com/yourdudeken/mpesa-sdk/go/types"
-    "github.com/yourdudeken/mpesa-sdk/go/webhooks"
+    "github.com/yourdudeken/daraja-sdk/go/client"
+    "github.com/yourdudeken/daraja-sdk/go/types"
+    "github.com/yourdudeken/daraja-sdk/go/webhooks"
 )
 
 func main() {

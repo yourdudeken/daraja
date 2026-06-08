@@ -9,7 +9,7 @@ Initiate and query STK Push prompts sent to customer phones.
 ## Initiate STK Push
 
 ```typescript
-import { Mpesa } from '@yourdudeken/mpesa-sdk';
+import { Mpesa } from '@daraja-sdk/ts';
 
 const mpesa = new Mpesa({
   consumerKey: process.env.MPESA_CONSUMER_KEY!,
@@ -45,7 +45,7 @@ const status = await mpesa.stkPush.query({
 The SDK automatically generates the `Password` field using your shortcode, passkey, and current timestamp.
 
 ```typescript
-import { generatePassword, generateTimestamp } from '@yourdudeken/mpesa-sdk';
+import { generatePassword, generateTimestamp } from '@daraja-sdk/ts';
 const timestamp = generateTimestamp();
 const password = generatePassword(174379, 'your-passkey', timestamp);
 ```

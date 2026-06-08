@@ -11,13 +11,13 @@ The M-Pesa SDK includes a command-line interface for common operations, availabl
 The CLI is included with the TypeScript SDK package:
 
 ```bash
-npx @yourdudeken/mpesa-sdk mpesa --help
+npx @daraja-sdk/ts mpesa --help
 ```
 
 Or install globally:
 
 ```bash
-npm install -g @yourdudeken/mpesa-sdk
+npm install -g @daraja-sdk/ts
 mpesa --help
 ```
 
