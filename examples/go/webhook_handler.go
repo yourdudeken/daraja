@@ -6,9 +6,9 @@ import (
 	"log"
 	"os"
 
-	"github.com/yourdudeken/mpesa-sdk/client"
-	"github.com/yourdudeken/mpesa-sdk/types"
-	"github.com/yourdudeken/mpesa-sdk/webhooks"
+	"github.com/yourdudeken/daraja-sdk/go/client"
+	"github.com/yourdudeken/daraja-sdk/go/types"
+	"github.com/yourdudeken/daraja-sdk/go/webhooks"
 )
 
 func main() {

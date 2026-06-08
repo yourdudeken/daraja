@@ -1,4 +1,4 @@
-import { Mpesa } from "@yourdudeken/mpesa-sdk";
+import { Mpesa } from "@daraja-sdk/ts";
 
 const mpesa = new Mpesa({
   consumerKey: process.env.MPESA_CONSUMER_KEY!,

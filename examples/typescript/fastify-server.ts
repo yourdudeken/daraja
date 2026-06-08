@@ -1,5 +1,5 @@
 import Fastify from "fastify";
-import { Mpesa, createFastifyPlugin, WebhookManager } from "@yourdudeken/mpesa-sdk";
+import { Mpesa, createFastifyPlugin, WebhookManager } from "@daraja-sdk/ts";
 
 const fastify = Fastify({ logger: true });
 

@@ -1,4 +1,4 @@
-import { Mpesa } from "@yourdudeken/mpesa-sdk";
+import { Mpesa } from "@daraja-sdk/ts";
 
 function resolveShortcode(): number {
   const raw = process.env.MPESA_SHORTCODE;

@@ -1,4 +1,4 @@
-import { Mpesa, WebhookManager } from "@yourdudeken/mpesa-sdk";
+import { Mpesa, WebhookManager } from "@daraja-sdk/ts";
 
 const mpesa = new Mpesa({
   consumerKey: process.env.MPESA_CONSUMER_KEY!,
