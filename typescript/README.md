@@ -1,17 +1,17 @@
-# @yourdudeken/mpesa-sdk — TypeScript
+# @daraja-sdk/ts — TypeScript
 
 Production-grade TypeScript SDK for Safaricom M-Pesa Daraja API.
 
 ## Installation
 
 ```bash
-npm install @yourdudeken/mpesa-sdk axios
+npm install @daraja-sdk/ts axios
 ```
 
 ## Quick Start
 
 ```typescript
-import { Mpesa } from '@yourdudeken/mpesa-sdk';
+import { Mpesa } from '@daraja-sdk/ts';
 
 const mpesa = new Mpesa({
   consumerKey: process.env.MPESA_CONSUMER_KEY!,
@@ -107,4 +107,4 @@ const mpesa = new Mpesa({
 
 ## Documentation
 
-Full documentation at [https://yourdudeken.github.io/mpesa-sdk](https://yourdudeken.github.io/mpesa-sdk)
+Full documentation at [https://yourdudeken.github.io/daraja-sdk](https://yourdudeken.github.io/daraja-sdk)
