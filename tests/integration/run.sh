@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Integration test runner for M-Pesa SDK
+# Integration test runner for Safaricom M-Pesa Daraja SDK
 # Requires: python3, node, go, and valid sandbox credentials
 set -euo pipefail
 
@@ -12,7 +12,7 @@ if [ -z "$MPESA_CONSUMER_KEY" ] || [ -z "$MPESA_CONSUMER_SECRET" ]; then
   exit 1
 fi
 
-echo "=== M-Pesa SDK Integration Tests ==="
+echo "=== Safaricom M-Pesa Daraja SDK Integration Tests ==="
 
 echo ""
 echo "--- Python SDK ---"
