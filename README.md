@@ -280,7 +280,7 @@ See full documentation for detailed setup across all languages and features.
 ## Architecture
 
 ```
-daraja-sdk-sdk/
+daraja-sdk/
 ├── openapi/          # OpenAPI specification (single source of truth)
 ├── typescript/       # TypeScript SDK
 ├── python/           # Python SDK
