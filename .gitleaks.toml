@@ -1,0 +1,32 @@
+title = "M-Pesa SDK Gitleaks Config"
+
+[allowlist]
+description = "Allowlist for M-Pesa SDK"
+paths = [
+    '''.git/.*''',
+    '''node_modules/.*''',
+    '''dist/.*''',
+    '''__pycache__/.*''',
+    '''\.pytest_cache/.*''',
+    '''.*\.sum$''',
+    '''.*\.md$''',
+    '''\.github/workflows/.*''',
+]
+
+[[rules]]
+id = "mpesa-consumer-key"
+description = "M-Pesa Consumer Key"
+regex = '''(?i)(mpesa[-_]?consumer[-_]?key|MPESA_CONSUMER_KEY).{0,20}[a-f0-9]{8,}'''
+tags = ["mpesa", "credentials"]
+
+[[rules]]
+id = "mpesa-consumer-secret"
+description = "M-Pesa Consumer Secret"
+regex = '''(?i)(mpesa[-_]?consumer[-_]?secret|MPESA_CONSUMER_SECRET).{0,20}[a-f0-9]{8,}'''
+tags = ["mpesa", "credentials"]
+
+[[rules]]
+id = "mpesa-passkey"
+description = "M-Pesa Passkey"
+regex = '''(?i)(mpesa[-_]?passkey|MPESA_PASSKEY).{0,20}[a-zA-Z0-9_\-]{8,}'''
+tags = ["mpesa", "credentials"]

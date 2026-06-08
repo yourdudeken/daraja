@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema",
+  "description": "M-Pesa API endpoint definitions for all environments",
+  "environments": {
+    "sandbox": {
+      "base_url": "https://sandbox.safaricom.co.ke",
+      "endpoints": {
+        "auth": "/oauth/v1/generate",
+        "stk_push": "/mpesa/stkpush/v1/processrequest",
+        "stk_query": "/mpesa/stkpushquery/v1/query",
+        "c2b_register_url": "/mpesa/c2b/v2/registerurl",
+        "c2b_simulate": "/mpesa/c2b/v2/simulate",
+        "c2b_simulate_v1": "/mpesa/c2b/v1/simulate",
+        "b2c": "/mpesa/b2c/v3/paymentrequest",
+        "b2b": "/mpesa/b2b/v1/paymentrequest",
+        "reversal": "/mpesa/reversal/v1/request",
+        "transaction_status": "/mpesa/transactionstatus/v1/query",
+        "account_balance": "/mpesa/accountbalance/v1/query",
+        "dynamic_qr": "/mpesa/qrcode/v1/generate",
+        "query_org_info": "/mpesa/queryorginfo/v1/query",
+        "imsi": "/mpesa/imsi/v1/query",
+        "iot_manage": "/mpesa/iot/v1/manage",
+        "b2pochi": "/mpesa/b2pochi/v1/paymentrequest",
+        "lipa_na_bonga": "/mpesa/lipanabonga/v1/redeem",
+        "pull_transactions": "/mpesa/pulltransactions/v1/query",
+        "swap": "/mpesa/swap/v1/transfer",
+        "bill_manager": "/mpesa/billmanager/v1/updatebillreference",
+        "b2b_express": "/mpesa/b2bexpressckeckout/v1/paymentrequest",
+        "ratiba": "/mpesa/ratiba/v1/process",
+        "tax_remittance": "/mpesa/taxremittance/v1/remit"
+      }
+    },
+    "production": {
+      "base_url": "https://api.safaricom.co.ke",
+      "endpoints": {
+        "auth": "/oauth/v1/generate",
+        "stk_push": "/mpesa/stkpush/v1/processrequest",
+        "stk_query": "/mpesa/stkpushquery/v1/query",
+        "c2b_register_url": "/mpesa/c2b/v2/registerurl",
+        "c2b_simulate": "/mpesa/c2b/v2/simulate",
+        "c2b_simulate_v1": "/mpesa/c2b/v1/simulate",
+        "b2c": "/mpesa/b2c/v3/paymentrequest",
+        "b2b": "/mpesa/b2b/v1/paymentrequest",
+        "reversal": "/mpesa/reversal/v1/request",
+        "transaction_status": "/mpesa/transactionstatus/v1/query",
+        "account_balance": "/mpesa/accountbalance/v1/query",
+        "dynamic_qr": "/mpesa/qrcode/v1/generate",
+        "query_org_info": "/mpesa/queryorginfo/v1/query",
+        "imsi": "/mpesa/imsi/v1/query",
+        "iot_manage": "/mpesa/iot/v1/manage",
+        "b2pochi": "/mpesa/b2pochi/v1/paymentrequest",
+        "lipa_na_bonga": "/mpesa/lipanabonga/v1/redeem",
+        "pull_transactions": "/mpesa/pulltransactions/v1/query",
+        "swap": "/mpesa/swap/v1/transfer",
+        "bill_manager": "/mpesa/billmanager/v1/updatebillreference",
+        "b2b_express": "/mpesa/b2bexpressckeckout/v1/paymentrequest",
+        "ratiba": "/mpesa/ratiba/v1/process",
+        "tax_remittance": "/mpesa/taxremittance/v1/remit"
+      }
+    }
+  }
+}

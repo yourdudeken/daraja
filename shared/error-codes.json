@@ -1,0 +1,86 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema",
+  "description": "Standard M-Pesa API error codes",
+  "errors": {
+    "400.002.02": {
+      "message": "Bad Request – Invalid {field}",
+      "http_status": 400,
+      "description": "Ensure the payload field is correct"
+    },
+    "400.003.01": {
+      "message": "Invalid Access Token",
+      "http_status": 400,
+      "description": "Regenerate token before expiry"
+    },
+    "400.003.02": {
+      "message": "Bad Request",
+      "http_status": 400,
+      "description": "Check API documentation for missing parameters"
+    },
+    "400.002.05": {
+      "message": "Invalid Request Payload",
+      "http_status": 400,
+      "description": "Submit correct request payload as per documentation"
+    },
+    "400.008.01": {
+      "message": "Invalid authentication type",
+      "http_status": 400,
+      "description": "Select authorization type as Basic"
+    },
+    "400.008.02": {
+      "message": "Invalid grant type",
+      "http_status": 400,
+      "description": "Select grant_type as client_credentials"
+    },
+    "401.002.01": {
+      "message": "Invalid Access Token",
+      "http_status": 401,
+      "description": "Regenerate new access token"
+    },
+    "404.001.01": {
+      "message": "Resource not found",
+      "http_status": 404,
+      "description": "Check API endpoint"
+    },
+    "404.001.03": {
+      "message": "Invalid Access Token",
+      "http_status": 404,
+      "description": "Regenerate token before expiry"
+    },
+    "404.001.04": {
+      "message": "Invalid Authentication Header",
+      "http_status": 404,
+      "description": "Use POST for all except Authorization (GET)"
+    },
+    "405.001": {
+      "message": "Method Not Allowed",
+      "http_status": 405,
+      "description": "Use the correct HTTP method for the endpoint"
+    },
+    "500.001.1001": {
+      "message": "Merchant does not exist / Wrong credentials",
+      "http_status": 500,
+      "description": "Use correct BusinessShortCode or check Password encoding"
+    },
+    "500.002.1001": {
+      "message": "Duplicate OriginatorConversationID",
+      "http_status": 500,
+      "description": "Ensure unique ID per request"
+    },
+    "500.003.02": {
+      "message": "Spike Arrest Violation",
+      "http_status": 500,
+      "description": "Reduce request rate"
+    },
+    "500.003.03": {
+      "message": "Quota Violation",
+      "http_status": 500,
+      "description": "Reduce request rate"
+    },
+    "500.003.1001": {
+      "message": "Internal Server Error",
+      "http_status": 500,
+      "description": "Check correct setup and endpoints"
+    }
+  }
+}

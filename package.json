@@ -1,0 +1,25 @@
+{
+  "name": "mpesa-sdk-monorepo",
+  "private": true,
+  "description": "M-Pesa SDK Ecosystem - TypeScript, Python, Go",
+  "scripts": {
+    "build": "npm run build:ts",
+    "build:ts": "npm -w typescript run build",
+    "test": "npm run test:ts && npm run test:py && npm run test:go",
+    "test:ts": "npm -w typescript run test",
+    "test:py": "cd python && pytest",
+    "test:go": "cd go && go test ./...",
+    "lint": "npm -w typescript run lint",
+    "format": "npm -w typescript run format",
+    "clean": "npm -w typescript run clean",
+    "docs": "cd docs/docusaurus && npm start",
+    "docs:build": "cd docs/docusaurus && npm run build",
+    "release": "npm run build && npm run test && npm run lint"
+  },
+  "workspaces": [
+    "typescript"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

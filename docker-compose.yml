@@ -1,0 +1,40 @@
+version: "3.9"
+
+services:
+  typescript-dev:
+    image: node:20-alpine
+    working_dir: /app
+    volumes:
+      - .:/app
+      - /app/node_modules
+    command: sh -c "npm ci && npm run dev"
+    environment:
+      - NODE_ENV=development
+    ports:
+      - "3000:3000"
+
+  python-dev:
+    image: python:3.12-slim
+    working_dir: /app/python
+    volumes:
+      - .:/app
+    command: sh -c "pip install hatch && hatch run test"
+    environment:
+      - PYTHONUNBUFFERED=1
+
+  go-dev:
+    image: golang:1.23-alpine
+    working_dir: /app/go
+    volumes:
+      - .:/app
+    command: sh -c "go test ./... -v -count=1"
+
+  docs:
+    image: node:20-alpine
+    working_dir: /app/docs/docusaurus
+    volumes:
+      - .:/app
+      - /app/node_modules
+    command: sh -c "npm install && npm start -- --host 0.0.0.0"
+    ports:
+      - "3001:3000"

@@ -1,0 +1,1183 @@
+openapi: 3.1.0
+info:
+  title: M-Pesa Daraja API
+  description: |
+    Comprehensive SDK ecosystem for Safaricom M-Pesa Daraja APIs.
+    This specification serves as the single source of truth for all SDK implementations.
+  version: 3.0.0
+  contact:
+    name: M-Pesa SDK Team
+    url: https://github.com/yourdudeken/mpesa-sdk
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: https://sandbox.safaricom.co.ke
+    description: Sandbox environment
+  - url: https://api.safaricom.co.ke
+    description: Production environment
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: OAuth 2.0 access token from /oauth/v1/generate
+    BasicAuth:
+      type: http
+      scheme: basic
+      description: Basic auth with Consumer Key:Consumer Secret for token generation
+
+  schemas:
+    # ============================================================
+    # AUTHENTICATION
+    # ============================================================
+    AccessTokenRequest:
+      type: object
+      required: [grant_type]
+      properties:
+        grant_type:
+          type: string
+          enum: [client_credentials]
+          description: OAuth 2.0 grant type
+
+    AccessTokenResponse:
+      type: object
+      properties:
+        access_token:
+          type: string
+          description: OAuth 2.0 access token
+        expires_in:
+          type: integer
+          description: Token expiry time in seconds
+          example: 3599
+
+    # ============================================================
+    # STK PUSH
+    # ============================================================
+    STKPushRequest:
+      type: object
+      required:
+        - BusinessShortCode
+        - Password
+        - Timestamp
+        - TransactionType
+        - Amount
+        - PartyA
+        - PartyB
+        - PhoneNumber
+        - CallBackURL
+        - AccountReference
+        - TransactionDesc
+      properties:
+        BusinessShortCode:
+          type: integer
+          description: M-PESA Shortcode assigned to the Business
+          example: 174379
+        Password:
+          type: string
+          description: Base64 encoded string (Shortcode+Passkey+Timestamp)
+        Timestamp:
+          type: string
+          description: Timestamp in format YYYYMMDDHHmmss
+          pattern: '^\d{14}$'
+          example: '20210628092408'
+        TransactionType:
+          type: string
+          enum: [CustomerPayBillOnline, CustomerBuyGoodsOnline]
+          description: Type of transaction
+        Amount:
+          type: integer
+          description: Transaction amount
+          minimum: 1
+          maximum: 250000
+          example: 1
+        PartyA:
+          type: integer
+          description: Phone number sending money (format 2547XXXXXXXX)
+          example: 254722000000
+        PartyB:
+          type: integer
+          description: Organization receiving funds
+          example: 174379
+        PhoneNumber:
+          type: integer
+          description: Mobile number to receive USSD prompt
+          example: 254722111111
+        CallBackURL:
+          type: string
+          format: uri
+          description: URL for payment gateway to send result
+        AccountReference:
+          type: string
+          maxLength: 12
+          description: Alpha-numeric account identifier
+          example: accountref
+        TransactionDesc:
+          type: string
+          maxLength: 13
+          description: Additional transaction information
+          example: txndesc
+
+    STKPushResponse:
+      type: object
+      properties:
+        MerchantRequestID:
+          type: string
+          description: Global unique identifier from API proxy
+        CheckoutRequestID:
+          type: string
+          description: Global unique identifier from M-PESA
+        ResponseCode:
+          type: string
+          description: Status code (0 = success)
+        ResponseDescription:
+          type: string
+          description: Acknowledgment message
+        CustomerMessage:
+          type: string
+          description: Message for the customer
+
+    STKCallbackPayload:
+      type: object
+      properties:
+        Body:
+          type: object
+          properties:
+            stkCallback:
+              type: object
+              properties:
+                MerchantRequestID:
+                  type: string
+                CheckoutRequestID:
+                  type: string
+                ResultCode:
+                  type: integer
+                  description: 0 = success
+                ResultDesc:
+                  type: string
+                CallbackMetadata:
+                  type: object
+                  properties:
+                    Item:
+                      type: array
+                      items:
+                        $ref: '#/components/schemas/CallbackItem'
+
+    CallbackItem:
+      type: object
+      properties:
+        Name:
+          type: string
+        Value:
+          type: string
+
+    # ============================================================
+    # STK QUERY
+    # ============================================================
+    STKQueryRequest:
+      type: object
+      required:
+        - BusinessShortCode
+        - Password
+        - Timestamp
+        - CheckoutRequestID
+      properties:
+        BusinessShortCode:
+          type: string
+          description: Organization's shortcode
+          example: '174379'
+        Password:
+          type: string
+          description: Base64 encoded string (Shortcode+Passkey+Timestamp)
+        Timestamp:
+          type: string
+          description: Timestamp in format YYYYMMDDHHmmss
+          pattern: '^\d{14}$'
+        CheckoutRequestID:
+          type: string
+          description: Checkout request ID from STK push response
+
+    STKQueryResponse:
+      type: object
+      properties:
+        ResponseCode:
+          type: string
+        ResponseDescription:
+          type: string
+        MerchantRequestID:
+          type: string
+        CheckoutRequestID:
+          type: string
+        ResultCode:
+          type: string
+        ResultDesc:
+          type: string
+
+    # ============================================================
+    # C2B - Register URL
+    # ============================================================
+    C2BRegisterURLRequest:
+      type: object
+      required:
+        - ShortCode
+        - ResponseType
+        - ConfirmationURL
+        - ValidationURL
+      properties:
+        ShortCode:
+          type: string
+          description: Unique M-PESA paybill/till number
+          example: '600984'
+        ResponseType:
+          type: string
+          enum: [Completed, Cancelled]
+          description: Default action if validation URL unreachable
+        ConfirmationURL:
+          type: string
+          format: uri
+          description: URL for payment notifications
+        ValidationURL:
+          type: string
+          format: uri
+          description: URL for validation requests
+
+    C2BSimulateRequest:
+      type: object
+      required:
+        - ShortCode
+        - CommandID
+        - Amount
+        - Msisdn
+      properties:
+        ShortCode:
+          type: integer
+          description: Organization shortcode
+        CommandID:
+          type: string
+          enum: [CustomerPayBillOnline, CustomerBuyGoodsOnline]
+        Amount:
+          type: integer
+        Msisdn:
+          type: integer
+          description: Customer phone number
+          example: 254708374149
+        BillRefNumber:
+          type: string
+          description: Account reference for paybill
+
+    C2BResponse:
+      type: object
+      properties:
+        OriginatorCoversationID:
+          type: string
+        ResponseCode:
+          type: string
+        ResponseDescription:
+          type: string
+
+    # ============================================================
+    # C2B Callback types
+    # ============================================================
+    C2BValidationRequest:
+      type: object
+      properties:
+        TransactionType:
+          type: string
+        TransID:
+          type: string
+          description: Unique M-PESA transaction ID
+        TransTime:
+          type: string
+          description: Timestamp YYYYMMDDHHmmss
+        TransAmount:
+          type: string
+        BusinessShortCode:
+          type: string
+        BillRefNumber:
+          type: string
+        InvoiceNumber:
+          type: string
+        OrgAccountBalance:
+          type: string
+        ThirdPartyTransID:
+          type: string
+        MSISDN:
+          type: string
+          description: Masked customer number
+        FirstName:
+          type: string
+        MiddleName:
+          type: string
+        LastName:
+          type: string
+
+    C2BValidationResponse:
+      type: object
+      required: [ResultCode, ResultDesc]
+      properties:
+        ResultCode:
+          type: string
+          description: '0 = accept, C2B00011-C2B00016 = reject'
+        ResultDesc:
+          type: string
+          description: Accepted or Rejected
+
+    # ============================================================
+    # B2C
+    # ============================================================
+    B2CRequest:
+      type: object
+      required:
+        - InitiatorName
+        - SecurityCredential
+        - CommandID
+        - Amount
+        - PartyA
+        - PartyB
+        - Remarks
+        - QueueTimeOutURL
+        - ResultURL
+      properties:
+        OriginatorConversationID:
+          type: string
+          description: Unique string to avoid double disbursement
+        InitiatorName:
+          type: string
+          description: Username of API user on M-PESA portal
+        SecurityCredential:
+          type: string
+          description: Encrypted password of API user
+        CommandID:
+          type: string
+          enum: [SalaryPayment, BusinessPayment, PromotionPayment]
+        Amount:
+          type: integer
+        PartyA:
+          type: integer
+          description: B2C organization short code
+        PartyB:
+          type: integer
+          description: Customer mobile number (12-digit MSISDN)
+          example: 254705912645
+        Remarks:
+          type: string
+          minLength: 2
+          maxLength: 100
+        QueueTimeOutURL:
+          type: string
+          format: uri
+        ResultURL:
+          type: string
+          format: uri
+        Occassion:
+          type: string
+          maxLength: 100
+
+    B2CResponse:
+      type: object
+      properties:
+        ConversationID:
+          type: string
+        OriginatorConversationID:
+          type: string
+        ResponseCode:
+          type: string
+        ResponseDescription:
+          type: string
+
+    B2CCallbackPayload:
+      type: object
+      properties:
+        Result:
+          type: object
+          properties:
+            ResultType:
+              type: integer
+            ResultCode:
+              type: integer
+            ResultDesc:
+              type: string
+            OriginatorConversationID:
+              type: string
+            ConversationID:
+              type: string
+            TransactionID:
+              type: string
+            ResultParameters:
+              type: object
+              properties:
+                ResultParameter:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/ResultParameterItem'
+            ReferenceData:
+              type: object
+              properties:
+                ReferenceItem:
+                  type: object
+                  properties:
+                    Key:
+                      type: string
+                    Value:
+                      type: string
+
+    # ============================================================
+    # B2B
+    # ============================================================
+    B2BRequest:
+      type: object
+      required:
+        - Initiator
+        - SecurityCredential
+        - CommandID
+        - Amount
+        - PartyA
+        - PartyB
+        - Remarks
+        - QueueTimeOutURL
+        - ResultURL
+      properties:
+        Initiator:
+          type: string
+          description: M-Pesa API operator username
+        SecurityCredential:
+          type: string
+          description: Encrypted password of the M-Pesa API operator
+        CommandID:
+          type: string
+          enum: [BusinessPayBill, BusinessBuyGoods, MerchantToMerchantTransfer, MerchantTransferFromMerchantToWorking, MerchantServicesMMFAccountBalance, AgencyFloatAdvance]
+        SenderIdentifierType:
+          type: integer
+          default: 4
+          description: Type of shortcode (4 only)
+        RecieverIdentifierType:
+          type: integer
+          default: 4
+          description: Type of shortcode (4 only)
+        Amount:
+          type: integer
+        PartyA:
+          type: integer
+          description: Shortcode of the organization deducting money
+        PartyB:
+          type: integer
+          description: Shortcode to which money will be moved
+        Requester:
+          type: integer
+          description: Optional consumer mobile number
+          example: 254700000000
+        AccountReference:
+          type: string
+          maxLength: 13
+          description: Account number for payment
+        Remarks:
+          type: string
+          maxLength: 100
+        QueueTimeOutURL:
+          type: string
+          format: uri
+        ResultURL:
+          type: string
+          format: uri
+        Occassion:
+          type: string
+          maxLength: 100
+
+    B2BResponse:
+      type: object
+      properties:
+        OriginatorConversationID:
+          type: string
+        ConversationID:
+          type: string
+        ResponseCode:
+          type: string
+        ResponseDescription:
+          type: string
+
+    # ============================================================
+    # REVERSAL
+    # ============================================================
+    ReversalRequest:
+      type: object
+      required:
+        - Initiator
+        - SecurityCredential
+        - CommandID
+        - TransactionID
+        - Amount
+        - ReceiverParty
+        - RecieverIdentifierType
+        - ResultURL
+        - QueueTimeOutURL
+        - Remarks
+      properties:
+        Initiator:
+          type: string
+        SecurityCredential:
+          type: string
+        CommandID:
+          type: string
+          enum: [TransactionReversal]
+        TransactionID:
+          type: string
+          description: M-PESA receipt number
+        Amount:
+          type: integer
+        ReceiverParty:
+          type: integer
+          description: Organization shortcode
+        RecieverIdentifierType:
+          type: integer
+          default: 11
+        QueueTimeOutURL:
+          type: string
+          format: uri
+        ResultURL:
+          type: string
+          format: uri
+        Remarks:
+          type: string
+          maxLength: 100
+
+    ReversalResponse:
+      type: object
+      properties:
+        OriginatorConversationID:
+          type: string
+        ConversationID:
+          type: string
+        ResponseCode:
+          type: string
+        ResponseDescription:
+          type: string
+
+    # ============================================================
+    # TRANSACTION STATUS
+    # ============================================================
+    TransactionStatusRequest:
+      type: object
+      required:
+        - Initiator
+        - SecurityCredential
+        - CommandID
+        - PartyA
+        - IdentifierType
+        - ResultURL
+        - QueueTimeOutURL
+        - Remarks
+      properties:
+        Initiator:
+          type: string
+        SecurityCredential:
+          type: string
+        CommandID:
+          type: string
+          enum: [TransactionStatusQuery]
+        TransactionID:
+          type: string
+          description: M-PESA receipt number
+        OriginalConversationID:
+          type: string
+          description: Original conversation ID
+        PartyA:
+          type: integer
+          description: Organization/MSISDN receiving the transaction
+        IdentifierType:
+          type: integer
+          default: 4
+        ResultURL:
+          type: string
+          format: uri
+        QueueTimeOutURL:
+          type: string
+          format: uri
+        Remarks:
+          type: string
+          maxLength: 100
+        Occasion:
+          type: string
+          maxLength: 100
+
+    TransactionStatusResponse:
+      type: object
+      properties:
+        OriginatorConversationID:
+          type: string
+        ConversationID:
+          type: string
+        ResponseCode:
+          type: string
+        ResponseDescription:
+          type: string
+
+    # ============================================================
+    # ACCOUNT BALANCE
+    # ============================================================
+    AccountBalanceRequest:
+      type: object
+      required:
+        - Initiator
+        - SecurityCredential
+        - CommandID
+        - PartyA
+        - IdentifierType
+        - Remarks
+        - QueueTimeOutURL
+        - ResultURL
+      properties:
+        Initiator:
+          type: string
+        SecurityCredential:
+          type: string
+        CommandID:
+          type: string
+          enum: [AccountBalance]
+        PartyA:
+          type: integer
+          description: Shortcode of the organization
+        IdentifierType:
+          type: integer
+          default: 4
+        Remarks:
+          type: string
+          maxLength: 100
+        QueueTimeOutURL:
+          type: string
+          format: uri
+        ResultURL:
+          type: string
+          format: uri
+
+    AccountBalanceResponse:
+      type: object
+      properties:
+        OriginatorConversationID:
+          type: string
+        ConversationID:
+          type: string
+        ResponseCode:
+          type: string
+        ResponseDescription:
+          type: string
+
+    # ============================================================
+    # DYNAMIC QR
+    # ============================================================
+    DynamicQRRequest:
+      type: object
+      required:
+        - MerchantName
+        - RefNo
+        - Amount
+        - TrxCode
+        - CPI
+        - Size
+      properties:
+        MerchantName:
+          type: string
+          description: Name of the Company/M-Pesa Merchant
+        RefNo:
+          type: string
+          description: Transaction Reference
+        Amount:
+          type: integer
+          description: Total amount for the transaction
+        TrxCode:
+          type: string
+          enum: [BG, WA, PB, SM, SB]
+          description: Transaction Type Code
+        CPI:
+          type: string
+          description: Credit Party Identifier
+        Size:
+          type: string
+          description: QR code size in pixels
+          example: '300'
+
+    DynamicQRResponse:
+      type: object
+      properties:
+        ResponseCode:
+          type: string
+        RequestID:
+          type: string
+        ResponseDescription:
+          type: string
+        QRCode:
+          type: string
+          description: Base64-encoded QR code image
+
+    # ============================================================
+    # SHARED
+    # ============================================================
+    ResultParameterItem:
+      type: object
+      properties:
+        Key:
+          type: string
+        Value:
+          type: string
+
+    MpesaErrorResponse:
+      type: object
+      properties:
+        requestId:
+          type: string
+        errorCode:
+          type: string
+        errorMessage:
+          type: string
+
+    MpesaResult:
+      type: object
+      properties:
+        Result:
+          type: object
+          properties:
+            ResultType:
+              type: integer
+            ResultCode:
+              type: integer
+            ResultDesc:
+              type: string
+            OriginatorConversationID:
+              type: string
+            ConversationID:
+              type: string
+            TransactionID:
+              type: string
+            ResultParameters:
+              type: object
+              properties:
+                ResultParameter:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/ResultParameterItem'
+            ReferenceData:
+              type: object
+              properties:
+                ReferenceItem:
+                  type: object
+                  properties:
+                    Key:
+                      type: string
+                    Value:
+                      type: string
+
+    # Security Credential
+    SecurityCredentialRequest:
+      type: object
+      properties:
+        password:
+          type: string
+          description: Plain text password to encrypt
+        certificatePath:
+          type: string
+          description: Path to M-Pesa public key certificate
+
+    # Environment Configuration
+    EnvironmentConfig:
+      type: object
+      properties:
+        baseUrl:
+          type: string
+        authUrl:
+          type: string
+        stkPushUrl:
+          type: string
+        stkQueryUrl:
+          type: string
+        c2bRegisterUrl:
+          type: string
+        c2bSimulateUrl:
+          type: string
+        b2cUrl:
+          type: string
+        b2bUrl:
+          type: string
+        reversalUrl:
+          type: string
+        transactionStatusUrl:
+          type: string
+        accountBalanceUrl:
+          type: string
+        dynamicQrUrl:
+          type: string
+
+  # ============================================================
+  # REQUEST BODIES
+  # ============================================================
+  requestBodies:
+    STKPush:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/STKPushRequest'
+      required: true
+    STKQuery:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/STKQueryRequest'
+      required: true
+    C2BRegisterURL:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/C2BRegisterURLRequest'
+      required: true
+    C2BSimulate:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/C2BSimulateRequest'
+      required: true
+    B2C:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/B2CRequest'
+      required: true
+    B2B:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/B2BRequest'
+      required: true
+    Reversal:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ReversalRequest'
+      required: true
+    TransactionStatus:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/TransactionStatusRequest'
+      required: true
+    AccountBalance:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/AccountBalanceRequest'
+      required: true
+    DynamicQR:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/DynamicQRRequest'
+      required: true
+
+paths:
+  # ============================================================
+  # AUTHENTICATION
+  # ============================================================
+  /oauth/v1/generate:
+    get:
+      tags: [Authentication]
+      summary: Generate OAuth Access Token
+      description: Get a time-bound access token for API authentication
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: grant_type
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [client_credentials]
+      responses:
+        '200':
+          description: Access token generated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccessTokenResponse'
+        '400':
+          description: Invalid grant type
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MpesaErrorResponse'
+
+  # ============================================================
+  # STK PUSH
+  # ============================================================
+  /mpesa/stkpush/v1/processrequest:
+    post:
+      tags: [STK Push]
+      summary: Initiate STK Push
+      description: Send a payment prompt to a customer's M-Pesa phone
+      security:
+        - BearerAuth: []
+      requestBody:
+        $ref: '#/components/requestBodies/STKPush'
+      responses:
+        '200':
+          description: STK Push initiated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/STKPushResponse'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MpesaErrorResponse'
+
+  # ============================================================
+  # STK QUERY
+  # ============================================================
+  /mpesa/stkpushquery/v1/query:
+    post:
+      tags: [STK Push]
+      summary: Query STK Push Status
+      description: Check the status of an STK Push transaction
+      security:
+        - BearerAuth: []
+      requestBody:
+        $ref: '#/components/requestBodies/STKQuery'
+      responses:
+        '200':
+          description: Query processed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/STKQueryResponse'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MpesaErrorResponse'
+
+  # ============================================================
+  # C2B
+  # ============================================================
+  /mpesa/c2b/v2/registerurl:
+    post:
+      tags: [C2B]
+      summary: Register C2B URLs
+      description: Register validation and confirmation URLs for C2B payments
+      security:
+        - BearerAuth: []
+      requestBody:
+        $ref: '#/components/requestBodies/C2BRegisterURL'
+      responses:
+        '200':
+          description: URLs registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/C2BResponse'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MpesaErrorResponse'
+
+  /mpesa/c2b/v2/simulate:
+    post:
+      tags: [C2B]
+      summary: Simulate C2B Transaction
+      description: Simulate a C2B payment (sandbox only)
+      security:
+        - BearerAuth: []
+      requestBody:
+        $ref: '#/components/requestBodies/C2BSimulate'
+      responses:
+        '200':
+          description: Transaction simulated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/C2BResponse'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MpesaErrorResponse'
+
+  # ============================================================
+  # B2C
+  # ============================================================
+  /mpesa/b2c/v3/paymentrequest:
+    post:
+      tags: [B2C]
+      summary: Initiate B2C Payment
+      description: Send money from business to customer
+      security:
+        - BearerAuth: []
+      requestBody:
+        $ref: '#/components/requestBodies/B2C'
+      responses:
+        '200':
+          description: B2C payment initiated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/B2CResponse'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MpesaErrorResponse'
+
+  # ============================================================
+  # B2B
+  # ============================================================
+  /mpesa/b2b/v1/paymentrequest:
+    post:
+      tags: [B2B]
+      summary: Initiate B2B Payment
+      description: Make payments from business to business
+      security:
+        - BearerAuth: []
+      requestBody:
+        $ref: '#/components/requestBodies/B2B'
+      responses:
+        '200':
+          description: B2B payment initiated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/B2BResponse'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MpesaErrorResponse'
+
+  # ============================================================
+  # REVERSAL
+  # ============================================================
+  /mpesa/reversal/v1/request:
+    post:
+      tags: [Reversals]
+      summary: Reverse Transaction
+      description: Reverse a C2B transaction
+      security:
+        - BearerAuth: []
+      requestBody:
+        $ref: '#/components/requestBodies/Reversal'
+      responses:
+        '200':
+          description: Reversal initiated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReversalResponse'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MpesaErrorResponse'
+
+  # ============================================================
+  # TRANSACTION STATUS
+  # ============================================================
+  /mpesa/transactionstatus/v1/query:
+    post:
+      tags: [Transaction Status]
+      summary: Query Transaction Status
+      description: Check the status of a transaction
+      security:
+        - BearerAuth: []
+      requestBody:
+        $ref: '#/components/requestBodies/TransactionStatus'
+      responses:
+        '200':
+          description: Status query accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransactionStatusResponse'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MpesaErrorResponse'
+
+  # ============================================================
+  # ACCOUNT BALANCE
+  # ============================================================
+  /mpesa/accountbalance/v1/query:
+    post:
+      tags: [Account Balance]
+      summary: Query Account Balance
+      description: Check M-Pesa account balance
+      security:
+        - BearerAuth: []
+      requestBody:
+        $ref: '#/components/requestBodies/AccountBalance'
+      responses:
+        '200':
+          description: Balance query accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountBalanceResponse'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MpesaErrorResponse'
+
+  # ============================================================
+  # DYNAMIC QR
+  # ============================================================
+  /mpesa/qrcode/v1/generate:
+    post:
+      tags: [Dynamic QR]
+      summary: Generate Dynamic QR Code
+      description: Generate a dynamic M-Pesa QR code
+      security:
+        - BearerAuth: []
+      requestBody:
+        $ref: '#/components/requestBodies/DynamicQR'
+      responses:
+        '200':
+          description: QR code generated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DynamicQRResponse'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MpesaErrorResponse'
+
+tags:
+  - name: Authentication
+    description: OAuth 2.0 authentication endpoints
+  - name: STK Push
+    description: M-Pesa Express (STK Push) endpoints
+  - name: C2B
+    description: Customer to Business endpoints
+  - name: B2C
+    description: Business to Customer endpoints
+  - name: B2B
+    description: Business to Business endpoints
+  - name: Reversals
+    description: Transaction reversal endpoints
+  - name: Transaction Status
+    description: Transaction status query endpoints
+  - name: Account Balance
+    description: Account balance query endpoints
+  - name: Dynamic QR
+    description: Dynamic QR code generation endpoints
