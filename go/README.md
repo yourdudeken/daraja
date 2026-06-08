@@ -127,4 +127,4 @@ mpesa := client.NewClient(types.MpesaConfig{
 
 ## Documentation
 
-Full documentation at [https://yourdudeken.github.io/mpesa-sdk](https://yourdudeken.github.io/mpesa-sdk)
+Full documentation at [https://yourdudeken.github.io/daraja-sdk](https://yourdudeken.github.io/daraja-sdk)

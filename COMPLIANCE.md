@@ -2,7 +2,7 @@
 
 ## PCI-DSS
 
-The M-Pesa SDK does not store, process, or transmit Primary Account Numbers (PAN). 
+The Daraja SDK does not store, process, or transmit Primary Account Numbers (PAN). 
 Phone numbers used in transactions (MSISDN) are not classified as PAN under PCI-DSS.
 
 **Recommendations:**

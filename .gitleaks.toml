@@ -1,7 +1,7 @@
-title = "M-Pesa SDK Gitleaks Config"
+title = "Safaricom M-Pesa Daraja SDK Gitleaks Config"
 
 [allowlist]
-description = "Allowlist for M-Pesa SDK"
+description = "Allowlist for Daraja SDK"
 paths = [
     '''.git/.*''',
     '''node_modules/.*''',

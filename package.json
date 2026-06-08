@@ -1,7 +1,7 @@
 {
-  "name": "mpesa-sdk-monorepo",
+  "name": "daraja-sdk-monorepo",
   "private": true,
-  "description": "M-Pesa SDK Ecosystem - TypeScript, Python, Go",
+  "description": "Safaricom M-Pesa Daraja SDK Ecosystem - TypeScript, Python, Go",
   "scripts": {
     "build": "npm run build:ts",
     "build:ts": "npm -w typescript run build",

@@ -2,19 +2,19 @@
 
 Production-grade SDK ecosystem for Safaricom M-Pesa Daraja APIs.
 
-[![CI](https://github.com/yourdudeken/mpesa-sdk/actions/workflows/ci.yml/badge.svg)](https://github.com/yourdudeken/mpesa-sdk/actions/workflows/ci.yml)
-[![npm version](https://img.shields.io/npm/v/@yourdudeken/mpesa-sdk)](https://www.npmjs.com/package/@yourdudeken/mpesa-sdk)
-[![PyPI version](https://img.shields.io/pypi/v/yourdudeken-mpesa-sdk)](https://pypi.org/project/yourdudeken-mpesa-sdk/)
-[![Go Reference](https://pkg.go.dev/badge/github.com/yourdudeken/mpesa-sdk%2fgo.svg)](https://pkg.go.dev/github.com/yourdudeken/mpesa-sdk/go)
+[![CI](https://github.com/yourdudeken/daraja-sdk/actions/workflows/ci.yml/badge.svg)](https://github.com/yourdudeken/daraja-sdk/actions/workflows/ci.yml)
+[![npm version](https://img.shields.io/npm/v/@yourdudeken/daraja-sdk)](https://www.npmjs.com/package/@yourdudeken/daraja-sdk)
+[![PyPI version](https://img.shields.io/pypi/v/yourdudeken-daraja-sdk)](https://pypi.org/project/yourdudeken-daraja-sdk/)
+[![Go Reference](https://pkg.go.dev/badge/github.com/yourdudeken/daraja-sdk%2fgo.svg)](https://pkg.go.dev/github.com/yourdudeken/daraja-sdk/go)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ## Available SDKs
 
 | Language | Package | Version |
 |----------|---------|---------|
-| **TypeScript** | `@yourdudeken/mpesa-sdk` | ![npm](https://img.shields.io/npm/v/@yourdudeken/mpesa-sdk) |
-| **Python** | `yourdudeken-mpesa-sdk` | ![pypi](https://img.shields.io/pypi/v/yourdudeken-mpesa-sdk) |
-| **Go** | `github.com/yourdudeken/mpesa-sdk/go` | ![go](https://img.shields.io/github/v/tag/yourdudeken/mpesa-sdk?filter=go/v*.*.*) |
+| **TypeScript** | `@daraja-sdk/ts` | ![npm](https://img.shields.io/npm/v/@yourdudeken/daraja-sdk) |
+| **Python** | `daraja-sdk-py` | ![pypi](https://img.shields.io/pypi/v/yourdudeken-daraja-sdk) |
+| **Go** | `github.com/yourdudeken/daraja-sdk/go` | ![go](https://img.shields.io/github/v/tag/yourdudeken/daraja-sdk?filter=go/v*.*.*) |
 
 ## Features
 
@@ -64,11 +64,11 @@ Production-grade SDK ecosystem for Safaricom M-Pesa Daraja APIs.
 ### TypeScript
 
 ```bash
-npm install @yourdudeken/mpesa-sdk axios
+npm install @daraja-sdk/ts axios
 ```
 
 ```typescript
-import { Mpesa } from '@yourdudeken/mpesa-sdk';
+import { Mpesa } from '@daraja-sdk/ts';
 
 const mpesa = new Mpesa({
   consumerKey: process.env.MPESA_CONSUMER_KEY!,
@@ -93,7 +93,7 @@ const response = await mpesa.stkPush.initiate({
 ### Python
 
 ```bash
-pip install yourdudeken-mpesa-sdk
+pip install daraja-sdk-py
 ```
 
 ```python
@@ -122,13 +122,13 @@ response = client.stk_push({
 ### Go
 
 ```bash
-go get github.com/yourdudeken/mpesa-sdk/go
+go get github.com/yourdudeken/daraja-sdk/go
 ```
 
 ```go
 import (
-    "github.com/yourdudeken/mpesa-sdk/go/client"
-    "github.com/yourdudeken/mpesa-sdk/go/types"
+    "github.com/yourdudeken/daraja-sdk/go/client"
+    "github.com/yourdudeken/daraja-sdk/go/types"
 )
 
 mpesa := client.NewClient(types.MpesaConfig{
@@ -280,7 +280,7 @@ See full documentation for detailed setup across all languages and features.
 ## Architecture
 
 ```
-mpesa-sdk/
+daraja-sdk-sdk/
 ├── openapi/          # OpenAPI specification (single source of truth)
 ├── typescript/       # TypeScript SDK
 ├── python/           # Python SDK
@@ -294,7 +294,7 @@ mpesa-sdk/
 
 ## Documentation
 
-Full documentation: [https://yourdudeken.github.io/mpesa-sdk](https://yourdudeken.github.io/mpesa-sdk)
+Full documentation: [https://yourdudeken.github.io/daraja-sdk](https://yourdudeken.github.io/daraja-sdk)
 
 ## License
 

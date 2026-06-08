@@ -5,23 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.3.10] - 2026-06-02
-
-### Changed
-
-- Docusaurus docs: fixed ProgressPlugin build error (pinned webpack 5.94.0)
-- Docusaurus docs: fixed broken links with root redirect page
-- Added missing docs: typescript/README.md, go/README.md, CHANGELOG.md
-- All version badges in README and docs now auto-fetch from registry
-- Python SDK refactored into package-per-module structure
-- Expanded interactive examples for all APIs across all three SDKs
-- CI/CD: Fixed npm publish access for scoped packages, Go tag push permissions
-
 ## [1.0.0] - 2026-05-12
 
 ### Added
 
-- **TypeScript SDK** (`@yourdudeken/mpesa-sdk`)
+- **TypeScript SDK** (`@daraja-sdk/ts`)
   - OAuth authentication with automatic token management
   - STK Push (M-Pesa Express) with password generation
   - STK Query
@@ -41,7 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Credential masking in logs
   - Tree-shakeable ESM + CJS builds
 
-- **Python SDK** (`yourdudeken-mpesa-sdk`)
+- **Python SDK** (`daraja-sdk-py`)
   - Full sync client with httpx
   - Pydantic v2 models for all request/response types
   - All M-Pesa API endpoints (STK Push, C2B, B2C, B2B, Reversal, etc.)
@@ -51,7 +39,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Context manager support
   - FastAPI, Flask, Django integration examples
 
-- **Go SDK** (`github.com/yourdudeken/mpesa-sdk/go`)
+- **Go SDK** (`github.com/yourdudeken/daraja-sdk/go`)
   - Context-aware HTTP client
   - Thread-safe token management
   - All M-Pesa API endpoints

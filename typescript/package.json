@@ -1,6 +1,6 @@
 {
   "name": "@daraja-sdk/ts",
-  "version": "0.2.0",
+  "version": "0.0.1",
   "description": "Production-grade TypeScript SDK for Safaricom M-Pesa Daraja API",
   "keywords": [
     "mpesa",
@@ -13,10 +13,10 @@
     "b2b",
     "c2b"
   ],
-  "homepage": "https://github.com/yourdudeken/mpesa-sdk#readme",
+  "homepage": "https://github.com/yourdudeken/daraja-sdk#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/yourdudeken/mpesa-sdk.git"
+    "url": "git+https://github.com/yourdudeken/daraja-sdk.git"
   },
   "license": "MIT",
   "author": "M-Pesa SDK Team",

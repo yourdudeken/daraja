@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "daraja-sdk-py"
-version = "0.2.0"
+version = "0.0.1"
 description = "Production-grade Python SDK for Safaricom M-Pesa Daraja API"
 readme = "README.md"
 license = { text = "MIT" }

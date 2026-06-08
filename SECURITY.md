@@ -2,11 +2,11 @@
 
 ## Reporting a Vulnerability
 
-We take the security of the M-Pesa SDK seriously. If you discover a security vulnerability, please do NOT file a public issue.
+We take the security of the Daraja SDK seriously. If you discover a security vulnerability, please do NOT file a public issue.
 
 **Instead, send a private report to:**
 
-- Open a GitHub Security Advisory at: https://github.com/yourdudeken/mpesa-sdk/security/advisories/new
+- Open a GitHub Security Advisory at: https://github.com/yourdudeken/daraja-sdk/security/advisories/new
 - Or email: security@yourdudeken.dev
 
 We will acknowledge receipt within 48 hours and work on a fix.

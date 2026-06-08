@@ -105,4 +105,4 @@ client = Mpesa({
 
 ## Documentation
 
-Full documentation: [https://yourdudeken.github.io/mpesa-sdk](https://yourdudeken.github.io/mpesa-sdk)
+Full documentation: [https://yourdudeken.github.io/daraja-sdk](https://yourdudeken.github.io/daraja-sdk)
