@@ -3,7 +3,7 @@ set -euo pipefail
 
 VERSION=${1:-patch}
 
-echo "=== Releasing M-Pesa SDK (${VERSION}) ==="
+echo "=== Releasing Safaricom M-Pesa Daraja SDK (${VERSION}) ==="
 
 # TypeScript
 echo ""

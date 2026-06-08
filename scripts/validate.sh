@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-echo "=== M-Pesa SDK Validation ==="
+echo "=== Safaricom M-Pesa Daraja SDK Validation ==="
 
 # TypeScript
 echo ""
