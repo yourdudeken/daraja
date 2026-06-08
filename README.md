@@ -1,4 +1,4 @@
-# M-Pesa SDK
+# Daraja SDK
 
 Production-grade SDK ecosystem for Safaricom M-Pesa Daraja APIs.
 
