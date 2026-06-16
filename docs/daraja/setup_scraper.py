@@ -20,50 +20,50 @@ def run_command(command, description):
     print(f"\n{description}...")
     try:
         result = subprocess.run(command, shell=True, check=True, capture_output=True, text=True)
-        print(f"✅ {description} completed successfully")
+        print(f" {description} completed successfully")
         return True
     except subprocess.CalledProcessError as e:
-        print(f"❌ {description} failed:")
+        print(f" {description} failed:")
         print(f"Error: {e.stderr}")
         return False
 
 def main():
     """Main setup function."""
-    print("🚀 Setting up Daraja API Documentation Scraper")
+    print(" Setting up Daraja API Documentation Scraper")
     print("=" * 50)
     
     # Check Python version
     if sys.version_info < (3, 8):
-        print("❌ Python 3.8+ is required")
+        print(" Python 3.8+ is required")
         sys.exit(1)
     
-    print(f"✅ Python {sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro} detected")
+    print(f" Python {sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro} detected")
     
     # Install Python dependencies
     if not run_command("pip install -r requirements.txt", "Installing Python dependencies"):
-        print("\n⚠️  Failed to install dependencies. Try running manually:")
+        print("\n  Failed to install dependencies. Try running manually:")
         print("pip install -r requirements.txt")
         return
     
     # Install Playwright browsers
     if not run_command("playwright install chromium", "Installing Playwright Chromium browser"):
-        print("\n⚠️  Failed to install Playwright browsers. Try running manually:")
+        print("\n  Failed to install Playwright browsers. Try running manually:")
         print("playwright install chromium")
         return
     
     # Verify setup
-    print("\n🔍 Verifying setup...")
+    print("\n Verifying setup...")
     
     try:
         import playwright
         import bs4
         import markdownify
-        print("✅ All Python packages imported successfully")
+        print(" All Python packages imported successfully")
     except ImportError as e:
-        print(f"❌ Import error: {e}")
+        print(f" Import error: {e}")
         return
     
-    print("\n🎉 Setup completed successfully!")
+    print("\n Setup completed successfully!")
     print("\nYou can now run the scraper with:")
     print("python scraper.py")
     
