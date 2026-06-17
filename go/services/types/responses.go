@@ -114,25 +114,25 @@ type LipaNaBongaResult struct {
 	NewBalance          string
 }
 
-type PullTransactionsResult struct {
-	ResponseCode        string
+type PullTransactionsRegisterResult struct {
+	ResponseRefID       string
+	ResponseStatus      string
+	ShortCode           string
 	ResponseDescription string
-	TotalCount          string
-	PageNumber          string
-	PageSize            string
-	Transactions        []types.PullTransaction
+}
+
+type PullTransactionsQueryResult struct {
+	ResponseRefID   string
+	ResponseCode    string
+	ResponseMessage string
+	Response        [][]types.PullTransactionItem
 }
 
 type SwapResult struct {
-	ResponseCode        string
-	ResponseDescription string
-	TransactionID       string
-	Amount              string
-	SourceAccount       string
-	TargetAccount       string
-	Timestamp           string
-	NewSourceBalance    string
-	NewTargetBalance    string
+	RequestRefID string
+	ResponseCode string
+	ResponseDesc string
+	LastSwapDate string
 }
 
 type BillManagerResult struct {
@@ -143,10 +143,8 @@ type BillManagerResult struct {
 }
 
 type B2BExpressResult struct {
-	OriginatorConversationID string
-	ConversationID           string
-	ResponseCode             string
-	ResponseDescription      string
+	Code   string
+	Status string
 }
 
 type RatibaResult struct {

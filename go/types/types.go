@@ -483,56 +483,55 @@ type LipaNaBongaResponse struct {
 }
 
 // ---- Pull Transactions ----
-type PullTransaction struct {
-	TransactionID   string `json:"TransactionID"`
-	TransactionDate string `json:"TransactionDate"`
-	TransactionType string `json:"TransactionType"`
-	Amount          string `json:"Amount"`
-	PhoneNumber     string `json:"PhoneNumber"`
-	Reference       string `json:"Reference"`
-	Status          string `json:"Status"`
-}
-
-type PullTransactionsRequest struct {
-	AccessToken     string `json:"AccessToken"`
+type PullTransactionsRegisterRequest struct {
 	ShortCode       string `json:"ShortCode"`
-	StartDate       string `json:"StartDate"`
-	EndDate         string `json:"EndDate"`
-	TransactionType string `json:"TransactionType"`
-	PageNumber      int    `json:"PageNumber"`
-	PageSize        int    `json:"PageSize"`
+	RequestType     string `json:"RequestType"`
+	NominatedNumber string `json:"NominatedNumber"`
+	CallBackURL     string `json:"CallBackURL"`
 }
 
-type PullTransactionsResponse struct {
-	ResponseCode        string            `json:"ResponseCode"`
-	ResponseDescription string            `json:"ResponseDescription"`
-	TotalCount          string            `json:"TotalCount"`
-	PageNumber          string            `json:"PageNumber"`
-	PageSize            string            `json:"PageSize"`
-	Transactions        []PullTransaction `json:"Transactions"`
+type PullTransactionsRegisterResponse struct {
+	ResponseRefID       string `json:"ResponseRefID"`
+	ResponseStatus      string `json:"ResponseStatus"`
+	ShortCode           string `json:"ShortCode"`
+	ResponseDescription string `json:"ResponseDescription"`
 }
 
-// ---- Swap ----
+type PullTransactionItem struct {
+	TransactionID    string `json:"transactionId"`
+	TrxDate          string `json:"trxDate"`
+	Msisdn           int    `json:"msisdn"`
+	Sender           string `json:"sender"`
+	TransactionType  string `json:"transactiontype"`
+	BillReference    string `json:"billreference"`
+	Amount           string `json:"amount"`
+	OrganizationName string `json:"organizationname"`
+}
+
+type PullTransactionsQueryRequest struct {
+	ShortCode   string `json:"ShortCode"`
+	StartDate   string `json:"StartDate"`
+	EndDate     string `json:"EndDate"`
+	OffSetValue string `json:"OffSetValue"`
+}
+
+type PullTransactionsQueryResponse struct {
+	ResponseRefID   string                  `json:"ResponseRefID"`
+	ResponseCode    string                  `json:"ResponseCode"`
+	ResponseMessage string                  `json:"ResponseMessage"`
+	Response        [][]PullTransactionItem `json:"Response"`
+}
+
+// ---- Swap (SIM swap date query) ----
 type SwapRequest struct {
-	InitiatorName      string `json:"InitiatorName"`
-	SecurityCredential string `json:"SecurityCredential"`
-	CommandID          string `json:"CommandID"`
-	Amount             int    `json:"Amount"`
-	SourceAccount      string `json:"SourceAccount"`
-	TargetAccount      string `json:"TargetAccount"`
-	Remarks            string `json:"Remarks"`
+	CustomerNumber string `json:"customerNumber"`
 }
 
 type SwapResponse struct {
-	ResponseCode        string `json:"ResponseCode"`
-	ResponseDescription string `json:"ResponseDescription"`
-	TransactionID       string `json:"TransactionID"`
-	Amount              string `json:"Amount"`
-	SourceAccount       string `json:"SourceAccount"`
-	TargetAccount       string `json:"TargetAccount"`
-	Timestamp           string `json:"Timestamp"`
-	NewSourceBalance    string `json:"NewSourceBalance"`
-	NewTargetBalance    string `json:"NewTargetBalance"`
+	RequestRefID string `json:"requestRefID"`
+	ResponseCode string `json:"responseCode"`
+	ResponseDesc string `json:"responseDesc"`
+	LastSwapDate string `json:"lastSwapDate"`
 }
 
 // ---- Bill Manager ----
@@ -556,25 +555,18 @@ type BillManagerResponse struct {
 
 // ---- B2B Express CheckOut ----
 type B2BExpressRequest struct {
-	InitiatorName          string `json:"InitiatorName"`
-	SecurityCredential     string `json:"SecurityCredential"`
-	CommandID              string `json:"CommandID"`
-	SenderIdentifierType   string `json:"SenderIdentifierType"`
-	RecieverIdentifierType string `json:"RecieverIdentifierType"`
-	Amount                 string `json:"Amount"`
-	PartyA                 string `json:"PartyA"`
-	PartyB                 string `json:"PartyB"`
-	AccountReference       string `json:"AccountReference"`
-	Remarks                string `json:"Remarks"`
-	QueueTimeOutURL        string `json:"QueueTimeOutURL"`
-	ResultURL              string `json:"ResultURL"`
+	PrimaryShortCode  string `json:"primaryShortCode"`
+	ReceiverShortCode string `json:"receiverShortCode"`
+	Amount            string `json:"amount"`
+	PaymentRef        string `json:"paymentRef"`
+	CallbackUrl       string `json:"callbackUrl"`
+	PartnerName       string `json:"partnerName"`
+	RequestRefID      string `json:"RequestRefID"`
 }
 
 type B2BExpressResponse struct {
-	OriginatorConversationID string `json:"OriginatorConversationID"`
-	ConversationID           string `json:"ConversationID"`
-	ResponseCode             string `json:"ResponseCode"`
-	ResponseDescription      string `json:"ResponseDescription"`
+	Code   string `json:"code"`
+	Status string `json:"status"`
 }
 
 // ---- M-Pesa Ratiba ----

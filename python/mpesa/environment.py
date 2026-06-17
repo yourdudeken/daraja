@@ -2,16 +2,38 @@ import json
 from pathlib import Path
 from typing import Literal
 
-_SHARED_ENDPOINTS_PATH = Path(__file__).resolve().parent.parent.parent.parent / "shared" / "endpoints.json"
+_SHARED_ENDPOINTS_PATH = (
+    Path(__file__).resolve().parent.parent.parent.parent / "shared" / "endpoints.json"
+)
 
 SANDBOX_BASE_URL = "https://sandbox.safaricom.co.ke"
 PRODUCTION_BASE_URL = "https://api.safaricom.co.ke"
 
 _ENDPOINT_KEYS = [
-    "auth", "stk_push", "stk_query", "c2b_register_url", "c2b_simulate", "c2b_simulate_v1",
-    "b2c", "b2b", "reversal", "transaction_status", "account_balance", "dynamic_qr",
-    "query_org_info", "imsi", "iot_manage", "b2pochi", "lipa_na_bonga", "pull_transactions",
-    "swap", "bill_manager", "b2b_express", "ratiba", "tax_remittance",
+    "auth",
+    "stk_push",
+    "stk_query",
+    "c2b_register_url",
+    "c2b_simulate",
+    "c2b_simulate_v1",
+    "b2c",
+    "b2b",
+    "reversal",
+    "transaction_status",
+    "account_balance",
+    "dynamic_qr",
+    "query_org_info",
+    "imsi",
+    "iot_manage",
+    "b2pochi",
+    "lipa_na_bonga",
+    "pull_transactions_register",
+    "pull_transactions_query",
+    "swap",
+    "bill_manager",
+    "b2b_express",
+    "ratiba",
+    "tax_remittance",
 ]
 
 ENDPOINTS: dict[str, str] = {}
@@ -41,10 +63,11 @@ else:
         "IOT_MANAGE": "/mpesa/iot/v1/manage",
         "B2POCHI": "/mpesa/b2pochi/v1/paymentrequest",
         "LIPA_NA_BONGA": "/mpesa/lipanabonga/v1/redeem",
-        "PULL_TRANSACTIONS": "/mpesa/pulltransactions/v1/query",
-        "SWAP": "/mpesa/swap/v1/transfer",
+        "PULL_TRANSACTIONS_REGISTER": "/pulltransactions/v1/register",
+        "PULL_TRANSACTIONS_QUERY": "/pulltransactions/v1/query",
+        "SWAP": "/imsi/v2/checkATI",
         "BILL_MANAGER": "/mpesa/billmanager/v1/updatebillreference",
-        "B2B_EXPRESS": "/mpesa/b2bexpressckeckout/v1/paymentrequest",
+        "B2B_EXPRESS": "/v1/ussdpush/get-msisdn",
         "RATIBA": "/mpesa/ratiba/v1/process",
         "TAX_REMITTANCE": "/mpesa/taxremittance/v1/remit",
     }

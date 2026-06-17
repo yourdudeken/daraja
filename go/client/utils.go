@@ -118,55 +118,57 @@ const (
 )
 
 var endpoints = map[string]string{
-	"AUTH":               "/oauth/v1/generate",
-	"STK_PUSH":           "/mpesa/stkpush/v1/processrequest",
-	"STK_QUERY":          "/mpesa/stkpushquery/v1/query",
-	"C2B_REGISTER_URL":   "/mpesa/c2b/v2/registerurl",
-	"C2B_SIMULATE":       "/mpesa/c2b/v2/simulate",
-	"C2B_SIMULATE_V1":    "/mpesa/c2b/v1/simulate",
-	"B2C":                "/mpesa/b2c/v3/paymentrequest",
-	"B2B":                "/mpesa/b2b/v1/paymentrequest",
-	"REVERSAL":           "/mpesa/reversal/v1/request",
-	"TRANSACTION_STATUS": "/mpesa/transactionstatus/v1/query",
-	"ACCOUNT_BALANCE":    "/mpesa/accountbalance/v1/query",
-	"DYNAMIC_QR":         "/mpesa/qrcode/v1/generate",
-	"QUERY_ORG_INFO":     "/mpesa/queryorginfo/v1/query",
-	"IMSI":               "/mpesa/imsi/v1/query",
-	"IOT_MANAGE":         "/mpesa/iot/v1/manage",
-	"B2POCHI":            "/mpesa/b2pochi/v1/paymentrequest",
-	"LIPA_NA_BONGA":      "/mpesa/lipanabonga/v1/redeem",
-	"PULL_TRANSACTIONS":  "/mpesa/pulltransactions/v1/query",
-	"SWAP":               "/mpesa/swap/v1/transfer",
-	"BILL_MANAGER":       "/mpesa/billmanager/v1/updatebillreference",
-	"B2B_EXPRESS":        "/mpesa/b2bexpressckeckout/v1/paymentrequest",
-	"RATIBA":             "/mpesa/ratiba/v1/process",
-	"TAX_REMITTANCE":     "/mpesa/taxremittance/v1/remit",
+	"AUTH":                       "/oauth/v1/generate",
+	"STK_PUSH":                   "/mpesa/stkpush/v1/processrequest",
+	"STK_QUERY":                  "/mpesa/stkpushquery/v1/query",
+	"C2B_REGISTER_URL":           "/mpesa/c2b/v2/registerurl",
+	"C2B_SIMULATE":               "/mpesa/c2b/v2/simulate",
+	"C2B_SIMULATE_V1":            "/mpesa/c2b/v1/simulate",
+	"B2C":                        "/mpesa/b2c/v3/paymentrequest",
+	"B2B":                        "/mpesa/b2b/v1/paymentrequest",
+	"REVERSAL":                   "/mpesa/reversal/v1/request",
+	"TRANSACTION_STATUS":         "/mpesa/transactionstatus/v1/query",
+	"ACCOUNT_BALANCE":            "/mpesa/accountbalance/v1/query",
+	"DYNAMIC_QR":                 "/mpesa/qrcode/v1/generate",
+	"QUERY_ORG_INFO":             "/mpesa/queryorginfo/v1/query",
+	"IMSI":                       "/mpesa/imsi/v1/query",
+	"IOT_MANAGE":                 "/mpesa/iot/v1/manage",
+	"B2POCHI":                    "/mpesa/b2pochi/v1/paymentrequest",
+	"LIPA_NA_BONGA":              "/mpesa/lipanabonga/v1/redeem",
+	"PULL_TRANSACTIONS_REGISTER": "/pulltransactions/v1/register",
+	"PULL_TRANSACTIONS_QUERY":    "/pulltransactions/v1/query",
+	"SWAP":                       "/imsi/v2/checkATI",
+	"BILL_MANAGER":               "/mpesa/billmanager/v1/updatebillreference",
+	"B2B_EXPRESS":                "/v1/ussdpush/get-msisdn",
+	"RATIBA":                     "/mpesa/ratiba/v1/process",
+	"TAX_REMITTANCE":             "/mpesa/taxremittance/v1/remit",
 }
 
 type environmentEndpoints struct {
-	Auth              string
-	STKPush           string
-	STKQuery          string
-	C2BRegisterURL    string
-	C2BSimulate       string
-	C2BSimulateV1     string
-	B2C               string
-	B2B               string
-	Reversal          string
-	TransactionStatus string
-	AccountBalance    string
-	DynamicQR         string
-	QueryOrgInfo      string
-	IMSI              string
-	IoTManage         string
-	B2Pochi           string
-	LipaNaBonga       string
-	PullTransactions  string
-	Swap              string
-	BillManager       string
-	B2BExpress        string
-	Ratiba            string
-	TaxRemittance     string
+	Auth                     string
+	STKPush                  string
+	STKQuery                 string
+	C2BRegisterURL           string
+	C2BSimulate              string
+	C2BSimulateV1            string
+	B2C                      string
+	B2B                      string
+	Reversal                 string
+	TransactionStatus        string
+	AccountBalance           string
+	DynamicQR                string
+	QueryOrgInfo             string
+	IMSI                     string
+	IoTManage                string
+	B2Pochi                  string
+	LipaNaBonga              string
+	PullTransactionsRegister string
+	PullTransactionsQuery    string
+	Swap                     string
+	BillManager              string
+	B2BExpress               string
+	Ratiba                   string
+	TaxRemittance            string
 }
 
 func getEndpoints(env types.Environment) environmentEndpoints {
@@ -176,28 +178,29 @@ func getEndpoints(env types.Environment) environmentEndpoints {
 	}
 
 	return environmentEndpoints{
-		Auth:              base + endpoints["AUTH"],
-		STKPush:           base + endpoints["STK_PUSH"],
-		STKQuery:          base + endpoints["STK_QUERY"],
-		C2BRegisterURL:    base + endpoints["C2B_REGISTER_URL"],
-		C2BSimulate:       base + endpoints["C2B_SIMULATE"],
-		C2BSimulateV1:     base + endpoints["C2B_SIMULATE_V1"],
-		B2C:               base + endpoints["B2C"],
-		B2B:               base + endpoints["B2B"],
-		Reversal:          base + endpoints["REVERSAL"],
-		TransactionStatus: base + endpoints["TRANSACTION_STATUS"],
-		AccountBalance:    base + endpoints["ACCOUNT_BALANCE"],
-		DynamicQR:         base + endpoints["DYNAMIC_QR"],
-		QueryOrgInfo:      base + endpoints["QUERY_ORG_INFO"],
-		IMSI:              base + endpoints["IMSI"],
-		IoTManage:         base + endpoints["IOT_MANAGE"],
-		B2Pochi:           base + endpoints["B2POCHI"],
-		LipaNaBonga:       base + endpoints["LIPA_NA_BONGA"],
-		PullTransactions:  base + endpoints["PULL_TRANSACTIONS"],
-		Swap:              base + endpoints["SWAP"],
-		BillManager:       base + endpoints["BILL_MANAGER"],
-		B2BExpress:        base + endpoints["B2B_EXPRESS"],
-		Ratiba:            base + endpoints["RATIBA"],
-		TaxRemittance:     base + endpoints["TAX_REMITTANCE"],
+		Auth:                     base + endpoints["AUTH"],
+		STKPush:                  base + endpoints["STK_PUSH"],
+		STKQuery:                 base + endpoints["STK_QUERY"],
+		C2BRegisterURL:           base + endpoints["C2B_REGISTER_URL"],
+		C2BSimulate:              base + endpoints["C2B_SIMULATE"],
+		C2BSimulateV1:            base + endpoints["C2B_SIMULATE_V1"],
+		B2C:                      base + endpoints["B2C"],
+		B2B:                      base + endpoints["B2B"],
+		Reversal:                 base + endpoints["REVERSAL"],
+		TransactionStatus:        base + endpoints["TRANSACTION_STATUS"],
+		AccountBalance:           base + endpoints["ACCOUNT_BALANCE"],
+		DynamicQR:                base + endpoints["DYNAMIC_QR"],
+		QueryOrgInfo:             base + endpoints["QUERY_ORG_INFO"],
+		IMSI:                     base + endpoints["IMSI"],
+		IoTManage:                base + endpoints["IOT_MANAGE"],
+		B2Pochi:                  base + endpoints["B2POCHI"],
+		LipaNaBonga:              base + endpoints["LIPA_NA_BONGA"],
+		PullTransactionsRegister: base + endpoints["PULL_TRANSACTIONS_REGISTER"],
+		PullTransactionsQuery:    base + endpoints["PULL_TRANSACTIONS_QUERY"],
+		Swap:                     base + endpoints["SWAP"],
+		BillManager:              base + endpoints["BILL_MANAGER"],
+		B2BExpress:               base + endpoints["B2B_EXPRESS"],
+		Ratiba:                   base + endpoints["RATIBA"],
+		TaxRemittance:            base + endpoints["TAX_REMITTANCE"],
 	}
 }

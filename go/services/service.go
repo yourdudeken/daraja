@@ -375,53 +375,57 @@ func (s *Service) LipaNaBonga(ctx context.Context, input svctypes.LipaNaBongaInp
 	}, nil
 }
 
-func (s *Service) PullTransactions(ctx context.Context, input svctypes.PullTransactionsInput) (*svctypes.PullTransactionsResult, error) {
-	req := types.PullTransactionsRequest{
+func (s *Service) PullTransactionsRegister(ctx context.Context, input svctypes.PullTransactionsRegisterInput) (*svctypes.PullTransactionsRegisterResult, error) {
+	req := types.PullTransactionsRegisterRequest{
 		ShortCode:       input.ShortCode,
-		StartDate:       input.StartDate,
-		EndDate:         input.EndDate,
-		TransactionType: input.TransactionType,
-		PageNumber:      input.PageNumber,
-		PageSize:        input.PageSize,
+		RequestType:     input.RequestType,
+		NominatedNumber: input.NominatedNumber,
+		CallBackURL:     input.CallBackURL,
 	}
-	resp, err := s.client.PullTransactions(ctx, req)
+	resp, err := s.client.PullTransactionsRegister(ctx, req)
 	if err != nil {
 		return nil, err
 	}
-	return &svctypes.PullTransactionsResult{
-		ResponseCode:        resp.ResponseCode,
+	return &svctypes.PullTransactionsRegisterResult{
+		ResponseRefID:       resp.ResponseRefID,
+		ResponseStatus:      resp.ResponseStatus,
+		ShortCode:           resp.ShortCode,
 		ResponseDescription: resp.ResponseDescription,
-		TotalCount:          resp.TotalCount,
-		PageNumber:          resp.PageNumber,
-		PageSize:            resp.PageSize,
-		Transactions:        resp.Transactions,
+	}, nil
+}
+
+func (s *Service) PullTransactionsQuery(ctx context.Context, input svctypes.PullTransactionsQueryInput) (*svctypes.PullTransactionsQueryResult, error) {
+	req := types.PullTransactionsQueryRequest{
+		ShortCode:   input.ShortCode,
+		StartDate:   input.StartDate,
+		EndDate:     input.EndDate,
+		OffSetValue: input.OffSetValue,
+	}
+	resp, err := s.client.PullTransactionsQuery(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return &svctypes.PullTransactionsQueryResult{
+		ResponseRefID:   resp.ResponseRefID,
+		ResponseCode:    resp.ResponseCode,
+		ResponseMessage: resp.ResponseMessage,
+		Response:        resp.Response,
 	}, nil
 }
 
 func (s *Service) Swap(ctx context.Context, input svctypes.SwapInput) (*svctypes.SwapResult, error) {
 	req := types.SwapRequest{
-		InitiatorName:      input.InitiatorName,
-		SecurityCredential: input.SecurityCredential,
-		CommandID:          input.CommandID,
-		Amount:             input.Amount,
-		SourceAccount:      input.SourceAccount,
-		TargetAccount:      input.TargetAccount,
-		Remarks:            input.Remarks,
+		CustomerNumber: input.CustomerNumber,
 	}
 	resp, err := s.client.Swap(ctx, req)
 	if err != nil {
 		return nil, err
 	}
 	return &svctypes.SwapResult{
-		ResponseCode:        resp.ResponseCode,
-		ResponseDescription: resp.ResponseDescription,
-		TransactionID:       resp.TransactionID,
-		Amount:              resp.Amount,
-		SourceAccount:       resp.SourceAccount,
-		TargetAccount:       resp.TargetAccount,
-		Timestamp:           resp.Timestamp,
-		NewSourceBalance:    resp.NewSourceBalance,
-		NewTargetBalance:    resp.NewTargetBalance,
+		RequestRefID: resp.RequestRefID,
+		ResponseCode: resp.ResponseCode,
+		ResponseDesc: resp.ResponseDesc,
+		LastSwapDate: resp.LastSwapDate,
 	}, nil
 }
 
@@ -450,28 +454,21 @@ func (s *Service) BillManager(ctx context.Context, input svctypes.BillManagerInp
 
 func (s *Service) B2BExpress(ctx context.Context, input svctypes.B2BExpressInput) (*svctypes.B2BExpressResult, error) {
 	req := types.B2BExpressRequest{
-		InitiatorName:          input.InitiatorName,
-		SecurityCredential:     input.SecurityCredential,
-		CommandID:              input.CommandID,
-		SenderIdentifierType:   input.SenderIdentifierType,
-		RecieverIdentifierType: input.RecieverIdentifierType,
-		Amount:                 input.Amount,
-		PartyA:                 input.PartyA,
-		PartyB:                 input.PartyB,
-		AccountReference:       input.AccountReference,
-		Remarks:                input.Remarks,
-		QueueTimeOutURL:        input.QueueTimeOutURL,
-		ResultURL:              input.ResultURL,
+		PrimaryShortCode:  input.PrimaryShortCode,
+		ReceiverShortCode: input.ReceiverShortCode,
+		Amount:            input.Amount,
+		PaymentRef:        input.PaymentRef,
+		CallbackUrl:       input.CallbackUrl,
+		PartnerName:       input.PartnerName,
+		RequestRefID:      input.RequestRefID,
 	}
 	resp, err := s.client.B2BExpress(ctx, req)
 	if err != nil {
 		return nil, err
 	}
 	return &svctypes.B2BExpressResult{
-		OriginatorConversationID: resp.OriginatorConversationID,
-		ConversationID:           resp.ConversationID,
-		ResponseCode:             resp.ResponseCode,
-		ResponseDescription:      resp.ResponseDescription,
+		Code:   resp.Code,
+		Status: resp.Status,
 	}, nil
 }
 

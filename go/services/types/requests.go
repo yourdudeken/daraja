@@ -151,23 +151,22 @@ type LipaNaBongaInput struct {
 	Remarks              string
 }
 
-type PullTransactionsInput struct {
+type PullTransactionsRegisterInput struct {
 	ShortCode       string
-	StartDate       string
-	EndDate         string
-	TransactionType string
-	PageNumber      int
-	PageSize        int
+	RequestType     string
+	NominatedNumber string
+	CallBackURL     string
+}
+
+type PullTransactionsQueryInput struct {
+	ShortCode   string
+	StartDate   string
+	EndDate     string
+	OffSetValue string
 }
 
 type SwapInput struct {
-	InitiatorName      string
-	SecurityCredential string
-	CommandID          string
-	Amount             int
-	SourceAccount      string
-	TargetAccount      string
-	Remarks            string
+	CustomerNumber string
 }
 
 type BillManagerInput struct {
@@ -182,18 +181,13 @@ type BillManagerInput struct {
 }
 
 type B2BExpressInput struct {
-	InitiatorName          string
-	SecurityCredential     string
-	CommandID              string
-	SenderIdentifierType   string
-	RecieverIdentifierType string
-	Amount                 string
-	PartyA                 string
-	PartyB                 string
-	AccountReference       string
-	Remarks                string
-	QueueTimeOutURL        string
-	ResultURL              string
+	PrimaryShortCode  string
+	ReceiverShortCode string
+	Amount            string
+	PaymentRef        string
+	CallbackUrl       string
+	PartnerName       string
+	RequestRefID      string
 }
 
 type RatibaPaymentInput struct {

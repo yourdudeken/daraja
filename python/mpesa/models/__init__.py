@@ -403,7 +403,14 @@ class IMSIResponse(BaseModel):
 class IoTSIMRequest(BaseModel):
     InitiatorName: str
     SecurityCredential: str
-    CommandID: Literal["ActivateIOTSIM", "DeactivateIOTSIM", "CheckStatus", "UpdateDataPlan", "ReportUsage", "SuspendSIM"]
+    CommandID: Literal[
+        "ActivateIOTSIM",
+        "DeactivateIOTSIM",
+        "CheckStatus",
+        "UpdateDataPlan",
+        "ReportUsage",
+        "SuspendSIM",
+    ]
     ICCID: str
     IMEI: Optional[str] = None
     DeviceName: Optional[str] = None
@@ -461,55 +468,54 @@ class LipaNaBongaResponse(BaseModel):
     NewBalance: str
 
 
-class PullTransaction(BaseModel):
-    TransactionID: str
-    TransactionDate: str
-    TransactionType: str
-    Amount: str
-    PhoneNumber: str
-    Reference: str
-    Status: str
+class PullTransactionsRegisterRequest(BaseModel):
+    ShortCode: str
+    RequestType: str = "Pull"
+    NominatedNumber: str
+    CallBackURL: str
 
 
-class PullTransactionsRequest(BaseModel):
-    AccessToken: str = ""
+class PullTransactionsRegisterResponse(BaseModel):
+    ResponseRefID: str
+    ResponseStatus: str
+    ShortCode: str
+    ResponseDescription: str
+
+
+class PullTransactionItem(BaseModel):
+    transactionId: str
+    trxDate: str
+    msisdn: int
+    sender: str
+    transactiontype: str
+    billreference: str
+    amount: str
+    organizationname: str
+
+
+class PullTransactionsQueryRequest(BaseModel):
     ShortCode: str
     StartDate: str
     EndDate: str
-    TransactionType: str = "All"
-    PageNumber: int = 1
-    PageSize: int = 100
+    OffSetValue: str = "0"
 
 
-class PullTransactionsResponse(BaseModel):
+class PullTransactionsQueryResponse(BaseModel):
+    ResponseRefID: str
     ResponseCode: str
-    ResponseDescription: str
-    TotalCount: str
-    PageNumber: str
-    PageSize: str
-    Transactions: list[PullTransaction] = []
+    ResponseMessage: str
+    Response: list[list[PullTransactionItem]] = []
 
 
 class SwapRequest(BaseModel):
-    InitiatorName: str
-    SecurityCredential: str
-    CommandID: str = "SwapFunds"
-    Amount: int
-    SourceAccount: str
-    TargetAccount: str
-    Remarks: str
+    customerNumber: str
 
 
 class SwapResponse(BaseModel):
-    ResponseCode: str
-    ResponseDescription: str
-    TransactionID: str
-    Amount: str
-    SourceAccount: str
-    TargetAccount: str
-    Timestamp: str
-    NewSourceBalance: str
-    NewTargetBalance: str
+    requestRefID: str
+    responseCode: str
+    responseDesc: str
+    lastSwapDate: str
 
 
 class BillManagerRequest(BaseModel):
@@ -531,25 +537,18 @@ class BillManagerResponse(BaseModel):
 
 
 class B2BExpressRequest(BaseModel):
-    InitiatorName: str
-    SecurityCredential: str
-    CommandID: str
-    SenderIdentifierType: str
-    RecieverIdentifierType: str
-    Amount: str
-    PartyA: str
-    PartyB: str
-    AccountReference: str
-    Remarks: str
-    QueueTimeOutURL: str
-    ResultURL: str
+    primaryShortCode: str
+    receiverShortCode: str
+    amount: str
+    paymentRef: str
+    callbackUrl: str
+    partnerName: str
+    RequestRefID: str
 
 
 class B2BExpressResponse(BaseModel):
-    OriginatorConversationID: str
-    ConversationID: str
-    ResponseCode: str
-    ResponseDescription: str
+    code: str
+    status: str
 
 
 class RatibaPayment(BaseModel):
@@ -657,9 +656,11 @@ __all__ = [
     "B2PochiResponse",
     "LipaNaBongaRequest",
     "LipaNaBongaResponse",
-    "PullTransaction",
-    "PullTransactionsRequest",
-    "PullTransactionsResponse",
+    "PullTransactionsRegisterRequest",
+    "PullTransactionsRegisterResponse",
+    "PullTransactionItem",
+    "PullTransactionsQueryRequest",
+    "PullTransactionsQueryResponse",
     "SwapRequest",
     "SwapResponse",
     "BillManagerRequest",

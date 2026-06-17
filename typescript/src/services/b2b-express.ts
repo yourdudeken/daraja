@@ -13,26 +13,21 @@ export class B2BExpressService {
 
   static parseCallback(payload: B2BExpressCallbackPayload): {
     success: boolean;
-    transactionId: string;
     resultCode: string;
     resultDescription: string;
-    details?: Record<string, string | number>;
+    requestId: string;
+    transactionId?: string;
+    amount?: string;
+    status?: string;
   } {
-    const result = payload.Result;
-    const details: Record<string, string | number> = {};
-
-    if (result.ResultParameters?.ResultParameter) {
-      for (const param of result.ResultParameters.ResultParameter) {
-        details[param.Key] = param.Value;
-      }
-    }
-
     return {
-      success: result.ResultCode === "0",
-      transactionId: result.TransactionID,
-      resultCode: result.ResultCode,
-      resultDescription: result.ResultDesc,
-      details: Object.keys(details).length > 0 ? details : undefined,
+      success: payload.resultCode === "0",
+      resultCode: payload.resultCode,
+      resultDescription: payload.resultDesc,
+      requestId: payload.requestId,
+      transactionId: payload.transactionId,
+      amount: payload.amount,
+      status: payload.status,
     };
   }
 }

@@ -22,10 +22,11 @@
         "iot_manage": "/mpesa/iot/v1/manage",
         "b2pochi": "/mpesa/b2pochi/v1/paymentrequest",
         "lipa_na_bonga": "/mpesa/lipanabonga/v1/redeem",
-        "pull_transactions": "/mpesa/pulltransactions/v1/query",
-        "swap": "/mpesa/swap/v1/transfer",
+        "pull_transactions_register": "/pulltransactions/v1/register",
+        "pull_transactions_query": "/pulltransactions/v1/query",
+        "swap": "/imsi/v2/checkATI",
         "bill_manager": "/mpesa/billmanager/v1/updatebillreference",
-        "b2b_express": "/mpesa/b2bexpressckeckout/v1/paymentrequest",
+        "b2b_express": "/v1/ussdpush/get-msisdn",
         "ratiba": "/mpesa/ratiba/v1/process",
         "tax_remittance": "/mpesa/taxremittance/v1/remit"
       }
@@ -50,10 +51,11 @@
         "iot_manage": "/mpesa/iot/v1/manage",
         "b2pochi": "/mpesa/b2pochi/v1/paymentrequest",
         "lipa_na_bonga": "/mpesa/lipanabonga/v1/redeem",
-        "pull_transactions": "/mpesa/pulltransactions/v1/query",
-        "swap": "/mpesa/swap/v1/transfer",
+        "pull_transactions_register": "/pulltransactions/v1/register",
+        "pull_transactions_query": "/pulltransactions/v1/query",
+        "swap": "/imsi/v2/checkATI",
         "bill_manager": "/mpesa/billmanager/v1/updatebillreference",
-        "b2b_express": "/mpesa/b2bexpressckeckout/v1/paymentrequest",
+        "b2b_express": "/v1/ussdpush/get-msisdn",
         "ratiba": "/mpesa/ratiba/v1/process",
         "tax_remittance": "/mpesa/taxremittance/v1/remit"
       }

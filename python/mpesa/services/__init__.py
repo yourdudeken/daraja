@@ -28,8 +28,10 @@ from mpesa.models import (
     LipaNaBongaRequest,
     LipaNaBongaResponse,
     MpesaConfig,
-    PullTransactionsRequest,
-    PullTransactionsResponse,
+    PullTransactionsRegisterRequest,
+    PullTransactionsRegisterResponse,
+    PullTransactionsQueryRequest,
+    PullTransactionsQueryResponse,
     QueryOrgInfoRequest,
     QueryOrgInfoResponse,
     RatibaRequest,
@@ -62,7 +64,9 @@ class STKPushService:
             request = STKPushRequest(**request)
         if not request.Password and self._config.passkey:
             timestamp = request.Timestamp or generate_timestamp()
-            request.Password = generate_password(request.BusinessShortCode, self._config.passkey, timestamp)
+            request.Password = generate_password(
+                request.BusinessShortCode, self._config.passkey, timestamp
+            )
             request.Timestamp = timestamp
         result = self._post("STK_PUSH", request.model_dump())
         return STKPushResponse(**result)
@@ -72,7 +76,9 @@ class STKPushService:
             request = STKQueryRequest(**request)
         if not request.Password and self._config.passkey:
             timestamp = request.Timestamp or generate_timestamp()
-            request.Password = generate_password(request.BusinessShortCode, self._config.passkey, timestamp)
+            request.Password = generate_password(
+                request.BusinessShortCode, self._config.passkey, timestamp
+            )
             request.Timestamp = timestamp
         result = self._post("STK_QUERY", request.model_dump())
         return STKQueryResponse(**result)
@@ -239,18 +245,26 @@ class PullTransactionsService:
     def __init__(self, post: PostFn) -> None:
         self._post = post
 
-    def query(self, request: PullTransactionsRequest | dict) -> PullTransactionsResponse:
+    def register(
+        self, request: PullTransactionsRegisterRequest | dict
+    ) -> PullTransactionsRegisterResponse:
         if isinstance(request, dict):
-            request = PullTransactionsRequest(**request)
-        result = self._post("PULL_TRANSACTIONS", request.model_dump())
-        return PullTransactionsResponse(**result)
+            request = PullTransactionsRegisterRequest(**request)
+        result = self._post("PULL_TRANSACTIONS_REGISTER", request.model_dump())
+        return PullTransactionsRegisterResponse(**result)
+
+    def query(self, request: PullTransactionsQueryRequest | dict) -> PullTransactionsQueryResponse:
+        if isinstance(request, dict):
+            request = PullTransactionsQueryRequest(**request)
+        result = self._post("PULL_TRANSACTIONS_QUERY", request.model_dump())
+        return PullTransactionsQueryResponse(**result)
 
 
 class SwapService:
     def __init__(self, post: PostFn) -> None:
         self._post = post
 
-    def transfer(self, request: SwapRequest | dict) -> SwapResponse:
+    def query(self, request: SwapRequest | dict) -> SwapResponse:
         if isinstance(request, dict):
             request = SwapRequest(**request)
         result = self._post("SWAP", request.model_dump())
@@ -277,6 +291,18 @@ class B2BExpressService:
             request = B2BExpressRequest(**request)
         result = self._post("B2B_EXPRESS", request.model_dump())
         return B2BExpressResponse(**result)
+
+    @staticmethod
+    def parse_callback(payload: dict) -> dict:
+        return {
+            "success": payload.get("resultCode") == "0",
+            "resultCode": payload.get("resultCode"),
+            "resultDescription": payload.get("resultDesc"),
+            "requestId": payload.get("requestId"),
+            "transactionId": payload.get("transactionId"),
+            "amount": payload.get("amount"),
+            "status": payload.get("status"),
+        }
 
 
 class RatibaService:

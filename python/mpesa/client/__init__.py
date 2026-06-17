@@ -42,8 +42,10 @@ from mpesa.models import (
     LipaNaBongaRequest,
     LipaNaBongaResponse,
     MpesaConfig,
-    PullTransactionsRequest,
-    PullTransactionsResponse,
+    PullTransactionsRegisterRequest,
+    PullTransactionsRegisterResponse,
+    PullTransactionsQueryRequest,
+    PullTransactionsQueryResponse,
     QueryOrgInfoRequest,
     QueryOrgInfoResponse,
     RatibaRequest,
@@ -63,10 +65,28 @@ from mpesa.models import (
     _get_logger,
 )
 from mpesa.utils import generate_password, generate_timestamp, create_tracer, with_span
-from mpesa.utils.circuit_breaker import CircuitBreaker, CircuitBreakerOpenError, CircuitBreakerConfig
-from mpesa.utils.idempotency import IdempotencyStore, InMemoryIdempotencyStore, generate_idempotency_key
-from mpesa.utils.rate_limiter import TokenBucketRateLimiter, NoopRateLimiter, RateLimiterConfig, EndpointRateLimiterRouter
-from mpesa.utils.token_cache import SharedTokenCache, InMemorySharedTokenCache, RedisTokenCache, build_token_cache_key
+from mpesa.utils.circuit_breaker import (
+    CircuitBreaker,
+    CircuitBreakerOpenError,
+    CircuitBreakerConfig,
+)
+from mpesa.utils.idempotency import (
+    IdempotencyStore,
+    InMemoryIdempotencyStore,
+    generate_idempotency_key,
+)
+from mpesa.utils.rate_limiter import (
+    TokenBucketRateLimiter,
+    NoopRateLimiter,
+    RateLimiterConfig,
+    EndpointRateLimiterRouter,
+)
+from mpesa.utils.token_cache import (
+    SharedTokenCache,
+    InMemorySharedTokenCache,
+    RedisTokenCache,
+    build_token_cache_key,
+)
 from mpesa.utils.tracing import Tracer as TracerType
 
 from mpesa.client.async_client import AsyncMpesa
@@ -140,8 +160,10 @@ class Mpesa:
         self._logger = _get_logger(config.logger)
         self._tracer = config.tracer if config.tracer is not None else create_tracer(self._logger)
         self._idempotency_store: Optional[IdempotencyStore] = (
-            config.idempotency_store if hasattr(config, 'idempotency_store') and config.idempotency_store is not None
-            else InMemoryIdempotencyStore() if config.enable_idempotency
+            config.idempotency_store
+            if hasattr(config, "idempotency_store") and config.idempotency_store is not None
+            else InMemoryIdempotencyStore()
+            if config.enable_idempotency
             else None
         )
 
@@ -190,21 +212,32 @@ class Mpesa:
             },
         )
         self._token_manager = _TokenManager(self._client, config)
-        self._logger.info("M-Pesa client initialized", extra={
-            "environment": config.environment,
-            "timeout": config.timeout,
-            "max_retries": config.retry_config.max_retries,
-        })
+        self._logger.info(
+            "M-Pesa client initialized",
+            extra={
+                "environment": config.environment,
+                "timeout": config.timeout,
+                "max_retries": config.retry_config.max_retries,
+            },
+        )
 
     def _log_request(self, request: httpx.Request) -> None:
-        self._logger.debug("Outgoing request",
-                           extra={"method": request.method, "url": str(request.url)})
+        self._logger.debug(
+            "Outgoing request", extra={"method": request.method, "url": str(request.url)}
+        )
 
     def _log_response(self, response: httpx.Response) -> None:
-        self._logger.debug("Response received",
-                           extra={"status": response.status_code, "url": str(response.url)})
+        self._logger.debug(
+            "Response received", extra={"status": response.status_code, "url": str(response.url)}
+        )
 
-    def _request(self, method: str, url: str, json_data: Optional[dict] = None, operation_name: Optional[str] = None) -> dict:
+    def _request(
+        self,
+        method: str,
+        url: str,
+        json_data: Optional[dict] = None,
+        operation_name: Optional[str] = None,
+    ) -> dict:
         request_id = _generate_request_id()
 
         idempotency_key: Optional[str] = None
@@ -212,7 +245,9 @@ class Mpesa:
             idempotency_key = generate_idempotency_key(method, url, json_data)
             cached = self._idempotency_store.get(idempotency_key)
             if cached is not None:
-                self._logger.debug("Idempotency cache hit", extra={"key": idempotency_key, "url": url})
+                self._logger.debug(
+                    "Idempotency cache hit", extra={"key": idempotency_key, "url": url}
+                )
                 return cached
 
         self._rate_limiter.acquire(url)
@@ -223,8 +258,10 @@ class Mpesa:
             for attempt in range(self._config.retry_config.max_retries + 1):
                 try:
                     if attempt > 0:
-                        self._logger.warning("Retrying request",
-                                             extra={"attempt": attempt, "url": url, "request_id": request_id})
+                        self._logger.warning(
+                            "Retrying request",
+                            extra={"attempt": attempt, "url": url, "request_id": request_id},
+                        )
 
                     token = self._token_manager.get_token()
                     headers = {
@@ -240,10 +277,20 @@ class Mpesa:
                         headers=headers,
                     )
 
-                    if response.status_code in RETRYABLE_STATUS_CODES and attempt < self._config.retry_config.max_retries:
-                        delay = min(2 ** attempt * 1.0, 30.0)
-                        self._logger.warning("Retryable status code, backing off",
-                                             extra={"status": response.status_code, "delay": delay, "attempt": attempt, "request_id": request_id})
+                    if (
+                        response.status_code in RETRYABLE_STATUS_CODES
+                        and attempt < self._config.retry_config.max_retries
+                    ):
+                        delay = min(2**attempt * 1.0, 30.0)
+                        self._logger.warning(
+                            "Retryable status code, backing off",
+                            extra={
+                                "status": response.status_code,
+                                "delay": delay,
+                                "attempt": attempt,
+                                "request_id": request_id,
+                            },
+                        )
                         time.sleep(delay)
                         continue
 
@@ -270,22 +317,31 @@ class Mpesa:
                     json_result = response.json()
                     if idempotency_key:
                         self._idempotency_store.set(idempotency_key, json_result, 86400_000)
-                    self._logger.debug("Request successful",
-                                       extra={"method": method, "url": url, "status": response.status_code, "request_id": request_id})
+                    self._logger.debug(
+                        "Request successful",
+                        extra={
+                            "method": method,
+                            "url": url,
+                            "status": response.status_code,
+                            "request_id": request_id,
+                        },
+                    )
                     return json_result
 
                 except httpx.TimeoutException as e:
                     last_error = TimeoutError("Request timed out.", cause=e, request_id=request_id)
                     if attempt < self._config.retry_config.max_retries:
-                        delay = min(2 ** attempt * 1.0, 30.0)
+                        delay = min(2**attempt * 1.0, 30.0)
                         time.sleep(delay)
                         continue
                     raise last_error
 
                 except httpx.ConnectError as e:
-                    last_error = APIConnectionError("Connection failed.", cause=e, request_id=request_id)
+                    last_error = APIConnectionError(
+                        "Connection failed.", cause=e, request_id=request_id
+                    )
                     if attempt < self._config.retry_config.max_retries:
-                        delay = min(2 ** attempt * 1.0, 30.0)
+                        delay = min(2**attempt * 1.0, 30.0)
                         time.sleep(delay)
                         continue
                     raise last_error
@@ -294,8 +350,14 @@ class Mpesa:
                     raise
 
                 except httpx.HTTPStatusError as e:
-                    self._logger.error("API error response",
-                                       extra={"status": e.response.status_code, "body": e.response.text, "request_id": request_id})
+                    self._logger.error(
+                        "API error response",
+                        extra={
+                            "status": e.response.status_code,
+                            "body": e.response.text,
+                            "request_id": request_id,
+                        },
+                    )
                     raise MpesaAPIError(
                         str(e),
                         status_code=e.response.status_code,
@@ -308,12 +370,16 @@ class Mpesa:
             raise MpesaAPIError("Request failed after retries.", request_id=request_id)
 
         span_name = f"mpesa.http.{method.lower()}"
-        with with_span(self._tracer, span_name, {
-            "http.method": method.upper(),
-            "http.url": url,
-            "mpesa.operation": operation_name or "",
-            "rpc.system": "mpesa",
-        }) as span:
+        with with_span(
+            self._tracer,
+            span_name,
+            {
+                "http.method": method.upper(),
+                "http.url": url,
+                "mpesa.operation": operation_name or "",
+                "rpc.system": "mpesa",
+            },
+        ) as span:
             result = self._circuit_breaker.call(do_request)
             if isinstance(result, dict):
                 rc = result.get("ResponseCode", "")
@@ -330,7 +396,9 @@ class Mpesa:
             request = STKPushRequest(**request)
         if not request.Password and self._config.passkey:
             timestamp = request.Timestamp or generate_timestamp()
-            request.Password = generate_password(request.BusinessShortCode, self._config.passkey, timestamp)
+            request.Password = generate_password(
+                request.BusinessShortCode, self._config.passkey, timestamp
+            )
             request.Timestamp = timestamp
         result = self._post("STK_PUSH", request.model_dump())
         return STKPushResponse(**result)
@@ -340,7 +408,9 @@ class Mpesa:
             request = STKQueryRequest(**request)
         if not request.Password and self._config.passkey:
             timestamp = request.Timestamp or generate_timestamp()
-            request.Password = generate_password(request.BusinessShortCode, self._config.passkey, timestamp)
+            request.Password = generate_password(
+                request.BusinessShortCode, self._config.passkey, timestamp
+            )
             request.Timestamp = timestamp
         result = self._post("STK_QUERY", request.model_dump())
         return STKQueryResponse(**result)
@@ -375,7 +445,9 @@ class Mpesa:
         result = self._post("REVERSAL", request.model_dump())
         return ReversalResponse(**result)
 
-    def transaction_status(self, request: TransactionStatusRequest | dict) -> TransactionStatusResponse:
+    def transaction_status(
+        self, request: TransactionStatusRequest | dict
+    ) -> TransactionStatusResponse:
         if isinstance(request, dict):
             request = TransactionStatusRequest(**request)
         result = self._post("TRANSACTION_STATUS", request.model_dump())
@@ -396,41 +468,49 @@ class Mpesa:
     @property
     def stk_push_service(self):
         from mpesa.services import STKPushService
+
         return STKPushService(self._post, self._config)
 
     @property
     def c2b_service(self):
         from mpesa.services import C2BService
+
         return C2BService(self._post)
 
     @property
     def b2c_service(self):
         from mpesa.services import B2CService
+
         return B2CService(self._post)
 
     @property
     def b2b_service(self):
         from mpesa.services import B2BService
+
         return B2BService(self._post)
 
     @property
     def reversal_service(self):
         from mpesa.services import ReversalService
+
         return ReversalService(self._post)
 
     @property
     def transaction_status_service(self):
         from mpesa.services import TransactionStatusService
+
         return TransactionStatusService(self._post)
 
     @property
     def account_balance_service(self):
         from mpesa.services import AccountBalanceService
+
         return AccountBalanceService(self._post)
 
     @property
     def dynamic_qr_service(self):
         from mpesa.services import DynamicQRService
+
         return DynamicQRService(self._post)
 
     def business_buy_goods(self, request: BusinessBuyGoodsRequest | dict) -> BusinessGoodsResponse:
@@ -445,7 +525,9 @@ class Mpesa:
         result = self._post("C2B_SIMULATE_V1", request.model_dump())
         return BusinessGoodsResponse(**result)
 
-    def query_org_info(self, request: QueryOrgInfoRequest | dict | None = None) -> QueryOrgInfoResponse:
+    def query_org_info(
+        self, request: QueryOrgInfoRequest | dict | None = None
+    ) -> QueryOrgInfoResponse:
         if request is None:
             request = QueryOrgInfoRequest()
         elif isinstance(request, dict):
@@ -468,21 +550,25 @@ class Mpesa:
     @property
     def business_goods_service(self):
         from mpesa.services import BusinessGoodsService
+
         return BusinessGoodsService(self._post)
 
     @property
     def query_org_info_service(self):
         from mpesa.services import QueryOrgInfoService
+
         return QueryOrgInfoService(self._post)
 
     @property
     def imsi_service(self):
         from mpesa.services import IMSIService
+
         return IMSIService(self._post)
 
     @property
     def iot_service(self):
         from mpesa.services import IoTSIMService
+
         return IoTSIMService(self._post)
 
     def b2pochi(self, request: B2PochiRequest | dict) -> B2PochiResponse:
@@ -497,11 +583,21 @@ class Mpesa:
         result = self._post("LIPA_NA_BONGA", request.model_dump())
         return LipaNaBongaResponse(**result)
 
-    def pull_transactions(self, request: PullTransactionsRequest | dict) -> PullTransactionsResponse:
+    def pull_transactions_register(
+        self, request: PullTransactionsRegisterRequest | dict
+    ) -> PullTransactionsRegisterResponse:
         if isinstance(request, dict):
-            request = PullTransactionsRequest(**request)
-        result = self._post("PULL_TRANSACTIONS", request.model_dump())
-        return PullTransactionsResponse(**result)
+            request = PullTransactionsRegisterRequest(**request)
+        result = self._post("PULL_TRANSACTIONS_REGISTER", request.model_dump())
+        return PullTransactionsRegisterResponse(**result)
+
+    def pull_transactions_query(
+        self, request: PullTransactionsQueryRequest | dict
+    ) -> PullTransactionsQueryResponse:
+        if isinstance(request, dict):
+            request = PullTransactionsQueryRequest(**request)
+        result = self._post("PULL_TRANSACTIONS_QUERY", request.model_dump())
+        return PullTransactionsQueryResponse(**result)
 
     def swap(self, request: SwapRequest | dict) -> SwapResponse:
         if isinstance(request, dict):
@@ -536,41 +632,49 @@ class Mpesa:
     @property
     def b2pochi_service(self):
         from mpesa.services import B2PochiService
+
         return B2PochiService(self._post)
 
     @property
     def lipa_na_bonga_service(self):
         from mpesa.services import LipaNaBongaService
+
         return LipaNaBongaService(self._post)
 
     @property
     def pull_transactions_service(self):
         from mpesa.services import PullTransactionsService
+
         return PullTransactionsService(self._post)
 
     @property
     def swap_service(self):
         from mpesa.services import SwapService
+
         return SwapService(self._post)
 
     @property
     def bill_manager_service(self):
         from mpesa.services import BillManagerService
+
         return BillManagerService(self._post)
 
     @property
     def b2b_express_service(self):
         from mpesa.services import B2BExpressService
+
         return B2BExpressService(self._post)
 
     @property
     def ratiba_service(self):
         from mpesa.services import RatibaService
+
         return RatibaService(self._post)
 
     @property
     def tax_remittance_service(self):
         from mpesa.services import TaxRemittanceService
+
         return TaxRemittanceService(self._post)
 
     def rotate_credentials(self, consumer_key: str, consumer_secret: str) -> None:

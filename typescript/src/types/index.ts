@@ -566,58 +566,57 @@ export interface LipaNaBongaResponse {
 // ============================================================
 // PULL TRANSACTIONS
 // ============================================================
-export interface PullTransactionsRequest {
-  AccessToken?: string;
+export interface PullTransactionsRegisterRequest {
+  ShortCode: string;
+  RequestType: string;
+  NominatedNumber: string;
+  CallBackURL: string;
+}
+
+export interface PullTransactionsRegisterResponse {
+  ResponseRefID: string;
+  ResponseStatus: string;
+  ShortCode: string;
+  ResponseDescription: string;
+}
+
+export interface PullTransactionsQueryRequest {
   ShortCode: string;
   StartDate: string;
   EndDate: string;
-  TransactionType: string;
-  PageNumber: number;
-  PageSize: number;
+  OffSetValue: string;
 }
 
-export interface PullTransaction {
-  TransactionID: string;
-  TransactionDate: string;
-  TransactionType: string;
-  Amount: string;
-  PhoneNumber: string;
-  Reference: string;
-  Status: string;
+export interface PullTransactionItem {
+  transactionId: string;
+  trxDate: string;
+  msisdn: number;
+  sender: string;
+  transactiontype: string;
+  billreference: string;
+  amount: string;
+  organizationname: string;
 }
 
-export interface PullTransactionsResponse {
+export interface PullTransactionsQueryResponse {
+  ResponseRefID: string;
   ResponseCode: string;
-  ResponseDescription: string;
-  TotalCount: string;
-  PageNumber: string;
-  PageSize: string;
-  Transactions: PullTransaction[];
+  ResponseMessage: string;
+  Response: PullTransactionItem[][];
 }
 
 // ============================================================
-// SWAP
+// SWAP (SIM swap date query)
 // ============================================================
 export interface SwapRequest {
-  InitiatorName: string;
-  SecurityCredential: string;
-  CommandID: string;
-  Amount: number;
-  SourceAccount: string;
-  TargetAccount: string;
-  Remarks: string;
+  customerNumber: string;
 }
 
 export interface SwapResponse {
-  ResponseCode: string;
-  ResponseDescription: string;
-  TransactionID: string;
-  Amount: string;
-  SourceAccount: string;
-  TargetAccount: string;
-  Timestamp: string;
-  NewSourceBalance: string;
-  NewTargetBalance: string;
+  requestRefID: string;
+  responseCode: string;
+  responseDesc: string;
+  lastSwapDate: string;
 }
 
 // ============================================================
@@ -645,42 +644,29 @@ export interface BillManagerResponse {
 // B2B EXPRESS CHECKOUT
 // ============================================================
 export interface B2BExpressRequest {
-  InitiatorName: string;
-  SecurityCredential: string;
-  CommandID: string;
-  SenderIdentifierType: string;
-  RecieverIdentifierType: string;
-  Amount: string;
-  PartyA: string;
-  PartyB: string;
-  AccountReference: string;
-  Remarks: string;
-  QueueTimeOutURL: string;
-  ResultURL: string;
+  primaryShortCode: string;
+  receiverShortCode: string;
+  amount: string;
+  paymentRef: string;
+  callbackUrl: string;
+  partnerName: string;
+  RequestRefID: string;
 }
 
 export interface B2BExpressResponse {
-  OriginatorConversationID: string;
-  ConversationID: string;
-  ResponseCode: string;
-  ResponseDescription: string;
+  code: string;
+  status: string;
 }
 
 export interface B2BExpressCallbackPayload {
-  Result: {
-    ResultType: string;
-    ResultCode: string;
-    ResultDesc: string;
-    OriginatorConversationID: string;
-    ConversationID: string;
-    TransactionID: string;
-    ResultParameters?: {
-      ResultParameter: Array<{
-        Key: string;
-        Value: string | number;
-      }>;
-    };
-  };
+  resultCode: string;
+  resultDesc: string;
+  amount: string;
+  requestId: string;
+  transactionId?: string;
+  status?: string;
+  paymentReference?: string;
+  conversationID?: string;
 }
 
 // ============================================================

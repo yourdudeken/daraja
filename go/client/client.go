@@ -728,13 +728,26 @@ func (c *Client) LipaNaBonga(ctx context.Context, req types.LipaNaBongaRequest) 
 }
 
 // ---- Pull Transactions ----
-func (c *Client) PullTransactions(ctx context.Context, req types.PullTransactionsRequest) (*types.PullTransactionsResponse, error) {
-	respBody, err := c.doRequest(ctx, "POST", c.endpoints.PullTransactions, req)
+func (c *Client) PullTransactionsRegister(ctx context.Context, req types.PullTransactionsRegisterRequest) (*types.PullTransactionsRegisterResponse, error) {
+	respBody, err := c.doRequest(ctx, "POST", c.endpoints.PullTransactionsRegister, req)
 	if err != nil {
 		return nil, err
 	}
 
-	var resp types.PullTransactionsResponse
+	var resp types.PullTransactionsRegisterResponse
+	if err := json.Unmarshal(respBody, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func (c *Client) PullTransactionsQuery(ctx context.Context, req types.PullTransactionsQueryRequest) (*types.PullTransactionsQueryResponse, error) {
+	respBody, err := c.doRequest(ctx, "POST", c.endpoints.PullTransactionsQuery, req)
+	if err != nil {
+		return nil, err
+	}
+
+	var resp types.PullTransactionsQueryResponse
 	if err := json.Unmarshal(respBody, &resp); err != nil {
 		return nil, err
 	}
