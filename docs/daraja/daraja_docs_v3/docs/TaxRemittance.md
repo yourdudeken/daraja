@@ -7,7 +7,7 @@
 
 HomeAPIsDashboardMarketplaceFAQsMiniApps
 
-Sign UpLog In
+Log Out
 
 1. Discover APIs
 2. /
@@ -24,6 +24,14 @@ This API enables businesses to remit tax to Kenya Revenue Authority (KRA).
 POST
 
 https://sandbox.safaricom.co.ke/mpesa/b2b/v1/remittax
+
+Use API
+
+Get Started in 3 easy steps
+
+![simulator-progress](../images/TaxRemittance_img_2.svg)
+
+Open Simulator
 
 API DocumentationError
 
@@ -325,7 +333,7 @@ Copyright@Safaricom PLC 2026
 
 Ask Daraja about anything 😊
 
-![chatbot icon](../images/TaxRemittance_img_2.svg)
+![chatbot icon](../images/TaxRemittance_img_3.svg)
 
 Logout of Daraja?
 

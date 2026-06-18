@@ -7,7 +7,7 @@
 
 HomeAPIsDashboardMarketplaceFAQsMiniApps
 
-Sign UpLog In
+Log Out
 
 1. Discover APIs
 2. /
@@ -24,6 +24,14 @@ Initiates online payment on behalf of a customer.
 POST
 
 https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest
+
+Use API
+
+Get Started in 3 easy steps
+
+![simulator-progress](../images/MpesaExpressSimulate_img_2.svg)
+
+Open Simulator
 
 ###### DOCUMENTATION
 
@@ -77,11 +85,18 @@ This API is asynchronous. You can consume this API over the internet, a virtual 
 
 Devs gather here! You will first generate an access token to authenticate you to make the API call. See below generate access token [API](https://developer.safaricom.co.ke/dashboard/apis?api=Authorization) here. We’ve also automated this on the simulate request section.
 
+## Environments
+
+| Environment | Description | URL |
+| --- | --- | --- |
+| Sandbox | Testing environment. | <https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest> |
+| Production | Live environment for real transactions. | <https://api.safaricom.co.ke/mpesa/stkpush/v1/processrequest> |
+
 ## Integration Steps
 
 ### Sequence Diagram
 
-![lipa-na-mpesa-sequence-diagram!](../images/MpesaExpressSimulate_img_2.png "lipa-na-mpesa-sequence-diagram")
+![lipa-na-mpesa-sequence-diagram!](../images/MpesaExpressSimulate_img_3.png "lipa-na-mpesa-sequence-diagram")
 
 ### Use Cases
 
@@ -275,11 +290,11 @@ Devs gather here! You will first generate an access token to authenticate you to
 ### Option 1: Daraja Simulator
 
 Create a new test app under apps on the main nerve bar, select mpesa express(lipa na mpesa) product. Once app is successfully created the simulator is automated to pick app credentials (Consumer key and Consumer Secret) and predefined test data, you can hit the simulate button.
-![Create App!](../images/MpesaExpressSimulate_img_3.png "Create App")
+![Create App!](../images/MpesaExpressSimulate_img_4.png "Create App")
 
 ### Note: The simulator can only be accessed when logged in. Please [log in](https://developer.safaricom.co.ke/account/login) to your Daraja account to access the simulator.
 
-![Simulator!](../images/MpesaExpressSimulate_img_4.png "Simulator")
+![Simulator!](../images/MpesaExpressSimulate_img_5.png "Simulator")
 
 ### Option 2: Postman
 
@@ -293,7 +308,7 @@ Use the credentials to generate access token using the below endpoint.
 ### Note: The Postman collection can only be accessed when logged in. Please [log in](https://developer.safaricom.co.ke/account/login) to your Daraja account to access the collection.
 
 Click the button named "Use API" to access the Postman collection with pre-built requests for all APIs.
-![Postman Collection!](../images/MpesaExpressSimulate_img_5.png "Postman Collection")
+![Postman Collection!](../images/MpesaExpressSimulate_img_6.png "Postman Collection")
 
 Download the Postman collection and replace parameters with your credentials.
 
@@ -317,10 +332,10 @@ In case of challenges, use our Daraja assistant, raise an incident on self-servi
 
 Kindly visit our How-To section for more information on M-PESA Org portal access and user creation.
 
-![Go Live!](../images/MpesaExpressSimulate_img_6.png "Go Live")
+![Go Live!](../images/MpesaExpressSimulate_img_7.png "Go Live")
 
 Upon successful go live, production endpoints will be sent to developer email and the test sandbox app will be moved to production with production consumer key and secrets. Below is how to see the production app.
-![Production App!](../images/MpesaExpressSimulate_img_7.png "Production App")
+![Production App!](../images/MpesaExpressSimulate_img_8.png "Production App")
 
 **We’ve successfully deployed dev congratulations we are now live!**
 
@@ -338,7 +353,7 @@ The portal offers various features for businesses, including:
 
 **Access to the M-PESA Organization Portal**
 
-![org-portal!](../images/MpesaExpressSimulate_img_8.png "org-portal")
+![org-portal!](../images/MpesaExpressSimulate_img_9.png "org-portal")
 
 To access the Organization portal (<https://org.ke.m-pesa.com/orglogin.action>), you need to have a Business Administrator role created under your business short code (Pay Bill/ Till).
 
@@ -417,18 +432,18 @@ The Business manager approves transactions, checks balances, and access statemen
 1. Log in the Organization portal as the Business administrator.
 2. Select operators.
 
-![select-operator!](../images/MpesaExpressSimulate_img_9.png "select-operator")
+![select-operator!](../images/MpesaExpressSimulate_img_10.png "select-operator")
 
 3. Then click the add option.
 4. It will take you to a new page where you will enter the username of the operator.
 5. Select access channel as Web.
 
-![access-channel!](../images/MpesaExpressSimulate_img_10.png "access-channel")
+![access-channel!](../images/MpesaExpressSimulate_img_11.png "access-channel")
 
 6. Then select web profile default rule profile.
 7. Then assign role...Business Manager and Set Restricted ORG API PASSWORD.
 
-![assign-role!](../images/MpesaExpressSimulate_img_11.png "assign-role")
+![assign-role!](../images/MpesaExpressSimulate_img_12.png "assign-role")
 
 8. Enter the KYC information of the operator then submit.
 
@@ -439,7 +454,7 @@ The Business manager approves transactions, checks balances, and access statemen
 1. Log in as the Business administrator.
 2. Select operators.
 
-![select-operator!](../images/MpesaExpressSimulate_img_12.png "select-operator")
+![select-operator!](../images/MpesaExpressSimulate_img_13.png "select-operator")
 
 3. Then click the add option.
 4. It will take you to a new page where you will enter the username of the API initiator.
@@ -447,7 +462,7 @@ The Business manager approves transactions, checks balances, and access statemen
 6. Then select web profile default rule profile.
 7. Then assign role...look for the ORG B2C API initiator, Balance Query ORG API, Transaction Status query ORG API roles.
 
-![assign-api-role!](../images/MpesaExpressSimulate_img_13.png "assign-api-role")
+![assign-api-role!](../images/MpesaExpressSimulate_img_14.png "assign-api-role")
 
 8. Enter the KYC information of the operator then submit.
 
@@ -455,13 +470,13 @@ The Business manager approves transactions, checks balances, and access statemen
 
 1. Login as User with the Set Restrict Password Role i.e. The Business Manager.
 
-![Operator Management!](../images/MpesaExpressSimulate_img_14.png "Operator Management")
+![Operator Management!](../images/MpesaExpressSimulate_img_15.png "Operator Management")
 
 2. Click on My Functions, Then Operator Management.
 3. Enter the API username to search after it populates the API user, At the end click on operations.
 4. Then click on set password avoid such (@ or.) in the setting of this password.
 
-![set-password.!](../images/MpesaExpressSimulate_img_15.png "set-password.")
+![set-password.!](../images/MpesaExpressSimulate_img_16.png "set-password.")
 
 ### Various API roles:
 
@@ -556,7 +571,7 @@ Copyright@Safaricom PLC 2026
 
 Ask Daraja about anything 😊
 
-![chatbot icon](../images/MpesaExpressSimulate_img_16.svg)
+![chatbot icon](../images/MpesaExpressSimulate_img_17.svg)
 
 Logout of Daraja?
 

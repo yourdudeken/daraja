@@ -7,7 +7,7 @@
 
 HomeAPIsDashboardMarketplaceFAQsMiniApps
 
-Sign UpLog In
+Log Out
 
 1. Discover APIs
 2. /
@@ -24,6 +24,14 @@ This is a reconciliation API that allows a partner to query all transactions per
 POST
 
 https://sandbox.safaricom.co.ke/pulltransactions/v1/register
+
+Use API
+
+Get Started in 3 easy steps
+
+![simulator-progress](../images/PullTransaction_img_2.svg)
+
+Open Simulator
 
 ###### DOCUMENTATION
 
@@ -72,11 +80,18 @@ The Pull Transactions API is a reconciliation tool that lets partners query all 
 
 Generate an access token to authenticate API calls. See [Authorization API](https://daraja.safaricom.co.ke/dashboard/apis?api=Authorization).
 
+## Environments
+
+| Environment | Description | Register Pull | Query Pull Transaction |
+| --- | --- | --- | --- |
+| Sandbox | Testing | <https://sandbox.safaricom.co.ke/pulltransactions/v1/register> | <https://sandbox.safaricom.co.ke/pulltransactions/v1/query> |
+| Production | Live | <https://api.safaricom.co.ke/pulltransactions/v1/register> | <https://api.safaricom.co.ke/pulltransactions/v1/query> |
+
 ## Integration Steps
 
 ### Sequence Diagram
 
-![pull-transaction-sequence-diagram](../images/PullTransaction_img_2.png)
+![pull-transaction-sequence-diagram](../images/PullTransaction_img_3.png)
 
 ### Use Cases
 
@@ -237,11 +252,11 @@ Note: The Pull API registration is a one-time process required to enable transac
 * Register URLs before each simulation.
 * Select "CustomerPayBillOnline" for Paybill or "CustomerBuyGoodsOnline" for Till.
 
-![Create App](../images/PullTransaction_img_3.png)
+![Create App](../images/PullTransaction_img_4.png)
 
 ### Note: The simulator can only be accessed when logged in. Please [log in](https://developer.safaricom.co.ke/account/login) to your Daraja account to access the simulator.
 
-![Simulator!](../images/PullTransaction_img_4.png "Simulator")
+![Simulator!](../images/PullTransaction_img_5.png "Simulator")
 
 ### Option 2: Postman
 
@@ -255,7 +270,7 @@ Use the credentials to generate access token using the below endpoint.
 ### Note: The Postman collection can only be accessed when logged in. Please [log in](https://developer.safaricom.co.ke/account/login) to your Daraja account to access the collection.
 
 Click the button named "Use API" to access the Postman collection with pre-built requests for all APIs.
-![Postman Collection!](../images/PullTransaction_img_5.png "Postman Collection")
+![Postman Collection!](../images/PullTransaction_img_6.png "Postman Collection")
 
 Download the Postman collection and replace parameters with your credentials.
 
@@ -265,7 +280,7 @@ Download the Postman collection and replace parameters with your credentials.
 * Fill in live data: short code, organization name, M-PESA admin/manager username.
 * Visit "GO LIVE" tab for more info.
 
-![Go Live](../images/PullTransaction_img_6.png)
+![Go Live](../images/PullTransaction_img_7.png)
 
 Upon successful go live, production endpoints are sent to developer email.
 
@@ -275,7 +290,7 @@ Upon successful go live, production endpoints are sent to developer email.
 
 The portal allows businesses to manage transactions, accounts, bulk payments, and user roles.
 
-![org-portal](../images/PullTransaction_img_7.png)
+![org-portal](../images/PullTransaction_img_8.png)
 
 * Access: <https://org.ke.m-pesa.com/orglogin.action>
 * Business Administrator role required.
@@ -316,9 +331,9 @@ The portal allows businesses to manage transactions, accounts, bulk payments, an
 4. Enter username, select access channel as Web.
 5. Assign role, set password, submit KYC info.
 
-![select-operator](../images/PullTransaction_img_8.png)
-![access-channel](../images/PullTransaction_img_9.png)
-![assign-role](../images/PullTransaction_img_10.png)
+![select-operator](../images/PullTransaction_img_9.png)
+![access-channel](../images/PullTransaction_img_10.png)
+![assign-role](../images/PullTransaction_img_11.png)
 
 ### API User Creation
 
@@ -330,7 +345,7 @@ The portal allows businesses to manage transactions, accounts, bulk payments, an
 4. Enter API initiator username, select access channel as API.
 5. Assign API roles, submit KYC info.
 
-![assign-api-role](../images/PullTransaction_img_11.png)
+![assign-api-role](../images/PullTransaction_img_12.png)
 
 **Set API User Password:**
 
@@ -338,8 +353,8 @@ The portal allows businesses to manage transactions, accounts, bulk payments, an
 2. Go to Operator Management.
 3. Search API user, click operations, set password.
 
-![Operator Management](../images/PullTransaction_img_12.png)
-![set-password](../images/PullTransaction_img_13.png)
+![Operator Management](../images/PullTransaction_img_13.png)
+![set-password](../images/PullTransaction_img_14.png)
 
 ### API Roles
 
@@ -416,7 +431,7 @@ Copyright@Safaricom PLC 2026
 
 Ask Daraja about anything 😊
 
-![chatbot icon](../images/PullTransaction_img_14.svg)
+![chatbot icon](../images/PullTransaction_img_15.svg)
 
 Logout of Daraja?
 

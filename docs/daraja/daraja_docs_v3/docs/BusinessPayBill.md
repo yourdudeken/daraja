@@ -7,7 +7,7 @@
 
 HomeAPIsDashboardMarketplaceFAQsMiniApps
 
-Sign UpLog In
+Log Out
 
 1. Discover APIs
 2. /
@@ -24,6 +24,14 @@ This API enables you to pay bills directly from your business account to a pay b
 POST
 
 https://sandbox.safaricom.co.ke/mpesa/b2b/v1/paymentrequest
+
+Use API
+
+Get Started in 3 easy steps
+
+![simulator-progress](../images/BusinessPayBill_img_2.svg)
+
+Open Simulator
 
 API DocumentationError
 
@@ -325,7 +333,7 @@ Copyright@Safaricom PLC 2026
 
 Ask Daraja about anything 😊
 
-![chatbot icon](../images/BusinessPayBill_img_2.svg)
+![chatbot icon](../images/BusinessPayBill_img_3.svg)
 
 Logout of Daraja?
 

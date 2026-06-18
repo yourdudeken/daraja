@@ -7,7 +7,7 @@
 
 HomeAPIsDashboardMarketplaceFAQsMiniApps
 
-Sign UpLog In
+Log Out
 
 1. Discover APIs
 2. /
@@ -24,6 +24,14 @@ Generates a dynamic M-PESA QR Code.
 POST
 
 https://sandbox.safaricom.co.ke/mpesa/qrcode/v1/generate
+
+Use API
+
+Get Started in 3 easy steps
+
+![simulator-progress](../images/DynamicQRCode_img_2.svg)
+
+Open Simulator
 
 API DocumentationError
 
@@ -108,7 +116,7 @@ Copyright@Safaricom PLC 2026
 
 Ask Daraja about anything 😊
 
-![chatbot icon](../images/DynamicQRCode_img_2.svg)
+![chatbot icon](../images/DynamicQRCode_img_3.svg)
 
 Logout of Daraja?
 

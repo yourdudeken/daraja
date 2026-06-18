@@ -7,7 +7,7 @@
 
 HomeAPIsDashboardMarketplaceFAQsMiniApps
 
-Sign UpLog In
+Log Out
 
 1. Discover APIs
 2. /
@@ -24,6 +24,14 @@ This is an API that allows third party integrators to facilitate creation of M-P
 POST
 
 https://sandbox.safaricom.co.ke/standingorder/v1/createStandingOrderExternal
+
+Use API
+
+Get Started in 3 easy steps
+
+![simulator-progress](../images/MpesaRatiba_img_2.svg)
+
+Open Simulator
 
 API DocumentationError
 
@@ -311,7 +319,7 @@ Copyright@Safaricom PLC 2026
 
 Ask Daraja about anything 😊
 
-![chatbot icon](../images/MpesaRatiba_img_2.svg)
+![chatbot icon](../images/MpesaRatiba_img_3.svg)
 
 Logout of Daraja?
 

@@ -7,7 +7,7 @@
 
 HomeAPIsDashboardMarketplaceFAQsMiniApps
 
-Sign UpLog In
+Log Out
 
 1. Discover APIs
 2. /
@@ -24,6 +24,14 @@ IoT SIM management APIs enable seamless activation, monitoring, messaging and co
 POST
 
 https://sandbox.safaricom.co.ke/simportal/{path\_suffix}
+
+Use API
+
+Get Started in 3 easy steps
+
+![simulator-progress](../images/IotSimManagement_img_2.svg)
+
+Open Simulator
 
 ###### DOCUMENTATION
 
@@ -1113,11 +1121,11 @@ The delete message API allows you to delete a specific message using its ID.
 * Register URLs before each simulation.
 * Select "CustomerPayBillOnline" for Paybill or "CustomerBuyGoodsOnline" for Till.
 
-![Create App](../images/IotSimManagement_img_2.png)
+![Create App](../images/IotSimManagement_img_3.png)
 
 ### Note: The simulator can only be accessed when logged in. Please [log in](https://developer.safaricom.co.ke/account/login) to your Daraja account to access the simulator.
 
-![Simulator!](../images/IotSimManagement_img_3.png "Simulator")
+![Simulator!](../images/IotSimManagement_img_4.png "Simulator")
 
 ### Option 2: Postman
 
@@ -1131,7 +1139,7 @@ Use the credentials to generate access token using the below endpoint.
 ### Note: The Postman collection can only be accessed when logged in. Please [log in](https://developer.safaricom.co.ke/account/login) to your Daraja account to access the collection.
 
 Click the button named "Use API" to access the Postman collection with pre-built requests for all APIs.
-![Postman Collection!](../images/IotSimManagement_img_4.png "Postman Collection")
+![Postman Collection!](../images/IotSimManagement_img_5.png "Postman Collection")
 
 Download the Postman collection and replace parameters with your credentials.
 
@@ -1163,7 +1171,7 @@ Copyright@Safaricom PLC 2026
 
 Ask Daraja about anything 😊
 
-![chatbot icon](../images/IotSimManagement_img_5.svg)
+![chatbot icon](../images/IotSimManagement_img_6.svg)
 
 Logout of Daraja?
 

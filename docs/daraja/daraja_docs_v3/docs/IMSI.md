@@ -7,7 +7,7 @@
 
 HomeAPIsDashboardMarketplaceFAQsMiniApps
 
-Sign UpLog In
+Log Out
 
 1. Discover APIs
 2. /
@@ -24,6 +24,14 @@ The IMSI API enhances security by letting users verify a Safaricom number’s ag
 POST
 
 https://sandbox.safaricom.co.ke/imsi/v1/checkATI
+
+Use API
+
+Get Started in 3 easy steps
+
+![simulator-progress](../images/IMSI_img_2.svg)
+
+Open Simulator
 
 ###### DOCUMENTATION
 
@@ -92,11 +100,20 @@ This API is asynchronous. You can consume this API over the internet.
 Devs gather here!  
 You will first generate an access token to authenticate you to make the API call. See below generate access token API [API](https://daraja.safaricom.co.ke/dashboard/apis?api=Authorization) here. We’ve also automated this on the simulate request section.
 
+## Environments
+
+| Environment | Description | URL |
+| --- | --- | --- |
+| Sandbox | Testing environment. | <https://sandbox.safaricom.co.ke/imsi/v1/checkATI> |
+| Production | Live environment for real transactions. | <https://api.safaricom.co.ke/imsi/v1/checkATI> |
+
+> Note: Before making any API request, you must first obtain authorization by generating an access token from the Authorization API to successfully complete the call.
+
 ## Integration Steps
 
 ### Sequence Diagram
 
-![imsi-sequence-diagram!](../images/IMSI_img_2.png "imsi-sequence-diagram")
+![imsi-sequence-diagram!](../images/IMSI_img_3.png "imsi-sequence-diagram")
 
 ## Use Cases
 
@@ -170,11 +187,11 @@ You will first generate an access token to authenticate you to make the API call
 ### Option 1: Daraja Simulator
 
 Create a new test app under apps on the main nerve bar, select IMSI product. Once app is successfully created the simulator is automated to pick app credentials (Consumer key and Consumer Secret) and predefined test data, you can hit the simulate button.
-![Create App!](../images/IMSI_img_3.png "Create App")
+![Create App!](../images/IMSI_img_4.png "Create App")
 
 ### Note: The simulator can only be accessed when logged in. Please [log in](https://developer.safaricom.co.ke/account/login) to your Daraja account to access the simulator.
 
-![Simulator!](../images/IMSI_img_4.png "Simulator")
+![Simulator!](../images/IMSI_img_5.png "Simulator")
 
 ### Option 2: Postman
 
@@ -188,7 +205,7 @@ Use the credentials to generate access token using the below endpoint.
 ### Note: The Postman collection can only be accessed when logged in. Please [log in](https://developer.safaricom.co.ke/account/login) to your Daraja account to access the collection.
 
 Click the button named "Use API" to access the Postman collection with pre-built requests for all APIs.
-![Postman Collection!](../images/IMSI_img_5.png "Postman Collection")
+![Postman Collection!](../images/IMSI_img_6.png "Postman Collection")
 
 Download the Postman collection and replace parameters with your credentials.
 
@@ -256,7 +273,7 @@ Copyright@Safaricom PLC 2026
 
 Ask Daraja about anything 😊
 
-![chatbot icon](../images/IMSI_img_6.svg)
+![chatbot icon](../images/IMSI_img_7.svg)
 
 Logout of Daraja?
 
