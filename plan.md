@@ -163,12 +163,12 @@ The generic `B2BService.send()` (all languages) at `/mpesa/b2b/v1/paymentrequest
 
 ## Recommended Roadmap
 
-### Phase 1 — Critical (fix broken API calls)
-1. Fix Pull Transactions endpoint + restructure into register/query
-2. Fix B2B Express Checkout endpoint
-3. Fix Swap from fund transfer to SIM swap date query
-4. Fix Business Buy Goods endpoint (C2B → B2B)
-5. Fix Business Pay Bill endpoint (C2B → B2B)
+### Phase 1 — Critical (fix broken API calls) ✅ Complete
+1. ✅ Pull Transactions — endpoint fixed, restructured into `register()` + `query()` across TS/Python/Go
+2. ✅ B2B Express Checkout — endpoint corrected to `/v1/ussdpush/get-msisdn`, request/response types rewritten
+3. ✅ Swap — corrected from fund transfer to SIM swap date query at `/imsi/v2/checkATI`
+4. ✅ Business Buy Goods — endpoint changed from C2B to B2B (`/mpesa/b2b/v1/paymentrequest` with CommandID `BusinessBuyGoods`)
+5. ✅ Business Pay Bill — endpoint changed from C2B to B2B (`/mpesa/b2b/v1/paymentrequest` with CommandID `BusinessPayBill`)
 
 ### Phase 2 — High (fill gaps and fix wrong paths)
 6. Implement full Bill Manager suite (6 sub-APIs)

@@ -329,27 +329,44 @@ class MpesaResult(BaseModel):
 
 
 class BusinessBuyGoodsRequest(BaseModel):
-    ShortCode: int
-    CommandID: str = "SimulateC2BTrans"
+    Initiator: str
+    SecurityCredential: str
+    CommandID: Literal["BusinessBuyGoods"] = "BusinessBuyGoods"
+    SenderIdentifierType: int = 4
+    RecieverIdentifierType: int = 4
     Amount: int
-    Msisdn: int
-    BillRefNumber: Optional[str] = None
+    PartyA: int
+    PartyB: int
+    Requester: Optional[int] = None
+    AccountReference: Optional[str] = None
+    Remarks: str
+    QueueTimeOutURL: str
+    ResultURL: str
+    Occassion: Optional[str] = None
 
 
 class BusinessPayBillRequest(BaseModel):
-    ShortCode: int
-    CommandID: str = "SimulateC2BTrans"
+    Initiator: str
+    SecurityCredential: str
+    CommandID: Literal["BusinessPayBill"] = "BusinessPayBill"
+    SenderIdentifierType: int = 4
+    RecieverIdentifierType: int = 4
     Amount: int
-    Msisdn: int
-    BillRefNumber: Optional[str] = None
+    PartyA: int
+    PartyB: int
+    Requester: Optional[int] = None
+    AccountReference: Optional[str] = None
+    Remarks: str
+    QueueTimeOutURL: str
+    ResultURL: str
+    Occassion: Optional[str] = None
 
 
 class BusinessGoodsResponse(BaseModel):
-    MerchantRequestID: str
-    CheckoutRequestID: str
+    OriginatorConversationID: str
+    ConversationID: str
     ResponseCode: str
     ResponseDescription: str
-    CustomerMessage: str
 
 
 class QueryOrgInfoRequest(BaseModel):

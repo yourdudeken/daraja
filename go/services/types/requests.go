@@ -98,17 +98,35 @@ type AccountBalanceInput struct {
 }
 
 type BusinessBuyGoodsInput struct {
-	ShortCode     int
-	Amount        int
-	Msisdn        int
-	BillRefNumber string
+	Initiator              string
+	SecurityCredential     string
+	SenderIdentifierType   int
+	RecieverIdentifierType int
+	Amount                 int
+	PartyA                 int
+	PartyB                 int
+	Requester              int
+	AccountReference       string
+	Remarks                string
+	QueueTimeOutURL        string
+	ResultURL              string
+	Occassion              string
 }
 
 type BusinessPayBillInput struct {
-	ShortCode     int
-	Amount        int
-	Msisdn        int
-	BillRefNumber string
+	Initiator              string
+	SecurityCredential     string
+	SenderIdentifierType   int
+	RecieverIdentifierType int
+	Amount                 int
+	PartyA                 int
+	PartyB                 int
+	Requester              int
+	AccountReference       string
+	Remarks                string
+	QueueTimeOutURL        string
+	ResultURL              string
+	Occassion              string
 }
 
 type QueryOrgInfoInput struct{}

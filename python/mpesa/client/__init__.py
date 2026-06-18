@@ -516,13 +516,13 @@ class Mpesa:
     def business_buy_goods(self, request: BusinessBuyGoodsRequest | dict) -> BusinessGoodsResponse:
         if isinstance(request, dict):
             request = BusinessBuyGoodsRequest(**request)
-        result = self._post("C2B_SIMULATE_V1", request.model_dump())
+        result = self._post("B2B", request.model_dump())
         return BusinessGoodsResponse(**result)
 
     def business_pay_bill(self, request: BusinessPayBillRequest | dict) -> BusinessGoodsResponse:
         if isinstance(request, dict):
             request = BusinessPayBillRequest(**request)
-        result = self._post("C2B_SIMULATE_V1", request.model_dump())
+        result = self._post("B2B", request.model_dump())
         return BusinessGoodsResponse(**result)
 
     def query_org_info(

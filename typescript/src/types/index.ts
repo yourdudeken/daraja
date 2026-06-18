@@ -411,30 +411,47 @@ export interface DynamicQRResponse {
 }
 
 // ============================================================
-// BUSINESS BUY GOODS / PAY BILL
+// BUSINESS BUY GOODS / PAY BILL (B2B-type requests)
 // ============================================================
 export interface BusinessBuyGoodsRequest {
-  ShortCode: number;
-  CommandID: string;
+  Initiator: string;
+  SecurityCredential: string;
+  CommandID: "BusinessBuyGoods";
+  SenderIdentifierType?: number;
+  RecieverIdentifierType?: number;
   Amount: number;
-  Msisdn: number;
-  BillRefNumber?: string;
+  PartyA: number;
+  PartyB: number;
+  Requester?: number;
+  AccountReference?: string;
+  Remarks: string;
+  QueueTimeOutURL: string;
+  ResultURL: string;
+  Occassion?: string;
 }
 
 export interface BusinessPayBillRequest {
-  ShortCode: number;
-  CommandID: string;
+  Initiator: string;
+  SecurityCredential: string;
+  CommandID: "BusinessPayBill";
+  SenderIdentifierType?: number;
+  RecieverIdentifierType?: number;
   Amount: number;
-  Msisdn: number;
-  BillRefNumber?: string;
+  PartyA: number;
+  PartyB: number;
+  Requester?: number;
+  AccountReference?: string;
+  Remarks: string;
+  QueueTimeOutURL: string;
+  ResultURL: string;
+  Occassion?: string;
 }
 
 export interface BusinessGoodsResponse {
-  MerchantRequestID: string;
-  CheckoutRequestID: string;
+  OriginatorConversationID: string;
+  ConversationID: string;
   ResponseCode: string;
   ResponseDescription: string;
-  CustomerMessage: string;
 }
 
 // ============================================================

@@ -63,11 +63,10 @@ type AccountBalanceResult struct {
 }
 
 type BusinessGoodsResult struct {
-	MerchantRequestID   string
-	CheckoutRequestID   string
-	ResponseCode        string
-	ResponseDescription string
-	CustomerMessage     string
+	OriginatorConversationID string
+	ConversationID           string
+	ResponseCode             string
+	ResponseDescription      string
 }
 
 type QueryOrgInfoResult struct {

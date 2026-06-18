@@ -332,29 +332,46 @@ type AccountBalanceResponse struct {
 	ResponseDescription      string `json:"ResponseDescription"`
 }
 
-// ---- Business Buy Goods / Pay Bill ----
+// ---- Business Buy Goods / Pay Bill (B2B-type requests) ----
 type BusinessBuyGoodsRequest struct {
-	ShortCode     int    `json:"ShortCode"`
-	CommandID     string `json:"CommandID"`
-	Amount        int    `json:"Amount"`
-	Msisdn        int    `json:"Msisdn"`
-	BillRefNumber string `json:"BillRefNumber,omitempty"`
+	Initiator              string `json:"Initiator"`
+	SecurityCredential     string `json:"SecurityCredential"`
+	CommandID              string `json:"CommandID"`
+	SenderIdentifierType   int    `json:"SenderIdentifierType"`
+	RecieverIdentifierType int    `json:"RecieverIdentifierType"`
+	Amount                 int    `json:"Amount"`
+	PartyA                 int    `json:"PartyA"`
+	PartyB                 int    `json:"PartyB"`
+	Requester              int    `json:"Requester,omitempty"`
+	AccountReference       string `json:"AccountReference,omitempty"`
+	Remarks                string `json:"Remarks"`
+	QueueTimeOutURL        string `json:"QueueTimeOutURL"`
+	ResultURL              string `json:"ResultURL"`
+	Occassion              string `json:"Occassion,omitempty"`
 }
 
 type BusinessPayBillRequest struct {
-	ShortCode     int    `json:"ShortCode"`
-	CommandID     string `json:"CommandID"`
-	Amount        int    `json:"Amount"`
-	Msisdn        int    `json:"Msisdn"`
-	BillRefNumber string `json:"BillRefNumber,omitempty"`
+	Initiator              string `json:"Initiator"`
+	SecurityCredential     string `json:"SecurityCredential"`
+	CommandID              string `json:"CommandID"`
+	SenderIdentifierType   int    `json:"SenderIdentifierType"`
+	RecieverIdentifierType int    `json:"RecieverIdentifierType"`
+	Amount                 int    `json:"Amount"`
+	PartyA                 int    `json:"PartyA"`
+	PartyB                 int    `json:"PartyB"`
+	Requester              int    `json:"Requester,omitempty"`
+	AccountReference       string `json:"AccountReference,omitempty"`
+	Remarks                string `json:"Remarks"`
+	QueueTimeOutURL        string `json:"QueueTimeOutURL"`
+	ResultURL              string `json:"ResultURL"`
+	Occassion              string `json:"Occassion,omitempty"`
 }
 
 type BusinessGoodsResponse struct {
-	MerchantRequestID   string `json:"MerchantRequestID"`
-	CheckoutRequestID   string `json:"CheckoutRequestID"`
-	ResponseCode        string `json:"ResponseCode"`
-	ResponseDescription string `json:"ResponseDescription"`
-	CustomerMessage     string `json:"CustomerMessage"`
+	OriginatorConversationID string `json:"OriginatorConversationID"`
+	ConversationID           string `json:"ConversationID"`
+	ResponseCode             string `json:"ResponseCode"`
+	ResponseDescription      string `json:"ResponseDescription"`
 }
 
 // ---- Query Org Info ----

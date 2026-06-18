@@ -331,10 +331,17 @@ func TestIntegrationBusinessBuyGoods(t *testing.T) {
 	}
 
 	req := types.BusinessBuyGoodsRequest{
-		ShortCode: 600984,
-		CommandID: "BuyGoods",
-		Amount:    1,
-		Msisdn:    254708374149,
+		Initiator:              "testapi",
+		SecurityCredential:     "testcred",
+		CommandID:              "BusinessBuyGoods",
+		SenderIdentifierType:   4,
+		RecieverIdentifierType: 4,
+		Amount:                 1,
+		PartyA:                 600984,
+		PartyB:                 600000,
+		Remarks:                "test",
+		QueueTimeOutURL:        "https://example.com/timeout",
+		ResultURL:              "https://example.com/result",
 	}
 
 	_, err = client.BusinessBuyGoods(ctx, req)
@@ -354,10 +361,17 @@ func TestIntegrationBusinessPayBill(t *testing.T) {
 	}
 
 	req := types.BusinessPayBillRequest{
-		ShortCode: 600984,
-		CommandID: "PayBill",
-		Amount:    1,
-		Msisdn:    254708374149,
+		Initiator:              "testapi",
+		SecurityCredential:     "testcred",
+		CommandID:              "BusinessPayBill",
+		SenderIdentifierType:   4,
+		RecieverIdentifierType: 4,
+		Amount:                 1,
+		PartyA:                 600984,
+		PartyB:                 600000,
+		Remarks:                "test",
+		QueueTimeOutURL:        "https://example.com/timeout",
+		ResultURL:              "https://example.com/result",
 	}
 
 	_, err = client.BusinessPayBill(ctx, req)

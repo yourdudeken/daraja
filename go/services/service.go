@@ -226,43 +226,59 @@ func (s *Service) AccountBalance(ctx context.Context, input svctypes.AccountBala
 
 func (s *Service) BusinessBuyGoods(ctx context.Context, input svctypes.BusinessBuyGoodsInput) (*svctypes.BusinessGoodsResult, error) {
 	req := types.BusinessBuyGoodsRequest{
-		ShortCode:     input.ShortCode,
-		CommandID:     "SimulateC2BTrans",
-		Amount:        input.Amount,
-		Msisdn:        input.Msisdn,
-		BillRefNumber: input.BillRefNumber,
+		Initiator:              input.Initiator,
+		SecurityCredential:     input.SecurityCredential,
+		CommandID:              "BusinessBuyGoods",
+		SenderIdentifierType:   input.SenderIdentifierType,
+		RecieverIdentifierType: input.RecieverIdentifierType,
+		Amount:                 input.Amount,
+		PartyA:                 input.PartyA,
+		PartyB:                 input.PartyB,
+		Requester:              input.Requester,
+		AccountReference:       input.AccountReference,
+		Remarks:                input.Remarks,
+		QueueTimeOutURL:        input.QueueTimeOutURL,
+		ResultURL:              input.ResultURL,
+		Occassion:              input.Occassion,
 	}
 	resp, err := s.client.BusinessBuyGoods(ctx, req)
 	if err != nil {
 		return nil, err
 	}
 	return &svctypes.BusinessGoodsResult{
-		MerchantRequestID:   resp.MerchantRequestID,
-		CheckoutRequestID:   resp.CheckoutRequestID,
-		ResponseCode:        resp.ResponseCode,
-		ResponseDescription: resp.ResponseDescription,
-		CustomerMessage:     resp.CustomerMessage,
+		OriginatorConversationID: resp.OriginatorConversationID,
+		ConversationID:           resp.ConversationID,
+		ResponseCode:             resp.ResponseCode,
+		ResponseDescription:      resp.ResponseDescription,
 	}, nil
 }
 
 func (s *Service) BusinessPayBill(ctx context.Context, input svctypes.BusinessPayBillInput) (*svctypes.BusinessGoodsResult, error) {
 	req := types.BusinessPayBillRequest{
-		ShortCode:     input.ShortCode,
-		CommandID:     "SimulateC2BTrans",
-		Amount:        input.Amount,
-		Msisdn:        input.Msisdn,
-		BillRefNumber: input.BillRefNumber,
+		Initiator:              input.Initiator,
+		SecurityCredential:     input.SecurityCredential,
+		CommandID:              "BusinessPayBill",
+		SenderIdentifierType:   input.SenderIdentifierType,
+		RecieverIdentifierType: input.RecieverIdentifierType,
+		Amount:                 input.Amount,
+		PartyA:                 input.PartyA,
+		PartyB:                 input.PartyB,
+		Requester:              input.Requester,
+		AccountReference:       input.AccountReference,
+		Remarks:                input.Remarks,
+		QueueTimeOutURL:        input.QueueTimeOutURL,
+		ResultURL:              input.ResultURL,
+		Occassion:              input.Occassion,
 	}
 	resp, err := s.client.BusinessPayBill(ctx, req)
 	if err != nil {
 		return nil, err
 	}
 	return &svctypes.BusinessGoodsResult{
-		MerchantRequestID:   resp.MerchantRequestID,
-		CheckoutRequestID:   resp.CheckoutRequestID,
-		ResponseCode:        resp.ResponseCode,
-		ResponseDescription: resp.ResponseDescription,
-		CustomerMessage:     resp.CustomerMessage,
+		OriginatorConversationID: resp.OriginatorConversationID,
+		ConversationID:           resp.ConversationID,
+		ResponseCode:             resp.ResponseCode,
+		ResponseDescription:      resp.ResponseDescription,
 	}, nil
 }
 

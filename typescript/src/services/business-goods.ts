@@ -10,14 +10,14 @@ export class BusinessGoodsService {
 
   async buyGoods(request: BusinessBuyGoodsRequest): Promise<BusinessGoodsResponse> {
     return this.client.post<BusinessGoodsResponse>(
-      this.client.getEndpoint("C2B_SIMULATE_V1"),
+      this.client.getEndpoint("B2B"),
       request,
     );
   }
 
   async payBill(request: BusinessPayBillRequest): Promise<BusinessGoodsResponse> {
     return this.client.post<BusinessGoodsResponse>(
-      this.client.getEndpoint("C2B_SIMULATE_V1"),
+      this.client.getEndpoint("B2B"),
       request,
     );
   }

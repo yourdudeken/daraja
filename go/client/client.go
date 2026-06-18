@@ -631,7 +631,7 @@ func (c *Client) AccountBalance(ctx context.Context, req types.AccountBalanceReq
 
 // ---- Business Buy Goods ----
 func (c *Client) BusinessBuyGoods(ctx context.Context, req types.BusinessBuyGoodsRequest) (*types.BusinessGoodsResponse, error) {
-	respBody, err := c.doRequest(ctx, "POST", c.endpoints.C2BSimulateV1, req)
+	respBody, err := c.doRequest(ctx, "POST", c.endpoints.B2B, req)
 	if err != nil {
 		return nil, err
 	}
@@ -645,7 +645,7 @@ func (c *Client) BusinessBuyGoods(ctx context.Context, req types.BusinessBuyGood
 
 // ---- Business Pay Bill ----
 func (c *Client) BusinessPayBill(ctx context.Context, req types.BusinessPayBillRequest) (*types.BusinessGoodsResponse, error) {
-	respBody, err := c.doRequest(ctx, "POST", c.endpoints.C2BSimulateV1, req)
+	respBody, err := c.doRequest(ctx, "POST", c.endpoints.B2B, req)
 	if err != nil {
 		return nil, err
 	}
