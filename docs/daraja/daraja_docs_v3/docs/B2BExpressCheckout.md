@@ -7,7 +7,7 @@
 
 HomeAPIsDashboardMarketplaceFAQsMiniApps
 
-Log Out
+Sign UpLog In
 
 1. Discover APIs
 2. /
@@ -24,14 +24,6 @@ This API enables merchants to initiate USSD Push to till enabling their fellow m
 POST
 
 https://sandbox.safaricom.co.ke/v1/ussdpush/get-msisdn
-
-Use API
-
-Get Started in 3 easy steps
-
-![simulator-progress](../images/B2BExpressCheckout_img_2.svg)
-
-Open Simulator
 
 API DocumentationError
 
@@ -50,11 +42,11 @@ Below is a sequential diagram overview of the process:
 4. Mpesa confirms details credits the vendor and debits the merchant.
 5. Daraja sends a callback response to the sender.
 
-![](../images/B2BExpressCheckout_img_3.png)
+![](../images/B2BExpressCheckout_img_2.png)
 
 #### Low-Level Architecture
 
-![](../images/B2BExpressCheckout_img_4.png)
+![](../images/B2BExpressCheckout_img_3.png)
 
 Request Body
 
@@ -122,13 +114,13 @@ The values in the braces in the following text are from the vendor system.
 You are about to send Ksh {{amount}} to {{Vendor Friendly Name}} for payment reference: {{AccountNumber/BillReference}}.
 
 1. Merchants are prompted to enter their operator ID.  
-   ![](../images/B2BExpressCheckout_img_5.png)
+   ![](../images/B2BExpressCheckout_img_4.png)
 2. Next step, they are prompted to enter their operator PIN.  
-   ![](../images/B2BExpressCheckout_img_6.png)
+   ![](../images/B2BExpressCheckout_img_5.png)
 3. Vendor Prompted to accept the amount.  
-   ![](../images/B2BExpressCheckout_img_7.png)
+   ![](../images/B2BExpressCheckout_img_6.png)
 4. The merchant gets an acknowledgment they’ll receive a text once done.  
-   ![](../images/B2BExpressCheckout_img_8.png)
+   ![](../images/B2BExpressCheckout_img_7.png)
 
 **USSD Fail Callback Response**  
 In case the USSD Push Acknowledgement was a fail, the vendor gets a callback sent to the callback URL.  
@@ -202,12 +194,12 @@ An organization operator is linked to a phone number(preferred MSISDN) where the
 
 An organization can have multiple operators as shown in the screenshot below from Mpesa Web Portal
 
-![](../images/B2BExpressCheckout_img_9.png)
+![](../images/B2BExpressCheckout_img_8.png)
 
 Transactions carried out for the shortcode/till from the operator are deducted from the till.  
 The solution currently is limited to the operator whose phone number is under the ***Nominated Number*** under the Organization Details as configured in the Mpesa Web Portal.
 
-![](../images/B2BExpressCheckout_img_10.png)
+![](../images/B2BExpressCheckout_img_9.png)
 
 **NB: Access to the Mpesa Web Portal Platform is given upon successful registration of a shortcode**.
 
@@ -225,7 +217,7 @@ Copyright@Safaricom PLC 2026
 
 Ask Daraja about anything 😊
 
-![chatbot icon](../images/B2BExpressCheckout_img_11.svg)
+![chatbot icon](../images/B2BExpressCheckout_img_10.svg)
 
 Logout of Daraja?
 

@@ -3,11 +3,11 @@
 
 ---
 
-[![safaricom logo](https://developer.safaricom.co.ke/static/saf-logo.svg)](/)
+[![safaricom logo](../images/BusinessBuyGoods_img_0.svg)](/)
 
 HomeAPIsDashboardMarketplaceFAQsMiniApps
 
-Log Out
+Sign UpLog In
 
 1. Discover APIs
 2. /
@@ -24,14 +24,6 @@ This API enables you to pay for goods and services directly from your business a
 POST
 
 https://sandbox.safaricom.co.ke/mpesa/b2b/v1/paymentrequest
-
-Use API
-
-Get Started in 3 easy steps
-
-![simulator-progress](../images/BusinessBuyGoods_img_2.svg)
-
-Open Simulator
 
 API DocumentationError
 
@@ -331,7 +323,7 @@ Copyright@Safaricom PLC 2026
 
 Ask Daraja about anything 😊
 
-![chatbot icon](../images/BusinessBuyGoods_img_3.svg)
+![chatbot icon](../images/BusinessBuyGoods_img_2.svg)
 
 Logout of Daraja?
 

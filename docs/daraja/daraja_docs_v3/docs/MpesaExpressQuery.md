@@ -3,11 +3,11 @@
 
 ---
 
-[![safaricom logo](https://developer.safaricom.co.ke/static/saf-logo.svg)](/)
+[![safaricom logo](../images/MpesaExpressQuery_img_0.svg)](/)
 
 HomeAPIsDashboardMarketplaceFAQsMiniApps
 
-Log Out
+Sign UpLog In
 
 1. Discover APIs
 2. /
@@ -24,14 +24,6 @@ Check the status of a Lipa Na M-Pesa Online Payment.
 POST
 
 https://sandbox.safaricom.co.ke/mpesa/stkpushquery/v1/query
-
-Use API
-
-Get Started in 3 easy steps
-
-![simulator-progress](../images/MpesaExpressQuery_img_2.svg)
-
-Open Simulator
 
 API DocumentationError
 
@@ -107,7 +99,7 @@ Copyright@Safaricom PLC 2026
 
 Ask Daraja about anything 😊
 
-![chatbot icon](../images/MpesaExpressQuery_img_3.svg)
+![chatbot icon](../images/MpesaExpressQuery_img_2.svg)
 
 Logout of Daraja?
 

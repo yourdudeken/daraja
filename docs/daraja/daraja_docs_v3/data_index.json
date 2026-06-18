@@ -130,5 +130,11 @@
     "url": "https://developer.safaricom.co.ke/apis/IotSimManagement",
     "local_path": "docs/IotSimManagement.md",
     "description": "Documentation for IotSimManagement"
+  },
+  {
+    "name": "LipaNaBonga",
+    "url": "https://developer.safaricom.co.ke/apis/LipaNaBonga",
+    "local_path": "docs/LipaNaBonga.md",
+    "description": "Documentation for LipaNaBonga"
   }
 ]

@@ -7,7 +7,7 @@
 
 HomeAPIsDashboardMarketplaceFAQsMiniApps
 
-Log Out
+Sign UpLog In
 
 1. Discover APIs
 2. /
@@ -18,14 +18,6 @@ Log Out
 ###### Customer To Business Register URL
 
 By Safaricom
-
-Use API
-
-Get Started in 3 easy steps
-
-![simulator-progress](../images/CustomerToBusinessRegisterURL_img_2.svg)
-
-Open Simulator
 
 ###### DOCUMENTATION
 
@@ -43,7 +35,7 @@ Copyright@Safaricom PLC 2026
 
 Ask Daraja about anything 😊
 
-![chatbot icon](../images/CustomerToBusinessRegisterURL_img_3.svg)
+![chatbot icon](../images/CustomerToBusinessRegisterURL_img_2.svg)
 
 Logout of Daraja?
 

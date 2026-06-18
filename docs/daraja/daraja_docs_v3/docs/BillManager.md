@@ -7,7 +7,7 @@
 
 HomeAPIsDashboardMarketplaceFAQsMiniApps
 
-Log Out
+Sign UpLog In
 
 1. Discover APIs
 2. /
@@ -20,14 +20,6 @@ Log Out
 By Safaricom
 
 Gives the business and customers a one-stop end-to-end platform to send, receive, pay and reconcile all payments.
-
-Use API
-
-Get Started in 3 easy steps
-
-![simulator-progress](../images/BillManager_img_2.svg)
-
-Open Simulator
 
 API DocumentationError
 
@@ -701,7 +693,7 @@ Copyright@Safaricom PLC 2026
 
 Ask Daraja about anything 😊
 
-![chatbot icon](../images/BillManager_img_3.svg)
+![chatbot icon](../images/BillManager_img_2.svg)
 
 Logout of Daraja?
 

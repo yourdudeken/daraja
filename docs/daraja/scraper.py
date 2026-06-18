@@ -7,7 +7,7 @@ including all API endpoints, images, and metadata.
 
 Features:
 - Automated authentication with session persistence
-- Complete documentation scraping for 22+ APIs
+- Complete documentation scraping for 23+ APIs
 - Image downloading with local referencing
 - Markdown conversion with clean formatting
 - Structured data index generation
@@ -66,12 +66,14 @@ URLS = [
     "https://developer.safaricom.co.ke/apis/B2CAccountTopUp",
     "https://developer.safaricom.co.ke/apis/MpesaRatiba",
     "https://developer.safaricom.co.ke/apis/IotSimManagement",
+    "https://developer.safaricom.co.ke/apis/LipaNaBonga",
 ]
 
 
 async def download_image(page, img_url, local_filename):
     """
     Downloads image using the browser context to share cookies and authentication.
+    Falls back to urllib with extracted cookies if Playwright request fails.
 
     Args:
         page: Playwright page object with authentication context
@@ -81,19 +83,59 @@ async def download_image(page, img_url, local_filename):
     Returns:
         bool: True if download successful, False otherwise
     """
-    try:
-        # If it's a base64 string, save directly
-        if img_url.startswith("data:image"):
-            header, encoded = img_url.split(",", 1)
-            data = base64.b64decode(encoded)
-            with open(local_filename, "wb") as f:
-                f.write(data)
-            return True
+    import http.cookiejar as cookiejar
+    import urllib.request as urlreq
 
-        # Use Playwright's API request context to fetch with current cookies
+    # If it's a base64 string, save directly
+    if img_url.startswith("data:image"):
+        header, encoded = img_url.split(",", 1)
+        data = base64.b64decode(encoded)
+        with open(local_filename, "wb") as f:
+            f.write(data)
+        return True
+
+    # Try 1: Playwright API request context (shares page cookies)
+    try:
         response = await page.request.get(img_url)
         if response.status == 200:
             data = await response.body()
+            with open(local_filename, "wb") as f:
+                f.write(data)
+            return True
+    except Exception:
+        pass
+
+    # Try 2: urllib with cookies extracted from browser context
+    try:
+        cookies = await page.context.cookies()
+        cj = cookiejar.CookieJar()
+        for c in cookies:
+            ck = cookiejar.Cookie(
+                version=0,
+                name=c["name"],
+                value=c["value"],
+                port=None,
+                port_specified=False,
+                domain=c["domain"],
+                domain_specified=bool(c["domain"]),
+                domain_initial_dot=c["domain"].startswith("."),
+                path=c.get("path", "/"),
+                path_specified=True,
+                secure=c.get("secure", False),
+                expires=c.get("expires", None),
+                discard=False,
+                comment=None,
+                comment_url=None,
+                rest={"HttpOnly": c.get("httpOnly", False)},
+                rfc2109=False,
+            )
+            cj.set_cookie(ck)
+        opener = urlreq.build_opener(urlreq.HTTPCookieProcessor(cj))
+        opener.addheaders = [
+            ("User-Agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36"),
+        ]
+        with opener.open(img_url, timeout=15) as resp:
+            data = resp.read()
             with open(local_filename, "wb") as f:
                 f.write(data)
             return True
