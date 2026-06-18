@@ -4,6 +4,7 @@ build/
 .docusaurus/
 .rs
 __pycache__/
+.ruff_cache
 .pytest_cache
 *.pyc
 *.pyo

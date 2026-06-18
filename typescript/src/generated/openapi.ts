@@ -294,54 +294,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/mpesa/b2b/v1/paymentrequest": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Initiate B2B Payment
-         * @description Make payments from business to business
-         */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: components["requestBodies"]["B2B"];
-            responses: {
-                /** @description B2B payment initiated */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["B2BResponse"];
-                    };
-                };
-                /** @description Bad request */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["MpesaErrorResponse"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/mpesa/reversal/v1/request": {
         parameters: {
             query?: never;
@@ -773,48 +725,6 @@ export interface components {
                 };
             };
         };
-        B2BRequest: {
-            /** @description M-Pesa API operator username */
-            Initiator: string;
-            /** @description Encrypted password of the M-Pesa API operator */
-            SecurityCredential: string;
-            /** @enum {string} */
-            CommandID: "BusinessPayBill" | "BusinessBuyGoods" | "MerchantToMerchantTransfer" | "MerchantTransferFromMerchantToWorking" | "MerchantServicesMMFAccountBalance" | "AgencyFloatAdvance";
-            /**
-             * @description Type of shortcode (4 only)
-             * @default 4
-             */
-            SenderIdentifierType: number;
-            /**
-             * @description Type of shortcode (4 only)
-             * @default 4
-             */
-            RecieverIdentifierType: number;
-            Amount: number;
-            /** @description Shortcode of the organization deducting money */
-            PartyA: number;
-            /** @description Shortcode to which money will be moved */
-            PartyB: number;
-            /**
-             * @description Optional consumer mobile number
-             * @example 254700000000
-             */
-            Requester?: number;
-            /** @description Account number for payment */
-            AccountReference?: string;
-            Remarks: string;
-            /** Format: uri */
-            QueueTimeOutURL: string;
-            /** Format: uri */
-            ResultURL: string;
-            Occassion?: string;
-        };
-        B2BResponse: {
-            OriginatorConversationID?: string;
-            ConversationID?: string;
-            ResponseCode?: string;
-            ResponseDescription?: string;
-        };
         ReversalRequest: {
             Initiator: string;
             SecurityCredential: string;
@@ -988,11 +898,6 @@ export interface components {
         B2C: {
             content: {
                 "application/json": components["schemas"]["B2CRequest"];
-            };
-        };
-        B2B: {
-            content: {
-                "application/json": components["schemas"]["B2BRequest"];
             };
         };
         Reversal: {

@@ -425,78 +425,8 @@ components:
                       type: string
 
     # ============================================================
-    # B2B
+    # B2B — Specific APIs have dedicated schemas per CommandID
     # ============================================================
-    B2BRequest:
-      type: object
-      required:
-        - Initiator
-        - SecurityCredential
-        - CommandID
-        - Amount
-        - PartyA
-        - PartyB
-        - Remarks
-        - QueueTimeOutURL
-        - ResultURL
-      properties:
-        Initiator:
-          type: string
-          description: M-Pesa API operator username
-        SecurityCredential:
-          type: string
-          description: Encrypted password of the M-Pesa API operator
-        CommandID:
-          type: string
-          enum: [BusinessPayBill, BusinessBuyGoods, MerchantToMerchantTransfer, MerchantTransferFromMerchantToWorking, MerchantServicesMMFAccountBalance, AgencyFloatAdvance]
-        SenderIdentifierType:
-          type: integer
-          default: 4
-          description: Type of shortcode (4 only)
-        RecieverIdentifierType:
-          type: integer
-          default: 4
-          description: Type of shortcode (4 only)
-        Amount:
-          type: integer
-        PartyA:
-          type: integer
-          description: Shortcode of the organization deducting money
-        PartyB:
-          type: integer
-          description: Shortcode to which money will be moved
-        Requester:
-          type: integer
-          description: Optional consumer mobile number
-          example: 254700000000
-        AccountReference:
-          type: string
-          maxLength: 13
-          description: Account number for payment
-        Remarks:
-          type: string
-          maxLength: 100
-        QueueTimeOutURL:
-          type: string
-          format: uri
-        ResultURL:
-          type: string
-          format: uri
-        Occassion:
-          type: string
-          maxLength: 100
-
-    B2BResponse:
-      type: object
-      properties:
-        OriginatorConversationID:
-          type: string
-        ConversationID:
-          type: string
-        ResponseCode:
-          type: string
-        ResponseDescription:
-          type: string
 
     # ============================================================
     # REVERSAL
@@ -842,12 +772,6 @@ components:
           schema:
             $ref: '#/components/schemas/B2CRequest'
       required: true
-    B2B:
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/B2BRequest'
-      required: true
     Reversal:
       content:
         application/json:
@@ -1025,32 +949,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/B2CResponse'
-        '400':
-          description: Bad request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/MpesaErrorResponse'
-
-  # ============================================================
-  # B2B
-  # ============================================================
-  /mpesa/b2b/v1/paymentrequest:
-    post:
-      tags: [B2B]
-      summary: Initiate B2B Payment
-      description: Make payments from business to business
-      security:
-        - BearerAuth: []
-      requestBody:
-        $ref: '#/components/requestBodies/B2B'
-      responses:
-        '200':
-          description: B2B payment initiated
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/B2BResponse'
         '400':
           description: Bad request
           content:
