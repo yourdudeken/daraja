@@ -870,13 +870,26 @@ func (c *Client) B2Pochi(ctx context.Context, req types.B2PochiRequest) (*types.
 }
 
 // ---- Lipa na Bonga ----
-func (c *Client) LipaNaBonga(ctx context.Context, req types.LipaNaBongaRequest) (*types.LipaNaBongaResponse, error) {
-	respBody, err := c.doRequest(ctx, "POST", c.endpoints.LipaNaBonga, req)
+func (c *Client) LipaNaBongaCalculate(ctx context.Context, req types.LipaNaBongaCalculateRequest) (*types.LipaNaBongaCalculateResponse, error) {
+	respBody, err := c.doRequest(ctx, "POST", c.endpoints.LipaNaBongaCalculate, req)
 	if err != nil {
 		return nil, err
 	}
 
-	var resp types.LipaNaBongaResponse
+	var resp types.LipaNaBongaCalculateResponse
+	if err := json.Unmarshal(respBody, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func (c *Client) LipaNaBongaRedeem(ctx context.Context, req types.LipaNaBongaRedeemRequest) (*types.LipaNaBongaRedeemResponse, error) {
+	respBody, err := c.doRequest(ctx, "POST", c.endpoints.LipaNaBongaRedeem, req)
+	if err != nil {
+		return nil, err
+	}
+
+	var resp types.LipaNaBongaRedeemResponse
 	if err := json.Unmarshal(respBody, &resp); err != nil {
 		return nil, err
 	}

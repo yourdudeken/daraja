@@ -601,21 +601,36 @@ class B2PochiResponse(BaseModel):
     ResponseDescription: str
 
 
-class LipaNaBongaRequest(BaseModel):
-    PhoneNumber: str
-    Amount: int
-    TransactionReference: str
-    Remarks: str
+class LipaNaBongaCalculateRequest(BaseModel):
+    Points: str
 
 
-class LipaNaBongaResponse(BaseModel):
-    ResponseCode: str
-    ResponseDescription: str
-    TransactionID: str
-    PhoneNumber: str
-    PointsRedeemed: str
-    CreditAmount: str
-    NewBalance: str
+class LipaNaBongaCalculateResponse(BaseModel):
+    requestRefId: str
+    responseCode: int
+    responseMessage: str
+    customerMessage: str
+    timestamp: str
+    amount: str
+    points: str
+    rate: str
+
+
+class LipaNaBongaRedeemRequest(BaseModel):
+    msisdn: str
+    amount: int
+    bongaPoints: int
+    conversionRate: float
+    shortCode: str
+    accountNumber: str
+
+
+class LipaNaBongaRedeemResponse(BaseModel):
+    requestRefId: str
+    responseCode: int
+    responseMessage: str
+    customerMessage: str
+    timestamp: str
 
 
 class PullTransactionsRegisterRequest(BaseModel):
@@ -883,8 +898,10 @@ __all__ = [
     "IoTSIMResponse",
     "B2PochiRequest",
     "B2PochiResponse",
-    "LipaNaBongaRequest",
-    "LipaNaBongaResponse",
+    "LipaNaBongaCalculateRequest",
+    "LipaNaBongaCalculateResponse",
+    "LipaNaBongaRedeemRequest",
+    "LipaNaBongaRedeemResponse",
     "PullTransactionsRegisterRequest",
     "PullTransactionsRegisterResponse",
     "PullTransactionItem",

@@ -132,7 +132,8 @@ var endpoints = map[string]string{
 	"QUERY_ORG_INFO":              "/mpesa/queryorginfo/v1/query",
 	"IMSI":                        "/imsi/v1/checkATI",
 	"B2POCHI":                     "/mpesa/b2pochi/v1/paymentrequest",
-	"LIPA_NA_BONGA":               "/mpesa/lipanabonga/v1/redeem",
+	"LIPA_NA_BONGA_CALCULATE":     "/v1/lipa/na/bonga/calculate-points",
+	"LIPA_NA_BONGA_REDEEM":        "/v1/lipa/na/bonga/redeem-paybill",
 	"PULL_TRANSACTIONS_REGISTER":  "/pulltransactions/v1/register",
 	"PULL_TRANSACTIONS_QUERY":     "/pulltransactions/v1/query",
 	"SWAP":                        "/imsi/v2/checkATI",
@@ -177,7 +178,8 @@ type environmentEndpoints struct {
 	QueryOrgInfo              string
 	IMSI                      string
 	B2Pochi                   string
-	LipaNaBonga               string
+	LipaNaBongaCalculate      string
+	LipaNaBongaRedeem         string
 	PullTransactionsRegister  string
 	PullTransactionsQuery     string
 	Swap                      string
@@ -228,7 +230,8 @@ func getEndpoints(env types.Environment) environmentEndpoints {
 		QueryOrgInfo:              base + endpoints["QUERY_ORG_INFO"],
 		IMSI:                      base + endpoints["IMSI"],
 		B2Pochi:                   base + endpoints["B2POCHI"],
-		LipaNaBonga:               base + endpoints["LIPA_NA_BONGA"],
+		LipaNaBongaCalculate:      base + endpoints["LIPA_NA_BONGA_CALCULATE"],
+		LipaNaBongaRedeem:         base + endpoints["LIPA_NA_BONGA_REDEEM"],
 		PullTransactionsRegister:  base + endpoints["PULL_TRANSACTIONS_REGISTER"],
 		PullTransactionsQuery:     base + endpoints["PULL_TRANSACTIONS_QUERY"],
 		Swap:                      base + endpoints["SWAP"],

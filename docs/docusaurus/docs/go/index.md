@@ -71,7 +71,8 @@ func main() {
 | `BusinessBuyGoods()` | Receive till payment |
 | `BusinessPayBill()` | Receive bill payment |
 | `B2Pochi()` | Send to Pochi wallet |
-| `LipaNaBonga()` | Redeem Bonga points |
+| `LipaNaBongaCalculate()` | Calculate Bonga points value |
+| `LipaNaBongaRedeem()` | Redeem Bonga points |
 | `PullTransactions()` | Retrieve transaction history |
 | `QueryOrgInfo()` | Query organization details |
 | `IMSI()` | Query subscriber IMSI |

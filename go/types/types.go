@@ -686,21 +686,36 @@ type B2PochiResponse struct {
 }
 
 // ---- Lipa na Bonga ----
-type LipaNaBongaRequest struct {
-	PhoneNumber          string `json:"PhoneNumber"`
-	Amount               int    `json:"Amount"`
-	TransactionReference string `json:"TransactionReference"`
-	Remarks              string `json:"Remarks"`
+type LipaNaBongaCalculateRequest struct {
+	Points string `json:"points"`
 }
 
-type LipaNaBongaResponse struct {
-	ResponseCode        string `json:"ResponseCode"`
-	ResponseDescription string `json:"ResponseDescription"`
-	TransactionID       string `json:"TransactionID"`
-	PhoneNumber         string `json:"PhoneNumber"`
-	PointsRedeemed      string `json:"PointsRedeemed"`
-	CreditAmount        string `json:"CreditAmount"`
-	NewBalance          string `json:"NewBalance"`
+type LipaNaBongaCalculateResponse struct {
+	RequestRefID    string `json:"requestRefId"`
+	ResponseCode    int    `json:"responseCode"`
+	ResponseMessage string `json:"responseMessage"`
+	CustomerMessage string `json:"customerMessage"`
+	Timestamp       string `json:"timestamp"`
+	Amount          string `json:"amount"`
+	Points          string `json:"points"`
+	Rate            string `json:"rate"`
+}
+
+type LipaNaBongaRedeemRequest struct {
+	Msisdn         string  `json:"msisdn"`
+	Amount         int     `json:"amount"`
+	BongaPoints    int     `json:"bongaPoints"`
+	ConversionRate float64 `json:"conversionRate"`
+	ShortCode      string  `json:"shortCode"`
+	AccountNumber  string  `json:"accountNumber"`
+}
+
+type LipaNaBongaRedeemResponse struct {
+	RequestRefID    string `json:"requestRefId"`
+	ResponseCode    int    `json:"responseCode"`
+	ResponseMessage string `json:"responseMessage"`
+	CustomerMessage string `json:"customerMessage"`
+	Timestamp       string `json:"timestamp"`
 }
 
 // ---- Pull Transactions ----

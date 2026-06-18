@@ -746,21 +746,36 @@ export interface B2PochiResponse {
 // ============================================================
 // LIPA NA BONGA
 // ============================================================
-export interface LipaNaBongaRequest {
-  PhoneNumber: string;
-  Amount: number;
-  TransactionReference: string;
-  Remarks: string;
+export interface LipaNaBongaCalculateRequest {
+  Points: string;
 }
 
-export interface LipaNaBongaResponse {
-  ResponseCode: string;
-  ResponseDescription: string;
-  TransactionID: string;
-  PhoneNumber: string;
-  PointsRedeemed: string;
-  CreditAmount: string;
-  NewBalance: string;
+export interface LipaNaBongaCalculateResponse {
+  requestRefId: string;
+  responseCode: number;
+  responseMessage: string;
+  customerMessage: string;
+  timestamp: string;
+  amount: string;
+  points: string;
+  rate: string;
+}
+
+export interface LipaNaBongaRedeemRequest {
+  msisdn: string;
+  amount: number;
+  bongaPoints: number;
+  conversionRate: number;
+  shortCode: string;
+  accountNumber: string;
+}
+
+export interface LipaNaBongaRedeemResponse {
+  requestRefId: string;
+  responseCode: number;
+  responseMessage: string;
+  customerMessage: string;
+  timestamp: string;
 }
 
 // ============================================================

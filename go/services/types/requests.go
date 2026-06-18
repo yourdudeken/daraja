@@ -226,11 +226,17 @@ type B2PochiInput struct {
 	ResultURL          string
 }
 
-type LipaNaBongaInput struct {
-	PhoneNumber          string
-	Amount               int
-	TransactionReference string
-	Remarks              string
+type LipaNaBongaCalculateInput struct {
+	Points string
+}
+
+type LipaNaBongaRedeemInput struct {
+	Msisdn         string
+	Amount         int
+	BongaPoints    int
+	ConversionRate float64
+	ShortCode      string
+	AccountNumber  string
 }
 
 type PullTransactionsRegisterInput struct {

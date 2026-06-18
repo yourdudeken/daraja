@@ -89,7 +89,7 @@ Interactive auth flow:
 | 20 | `B2CAccountTopUp` | B2C account top-up |
 | 21 | `MpesaRatiba` | Salary disbursement |
 | 22 | `IotSimManagement` | IoT SIM management |
-| 23 | `LipaNaBonga` | The Bonga scheme is a Safaricom loyalty program |
+| 23 | `LipaNaBonga` | Redeem Bonga points |
 
 URLs defined in `URLS` list in `scraper.py`.
 

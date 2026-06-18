@@ -54,7 +54,7 @@ console.log(response.CheckoutRequestID);
 | `dynamicQR` | `DynamicQRService` | Dynamic QR generation |
 | `businessGoods` | `BusinessGoodsService` | Buy goods & pay bill |
 | `b2Pochi` | `B2PochiService` | B2Pochi payments |
-| `lipaNaBonga` | `LipaNaBongaService` | Bonga points redemption |
+| `lipaNaBonga` | `LipaNaBongaService` | Bonga points calculate &amp; redeem |
 | `pullTransactions` | `PullTransactionsService` | Transaction history |
 | `queryOrgInfo` | `QueryOrgInfoService` | Organization details |
 | `imsi` | `IMSIService` | Subscriber IMSI query |

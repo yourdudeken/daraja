@@ -38,8 +38,10 @@ from mpesa.models import (
     IMSIResponse,
     IoTSIMRequest,
     IoTSIMResponse,
-    LipaNaBongaRequest,
-    LipaNaBongaResponse,
+    LipaNaBongaCalculateRequest,
+    LipaNaBongaCalculateResponse,
+    LipaNaBongaRedeemRequest,
+    LipaNaBongaRedeemResponse,
     MpesaConfig,
     PullTransactionsRegisterRequest,
     PullTransactionsRegisterResponse,
@@ -570,11 +572,21 @@ class Mpesa:
         result = self._post("B2POCHI", request.model_dump())
         return B2PochiResponse(**result)
 
-    def lipa_na_bonga(self, request: LipaNaBongaRequest | dict) -> LipaNaBongaResponse:
+    def lipa_na_bonga_calculate(
+        self, request: LipaNaBongaCalculateRequest | dict
+    ) -> LipaNaBongaCalculateResponse:
         if isinstance(request, dict):
-            request = LipaNaBongaRequest(**request)
-        result = self._post("LIPA_NA_BONGA", request.model_dump())
-        return LipaNaBongaResponse(**result)
+            request = LipaNaBongaCalculateRequest(**request)
+        result = self._post("LIPA_NA_BONGA_CALCULATE", request.model_dump())
+        return LipaNaBongaCalculateResponse(**result)
+
+    def lipa_na_bonga_redeem(
+        self, request: LipaNaBongaRedeemRequest | dict
+    ) -> LipaNaBongaRedeemResponse:
+        if isinstance(request, dict):
+            request = LipaNaBongaRedeemRequest(**request)
+        result = self._post("LIPA_NA_BONGA_REDEEM", request.model_dump())
+        return LipaNaBongaRedeemResponse(**result)
 
     def pull_transactions_register(
         self, request: PullTransactionsRegisterRequest | dict

@@ -52,19 +52,29 @@ const response = await mpesa.b2Pochi.send({
 
 ## Lipa na Bonga
 
-Redeem Bonga points for customer:
+The Bonga scheme is a Safaricom loyalty program. Two operations available:
+
+### Calculate Points
+
+Get the KES equivalent of Bonga points:
+
+```typescript
+const response = await mpesa.lipaNaBonga.calculate({ Points: "40" });
+console.log(response.amount); // "8" KES
+```
+
+### Redeem Points
+
+Accept payment with Bonga Points via PayBill:
 
 ```typescript
 const response = await mpesa.lipaNaBonga.redeem({
-  Initiator: 'testapi',
-  SecurityCredential: '...',
-  CommandID: 'LipaNaBonga',
-  Amount: 100,
-  PartyA: 174379,
-  PartyB: 254708374149,
-  Remarks: 'Bonga redemption',
-  QueueTimeOutURL: 'https://example.com/queue',
-  ResultURL: 'https://example.com/result',
+  msisdn: "254708374149",
+  amount: 50,
+  bongaPoints: 20,
+  conversionRate: 0.2,
+  shortCode: "888880",
+  accountNumber: "test",
 });
 ```
 

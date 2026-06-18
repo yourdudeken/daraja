@@ -150,14 +150,23 @@ type B2PochiResult struct {
 	ResponseDescription      string
 }
 
-type LipaNaBongaResult struct {
-	ResponseCode        string
-	ResponseDescription string
-	TransactionID       string
-	PhoneNumber         string
-	PointsRedeemed      string
-	CreditAmount        string
-	NewBalance          string
+type LipaNaBongaCalculateResult struct {
+	RequestRefID    string
+	ResponseCode    int
+	ResponseMessage string
+	CustomerMessage string
+	Timestamp       string
+	Amount          string
+	Points          string
+	Rate            string
+}
+
+type LipaNaBongaRedeemResult struct {
+	RequestRefID    string
+	ResponseCode    int
+	ResponseMessage string
+	CustomerMessage string
+	Timestamp       string
 }
 
 type PullTransactionsRegisterResult struct {

@@ -52,19 +52,29 @@ response = client.b2pochi({
 
 ## Lipa na Bonga
 
-Redeem Bonga points:
+The Bonga scheme is a Safaricom loyalty program. Two operations available:
+
+### Calculate Points
+
+Get the KES equivalent of Bonga points:
 
 ```python
-response = client.lipa_na_bonga({
-    "Initiator": "testapi",
-    "SecurityCredential": "...",
-    "CommandID": "LipaNaBonga",
-    "Amount": 100,
-    "PartyA": 174379,
-    "PartyB": 254708374149,
-    "Remarks": "Bonga redemption",
-    "QueueTimeOutURL": "https://example.com/queue",
-    "ResultURL": "https://example.com/result",
+response = client.lipa_na_bonga_calculate({"Points": "40"})
+print(response.amount)  # "8" KES
+```
+
+### Redeem Points
+
+Accept payment with Bonga Points via PayBill:
+
+```python
+response = client.lipa_na_bonga_redeem({
+    "msisdn": "254708374149",
+    "amount": 50,
+    "bongaPoints": 20,
+    "conversionRate": 0.2,
+    "shortCode": "888880",
+    "accountNumber": "test",
 })
 ```
 

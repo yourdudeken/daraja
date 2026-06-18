@@ -51,7 +51,7 @@ All methods return typed responses.
 | `mpesa.businessGoods` | `buyGoods()`, `payBill()` |
 | `mpesa.queryOrgInfo` | `query()` |
 | `mpesa.b2Pochi` | `send()` |
-| `mpesa.lipaNaBonga` | `redeem()` |
+| `mpesa.lipaNaBonga` | `calculate()`, `redeem()` |
 | `mpesa.pullTransactions` | `register()`, `query()` |
 | `mpesa.imsi` | `query()` |
 | `mpesa.swap` | `query()` |

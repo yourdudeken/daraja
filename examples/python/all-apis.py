@@ -189,21 +189,26 @@ def b2pochi():
     return response
 
 
-def lipa_na_bonga():
-    response = client.lipa_na_bonga(
+def lipa_na_bonga_calculate():
+    response = client.lipa_na_bonga_calculate({"Points": "40"})
+    print(
+        f"Lipa na Bonga calculate: {response.amount} KES for {response.points} points"
+    )
+    return response
+
+
+def lipa_na_bonga_redeem():
+    response = client.lipa_na_bonga_redeem(
         {
-            "Initiator": os.environ["MPESA_INITIATOR_NAME"],
-            "SecurityCredential": os.environ["MPESA_SECURITY_CREDENTIAL"],
-            "CommandID": "LipaNaBonga",
-            "Amount": 100,
-            "PartyA": SHORTCODE,
-            "PartyB": 254708374149,
-            "Remarks": "Bonga redemption",
-            "QueueTimeOutURL": "https://your-domain.com/api/bonga/queue",
-            "ResultURL": "https://your-domain.com/api/bonga/result",
+            "msisdn": "254708374149",
+            "amount": 50,
+            "bongaPoints": 20,
+            "conversionRate": 0.2,
+            "shortCode": "888880",
+            "accountNumber": "test",
         }
     )
-    print(f"Lipa na Bonga: {response.OriginatorConversationID}")
+    print(f"Lipa na Bonga redeem: {response.requestRefId}")
     return response
 
 

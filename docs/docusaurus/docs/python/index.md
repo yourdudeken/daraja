@@ -55,7 +55,8 @@ print(f"Checkout ID: {response.CheckoutRequestID}")
 | `business_buy_goods()` | Receive till payment |
 | `business_pay_bill()` | Receive bill payment |
 | `b2pochi()` | Send to Pochi wallet |
-| `lipa_na_bonga()` | Redeem Bonga points |
+| `lipa_na_bonga_calculate()` | Calculate Bonga points value |
+| `lipa_na_bonga_redeem()` | Redeem Bonga points |
 | `pull_transactions()` | Retrieve transaction history |
 | `query_org_info()` | Query organization details |
 | `imsi_query()` | Query subscriber IMSI |

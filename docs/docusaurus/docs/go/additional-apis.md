@@ -52,19 +52,31 @@ resp, err := mpesa.B2Pochi(ctx, types.B2PochiRequest{
 
 ## Lipa na Bonga
 
-Redeem Bonga points:
+The Bonga scheme is a Safaricom loyalty program. Two operations available:
+
+### Calculate Points
+
+Get the KES equivalent of Bonga points:
 
 ```go
-resp, err := mpesa.LipaNaBonga(ctx, types.LipaNaBongaRequest{
-    Initiator:          os.Getenv("MPESA_INITIATOR_NAME"),
-    SecurityCredential: os.Getenv("MPESA_SECURITY_CREDENTIAL"),
-    CommandID:          "LipaNaBonga",
-    Amount:             100,
-    PartyA:             174379,
-    PartyB:             254708374149,
-    Remarks:            "Bonga redemption",
-    QueueTimeOutURL:    "https://example.com/queue",
-    ResultURL:          "https://example.com/result",
+resp, err := mpesa.LipaNaBongaCalculate(ctx, types.LipaNaBongaCalculateRequest{
+    Points: "40",
+})
+fmt.Printf("%s KES\n", resp.Amount)
+```
+
+### Redeem Points
+
+Accept payment with Bonga Points via PayBill:
+
+```go
+resp, err := mpesa.LipaNaBongaRedeem(ctx, types.LipaNaBongaRedeemRequest{
+    Msisdn:         "254708374149",
+    Amount:         50,
+    BongaPoints:    20,
+    ConversionRate: 0.2,
+    ShortCode:      "888880",
+    AccountNumber:  "test",
 })
 ```
 

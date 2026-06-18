@@ -168,17 +168,19 @@ export async function b2Pochi() {
   return response;
 }
 
-export async function lipaNaBonga() {
+export async function lipaNaBongaCalculate() {
+  const response = await mpesa.lipaNaBonga.calculate({ Points: "40" });
+  return response;
+}
+
+export async function lipaNaBongaRedeem() {
   const response = await mpesa.lipaNaBonga.redeem({
-    Initiator: process.env.MPESA_INITIATOR_NAME!,
-    SecurityCredential: process.env.MPESA_SECURITY_CREDENTIAL!,
-    CommandID: "LipaNaBonga",
-    Amount: 100,
-    PartyA: resolveShortcode(),
-    PartyB: 254708374149,
-    Remarks: "Bonga redemption",
-    QueueTimeOutURL: "https://your-domain.com/api/bonga/queue",
-    ResultURL: "https://your-domain.com/api/bonga/result",
+    msisdn: "254708374149",
+    amount: 50,
+    bongaPoints: 20,
+    conversionRate: 0.2,
+    shortCode: "888880",
+    accountNumber: "test",
   });
   return response;
 }

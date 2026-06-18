@@ -44,8 +44,10 @@ from mpesa.models import (
     IoTSIMResponse,
     IoTSuspendUnsuspendRequest,
     IoTAllMessagesRequest,
-    LipaNaBongaRequest,
-    LipaNaBongaResponse,
+    LipaNaBongaCalculateRequest,
+    LipaNaBongaCalculateResponse,
+    LipaNaBongaRedeemRequest,
+    LipaNaBongaRedeemResponse,
     MpesaConfig,
     PullTransactionsRegisterRequest,
     PullTransactionsRegisterResponse,
@@ -318,11 +320,19 @@ class LipaNaBongaService:
     def __init__(self, post: PostFn) -> None:
         self._post = post
 
-    def redeem(self, request: LipaNaBongaRequest | dict) -> LipaNaBongaResponse:
+    def calculate(
+        self, request: LipaNaBongaCalculateRequest | dict
+    ) -> LipaNaBongaCalculateResponse:
         if isinstance(request, dict):
-            request = LipaNaBongaRequest(**request)
-        result = self._post("LIPA_NA_BONGA", request.model_dump())
-        return LipaNaBongaResponse(**result)
+            request = LipaNaBongaCalculateRequest(**request)
+        result = self._post("LIPA_NA_BONGA_CALCULATE", request.model_dump())
+        return LipaNaBongaCalculateResponse(**result)
+
+    def redeem(self, request: LipaNaBongaRedeemRequest | dict) -> LipaNaBongaRedeemResponse:
+        if isinstance(request, dict):
+            request = LipaNaBongaRedeemRequest(**request)
+        result = self._post("LIPA_NA_BONGA_REDEEM", request.model_dump())
+        return LipaNaBongaRedeemResponse(**result)
 
 
 class PullTransactionsService:

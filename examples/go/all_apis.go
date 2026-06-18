@@ -221,24 +221,33 @@ func b2Pochi() {
 	fmt.Printf("B2Pochi: %s\n", resp.OriginatorConversationID)
 }
 
-func lipaNaBonga() {
+func lipaNaBongaCalculate() {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	resp, err := mpesa.LipaNaBonga(ctx, types.LipaNaBongaRequest{
-		Initiator:          os.Getenv("MPESA_INITIATOR_NAME"),
-		SecurityCredential: os.Getenv("MPESA_SECURITY_CREDENTIAL"),
-		CommandID:          "LipaNaBonga",
-		Amount:             100,
-		PartyA:             174379,
-		PartyB:             254708374149,
-		Remarks:            "Bonga redemption",
-		QueueTimeOutURL:    "https://your-domain.com/api/bonga/queue",
-		ResultURL:          "https://your-domain.com/api/bonga/result",
+	resp, err := mpesa.LipaNaBongaCalculate(ctx, types.LipaNaBongaCalculateRequest{
+		Points: "40",
 	})
 	if err != nil {
-		log.Fatalf("Lipa na Bonga failed: %v", err)
+		log.Fatalf("Lipa na Bonga calculate failed: %v", err)
 	}
-	fmt.Printf("Lipa na Bonga: %s\n", resp.OriginatorConversationID)
+	fmt.Printf("Lipa na Bonga calculate: %s KES for %s points\n", resp.Amount, resp.Points)
+}
+
+func lipaNaBongaRedeem() {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	resp, err := mpesa.LipaNaBongaRedeem(ctx, types.LipaNaBongaRedeemRequest{
+		Msisdn:         "254708374149",
+		Amount:         50,
+		BongaPoints:    20,
+		ConversionRate: 0.2,
+		ShortCode:      "888880",
+		AccountNumber:  "test",
+	})
+	if err != nil {
+		log.Fatalf("Lipa na Bonga redeem failed: %v", err)
+	}
+	fmt.Printf("Lipa na Bonga redeem: %s\n", resp.RequestRefID)
 }
 
 func pullTransactions() {

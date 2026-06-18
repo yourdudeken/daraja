@@ -520,25 +520,45 @@ func (s *Service) B2Pochi(ctx context.Context, input svctypes.B2PochiInput) (*sv
 	}, nil
 }
 
-func (s *Service) LipaNaBonga(ctx context.Context, input svctypes.LipaNaBongaInput) (*svctypes.LipaNaBongaResult, error) {
-	req := types.LipaNaBongaRequest{
-		PhoneNumber:          input.PhoneNumber,
-		Amount:               input.Amount,
-		TransactionReference: input.TransactionReference,
-		Remarks:              input.Remarks,
+func (s *Service) LipaNaBongaCalculate(ctx context.Context, input svctypes.LipaNaBongaCalculateInput) (*svctypes.LipaNaBongaCalculateResult, error) {
+	req := types.LipaNaBongaCalculateRequest{
+		Points: input.Points,
 	}
-	resp, err := s.client.LipaNaBonga(ctx, req)
+	resp, err := s.client.LipaNaBongaCalculate(ctx, req)
 	if err != nil {
 		return nil, err
 	}
-	return &svctypes.LipaNaBongaResult{
-		ResponseCode:        resp.ResponseCode,
-		ResponseDescription: resp.ResponseDescription,
-		TransactionID:       resp.TransactionID,
-		PhoneNumber:         resp.PhoneNumber,
-		PointsRedeemed:      resp.PointsRedeemed,
-		CreditAmount:        resp.CreditAmount,
-		NewBalance:          resp.NewBalance,
+	return &svctypes.LipaNaBongaCalculateResult{
+		RequestRefID:    resp.RequestRefID,
+		ResponseCode:    resp.ResponseCode,
+		ResponseMessage: resp.ResponseMessage,
+		CustomerMessage: resp.CustomerMessage,
+		Timestamp:       resp.Timestamp,
+		Amount:          resp.Amount,
+		Points:          resp.Points,
+		Rate:            resp.Rate,
+	}, nil
+}
+
+func (s *Service) LipaNaBongaRedeem(ctx context.Context, input svctypes.LipaNaBongaRedeemInput) (*svctypes.LipaNaBongaRedeemResult, error) {
+	req := types.LipaNaBongaRedeemRequest{
+		Msisdn:         input.Msisdn,
+		Amount:         input.Amount,
+		BongaPoints:    input.BongaPoints,
+		ConversionRate: input.ConversionRate,
+		ShortCode:      input.ShortCode,
+		AccountNumber:  input.AccountNumber,
+	}
+	resp, err := s.client.LipaNaBongaRedeem(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return &svctypes.LipaNaBongaRedeemResult{
+		RequestRefID:    resp.RequestRefID,
+		ResponseCode:    resp.ResponseCode,
+		ResponseMessage: resp.ResponseMessage,
+		CustomerMessage: resp.CustomerMessage,
+		Timestamp:       resp.Timestamp,
 	}, nil
 }
 

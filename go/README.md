@@ -70,7 +70,8 @@ All methods accept `context.Context` and return typed responses.
 | `AccountTopUp()` | B2C Account Top Up via B2B |
 | `TaxRemittance()` | Remit taxes to KRA (`/mpesa/b2b/v1/remittax`) |
 | `B2Pochi()` | Send to Pochi wallet |
-| `LipaNaBonga()` | Redeem Bonga points |
+| `LipaNaBongaCalculate()` | Calculate Bonga points value |
+| `LipaNaBongaRedeem()` | Redeem Bonga points |
 | `PullTransactionsRegister()` | Register for pull notifications |
 | `PullTransactionsQuery()` | Query pull transactions |
 | `QueryOrgInfo()` | Query organization details |
