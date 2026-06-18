@@ -29,17 +29,17 @@ The Daraja SDK implements 20 API services across three languages, but **8 of 22 
 | 11 | Query Org Info | `POST /mpesa/queryorginfo/v1/query` | `POST /mpesa/queryorginfo/v1/query` | ✅ Correct |
 | 12 | B2Pochi | `POST /mpesa/b2pochi/v1/paymentrequest` | `POST /mpesa/b2pochi/v1/paymentrequest` | ✅ Correct |
 | 13 | Lipa Na Bonga | Not documented in doc set | `POST /mpesa/lipanabonga/v1/redeem` | ⚠️ No docs to verify |
-| 14 | IMSI | `POST /imsi/v1/checkATI` | `POST /mpesa/imsi/v1/query` | ❌ Wrong path |
+| 14 | IMSI | `POST /imsi/v1/checkATI` | `POST /imsi/v1/checkATI` | ✅ Fixed |
 | 15 | Pull Transactions | `POST /pulltransactions/v1/register` + GET query | `POST /mpesa/pulltransactions/v1/query` | ❌ Wrong path & method |
 | 16 | B2B Express Checkout | `POST /v1/ussdpush/get-msisdn` | `POST /mpesa/b2bexpressckeckout/v1/paymentrequest` | ❌ Wrong path & typo |
 | 17 | Swap | `POST /imsi/v2/checkATI` (SIM swap date check) | `POST /mpesa/swap/v1/transfer` (fund transfer) | ❌ Wrong API entirely |
-| 18 | Bill Manager | `POST /v1/billmanager-invoice/{optin,single-invoicing,bulk-invoicing,...}` (6 sub-APIs) | `POST /mpesa/billmanager/v1/updatebillreference` (single method) | ❌ Wrong path + missing sub-APIs |
-| 19 | B2B Express (Ratiba/Standing Order) | `POST /standingorder/v1/createStandingOrderExternal` | `POST /mpesa/ratiba/v1/process` | ❌ Wrong path |
-| 20 | Tax Remittance | `POST /mpesa/b2b/v1/remittax` | `POST /mpesa/taxremittance/v1/remit` | ❌ Wrong path |
+| 18 | Bill Manager | `POST /v1/billmanager-invoice/{optin,single-invoicing,bulk-invoicing,...}` (7 sub-APIs) | `POST /v1/billmanager-invoice/{optin,single,bulk,...}` (7 methods) | ✅ Fixed |
+| 19 | B2B Express (Ratiba/Standing Order) | `POST /standingorder/v1/createStandingOrderExternal` | `POST /standingorder/v1/createStandingOrderExternal` | ✅ Fixed |
+| 20 | Tax Remittance | `POST /mpesa/b2b/v1/remittax` | `POST /mpesa/b2b/v1/remittax` | ✅ Fixed |
 | 21 | Business Buy Goods | `POST /mpesa/b2b/v1/paymentrequest` (B2B-type req) | `POST /mpesa/c2b/v1/simulate` | ❌ Wrong endpoint |
 | 22 | Business Pay Bill | `POST /mpesa/b2b/v1/paymentrequest` (B2B-type req) | `POST /mpesa/c2b/v1/simulate` | ❌ Wrong endpoint |
-| 23 | B2C Account Top Up | `POST /mpesa/b2b/v1/paymentrequest` (CommandID: BusinessPayToBulk) | Not implemented | ❌ Missing entirely |
-| 24 | IoT SIM Management | `POST /simportal/v1/{13 sub-APIs}` | `POST /mpesa/iot/v1/manage` | ❌ Wrong path + structure |
+| 23 | B2C Account Top Up | `POST /mpesa/b2b/v1/paymentrequest` (CommandID: BusinessPayToBulk) | `POST /mpesa/b2b/v1/paymentrequest` via B2B.topUp() | ✅ Implemented |
+| 24 | IoT SIM Management | `POST /simportal/v1/{13 sub-APIs}` | `POST /simportal/v1/{13 endpoints}` (13 methods) | ✅ Fixed |
 
 ---
 
@@ -49,8 +49,7 @@ The Daraja SDK implements 20 API services across three languages, but **8 of 22 
 
 **Entrypoint:** `Mpesa` class with 20 services as properties, plus `WebhookManager`.
 
-**Missing:**
-- `B2CAccountTopUpService` — B2C Account Top Up (should use `/mpesa/b2b/v1/paymentrequest` with `CommandID: "BusinessPayToBulk"`). TS has `b2c.topUp()` but it routes to `/mpesa/b2c/v3/paymentrequest` instead of the correct B2B endpoint.
+**Missing:** None — all 22+ APIs implemented including B2C Account Top Up via `b2b.topUp()`.
 
 **Service structure:** Clean delegation pattern. Service classes are thin wrappers calling `client.post(endpoint, request)`. No validation in services (delegated to client layer).
 
@@ -58,7 +57,7 @@ The Daraja SDK implements 20 API services across three languages, but **8 of 22 
 
 **Generated types:** Present at `src/generated/openapi.ts`.
 
-**Endpoint definitions:** `src/environment.ts` — all 22 endpoints in `SANDBOX_ENDPOINTS` object. Contains the `B2B_EXPRESS` typo (`b2bexpressckeckout`).
+**Endpoint definitions:** `src/environment.ts` — all 35 endpoint constants (22 original + 13 IoT + 7 Bill Manager - old IOT_MANAGE/BILL_MANAGER removed). Contains the `B2B_EXPRESS` typo (`b2bexpressckeckout`).
 
 ### Python (`python/mpesa/`)
 
@@ -66,13 +65,11 @@ The Daraja SDK implements 20 API services across three languages, but **8 of 22 
 
 **Synchronous client (`Mpesa`):** Full implementation with 23 direct methods + 20 service properties. Correct.
 
-**Async client (`AsyncMpesa`):** **Feature gap** — only implements 10 of 23 methods:
-- ✅ `stk_push`, `stk_query`, `c2b_register_url`, `c2b_simulate`, `b2c`, `b2b`, `reversal`, `transaction_status`, `account_balance`, `dynamic_qr`
-- ❌ Missing: `business_buy_goods`, `business_pay_bill`, `query_org_info`, `imsi_query`, `iot_manage`, `b2pochi`, `lipa_na_bonga`, `pull_transactions`, `swap`, `bill_manager`, `b2b_express`, `ratiba`, `tax_remittance`
+**Async client (`AsyncMpesa`):** **Gap filled** — now implements 27 methods including all previously missing ones.
 
 **Services:** All 20 service classes defined inline in `services/__init__.py`. No separate files per service.
 
-**B2CService:** Missing `top_up()` method. No B2C Account Top Up support.
+**B2CService:** Added `top_up()` method on B2BService. B2CService no longer has incorrect `top_up()`.
 
 **Models:** 57 Pydantic models in `models/__init__.py`. Generated models in `generated/models.py`.
 
@@ -88,8 +85,7 @@ The Daraja SDK implements 20 API services across three languages, but **8 of 22 
 
 **No service abstraction layer:** While `go/services/` directory exists with `service.go` (563 lines) and `types/` subdirectory, the actual API methods are all on `client.Client` directly. The service layer appears to be for advanced usage.
 
-**Missing:**
-- `AccountTopUp()` — B2C Account Top Up not implemented
+**Missing:** None — all APIs implemented including `AccountTopUp()` on client and service.
 
 **Types:** 711 lines in `types/types.go` covering all request/response types. Generated types in `generated/types.go`.
 
@@ -145,10 +141,10 @@ The generic `B2BService.send()` (all languages) at `/mpesa/b2b/v1/paymentrequest
 
 | # | API | Language(s) | Issue | Fix |
 |---|-----|-------------|-------|-----|
-| M1 | B2C Account Top Up routing | TypeScript | `b2c.topUp()` routes to `/mpesa/b2c/v3/paymentrequest` but should route to `/mpesa/b2b/v1/paymentrequest` | Move to B2B service with correct CommandID |
-| M2 | AsyncMpesa missing methods | Python | `AsyncMpesa` missing 13 of 23 methods (business_buy_goods, business_pay_bill, query_org_info, imsi_query, iot_manage, b2pochi, lipa_na_bonga, pull_transactions, swap, bill_manager, b2b_express, ratiba, tax_remittance) | Implement all missing async methods |
-| M3 | Generic B2B API | All | `b2b.send()` uses undocumented generic legacy pattern | Mark deprecated; document specific CommandID-based methods |
-| M4 | No documentation for Lipa Na Bonga | — | Lipa Na Bonga implemented but no docs in repo to verify | Obtain docs or remove/mark as unverified |
+| M1 | B2C Account Top Up routing | TypeScript | `b2c.topUp()` routes to `/mpesa/b2c/v3/paymentrequest` but should route to `/mpesa/b2b/v1/paymentrequest` | ✅ Fixed — moved to B2B service with correct CommandID |
+| M2 | AsyncMpesa missing methods | Python | `AsyncMpesa` missing 13 of 23 methods | ✅ Fixed — 17 missing async methods implemented |
+| M3 | Generic B2B API | All | `b2b.send()` uses undocumented generic legacy pattern | ⬜ Mark deprecated; document specific CommandID-based methods |
+| M4 | No documentation for Lipa Na Bonga | — | Lipa Na Bonga implemented but no docs in repo to verify | ⬜ Obtain docs or remove/mark as unverified |
 
 ### Low
 
@@ -170,21 +166,21 @@ The generic `B2BService.send()` (all languages) at `/mpesa/b2b/v1/paymentrequest
 4. ✅ Business Buy Goods — endpoint changed from C2B to B2B (`/mpesa/b2b/v1/paymentrequest` with CommandID `BusinessBuyGoods`)
 5. ✅ Business Pay Bill — endpoint changed from C2B to B2B (`/mpesa/b2b/v1/paymentrequest` with CommandID `BusinessPayBill`)
 
-### Phase 2 — High (fill gaps and fix wrong paths)
-6. Implement full Bill Manager suite (6 sub-APIs)
-7. Implement IoT SIM Management (13 sub-APIs)
-8. Fix Tax Remittance endpoint
-9. Fix M-Pesa Ratiba endpoint
-10. Implement B2C Account Top Up
-11. Fix IMSI endpoint
+### Phase 2 — High (fill gaps and fix wrong paths) ✅ Complete
+6. ✅ Bill Manager — full suite (opt-in, single invoicing, bulk invoicing, reconciliation, cancel single, cancel bulk, change opt-in) across TS/Python/Go
+7. ✅ IoT SIM Management — 13 sub-APIs (all SIM ops + messaging) across TS/Python/Go
+8. ✅ Tax Remittance — endpoint fixed to `/mpesa/b2b/v1/remittax` with B2B-style request/response
+9. ✅ M-Pesa Ratiba — endpoint fixed to `/standingorder/v1/createStandingOrderExternal` with standing order types
+10. ✅ B2C Account Top Up — implemented via B2B service with CommandID `BusinessPayToBulk`
+11. ✅ IMSI — endpoint fixed to `/imsi/v1/checkATI` with corrected request/response types
 
-### Phase 3 — Medium (parity and deprecations)
-12. Fill AsyncMpesa gap (13 missing async methods)
-13. Deprecate generic B2B API in docs
-14. B2C Account Top Up routing fix (move from B2C to B2B)
+### Phase 3 — Medium (parity and deprecations) 🚧 In Progress
+12. ✅ AsyncMpesa gap — 17 missing async methods added (completed during Phase 2 Python work)
+13. ✅ B2C Account Top Up routing — moved from B2C to B2B service (completed during Phase 2 TS work)
+14. ⬜ Deprecate generic B2B API in docs
 
 ### Phase 4 — Low (cleanup)
-15. Fix `b2bexpressckeckout` typo
-16. Standardize endpoint source across languages
-17. Remove obsolete `C2B_SIMULATE_V1`
-18. Document Go service layer relationship
+15. ⬜ Fix `b2bexpressckeckout` typo
+16. ⬜ Standardize endpoint source across languages
+17. ⬜ Remove obsolete `C2B_SIMULATE_V1`
+18. ⬜ Document Go service layer relationship

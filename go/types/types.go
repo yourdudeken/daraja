@@ -1,6 +1,7 @@
 package types
 
 import (
+	"encoding/json"
 	"log"
 	"time"
 )
@@ -234,6 +235,30 @@ type B2CResponse struct {
 	ResponseDescription      string `json:"ResponseDescription"`
 }
 
+// ---- B2C Account Top Up ----
+type B2CAccountTopUpRequest struct {
+	Initiator              string  `json:"Initiator"`
+	SecurityCredential     string  `json:"SecurityCredential"`
+	CommandID              string  `json:"CommandID"`
+	SenderIdentifierType   string  `json:"SenderIdentifierType"`
+	RecieverIdentifierType string  `json:"RecieverIdentifierType"`
+	Amount                 string  `json:"Amount"`
+	PartyA                 string  `json:"PartyA"`
+	PartyB                 string  `json:"PartyB"`
+	AccountReference       string  `json:"AccountReference"`
+	Requester              *string `json:"Requester,omitempty"`
+	Remarks                string  `json:"Remarks"`
+	QueueTimeOutURL        string  `json:"QueueTimeOutURL"`
+	ResultURL              string  `json:"ResultURL"`
+}
+
+type B2CAccountTopUpResponse struct {
+	OriginatorConversationID string `json:"OriginatorConversationID"`
+	ConversationID           string `json:"ConversationID"`
+	ResponseCode             string `json:"ResponseCode"`
+	ResponseDescription      string `json:"ResponseDescription"`
+}
+
 // ---- B2B ----
 type B2BCommandID string
 
@@ -411,51 +436,266 @@ type QueryOrgInfoResponse struct {
 
 // ---- IMSI ----
 type IMSIRequest struct {
-	PhoneNumber string `json:"PhoneNumber"`
-	AccessToken string `json:"AccessToken"`
+	CustomerNumber string `json:"customerNumber"`
 }
 
 type IMSIResponse struct {
-	ResponseCode        string `json:"ResponseCode"`
-	ResponseDescription string `json:"ResponseDescription"`
-	PhoneNumber         string `json:"PhoneNumber"`
-	IMSI                string `json:"IMSI"`
-	SubscriberStatus    string `json:"SubscriberStatus"`
-	NetworkOperator     string `json:"NetworkOperator"`
+	RequestRefID           string `json:"requestRefID"`
+	ResponseCode           string `json:"responseCode"`
+	ResponseDesc           string `json:"responseDesc"`
+	IMSI                   string `json:"imsi"`
+	LastSwapDate           string `json:"lastSwapDate"`
+	MsisdnRegistrationDate string `json:"msisdnRegistrationDate"`
+	CustomerNumber         string `json:"customerNumber"`
 }
 
 // ---- IoT SIM Management ----
-type IoTCommandID string
-
-const (
-	IoTActivate       IoTCommandID = "ActivateIOTSIM"
-	IoTDeactivate     IoTCommandID = "DeactivateIOTSIM"
-	IoTCheckStatus    IoTCommandID = "CheckStatus"
-	IoTUpdateDataPlan IoTCommandID = "UpdateDataPlan"
-	IoTReportUsage    IoTCommandID = "ReportUsage"
-	IoTSuspendSIM     IoTCommandID = "SuspendSIM"
-)
-
-type IoTSIMRequest struct {
-	InitiatorName      string       `json:"InitiatorName"`
-	SecurityCredential string       `json:"SecurityCredential"`
-	CommandID          IoTCommandID `json:"CommandID"`
-	ICCID              string       `json:"ICCID"`
-	IMEI               string       `json:"IMEI,omitempty"`
-	DeviceName         string       `json:"DeviceName,omitempty"`
-	DeviceLocation     string       `json:"DeviceLocation,omitempty"`
-	DataPlan           string       `json:"DataPlan,omitempty"`
-	BillingCycle       string       `json:"BillingCycle,omitempty"`
+type IoTHeader struct {
+	RequestRefID    string `json:"requestRefId"`
+	ResponseCode    int    `json:"responseCode"`
+	ResponseMessage string `json:"responseMessage"`
+	CustomerMessage string `json:"customerMessage"`
+	Timestamp       string `json:"timestamp"`
 }
 
-type IoTSIMResponse struct {
-	ResponseCode        string `json:"ResponseCode"`
-	ResponseDescription string `json:"ResponseDescription"`
-	ICCID               string `json:"ICCID"`
-	Status              string `json:"Status"`
-	ActivationDate      string `json:"ActivationDate,omitempty"`
-	DataPlan            string `json:"DataPlan,omitempty"`
-	ExpiryDate          string `json:"ExpiryDate,omitempty"`
+// GetAllSIMs
+type IoTGetAllSIMsRequest struct {
+	VpnGroup     []string `json:"vpnGroup"`
+	StartAtIndex string   `json:"startAtInde"`
+	PageSize     string   `json:"pageSize"`
+	Username     string   `json:"username"`
+}
+
+type IoTGetAllSIMsDesc struct {
+	LifeCycleStatus string `json:"life_cycle_status"`
+	Iccid           string `json:"iccid"`
+	AssetName       string `json:"asset_name"`
+	ActivationDate  string `json:"activation_date"`
+	ExpiryDate      string `json:"expiry_date"`
+	Imei            string `json:"imei"`
+	ProductStatus   string `json:"product_status"`
+	Imsi            string `json:"imsi"`
+	Msisdn          string `json:"msisdn"`
+	VpnGroup        string `json:"vpn_group"`
+	ActivationAgent string `json:"activation_agent"`
+}
+
+type IoTGetAllSIMsBody struct {
+	Desc []IoTGetAllSIMsDesc `json:"Desc"`
+}
+
+type IoTGetAllSIMsResponse struct {
+	Header IoTHeader         `json:"header"`
+	Body   IoTGetAllSIMsBody `json:"body"`
+}
+
+// QueryLifeCycleStatus
+type IoTQueryLifeCycleRequest struct {
+	Msisdn   string `json:"msisdn"`
+	VpnGroup string `json:"vpnGroup"`
+	Username string `json:"username"`
+}
+
+type IoTQueryLifeCycleBody struct {
+	Desc       string `json:"desc"`
+	Status     string `json:"status"`
+	StatusCode string `json:"statusCode"`
+}
+
+type IoTQueryLifeCycleResponse struct {
+	Header IoTHeader             `json:"header"`
+	Body   IoTQueryLifeCycleBody `json:"body"`
+}
+
+// QueryCustomerInfo
+type IoTQueryCustomerInfoRequest struct {
+	Msisdn   string `json:"msisdn"`
+	VpnGroup string `json:"vpnGroup"`
+	Username string `json:"username"`
+}
+
+type IoTQueryCustomerInfoBody struct {
+	OfferingName     string `json:"offeringName"`
+	OfferingStatus   string `json:"offeringStatus"`
+	SubscriberStatus string `json:"subscriberStatus"`
+	OfferingID       string `json:"offeringId"`
+	VpnGroup         string `json:"vpnGroup"`
+}
+
+type IoTQueryCustomerInfoResponse struct {
+	Header IoTHeader                `json:"header"`
+	Body   IoTQueryCustomerInfoBody `json:"body"`
+}
+
+// SimActivation
+type IoTSimActivationRequest struct {
+	Msisdn   string `json:"msisdn"`
+	VpnGroup string `json:"vpnGroup"`
+	Username string `json:"username"`
+}
+
+type IoTSimActivationBody struct {
+	Desc      string `json:"Desc"`
+	RequestID string `json:"requestId"`
+	ID        string `json:"ID"`
+}
+
+type IoTSimActivationResponse struct {
+	Header IoTHeader            `json:"header"`
+	Body   IoTSimActivationBody `json:"body"`
+}
+
+// GetActivationTrends
+type IoTGetActivationTrendsRequest struct {
+	VpnGroup  string `json:"vpnGroup"`
+	StartDate string `json:"startDate"`
+	StopDate  string `json:"stopDate"`
+	Username  string `json:"username"`
+}
+
+type IoTGetActivationTrendsResponse struct {
+	Header IoTHeader       `json:"header"`
+	Body   json.RawMessage `json:"body"`
+}
+
+// RenameAsset
+type IoTRenameAssetRequest struct {
+	Msisdn    string `json:"msisdn"`
+	VpnGroup  string `json:"vpnGroup"`
+	Username  string `json:"username"`
+	AssetName string `json:"assetName"`
+}
+
+type IoTRenameAssetBody struct {
+	Result string `json:"result"`
+	Desc   string `json:"desc"`
+}
+
+type IoTRenameAssetResponse struct {
+	Header IoTHeader          `json:"header"`
+	Body   IoTRenameAssetBody `json:"body"`
+}
+
+// SuspendUnsuspend
+type IoTSuspendUnsuspendRequest struct {
+	Msisdn    string `json:"msisdn"`
+	Username  string `json:"username"`
+	VpnGroup  string `json:"vpnGroup"`
+	Product   string `json:"product"`
+	Operation string `json:"operation"`
+}
+
+type IoTSuspendUnsuspendBody struct {
+	StatusCode int    `json:"statusCode"`
+	StatusDesc string `json:"statusDesc"`
+}
+
+type IoTSuspendUnsuspendResponse struct {
+	Header IoTHeader               `json:"header"`
+	Body   IoTSuspendUnsuspendBody `json:"body"`
+}
+
+// Shared message item
+type IoTMessageItem struct {
+	ID               int    `json:"id"`
+	ReceiptId        int    `json:"receiptId"`
+	SourceAddr       string `json:"sourceAddr"`
+	Msisdn           string `json:"msisdn"`
+	Message          string `json:"message"`
+	SourceSystem     string `json:"sourceSystem"`
+	ProcessingStatus string `json:"processingStatus"`
+	MessageID        string `json:"messageId"`
+	Date             string `json:"date"`
+	DeliverTime      string `json:"deliverTime"`
+	Description      string `json:"description"`
+	VpnGroup         string `json:"vpnGroup"`
+}
+
+type IoTMessagePageable struct {
+	PageNumber int  `json:"pageNumber"`
+	PageSize   int  `json:"pageSize"`
+	Offset     int  `json:"offset"`
+	Unpaged    bool `json:"unpaged"`
+	Paged      bool `json:"paged"`
+}
+
+type IoTMessageBody struct {
+	Content          []IoTMessageItem   `json:"content"`
+	Pageable         IoTMessagePageable `json:"pageable"`
+	TotalPages       int                `json:"totalPages"`
+	TotalElements    int                `json:"totalElements"`
+	Last             bool               `json:"last"`
+	NumberOfElements int                `json:"numberOfElements"`
+	Size             int                `json:"size"`
+	Number           int                `json:"number"`
+	First            bool               `json:"first"`
+	Empty            bool               `json:"empty"`
+}
+
+// SearchMessages
+type IoTSearchMessagesRequest struct {
+	SearchValue string `json:"searchValue"`
+}
+
+type IoTSearchMessagesResponse struct {
+	Header IoTHeader      `json:"header"`
+	Body   IoTMessageBody `json:"body"`
+}
+
+// FilterMessages
+type IoTFilterMessagesRequest struct {
+	StartDate string `json:"startDate"`
+	EndDate   string `json:"endDate"`
+	Status    string `json:"status"`
+}
+
+type IoTFilterMessagesResponse struct {
+	Header IoTHeader      `json:"header"`
+	Body   IoTMessageBody `json:"body"`
+}
+
+// DeleteMessageThread
+type IoTDeleteMessageThreadRequest struct {
+	Msisdn string `json:"msisdn"`
+}
+
+type IoTDeleteMessageThreadResponse struct {
+	Header IoTHeader       `json:"header"`
+	Body   json.RawMessage `json:"body"`
+}
+
+// GetAllMessages
+type IoTGetAllMessagesRequest struct {
+	VpnGroup string `json:"vpnGroup"`
+	PageNo   int    `json:"pageNo"`
+	PageSize int    `json:"pageSize"`
+}
+
+type IoTGetAllMessagesResponse struct {
+	Header IoTHeader      `json:"header"`
+	Body   IoTMessageBody `json:"body"`
+}
+
+// SendSingleMessage
+type IoTSendSingleMessageRequest struct {
+	Msisdn   string `json:"msisdn"`
+	Message  string `json:"message"`
+	VpnGroup string `json:"vpnGroup"`
+}
+
+type IoTSendSingleMessageResponse struct {
+	Header IoTHeader      `json:"header"`
+	Body   IoTMessageItem `json:"body"`
+}
+
+// DeleteMessage
+type IoTDeleteMessageRequest struct {
+	ID int `json:"id"`
+}
+
+type IoTDeleteMessageResponse struct {
+	Header IoTHeader       `json:"header"`
+	Body   json.RawMessage `json:"body"`
 }
 
 // ---- B2Pochi ----
@@ -552,22 +792,87 @@ type SwapResponse struct {
 }
 
 // ---- Bill Manager ----
-type BillManagerRequest struct {
-	BillRefName      string `json:"BillRefName"`
-	DueDate          string `json:"DueDate"`
-	Amount           string `json:"Amount"`
-	InvoiceNumber    string `json:"InvoiceNumber"`
-	AccountReference string `json:"AccountReference"`
-	PhoneNumber      string `json:"PhoneNumber"`
-	Email            string `json:"Email,omitempty"`
-	Description      string `json:"Description"`
+type BillManagerInvoiceItem struct {
+	ItemName string `json:"itemName"`
+	Amount   string `json:"amount"`
 }
 
-type BillManagerResponse struct {
-	OriginatorConversationID string `json:"OriginatorConversationID"`
-	ConversationID           string `json:"ConversationID"`
-	ResponseCode             string `json:"ResponseCode"`
-	ResponseDescription      string `json:"ResponseDescription"`
+type BillManagerOptinRequest struct {
+	ShortCode       string `json:"shortcode"`
+	Email           string `json:"email"`
+	OfficialContact string `json:"officialContact"`
+	SendReminders   string `json:"sendReminders"`
+	Logo            string `json:"logo,omitempty"`
+	CallbackURL     string `json:"callbackurl"`
+}
+
+type BillManagerOptinResponse struct {
+	AppKey  string `json:"app_key"`
+	ResMsg  string `json:"resmsg"`
+	ResCode string `json:"rescode"`
+}
+
+type BillManagerSingleInvoiceRequest struct {
+	ExternalReference string                   `json:"externalReference"`
+	BilledFullName    string                   `json:"billedFullName"`
+	BilledPhoneNumber string                   `json:"billedPhoneNumber"`
+	BilledPeriod      string                   `json:"billedPeriod"`
+	InvoiceName       string                   `json:"invoiceName"`
+	DueDate           string                   `json:"dueDate"`
+	AccountReference  string                   `json:"accountReference"`
+	Amount            string                   `json:"amount"`
+	InvoiceItems      []BillManagerInvoiceItem `json:"invoiceItems,omitempty"`
+}
+
+type BillManagerInvoiceResponse struct {
+	StatusMessage string `json:"Status_Message"`
+	ResMsg        string `json:"resmsg"`
+	ResCode       string `json:"rescode"`
+}
+
+type BillManagerBulkInvoiceRequest []BillManagerSingleInvoiceRequest
+
+type BillManagerReconciliationRequest struct {
+	PaymentDate       string `json:"paymentDate"`
+	PaidAmount        string `json:"paidAmount"`
+	AccountReference  string `json:"accountReference"`
+	TransactionID     string `json:"transactionId"`
+	PhoneNumber       string `json:"phoneNumber"`
+	FullName          string `json:"fullName"`
+	InvoiceName       string `json:"invoiceName"`
+	ExternalReference string `json:"externalReference"`
+}
+
+type BillManagerReconciliationResponse struct {
+	ResMsg  string `json:"resmsg"`
+	ResCode string `json:"rescode"`
+}
+
+type BillManagerCancelSingleRequest struct {
+	ExternalReference string `json:"externalReference"`
+}
+
+type BillManagerCancelBulkRequest []BillManagerCancelSingleRequest
+
+type BillManagerCancelResponse struct {
+	StatusMessage string   `json:"Status_Message"`
+	ResMsg        string   `json:"resmsg"`
+	ResCode       string   `json:"rescode"`
+	Errors        []string `json:"errors"`
+}
+
+type BillManagerChangeOptinRequest struct {
+	ShortCode       string `json:"shortcode"`
+	Email           string `json:"email"`
+	OfficialContact string `json:"officialContact"`
+	SendReminders   int    `json:"sendReminders"`
+	Logo            string `json:"logo,omitempty"`
+	CallbackURL     string `json:"callbackurl"`
+}
+
+type BillManagerChangeOptinResponse struct {
+	ResMsg  string `json:"resmsg"`
+	ResCode string `json:"rescode"`
 }
 
 // ---- B2B Express CheckOut ----
@@ -587,59 +892,59 @@ type B2BExpressResponse struct {
 }
 
 // ---- M-Pesa Ratiba ----
-type RatibaPayment struct {
-	EmployeeID   string `json:"EmployeeID"`
-	EmployeeName string `json:"EmployeeName"`
-	PhoneNumber  string `json:"PhoneNumber"`
-	Amount       string `json:"Amount"`
-	Remarks      string `json:"Remarks"`
+type RatibaRequest struct {
+	StandingOrderName           string `json:"StandingOrderName"`
+	StartDate                   string `json:"StartDate"`
+	EndDate                     string `json:"EndDate"`
+	BusinessShortCode           string `json:"BusinessShortCode"`
+	TransactionType             string `json:"TransactionType"`
+	ReceiverPartyIdentifierType string `json:"ReceiverPartyIdentifierType"`
+	Amount                      string `json:"Amount"`
+	PartyA                      string `json:"PartyA"`
+	CallBackURL                 string `json:"CallBackURL"`
+	AccountReference            string `json:"AccountReference"`
+	TransactionDesc             string `json:"TransactionDesc"`
+	Frequency                   string `json:"Frequency"`
 }
 
-type RatibaRequest struct {
-	InitiatorName      string          `json:"InitiatorName"`
-	SecurityCredential string          `json:"SecurityCredential"`
-	CommandID          string          `json:"CommandID"`
-	BatchName          string          `json:"BatchName"`
-	BatchNumber        string          `json:"BatchNumber"`
-	BatchDescription   string          `json:"BatchDescription"`
-	ProcessingMethod   string          `json:"ProcessingMethod"`
-	ScheduleDateTime   string          `json:"ScheduleDateTime,omitempty"`
-	Payments           []RatibaPayment `json:"Payments"`
+type RatibaResponseHeader struct {
+	ResponseRefID       string `json:"responseRefID"`
+	ResponseCode        string `json:"responseCode"`
+	ResponseDescription string `json:"responseDescription"`
+	ResultDesc          string `json:"ResultDesc"`
+}
+
+type RatibaResponseBody struct {
+	ResponseDescription string `json:"responseDescription"`
+	ResponseCode        string `json:"responseCode"`
 }
 
 type RatibaResponse struct {
-	BatchID             string `json:"BatchID"`
-	ResponseCode        string `json:"ResponseCode"`
-	ResponseDescription string `json:"ResponseDescription"`
-	TotalAmount         string `json:"TotalAmount"`
-	PaymentCount        string `json:"PaymentCount"`
-	ProcessingStatus    string `json:"ProcessingStatus"`
-	ScheduledDateTime   string `json:"ScheduledDateTime,omitempty"`
+	ResponseHeader RatibaResponseHeader `json:"ResponseHeader"`
+	ResponseBody   RatibaResponseBody   `json:"ResponseBody"`
 }
 
 // ---- Tax Remittance ----
 type TaxRemittanceRequest struct {
-	InitiatorName        string `json:"InitiatorName"`
-	SecurityCredential   string `json:"SecurityCredential"`
-	CommandID            string `json:"CommandID"`
-	ShortCode            string `json:"ShortCode"`
-	TaxType              string `json:"TaxType"`
-	KRAPINNumber         string `json:"KRAPINNumber"`
-	Amount               string `json:"Amount"`
-	TransactionReference string `json:"TransactionReference"`
-	Description          string `json:"Description"`
+	Initiator              string `json:"Initiator"`
+	SecurityCredential     string `json:"SecurityCredential"`
+	CommandID              string `json:"CommandID"`
+	SenderIdentifierType   string `json:"SenderIdentifierType"`
+	RecieverIdentifierType string `json:"RecieverIdentifierType"`
+	Amount                 string `json:"Amount"`
+	PartyA                 string `json:"PartyA"`
+	PartyB                 string `json:"PartyB"`
+	AccountReference       string `json:"AccountReference"`
+	Remarks                string `json:"Remarks"`
+	QueueTimeOutURL        string `json:"QueueTimeOutURL"`
+	ResultURL              string `json:"ResultURL"`
 }
 
 type TaxRemittanceResponse struct {
-	ResponseCode        string `json:"ResponseCode"`
-	ResponseDescription string `json:"ResponseDescription"`
-	TransactionID       string `json:"TransactionID"`
-	KRAPINNumber        string `json:"KRAPINNumber"`
-	TaxType             string `json:"TaxType"`
-	Amount              string `json:"Amount"`
-	ReceiptNumber       string `json:"ReceiptNumber"`
-	PaymentDate         string `json:"PaymentDate"`
-	Status              string `json:"Status"`
+	OriginatorConversationID string `json:"OriginatorConversationID"`
+	ConversationID           string `json:"ConversationID"`
+	ResponseCode             string `json:"ResponseCode"`
+	ResponseDescription      string `json:"ResponseDescription"`
 }
 
 // ---- Dynamic QR ----

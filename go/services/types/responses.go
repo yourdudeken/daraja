@@ -78,22 +78,76 @@ type QueryOrgInfoResult struct {
 }
 
 type IMSIResult struct {
-	ResponseCode        string
-	ResponseDescription string
-	PhoneNumber         string
-	IMSI                string
-	SubscriberStatus    string
-	NetworkOperator     string
+	RequestRefID           string
+	ResponseCode           string
+	ResponseDesc           string
+	IMSI                   string
+	LastSwapDate           string
+	MsisdnRegistrationDate string
+	CustomerNumber         string
 }
 
-type IoTResult struct {
-	ResponseCode        string
-	ResponseDescription string
-	ICCID               string
-	Status              string
-	ActivationDate      string
-	DataPlan            string
-	ExpiryDate          string
+type IoTGetAllSIMsResult struct {
+	Header types.IoTHeader
+	Body   types.IoTGetAllSIMsBody
+}
+
+type IoTQueryLifeCycleResult struct {
+	Header types.IoTHeader
+	Body   types.IoTQueryLifeCycleBody
+}
+
+type IoTQueryCustomerInfoResult struct {
+	Header types.IoTHeader
+	Body   types.IoTQueryCustomerInfoBody
+}
+
+type IoTSimActivationResult struct {
+	Header types.IoTHeader
+	Body   types.IoTSimActivationBody
+}
+
+type IoTGetActivationTrendsResult struct {
+	Header types.IoTHeader
+	Body   []byte
+}
+
+type IoTRenameAssetResult struct {
+	Header types.IoTHeader
+	Body   types.IoTRenameAssetBody
+}
+
+type IoTSuspendUnsuspendResult struct {
+	Header types.IoTHeader
+	Body   types.IoTSuspendUnsuspendBody
+}
+
+type IoTSearchMessagesResult struct {
+	Header types.IoTHeader
+	Body   types.IoTMessageBody
+}
+
+type IoTFilterMessagesResult struct {
+	Header types.IoTHeader
+	Body   types.IoTMessageBody
+}
+
+type IoTDeleteMessageThreadResult struct {
+	Header types.IoTHeader
+}
+
+type IoTGetAllMessagesResult struct {
+	Header types.IoTHeader
+	Body   types.IoTMessageBody
+}
+
+type IoTSendSingleMessageResult struct {
+	Header types.IoTHeader
+	Body   types.IoTMessageItem
+}
+
+type IoTDeleteMessageResult struct {
+	Header types.IoTHeader
 }
 
 type B2PochiResult struct {
@@ -134,7 +188,7 @@ type SwapResult struct {
 	LastSwapDate string
 }
 
-type BillManagerResult struct {
+type B2CAccountTopUpResult struct {
 	OriginatorConversationID string
 	ConversationID           string
 	ResponseCode             string
@@ -146,26 +200,50 @@ type B2BExpressResult struct {
 	Status string
 }
 
+type BillManagerOptinResult struct {
+	AppKey  string
+	ResMsg  string
+	ResCode string
+}
+
+type BillManagerSingleInvoiceResult struct {
+	StatusMessage string
+	ResMsg        string
+	ResCode       string
+}
+
+type BillManagerBulkInvoiceResult struct {
+	StatusMessage string
+	ResMsg        string
+	ResCode       string
+}
+
+type BillManagerReconciliationResult struct {
+	ResMsg  string
+	ResCode string
+}
+
+type BillManagerCancelResult struct {
+	StatusMessage string
+	ResMsg        string
+	ResCode       string
+}
+
+type BillManagerChangeOptinResult struct {
+	ResMsg  string
+	ResCode string
+}
+
 type RatibaResult struct {
-	BatchID             string
-	ResponseCode        string
-	ResponseDescription string
-	TotalAmount         string
-	PaymentCount        string
-	ProcessingStatus    string
-	ScheduledDateTime   string
+	ResponseHeader types.RatibaResponseHeader
+	ResponseBody   types.RatibaResponseBody
 }
 
 type TaxRemittanceResult struct {
-	ResponseCode        string
-	ResponseDescription string
-	TransactionID       string
-	KRAPINNumber        string
-	TaxType             string
-	Amount              string
-	ReceiptNumber       string
-	PaymentDate         string
-	Status              string
+	OriginatorConversationID string
+	ConversationID           string
+	ResponseCode             string
+	ResponseDescription      string
 }
 
 type DynamicQRResult struct {

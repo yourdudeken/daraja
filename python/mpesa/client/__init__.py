@@ -19,13 +19,12 @@ from mpesa.models import (
     AccessTokenResponse,
     B2BExpressRequest,
     B2BExpressResponse,
-    B2BRequest,
-    B2BResponse,
+    B2CAccountTopUpRequest,
+    B2CAccountTopUpResponse,
     B2CRequest,
     B2CResponse,
     B2PochiRequest,
     B2PochiResponse,
-    BillManagerRequest,
     BillManagerResponse,
     BusinessBuyGoodsRequest,
     BusinessPayBillRequest,
@@ -605,10 +604,8 @@ class Mpesa:
         result = self._post("SWAP", request.model_dump())
         return SwapResponse(**result)
 
-    def bill_manager(self, request: BillManagerRequest | dict) -> BillManagerResponse:
-        if isinstance(request, dict):
-            request = BillManagerRequest(**request)
-        result = self._post("BILL_MANAGER", request.model_dump())
+    def bill_manager(self, request: dict) -> BillManagerResponse:
+        result = self._post("BILL_MANAGER", request)
         return BillManagerResponse(**result)
 
     def b2b_express(self, request: B2BExpressRequest | dict) -> B2BExpressResponse:
@@ -616,6 +613,12 @@ class Mpesa:
             request = B2BExpressRequest(**request)
         result = self._post("B2B_EXPRESS", request.model_dump())
         return B2BExpressResponse(**result)
+
+    def b2c_account_top_up(self, request: B2CAccountTopUpRequest | dict) -> B2CAccountTopUpResponse:
+        if isinstance(request, dict):
+            request = B2CAccountTopUpRequest(**request)
+        result = self._post("B2C_ACCOUNT_TOP_UP", request.model_dump())
+        return B2CAccountTopUpResponse(**result)
 
     def ratiba(self, request: RatibaRequest | dict) -> RatibaResponse:
         if isinstance(request, dict):
@@ -676,6 +679,12 @@ class Mpesa:
         from mpesa.services import TaxRemittanceService
 
         return TaxRemittanceService(self._post)
+
+    @property
+    def b2c_account_top_up_service(self):
+        from mpesa.services import B2BService
+
+        return B2BService(self._post)
 
     def rotate_credentials(self, consumer_key: str, consumer_secret: str) -> None:
         self._config.consumer_key = consumer_key

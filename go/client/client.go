@@ -685,14 +685,184 @@ func (c *Client) IMSI(ctx context.Context, req types.IMSIRequest) (*types.IMSIRe
 	return &resp, nil
 }
 
-// ---- IoT SIM ----
-func (c *Client) IoTManage(ctx context.Context, req types.IoTSIMRequest) (*types.IoTSIMResponse, error) {
-	respBody, err := c.doRequest(ctx, "POST", c.endpoints.IoTManage, req)
+// ---- B2C Account Top Up ----
+func (c *Client) AccountTopUp(ctx context.Context, req types.B2CAccountTopUpRequest) (*types.B2CAccountTopUpResponse, error) {
+	respBody, err := c.doRequest(ctx, "POST", c.endpoints.B2CAccountTopUp, req)
 	if err != nil {
 		return nil, err
 	}
 
-	var resp types.IoTSIMResponse
+	var resp types.B2CAccountTopUpResponse
+	if err := json.Unmarshal(respBody, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+// ---- IoT SIM Management ----
+func (c *Client) IoTGetAllSIMs(ctx context.Context, req types.IoTGetAllSIMsRequest) (*types.IoTGetAllSIMsResponse, error) {
+	respBody, err := c.doRequest(ctx, "POST", c.endpoints.IoTAllSIMs, req)
+	if err != nil {
+		return nil, err
+	}
+
+	var resp types.IoTGetAllSIMsResponse
+	if err := json.Unmarshal(respBody, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func (c *Client) IoTQueryLifeCycle(ctx context.Context, req types.IoTQueryLifeCycleRequest) (*types.IoTQueryLifeCycleResponse, error) {
+	respBody, err := c.doRequest(ctx, "POST", c.endpoints.IoTQueryLifeCycle, req)
+	if err != nil {
+		return nil, err
+	}
+
+	var resp types.IoTQueryLifeCycleResponse
+	if err := json.Unmarshal(respBody, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func (c *Client) IoTQueryCustomerInfo(ctx context.Context, req types.IoTQueryCustomerInfoRequest) (*types.IoTQueryCustomerInfoResponse, error) {
+	respBody, err := c.doRequest(ctx, "POST", c.endpoints.IoTQueryCustomerInfo, req)
+	if err != nil {
+		return nil, err
+	}
+
+	var resp types.IoTQueryCustomerInfoResponse
+	if err := json.Unmarshal(respBody, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func (c *Client) IoTSimActivation(ctx context.Context, req types.IoTSimActivationRequest) (*types.IoTSimActivationResponse, error) {
+	respBody, err := c.doRequest(ctx, "POST", c.endpoints.IoTSimActivation, req)
+	if err != nil {
+		return nil, err
+	}
+
+	var resp types.IoTSimActivationResponse
+	if err := json.Unmarshal(respBody, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func (c *Client) IoTGetActivationTrends(ctx context.Context, req types.IoTGetActivationTrendsRequest) (*types.IoTGetActivationTrendsResponse, error) {
+	respBody, err := c.doRequest(ctx, "POST", c.endpoints.IoTActivationTrends, req)
+	if err != nil {
+		return nil, err
+	}
+
+	var resp types.IoTGetActivationTrendsResponse
+	if err := json.Unmarshal(respBody, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func (c *Client) IoTRenameAsset(ctx context.Context, req types.IoTRenameAssetRequest) (*types.IoTRenameAssetResponse, error) {
+	respBody, err := c.doRequest(ctx, "POST", c.endpoints.IoTRenameAsset, req)
+	if err != nil {
+		return nil, err
+	}
+
+	var resp types.IoTRenameAssetResponse
+	if err := json.Unmarshal(respBody, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func (c *Client) IoTSuspendUnsuspend(ctx context.Context, req types.IoTSuspendUnsuspendRequest) (*types.IoTSuspendUnsuspendResponse, error) {
+	respBody, err := c.doRequest(ctx, "POST", c.endpoints.IoTSuspendUnsuspend, req)
+	if err != nil {
+		return nil, err
+	}
+
+	var resp types.IoTSuspendUnsuspendResponse
+	if err := json.Unmarshal(respBody, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func (c *Client) IoTSearchMessages(ctx context.Context, req types.IoTSearchMessagesRequest) (*types.IoTSearchMessagesResponse, error) {
+	respBody, err := c.doRequest(ctx, "POST", c.endpoints.IoTSearchMessages, req)
+	if err != nil {
+		return nil, err
+	}
+
+	var resp types.IoTSearchMessagesResponse
+	if err := json.Unmarshal(respBody, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func (c *Client) IoTFilterMessages(ctx context.Context, req types.IoTFilterMessagesRequest) (*types.IoTFilterMessagesResponse, error) {
+	respBody, err := c.doRequest(ctx, "POST", c.endpoints.IoTFilterMessages, req)
+	if err != nil {
+		return nil, err
+	}
+
+	var resp types.IoTFilterMessagesResponse
+	if err := json.Unmarshal(respBody, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func (c *Client) IoTDeleteMessageThread(ctx context.Context, req types.IoTDeleteMessageThreadRequest) (*types.IoTDeleteMessageThreadResponse, error) {
+	respBody, err := c.doRequest(ctx, "POST", c.endpoints.IoTDeleteThread, req)
+	if err != nil {
+		return nil, err
+	}
+
+	var resp types.IoTDeleteMessageThreadResponse
+	if err := json.Unmarshal(respBody, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func (c *Client) IoTGetAllMessages(ctx context.Context, req types.IoTGetAllMessagesRequest) (*types.IoTGetAllMessagesResponse, error) {
+	respBody, err := c.doRequest(ctx, "POST", c.endpoints.IoTAllMessages, req)
+	if err != nil {
+		return nil, err
+	}
+
+	var resp types.IoTGetAllMessagesResponse
+	if err := json.Unmarshal(respBody, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func (c *Client) IoTSendSingleMessage(ctx context.Context, req types.IoTSendSingleMessageRequest) (*types.IoTSendSingleMessageResponse, error) {
+	respBody, err := c.doRequest(ctx, "POST", c.endpoints.IoTSendSingleMessage, req)
+	if err != nil {
+		return nil, err
+	}
+
+	var resp types.IoTSendSingleMessageResponse
+	if err := json.Unmarshal(respBody, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func (c *Client) IoTDeleteMessage(ctx context.Context, req types.IoTDeleteMessageRequest) (*types.IoTDeleteMessageResponse, error) {
+	respBody, err := c.doRequest(ctx, "POST", c.endpoints.IoTDeleteMessage, req)
+	if err != nil {
+		return nil, err
+	}
+
+	var resp types.IoTDeleteMessageResponse
 	if err := json.Unmarshal(respBody, &resp); err != nil {
 		return nil, err
 	}
@@ -769,13 +939,91 @@ func (c *Client) Swap(ctx context.Context, req types.SwapRequest) (*types.SwapRe
 }
 
 // ---- Bill Manager ----
-func (c *Client) BillManager(ctx context.Context, req types.BillManagerRequest) (*types.BillManagerResponse, error) {
-	respBody, err := c.doRequest(ctx, "POST", c.endpoints.BillManager, req)
+func (c *Client) BillManagerOptin(ctx context.Context, req types.BillManagerOptinRequest) (*types.BillManagerOptinResponse, error) {
+	respBody, err := c.doRequest(ctx, "POST", c.endpoints.BillManagerOptin, req)
 	if err != nil {
 		return nil, err
 	}
 
-	var resp types.BillManagerResponse
+	var resp types.BillManagerOptinResponse
+	if err := json.Unmarshal(respBody, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func (c *Client) BillManagerSingleInvoice(ctx context.Context, req types.BillManagerSingleInvoiceRequest) (*types.BillManagerInvoiceResponse, error) {
+	respBody, err := c.doRequest(ctx, "POST", c.endpoints.BillManagerSingleInvoice, req)
+	if err != nil {
+		return nil, err
+	}
+
+	var resp types.BillManagerInvoiceResponse
+	if err := json.Unmarshal(respBody, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func (c *Client) BillManagerBulkInvoice(ctx context.Context, req types.BillManagerBulkInvoiceRequest) (*types.BillManagerInvoiceResponse, error) {
+	respBody, err := c.doRequest(ctx, "POST", c.endpoints.BillManagerBulkInvoice, req)
+	if err != nil {
+		return nil, err
+	}
+
+	var resp types.BillManagerInvoiceResponse
+	if err := json.Unmarshal(respBody, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func (c *Client) BillManagerReconciliation(ctx context.Context, req types.BillManagerReconciliationRequest) (*types.BillManagerReconciliationResponse, error) {
+	respBody, err := c.doRequest(ctx, "POST", c.endpoints.BillManagerReconciliation, req)
+	if err != nil {
+		return nil, err
+	}
+
+	var resp types.BillManagerReconciliationResponse
+	if err := json.Unmarshal(respBody, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func (c *Client) BillManagerCancelSingle(ctx context.Context, req types.BillManagerCancelSingleRequest) (*types.BillManagerCancelResponse, error) {
+	respBody, err := c.doRequest(ctx, "POST", c.endpoints.BillManagerCancelSingle, req)
+	if err != nil {
+		return nil, err
+	}
+
+	var resp types.BillManagerCancelResponse
+	if err := json.Unmarshal(respBody, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func (c *Client) BillManagerCancelBulk(ctx context.Context, req types.BillManagerCancelBulkRequest) (*types.BillManagerCancelResponse, error) {
+	respBody, err := c.doRequest(ctx, "POST", c.endpoints.BillManagerCancelBulk, req)
+	if err != nil {
+		return nil, err
+	}
+
+	var resp types.BillManagerCancelResponse
+	if err := json.Unmarshal(respBody, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func (c *Client) BillManagerChangeOptin(ctx context.Context, req types.BillManagerChangeOptinRequest) (*types.BillManagerChangeOptinResponse, error) {
+	respBody, err := c.doRequest(ctx, "POST", c.endpoints.BillManagerChangeOptin, req)
+	if err != nil {
+		return nil, err
+	}
+
+	var resp types.BillManagerChangeOptinResponse
 	if err := json.Unmarshal(respBody, &resp); err != nil {
 		return nil, err
 	}
@@ -796,8 +1044,8 @@ func (c *Client) B2BExpress(ctx context.Context, req types.B2BExpressRequest) (*
 	return &resp, nil
 }
 
-// ---- M-Pesa Ratiba ----
-func (c *Client) Ratiba(ctx context.Context, req types.RatibaRequest) (*types.RatibaResponse, error) {
+// ---- M-Pesa Ratiba (Standing Order) ----
+func (c *Client) CreateStandingOrder(ctx context.Context, req types.RatibaRequest) (*types.RatibaResponse, error) {
 	respBody, err := c.doRequest(ctx, "POST", c.endpoints.Ratiba, req)
 	if err != nil {
 		return nil, err

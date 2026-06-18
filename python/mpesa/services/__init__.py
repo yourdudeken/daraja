@@ -5,14 +5,20 @@ from mpesa.models import (
     AccountBalanceResponse,
     B2BExpressRequest,
     B2BExpressResponse,
-    B2BRequest,
-    B2BResponse,
+    B2CAccountTopUpRequest,
+    B2CAccountTopUpResponse,
     B2CRequest,
     B2CResponse,
     B2PochiRequest,
     B2PochiResponse,
-    BillManagerRequest,
+    BillManagerBulkInvoiceRequest,
+    BillManagerCancelBulkRequest,
+    BillManagerCancelSingleRequest,
+    BillManagerChangeOptInRequest,
+    BillManagerOptInRequest,
+    BillManagerReconciliationRequest,
     BillManagerResponse,
+    BillManagerSingleInvoiceRequest,
     BusinessBuyGoodsRequest,
     BusinessPayBillRequest,
     BusinessGoodsResponse,
@@ -23,8 +29,21 @@ from mpesa.models import (
     DynamicQRResponse,
     IMSIRequest,
     IMSIResponse,
+    IoTActivationTrendsRequest,
+    IoTAllSIMsRequest,
+    IoTDeleteMessageRequest,
+    IoTDeleteThreadRequest,
+    IoTFilterMessagesRequest,
+    IoTQueryCustomerInfoRequest,
+    IoTQueryLifeCycleRequest,
+    IoTRenameAssetRequest,
+    IoTSearchMessagesRequest,
+    IoTSendSingleMessageRequest,
+    IoTSIMActivationRequest,
     IoTSIMRequest,
     IoTSIMResponse,
+    IoTSuspendUnsuspendRequest,
+    IoTAllMessagesRequest,
     LipaNaBongaRequest,
     LipaNaBongaResponse,
     MpesaConfig,
@@ -116,11 +135,11 @@ class B2BService:
     def __init__(self, post: PostFn) -> None:
         self._post = post
 
-    def send(self, request: B2BRequest | dict) -> B2BResponse:
+    def top_up(self, request: B2CAccountTopUpRequest | dict) -> B2CAccountTopUpResponse:
         if isinstance(request, dict):
-            request = B2BRequest(**request)
-        result = self._post("B2B", request.model_dump())
-        return B2BResponse(**result)
+            request = B2CAccountTopUpRequest(**request)
+        result = self._post("B2C_ACCOUNT_TOP_UP", request.model_dump())
+        return B2CAccountTopUpResponse(**result)
 
 
 class ReversalService:
@@ -218,6 +237,71 @@ class IoTSIMService:
         result = self._post("IOT_MANAGE", request.model_dump())
         return IoTSIMResponse(**result)
 
+    def get_all_sims(self, request: IoTAllSIMsRequest | dict) -> dict:
+        if isinstance(request, dict):
+            request = IoTAllSIMsRequest(**request)
+        return self._post("IOT_ALLSIMS", request.model_dump())
+
+    def query_life_cycle_status(self, request: IoTQueryLifeCycleRequest | dict) -> dict:
+        if isinstance(request, dict):
+            request = IoTQueryLifeCycleRequest(**request)
+        return self._post("IOT_QUERY_LIFECYCLE", request.model_dump())
+
+    def query_customer_info(self, request: IoTQueryCustomerInfoRequest | dict) -> dict:
+        if isinstance(request, dict):
+            request = IoTQueryCustomerInfoRequest(**request)
+        return self._post("IOT_QUERY_CUSTOMER_INFO", request.model_dump())
+
+    def activate_sim(self, request: IoTSIMActivationRequest | dict) -> dict:
+        if isinstance(request, dict):
+            request = IoTSIMActivationRequest(**request)
+        return self._post("IOT_SIM_ACTIVATION", request.model_dump())
+
+    def get_activation_trends(self, request: IoTActivationTrendsRequest | dict) -> dict:
+        if isinstance(request, dict):
+            request = IoTActivationTrendsRequest(**request)
+        return self._post("IOT_ACTIVATION_TRENDS", request.model_dump())
+
+    def rename_asset(self, request: IoTRenameAssetRequest | dict) -> dict:
+        if isinstance(request, dict):
+            request = IoTRenameAssetRequest(**request)
+        return self._post("IOT_RENAME_ASSET", request.model_dump())
+
+    def suspend_unsuspend(self, request: IoTSuspendUnsuspendRequest | dict) -> dict:
+        if isinstance(request, dict):
+            request = IoTSuspendUnsuspendRequest(**request)
+        return self._post("IOT_SUSPEND_UNSUSPEND", request.model_dump())
+
+    def search_messages(self, request: IoTSearchMessagesRequest | dict) -> dict:
+        if isinstance(request, dict):
+            request = IoTSearchMessagesRequest(**request)
+        return self._post("IOT_SEARCH_MESSAGES", request.model_dump())
+
+    def filter_messages(self, request: IoTFilterMessagesRequest | dict) -> dict:
+        if isinstance(request, dict):
+            request = IoTFilterMessagesRequest(**request)
+        return self._post("IOT_FILTER_MESSAGES", request.model_dump())
+
+    def delete_message_thread(self, request: IoTDeleteThreadRequest | dict) -> dict:
+        if isinstance(request, dict):
+            request = IoTDeleteThreadRequest(**request)
+        return self._post("IOT_DELETE_THREAD", request.model_dump())
+
+    def get_all_messages(self, request: IoTAllMessagesRequest | dict) -> dict:
+        if isinstance(request, dict):
+            request = IoTAllMessagesRequest(**request)
+        return self._post("IOT_ALL_MESSAGES", request.model_dump())
+
+    def send_single_message(self, request: IoTSendSingleMessageRequest | dict) -> dict:
+        if isinstance(request, dict):
+            request = IoTSendSingleMessageRequest(**request)
+        return self._post("IOT_SEND_SINGLE_MESSAGE", request.model_dump())
+
+    def delete_message(self, request: IoTDeleteMessageRequest | dict) -> dict:
+        if isinstance(request, dict):
+            request = IoTDeleteMessageRequest(**request)
+        return self._post("IOT_DELETE_MESSAGE", request.model_dump())
+
 
 class B2PochiService:
     def __init__(self, post: PostFn) -> None:
@@ -275,10 +359,56 @@ class BillManagerService:
     def __init__(self, post: PostFn) -> None:
         self._post = post
 
-    def update_bill(self, request: BillManagerRequest | dict) -> BillManagerResponse:
+    def opt_in(self, request: BillManagerOptInRequest | dict) -> BillManagerResponse:
         if isinstance(request, dict):
-            request = BillManagerRequest(**request)
-        result = self._post("BILL_MANAGER", request.model_dump())
+            request = BillManagerOptInRequest(**request)
+        result = self._post("BILL_MANAGER_OPTIN", request.model_dump())
+        return BillManagerResponse(**result)
+
+    def send_single_invoice(
+        self, request: BillManagerSingleInvoiceRequest | dict
+    ) -> BillManagerResponse:
+        if isinstance(request, dict):
+            request = BillManagerSingleInvoiceRequest(**request)
+        result = self._post("BILL_MANAGER_SINGLE_INVOICE", request.model_dump())
+        return BillManagerResponse(**result)
+
+    def send_bulk_invoice(
+        self, request: BillManagerBulkInvoiceRequest | dict
+    ) -> BillManagerResponse:
+        if isinstance(request, dict):
+            request = BillManagerBulkInvoiceRequest(**request)
+        result = self._post("BILL_MANAGER_BULK_INVOICE", request.model_dump())
+        return BillManagerResponse(**result)
+
+    def reconciliation(
+        self, request: BillManagerReconciliationRequest | dict
+    ) -> BillManagerResponse:
+        if isinstance(request, dict):
+            request = BillManagerReconciliationRequest(**request)
+        result = self._post("BILL_MANAGER_RECONCILIATION", request.model_dump())
+        return BillManagerResponse(**result)
+
+    def cancel_single_invoice(
+        self, request: BillManagerCancelSingleRequest | dict
+    ) -> BillManagerResponse:
+        if isinstance(request, dict):
+            request = BillManagerCancelSingleRequest(**request)
+        result = self._post("BILL_MANAGER_CANCEL_SINGLE", request.model_dump())
+        return BillManagerResponse(**result)
+
+    def cancel_bulk_invoices(
+        self, request: BillManagerCancelBulkRequest | dict
+    ) -> BillManagerResponse:
+        if isinstance(request, dict):
+            request = BillManagerCancelBulkRequest(**request)
+        result = self._post("BILL_MANAGER_CANCEL_BULK", request.model_dump())
+        return BillManagerResponse(**result)
+
+    def change_opt_in(self, request: BillManagerChangeOptInRequest | dict) -> BillManagerResponse:
+        if isinstance(request, dict):
+            request = BillManagerChangeOptInRequest(**request)
+        result = self._post("BILL_MANAGER_CHANGE_OPTIN", request.model_dump())
         return BillManagerResponse(**result)
 
 
@@ -309,7 +439,7 @@ class RatibaService:
     def __init__(self, post: PostFn) -> None:
         self._post = post
 
-    def process(self, request: RatibaRequest | dict) -> RatibaResponse:
+    def create_standing_order(self, request: RatibaRequest | dict) -> RatibaResponse:
         if isinstance(request, dict):
             request = RatibaRequest(**request)
         result = self._post("RATIBA", request.model_dump())

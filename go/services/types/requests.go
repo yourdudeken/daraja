@@ -4,6 +4,22 @@ import (
 	"github.com/yourdudeken/daraja-sdk/go/types"
 )
 
+type B2CAccountTopUpInput struct {
+	Initiator              string
+	SecurityCredential     string
+	CommandID              string
+	SenderIdentifierType   string
+	RecieverIdentifierType string
+	Amount                 string
+	PartyA                 string
+	PartyB                 string
+	AccountReference       string
+	Requester              *string
+	Remarks                string
+	QueueTimeOutURL        string
+	ResultURL              string
+}
+
 type STKPushInput struct {
 	BusinessShortCode int
 	TransactionType   types.TransactionType
@@ -132,19 +148,84 @@ type BusinessPayBillInput struct {
 type QueryOrgInfoInput struct{}
 
 type IMSIInput struct {
-	PhoneNumber string
+	CustomerNumber string
 }
 
-type IoTInput struct {
-	InitiatorName      string
-	SecurityCredential string
-	CommandID          types.IoTCommandID
-	ICCID              string
-	IMEI               string
-	DeviceName         string
-	DeviceLocation     string
-	DataPlan           string
-	BillingCycle       string
+type IoTGetAllSIMsInput struct {
+	VpnGroup     []string
+	StartAtIndex string
+	PageSize     string
+	Username     string
+}
+
+type IoTQueryLifeCycleInput struct {
+	Msisdn   string
+	VpnGroup string
+	Username string
+}
+
+type IoTQueryCustomerInfoInput struct {
+	Msisdn   string
+	VpnGroup string
+	Username string
+}
+
+type IoTSimActivationInput struct {
+	Msisdn   string
+	VpnGroup string
+	Username string
+}
+
+type IoTGetActivationTrendsInput struct {
+	VpnGroup  string
+	StartDate string
+	StopDate  string
+	Username  string
+}
+
+type IoTRenameAssetInput struct {
+	Msisdn    string
+	VpnGroup  string
+	Username  string
+	AssetName string
+}
+
+type IoTSuspendUnsuspendInput struct {
+	Msisdn    string
+	Username  string
+	VpnGroup  string
+	Product   string
+	Operation string
+}
+
+type IoTSearchMessagesInput struct {
+	SearchValue string
+}
+
+type IoTFilterMessagesInput struct {
+	StartDate string
+	EndDate   string
+	Status    string
+}
+
+type IoTDeleteMessageThreadInput struct {
+	Msisdn string
+}
+
+type IoTGetAllMessagesInput struct {
+	VpnGroup string
+	PageNo   int
+	PageSize int
+}
+
+type IoTSendSingleMessageInput struct {
+	Msisdn   string
+	Message  string
+	VpnGroup string
+}
+
+type IoTDeleteMessageInput struct {
+	ID int
 }
 
 type B2PochiInput struct {
@@ -187,17 +268,6 @@ type SwapInput struct {
 	CustomerNumber string
 }
 
-type BillManagerInput struct {
-	BillRefName      string
-	DueDate          string
-	Amount           string
-	InvoiceNumber    string
-	AccountReference string
-	PhoneNumber      string
-	Email            string
-	Description      string
-}
-
 type B2BExpressInput struct {
 	PrimaryShortCode  string
 	ReceiverShortCode string
@@ -208,36 +278,90 @@ type B2BExpressInput struct {
 	RequestRefID      string
 }
 
-type RatibaPaymentInput struct {
-	EmployeeID   string
-	EmployeeName string
-	PhoneNumber  string
-	Amount       string
-	Remarks      string
+type BillManagerOptinInput struct {
+	ShortCode       string
+	Email           string
+	OfficialContact string
+	SendReminders   string
+	Logo            string
+	CallbackURL     string
+}
+
+type BillManagerInvoiceItemInput struct {
+	ItemName string
+	Amount   string
+}
+
+type BillManagerSingleInvoiceInput struct {
+	ExternalReference string
+	BilledFullName    string
+	BilledPhoneNumber string
+	BilledPeriod      string
+	InvoiceName       string
+	DueDate           string
+	AccountReference  string
+	Amount            string
+	InvoiceItems      []BillManagerInvoiceItemInput
+}
+
+type BillManagerBulkInvoiceInput []BillManagerSingleInvoiceInput
+
+type BillManagerReconciliationInput struct {
+	PaymentDate       string
+	PaidAmount        string
+	AccountReference  string
+	TransactionID     string
+	PhoneNumber       string
+	FullName          string
+	InvoiceName       string
+	ExternalReference string
+}
+
+type BillManagerCancelSingleInput struct {
+	ExternalReference string
+}
+
+type BillManagerCancelBulkInput struct {
+	ExternalReferences []string
+}
+
+type BillManagerChangeOptinInput struct {
+	ShortCode       string
+	Email           string
+	OfficialContact string
+	SendReminders   int
+	Logo            string
+	CallbackURL     string
 }
 
 type RatibaInput struct {
-	InitiatorName      string
-	SecurityCredential string
-	CommandID          string
-	BatchName          string
-	BatchNumber        string
-	BatchDescription   string
-	ProcessingMethod   string
-	ScheduleDateTime   string
-	Payments           []RatibaPaymentInput
+	StandingOrderName           string
+	StartDate                   string
+	EndDate                     string
+	BusinessShortCode           string
+	TransactionType             string
+	ReceiverPartyIdentifierType string
+	Amount                      string
+	PartyA                      string
+	CallBackURL                 string
+	AccountReference            string
+	TransactionDesc             string
+	Frequency                   string
 }
 
 type TaxRemittanceInput struct {
-	InitiatorName        string
-	SecurityCredential   string
-	CommandID            string
-	ShortCode            string
-	TaxType              string
-	KRAPINNumber         string
-	Amount               string
-	TransactionReference string
-	Description          string
+	Initiator              string
+	SecurityCredential     string
+	CommandID              string
+	SenderIdentifierType   string
+	RecieverIdentifierType string
+	Amount                 string
+	PartyA                 string
+	PartyB                 string
+	AccountReference       string
+	Remarks                string
+	QueueTimeOutURL        string
+	ResultURL              string
 }
 
 type DynamicQRInput struct {

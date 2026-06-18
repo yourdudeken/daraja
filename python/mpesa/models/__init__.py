@@ -1,6 +1,6 @@
 import logging
 from datetime import datetime
-from typing import Any, Optional, Literal, Protocol, runtime_checkable
+from typing import Any, Optional, Literal, Protocol, runtime_checkable, List, Dict
 from pydantic import BaseModel, Field
 
 
@@ -404,17 +404,17 @@ class QueryOrgInfoResponse(BaseModel):
 
 
 class IMSIRequest(BaseModel):
-    PhoneNumber: str
-    AccessToken: str = ""
+    customerNumber: str = ""
 
 
 class IMSIResponse(BaseModel):
-    ResponseCode: str
-    ResponseDescription: str
-    PhoneNumber: str
-    IMSI: str
-    SubscriberStatus: str
-    NetworkOperator: str
+    requestRefID: str = ""
+    responseCode: str = ""
+    responseDesc: str = ""
+    imsi: str = ""
+    lastSwapDate: str = ""
+    msisdnRegistrationDate: str = ""
+    customerNumber: str = ""
 
 
 class IoTSIMRequest(BaseModel):
@@ -444,6 +444,170 @@ class IoTSIMResponse(BaseModel):
     ActivationDate: Optional[str] = None
     DataPlan: Optional[str] = None
     ExpiryDate: Optional[str] = None
+
+
+class IoTHeader(BaseModel):
+    requestRefId: str = ""
+    responseCode: int = 0
+    responseMessage: str = ""
+    customerMessage: str = ""
+    timestamp: str = ""
+
+
+class IoTAllSIMsRequest(BaseModel):
+    vpnGroup: List[str]
+    startAtInde: str = "0"
+    pageSize: str = ""
+    username: str = ""
+
+
+class IoTSIMDesc(BaseModel):
+    life_cycle_status: str = ""
+    iccid: str = ""
+    asset_name: str = ""
+    activation_date: str = ""
+    expiry_date: str = ""
+    imei: str = ""
+    product_status: str = ""
+    imsi: str = ""
+    msisdn: str = ""
+    vpn_group: str = ""
+    activation_agent: str = ""
+
+
+class IoTAllSIMsResponse(BaseModel):
+    header: Optional[IoTHeader] = None
+    body: Optional[Dict[str, Any]] = None
+
+
+class IoTQueryLifeCycleRequest(BaseModel):
+    msisdn: str = ""
+    vpnGroup: str = ""
+    username: str = ""
+
+
+class IoTQueryLifeCycleResponse(BaseModel):
+    header: Optional[IoTHeader] = None
+    body: Optional[Dict[str, Any]] = None
+
+
+class IoTQueryCustomerInfoRequest(BaseModel):
+    msisdn: str = ""
+    vpnGroup: str = ""
+    username: str = ""
+
+
+class IoTQueryCustomerInfoResponse(BaseModel):
+    header: Optional[IoTHeader] = None
+    body: Optional[Dict[str, Any]] = None
+
+
+class IoTSIMActivationRequest(BaseModel):
+    msisdn: str = ""
+    vpnGroup: str = ""
+    username: str = ""
+
+
+class IoTSIMActivationResponse(BaseModel):
+    header: Optional[IoTHeader] = None
+    body: Optional[Dict[str, Any]] = None
+
+
+class IoTActivationTrendsRequest(BaseModel):
+    vpnGroup: str = ""
+    startDate: str = ""
+    stopDate: str = ""
+    username: str = ""
+
+
+class IoTActivationTrendsResponse(BaseModel):
+    header: Optional[IoTHeader] = None
+    body: Optional[Dict[str, Any]] = None
+
+
+class IoTRenameAssetRequest(BaseModel):
+    msisdn: str = ""
+    vpnGroup: str = ""
+    username: str = ""
+    assetName: str = ""
+
+
+class IoTRenameAssetResponse(BaseModel):
+    header: Optional[IoTHeader] = None
+    body: Optional[Dict[str, Any]] = None
+
+
+class IoTSuspendUnsuspendRequest(BaseModel):
+    msisdn: str = ""
+    username: str = ""
+    vpnGroup: str = ""
+    product: str = ""
+    operation: str = ""
+
+
+class IoTSuspendUnsuspendResponse(BaseModel):
+    header: Optional[IoTHeader] = None
+    body: Optional[Dict[str, Any]] = None
+
+
+class IoTSearchMessagesRequest(BaseModel):
+    searchValue: str = ""
+
+
+class IoTSearchMessagesResponse(BaseModel):
+    header: Optional[IoTHeader] = None
+    body: Optional[Dict[str, Any]] = None
+
+
+class IoTFilterMessagesRequest(BaseModel):
+    startDate: str = ""
+    endDate: str = ""
+    status: str = ""
+
+
+class IoTFilterMessagesResponse(BaseModel):
+    header: Optional[IoTHeader] = None
+    body: Optional[Dict[str, Any]] = None
+
+
+class IoTDeleteThreadRequest(BaseModel):
+    msisdn: str = ""
+
+
+class IoTDeleteThreadResponse(BaseModel):
+    header: Optional[IoTHeader] = None
+    body: Optional[Dict[str, Any]] = None
+
+
+class IoTAllMessagesRequest(BaseModel):
+    vpnGroup: str = ""
+    pageNo: int = 0
+    pageSize: int = 10
+
+
+class IoTAllMessagesResponse(BaseModel):
+    header: Optional[IoTHeader] = None
+    body: Optional[Dict[str, Any]] = None
+
+
+class IoTSendSingleMessageRequest(BaseModel):
+    msisdn: str = ""
+    message: str = ""
+    vpnGroup: str = ""
+
+
+class IoTSendSingleMessageResponse(BaseModel):
+    header: Optional[IoTHeader] = None
+    body: Optional[Dict[str, Any]] = None
+
+
+class IoTDeleteMessageRequest(BaseModel):
+    id: int = 0
+
+
+class IoTDeleteMessageResponse(BaseModel):
+    header: Optional[IoTHeader] = None
+    body: Optional[Dict[str, Any]] = None
 
 
 class B2PochiRequest(BaseModel):
@@ -535,22 +699,98 @@ class SwapResponse(BaseModel):
     lastSwapDate: str
 
 
-class BillManagerRequest(BaseModel):
-    BillRefName: str
-    DueDate: str
-    Amount: str
-    InvoiceNumber: str
-    AccountReference: str
-    PhoneNumber: str
-    Email: Optional[str] = None
-    Description: str
+class BillManagerOptInRequest(BaseModel):
+    shortcode: str = ""
+    email: str = ""
+    officialContact: str = ""
+    sendReminders: str = ""
+    logo: Optional[str] = None
+    callbackurl: str = ""
+
+
+class BillManagerOptInResponse(BaseModel):
+    app_key: Optional[str] = None
+    resmsg: str = ""
+    rescode: str = ""
+
+
+class BillManagerInvoiceItem(BaseModel):
+    itemName: str = ""
+    amount: str = ""
+
+
+class BillManagerSingleInvoiceRequest(BaseModel):
+    externalReference: str = ""
+    billedFullName: str = ""
+    billedPhoneNumber: str = ""
+    billedPeriod: str = ""
+    invoiceName: str = ""
+    dueDate: str = ""
+    accountReference: str = ""
+    amount: str = ""
+    invoiceItems: Optional[List[BillManagerInvoiceItem]] = None
+
+
+class BillManagerBulkInvoiceRequest(BaseModel):
+    invoices: List[BillManagerSingleInvoiceRequest]
+
+
+class BillManagerReconciliationRequest(BaseModel):
+    paymentDate: str = ""
+    paidAmount: str = ""
+    accountReference: str = ""
+    transactionId: str = ""
+    phoneNumber: str = ""
+    fullName: str = ""
+    invoiceName: str = ""
+    externalReference: Optional[str] = None
+
+
+class BillManagerCancelSingleRequest(BaseModel):
+    externalReference: str = ""
+
+
+class BillManagerCancelBulkRequest(BaseModel):
+    externalReferences: List[Dict[str, str]]
+
+
+class BillManagerChangeOptInRequest(BaseModel):
+    shortcode: str = ""
+    email: str = ""
+    officialContact: str = ""
+    sendReminders: str = ""
+    logo: Optional[str] = None
+    callbackurl: str = ""
 
 
 class BillManagerResponse(BaseModel):
-    OriginatorConversationID: str
-    ConversationID: str
-    ResponseCode: str
-    ResponseDescription: str
+    Status_Message: Optional[str] = None
+    resmsg: str = ""
+    rescode: str = ""
+    errors: Optional[List[str]] = None
+
+
+class B2CAccountTopUpRequest(BaseModel):
+    Initiator: str = ""
+    SecurityCredential: str = ""
+    CommandID: str = "BusinessPayToBulk"
+    SenderIdentifierType: str = "4"
+    RecieverIdentifierType: str = "4"
+    Amount: str = ""
+    PartyA: str = ""
+    PartyB: str = ""
+    AccountReference: str = ""
+    Requester: Optional[str] = None
+    Remarks: str = ""
+    QueueTimeOutURL: str = ""
+    ResultURL: str = ""
+
+
+class B2CAccountTopUpResponse(BaseModel):
+    OriginatorConversationID: str = ""
+    ConversationID: str = ""
+    ResponseCode: str = ""
+    ResponseDescription: str = ""
 
 
 class B2BExpressRequest(BaseModel):
@@ -568,58 +808,63 @@ class B2BExpressResponse(BaseModel):
     status: str
 
 
-class RatibaPayment(BaseModel):
-    EmployeeID: str
-    EmployeeName: str
-    PhoneNumber: str
-    Amount: str
-    Remarks: str
-
-
 class RatibaRequest(BaseModel):
-    InitiatorName: str
-    SecurityCredential: str
-    CommandID: str
-    BatchName: str
-    BatchNumber: str
-    BatchDescription: str
-    ProcessingMethod: str
-    ScheduleDateTime: Optional[str] = None
-    Payments: list[RatibaPayment]
+    StandingOrderName: str = ""
+    StartDate: str = ""
+    EndDate: str = ""
+    BusinessShortCode: str = ""
+    TransactionType: str = "Standing Order Customer Pay Bill"
+    ReceiverPartyIdentifierType: str = "4"
+    Amount: str = ""
+    PartyA: str = ""
+    CallBackURL: str = ""
+    AccountReference: str = ""
+    TransactionDesc: str = ""
+    Frequency: str = ""
+
+
+class RatibaResponseHeader(BaseModel):
+    responseRefID: str = ""
+    responseCode: str = ""
+    responseDescription: str = ""
+    ResultDesc: str = ""
+
+
+class RatibaResponseBody(BaseModel):
+    responseDescription: str = ""
+    responseCode: str = ""
 
 
 class RatibaResponse(BaseModel):
-    BatchID: str
-    ResponseCode: str
-    ResponseDescription: str
-    TotalAmount: str
-    PaymentCount: str
-    ProcessingStatus: str
-    ScheduledDateTime: Optional[str] = None
+    ResponseHeader: Optional[RatibaResponseHeader] = None
+    ResponseBody: Optional[RatibaResponseBody] = None
+
+
+class RatibaCallbackResponse(BaseModel):
+    responseHeader: Optional[dict] = None
+    responseBody: Optional[dict] = None
 
 
 class TaxRemittanceRequest(BaseModel):
-    InitiatorName: str
-    SecurityCredential: str
-    CommandID: str = "TaxRemittance"
-    ShortCode: str
-    TaxType: str
-    KRAPINNumber: str
-    Amount: str
-    TransactionReference: str
-    Description: str
+    Initiator: str = ""
+    SecurityCredential: str = ""
+    CommandID: str = "PayTaxToKRA"
+    SenderIdentifierType: str = "4"
+    RecieverIdentifierType: str = "4"
+    Amount: str = ""
+    PartyA: str = ""
+    PartyB: str = "572572"
+    AccountReference: str = ""
+    Remarks: str = ""
+    QueueTimeOutURL: str = ""
+    ResultURL: str = ""
 
 
 class TaxRemittanceResponse(BaseModel):
-    ResponseCode: str
-    ResponseDescription: str
-    TransactionID: str
-    KRAPINNumber: str
-    TaxType: str
-    Amount: str
-    ReceiptNumber: str
-    PaymentDate: str
-    Status: str
+    OriginatorConversationID: str = ""
+    ConversationID: str = ""
+    ResponseCode: str = ""
+    ResponseDescription: str = ""
 
 
 __all__ = [
@@ -680,13 +925,53 @@ __all__ = [
     "PullTransactionsQueryResponse",
     "SwapRequest",
     "SwapResponse",
-    "BillManagerRequest",
-    "BillManagerResponse",
     "B2BExpressRequest",
     "B2BExpressResponse",
-    "RatibaPayment",
+    "B2CAccountTopUpRequest",
+    "B2CAccountTopUpResponse",
+    "BillManagerOptInRequest",
+    "BillManagerOptInResponse",
+    "BillManagerInvoiceItem",
+    "BillManagerSingleInvoiceRequest",
+    "BillManagerBulkInvoiceRequest",
+    "BillManagerReconciliationRequest",
+    "BillManagerCancelSingleRequest",
+    "BillManagerCancelBulkRequest",
+    "BillManagerChangeOptInRequest",
+    "BillManagerResponse",
     "RatibaRequest",
+    "RatibaResponseHeader",
+    "RatibaResponseBody",
     "RatibaResponse",
+    "RatibaCallbackResponse",
     "TaxRemittanceRequest",
     "TaxRemittanceResponse",
+    "IoTHeader",
+    "IoTAllSIMsRequest",
+    "IoTSIMDesc",
+    "IoTAllSIMsResponse",
+    "IoTQueryLifeCycleRequest",
+    "IoTQueryLifeCycleResponse",
+    "IoTQueryCustomerInfoRequest",
+    "IoTQueryCustomerInfoResponse",
+    "IoTSIMActivationRequest",
+    "IoTSIMActivationResponse",
+    "IoTActivationTrendsRequest",
+    "IoTActivationTrendsResponse",
+    "IoTRenameAssetRequest",
+    "IoTRenameAssetResponse",
+    "IoTSuspendUnsuspendRequest",
+    "IoTSuspendUnsuspendResponse",
+    "IoTSearchMessagesRequest",
+    "IoTSearchMessagesResponse",
+    "IoTFilterMessagesRequest",
+    "IoTFilterMessagesResponse",
+    "IoTDeleteThreadRequest",
+    "IoTDeleteThreadResponse",
+    "IoTAllMessagesRequest",
+    "IoTAllMessagesResponse",
+    "IoTSendSingleMessageRequest",
+    "IoTSendSingleMessageResponse",
+    "IoTDeleteMessageRequest",
+    "IoTDeleteMessageResponse",
 ]

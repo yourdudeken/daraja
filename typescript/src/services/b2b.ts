@@ -1,12 +1,12 @@
 import { MpesaApiClient } from "../client/client.js";
-import type { B2BRequest, B2BResponse, MpesaResult } from "../types/index.js";
+import type { B2CAccountTopUpRequest, B2CAccountTopUpResponse, MpesaResult } from "../types/index.js";
 
 export class B2BService {
   constructor(private readonly client: MpesaApiClient) {}
 
-  async send(request: B2BRequest): Promise<B2BResponse> {
-    return this.client.post<B2BResponse>(
-      this.client.getEndpoint("B2B"),
+  async topUp(request: B2CAccountTopUpRequest): Promise<B2CAccountTopUpResponse> {
+    return this.client.post<B2CAccountTopUpResponse>(
+      this.client.getEndpoint("B2C_ACCOUNT_TOP_UP"),
       request,
     );
   }

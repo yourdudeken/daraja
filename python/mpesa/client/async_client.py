@@ -17,30 +17,71 @@ from mpesa.models import (
     AccountBalanceRequest,
     AccountBalanceResponse,
     AccessTokenResponse,
+    B2BExpressRequest,
+    B2BExpressResponse,
     B2BRequest,
     B2BResponse,
+    B2CAccountTopUpRequest,
+    B2CAccountTopUpResponse,
     B2CRequest,
     B2CResponse,
+    B2PochiRequest,
+    B2PochiResponse,
+    BillManagerResponse,
+    BusinessBuyGoodsRequest,
+    BusinessPayBillRequest,
+    BusinessGoodsResponse,
     C2BRegisterURLRequest,
     C2BResponse,
     C2BSimulateRequest,
     DynamicQRRequest,
     DynamicQRResponse,
+    IMSIRequest,
+    IMSIResponse,
+    IoTSIMRequest,
+    IoTSIMResponse,
+    LipaNaBongaRequest,
+    LipaNaBongaResponse,
     MpesaConfig,
+    PullTransactionsRegisterRequest,
+    PullTransactionsRegisterResponse,
+    PullTransactionsQueryRequest,
+    PullTransactionsQueryResponse,
+    QueryOrgInfoRequest,
+    QueryOrgInfoResponse,
+    RatibaRequest,
+    RatibaResponse,
     ReversalRequest,
     ReversalResponse,
     STKPushRequest,
     STKPushResponse,
     STKQueryRequest,
     STKQueryResponse,
+    SwapRequest,
+    SwapResponse,
+    TaxRemittanceRequest,
+    TaxRemittanceResponse,
     TransactionStatusRequest,
     TransactionStatusResponse,
     _get_logger,
 )
 from mpesa.utils import generate_password, generate_timestamp, create_tracer, with_span
-from mpesa.utils.idempotency import IdempotencyStore, InMemoryIdempotencyStore, generate_idempotency_key
-from mpesa.utils.circuit_breaker import CircuitBreaker, CircuitBreakerOpenError, CircuitBreakerConfig
-from mpesa.utils.rate_limiter import TokenBucketRateLimiter, NoopRateLimiter, RateLimiterConfig, EndpointRateLimiterRouter
+from mpesa.utils.idempotency import (
+    IdempotencyStore,
+    InMemoryIdempotencyStore,
+    generate_idempotency_key,
+)
+from mpesa.utils.circuit_breaker import (
+    CircuitBreaker,
+    CircuitBreakerOpenError,
+    CircuitBreakerConfig,
+)
+from mpesa.utils.rate_limiter import (
+    TokenBucketRateLimiter,
+    NoopRateLimiter,
+    RateLimiterConfig,
+    EndpointRateLimiterRouter,
+)
 from mpesa.utils.token_cache import SharedTokenCache, RedisTokenCache, build_token_cache_key
 
 RETRYABLE_STATUS_CODES = {408, 429, 500, 502, 503, 504}
@@ -115,8 +156,10 @@ class AsyncMpesa:
         self._logger = _get_logger(config.logger)
         self._tracer = config.tracer if config.tracer is not None else create_tracer(self._logger)
         self._idempotency_store: Optional[IdempotencyStore] = (
-            config.idempotency_store if hasattr(config, 'idempotency_store') and config.idempotency_store is not None
-            else InMemoryIdempotencyStore() if config.enable_idempotency
+            config.idempotency_store
+            if hasattr(config, "idempotency_store") and config.idempotency_store is not None
+            else InMemoryIdempotencyStore()
+            if config.enable_idempotency
             else None
         )
 
@@ -165,21 +208,32 @@ class AsyncMpesa:
             },
         )
         self._token_manager = _AsyncTokenManager(self._client, config)
-        self._logger.info("Async M-Pesa client initialized", extra={
-            "environment": config.environment,
-            "timeout": config.timeout,
-            "max_retries": config.retry_config.max_retries,
-        })
+        self._logger.info(
+            "Async M-Pesa client initialized",
+            extra={
+                "environment": config.environment,
+                "timeout": config.timeout,
+                "max_retries": config.retry_config.max_retries,
+            },
+        )
 
     def _log_request(self, request: httpx.Request) -> None:
-        self._logger.debug("Outgoing request",
-                           extra={"method": request.method, "url": str(request.url)})
+        self._logger.debug(
+            "Outgoing request", extra={"method": request.method, "url": str(request.url)}
+        )
 
     def _log_response(self, response: httpx.Response) -> None:
-        self._logger.debug("Response received",
-                           extra={"status": response.status_code, "url": str(response.url)})
+        self._logger.debug(
+            "Response received", extra={"status": response.status_code, "url": str(response.url)}
+        )
 
-    async def _request(self, method: str, url: str, json_data: Optional[dict] = None, operation_name: Optional[str] = None) -> dict:
+    async def _request(
+        self,
+        method: str,
+        url: str,
+        json_data: Optional[dict] = None,
+        operation_name: Optional[str] = None,
+    ) -> dict:
         request_id = _generate_request_id()
 
         idempotency_key: Optional[str] = None
@@ -187,7 +241,9 @@ class AsyncMpesa:
             idempotency_key = generate_idempotency_key(method, url, json_data)
             cached = self._idempotency_store.get(idempotency_key)
             if cached is not None:
-                self._logger.debug("Idempotency cache hit", extra={"key": idempotency_key, "url": url})
+                self._logger.debug(
+                    "Idempotency cache hit", extra={"key": idempotency_key, "url": url}
+                )
                 return cached
 
         while not self._rate_limiter.try_acquire(url):
@@ -198,8 +254,10 @@ class AsyncMpesa:
             for attempt in range(self._config.retry_config.max_retries + 1):
                 try:
                     if attempt > 0:
-                        self._logger.warning("Retrying request",
-                                             extra={"attempt": attempt, "url": url, "request_id": request_id})
+                        self._logger.warning(
+                            "Retrying request",
+                            extra={"attempt": attempt, "url": url, "request_id": request_id},
+                        )
 
                     token = await self._token_manager.get_token()
                     headers = {
@@ -215,10 +273,20 @@ class AsyncMpesa:
                         headers=headers,
                     )
 
-                    if response.status_code in RETRYABLE_STATUS_CODES and attempt < self._config.retry_config.max_retries:
-                        delay = min(2 ** attempt * 1.0, 30.0)
-                        self._logger.warning("Retryable status code, backing off",
-                                             extra={"status": response.status_code, "delay": delay, "attempt": attempt, "request_id": request_id})
+                    if (
+                        response.status_code in RETRYABLE_STATUS_CODES
+                        and attempt < self._config.retry_config.max_retries
+                    ):
+                        delay = min(2**attempt * 1.0, 30.0)
+                        self._logger.warning(
+                            "Retryable status code, backing off",
+                            extra={
+                                "status": response.status_code,
+                                "delay": delay,
+                                "attempt": attempt,
+                                "request_id": request_id,
+                            },
+                        )
                         await asyncio.sleep(delay)
                         continue
 
@@ -245,22 +313,31 @@ class AsyncMpesa:
                     json_result = response.json()
                     if idempotency_key:
                         self._idempotency_store.set(idempotency_key, json_result, 86400_000)
-                    self._logger.debug("Request successful",
-                                       extra={"method": method, "url": url, "status": response.status_code, "request_id": request_id})
+                    self._logger.debug(
+                        "Request successful",
+                        extra={
+                            "method": method,
+                            "url": url,
+                            "status": response.status_code,
+                            "request_id": request_id,
+                        },
+                    )
                     return json_result
 
                 except httpx.TimeoutException as e:
                     last_error = TimeoutError("Request timed out.", cause=e, request_id=request_id)
                     if attempt < self._config.retry_config.max_retries:
-                        delay = min(2 ** attempt * 1.0, 30.0)
+                        delay = min(2**attempt * 1.0, 30.0)
                         await asyncio.sleep(delay)
                         continue
                     raise last_error
 
                 except httpx.ConnectError as e:
-                    last_error = APIConnectionError("Connection failed.", cause=e, request_id=request_id)
+                    last_error = APIConnectionError(
+                        "Connection failed.", cause=e, request_id=request_id
+                    )
                     if attempt < self._config.retry_config.max_retries:
-                        delay = min(2 ** attempt * 1.0, 30.0)
+                        delay = min(2**attempt * 1.0, 30.0)
                         await asyncio.sleep(delay)
                         continue
                     raise last_error
@@ -269,8 +346,14 @@ class AsyncMpesa:
                     raise
 
                 except httpx.HTTPStatusError as e:
-                    self._logger.error("API error response",
-                                       extra={"status": e.response.status_code, "body": e.response.text, "request_id": request_id})
+                    self._logger.error(
+                        "API error response",
+                        extra={
+                            "status": e.response.status_code,
+                            "body": e.response.text,
+                            "request_id": request_id,
+                        },
+                    )
                     raise MpesaAPIError(
                         str(e),
                         status_code=e.response.status_code,
@@ -283,12 +366,16 @@ class AsyncMpesa:
             raise MpesaAPIError("Request failed after retries.", request_id=request_id)
 
         span_name = f"mpesa.http.{method.lower()}"
-        with with_span(self._tracer, span_name, {
-            "http.method": method.upper(),
-            "http.url": url,
-            "mpesa.operation": operation_name or "",
-            "rpc.system": "mpesa",
-        }) as span:
+        with with_span(
+            self._tracer,
+            span_name,
+            {
+                "http.method": method.upper(),
+                "http.url": url,
+                "mpesa.operation": operation_name or "",
+                "rpc.system": "mpesa",
+            },
+        ) as span:
             result = await self._circuit_breaker.acall(do_request)
             if isinstance(result, dict):
                 rc = result.get("ResponseCode", "")
@@ -305,7 +392,9 @@ class AsyncMpesa:
             request = STKPushRequest(**request)
         if not request.Password and self._config.passkey:
             timestamp = request.Timestamp or generate_timestamp()
-            request.Password = generate_password(request.BusinessShortCode, self._config.passkey, timestamp)
+            request.Password = generate_password(
+                request.BusinessShortCode, self._config.passkey, timestamp
+            )
             request.Timestamp = timestamp
         result = await self._post("STK_PUSH", request.model_dump())
         return STKPushResponse(**result)
@@ -315,7 +404,9 @@ class AsyncMpesa:
             request = STKQueryRequest(**request)
         if not request.Password and self._config.passkey:
             timestamp = request.Timestamp or generate_timestamp()
-            request.Password = generate_password(request.BusinessShortCode, self._config.passkey, timestamp)
+            request.Password = generate_password(
+                request.BusinessShortCode, self._config.passkey, timestamp
+            )
             request.Timestamp = timestamp
         result = await self._post("STK_QUERY", request.model_dump())
         return STKQueryResponse(**result)
@@ -350,13 +441,17 @@ class AsyncMpesa:
         result = await self._post("REVERSAL", request.model_dump())
         return ReversalResponse(**result)
 
-    async def transaction_status(self, request: TransactionStatusRequest | dict) -> TransactionStatusResponse:
+    async def transaction_status(
+        self, request: TransactionStatusRequest | dict
+    ) -> TransactionStatusResponse:
         if isinstance(request, dict):
             request = TransactionStatusRequest(**request)
         result = await self._post("TRANSACTION_STATUS", request.model_dump())
         return TransactionStatusResponse(**result)
 
-    async def account_balance(self, request: AccountBalanceRequest | dict) -> AccountBalanceResponse:
+    async def account_balance(
+        self, request: AccountBalanceRequest | dict
+    ) -> AccountBalanceResponse:
         if isinstance(request, dict):
             request = AccountBalanceRequest(**request)
         result = await self._post("ACCOUNT_BALANCE", request.model_dump())
@@ -367,6 +462,108 @@ class AsyncMpesa:
             request = DynamicQRRequest(**request)
         result = await self._post("DYNAMIC_QR", request.model_dump())
         return DynamicQRResponse(**result)
+
+    async def business_buy_goods(
+        self, request: BusinessBuyGoodsRequest | dict
+    ) -> BusinessGoodsResponse:
+        if isinstance(request, dict):
+            request = BusinessBuyGoodsRequest(**request)
+        result = await self._post("B2B", request.model_dump())
+        return BusinessGoodsResponse(**result)
+
+    async def business_pay_bill(
+        self, request: BusinessPayBillRequest | dict
+    ) -> BusinessGoodsResponse:
+        if isinstance(request, dict):
+            request = BusinessPayBillRequest(**request)
+        result = await self._post("B2B", request.model_dump())
+        return BusinessGoodsResponse(**result)
+
+    async def query_org_info(
+        self, request: QueryOrgInfoRequest | dict | None = None
+    ) -> QueryOrgInfoResponse:
+        if request is None:
+            request = QueryOrgInfoRequest()
+        elif isinstance(request, dict):
+            request = QueryOrgInfoRequest(**request)
+        result = await self._post("QUERY_ORG_INFO", request.model_dump())
+        return QueryOrgInfoResponse(**result)
+
+    async def imsi_query(self, request: IMSIRequest | dict) -> IMSIResponse:
+        if isinstance(request, dict):
+            request = IMSIRequest(**request)
+        result = await self._post("IMSI", request.model_dump())
+        return IMSIResponse(**result)
+
+    async def iot_manage(self, request: IoTSIMRequest | dict) -> IoTSIMResponse:
+        if isinstance(request, dict):
+            request = IoTSIMRequest(**request)
+        result = await self._post("IOT_MANAGE", request.model_dump())
+        return IoTSIMResponse(**result)
+
+    async def b2pochi(self, request: B2PochiRequest | dict) -> B2PochiResponse:
+        if isinstance(request, dict):
+            request = B2PochiRequest(**request)
+        result = await self._post("B2POCHI", request.model_dump())
+        return B2PochiResponse(**result)
+
+    async def lipa_na_bonga(self, request: LipaNaBongaRequest | dict) -> LipaNaBongaResponse:
+        if isinstance(request, dict):
+            request = LipaNaBongaRequest(**request)
+        result = await self._post("LIPA_NA_BONGA", request.model_dump())
+        return LipaNaBongaResponse(**result)
+
+    async def pull_transactions_register(
+        self, request: PullTransactionsRegisterRequest | dict
+    ) -> PullTransactionsRegisterResponse:
+        if isinstance(request, dict):
+            request = PullTransactionsRegisterRequest(**request)
+        result = await self._post("PULL_TRANSACTIONS_REGISTER", request.model_dump())
+        return PullTransactionsRegisterResponse(**result)
+
+    async def pull_transactions_query(
+        self, request: PullTransactionsQueryRequest | dict
+    ) -> PullTransactionsQueryResponse:
+        if isinstance(request, dict):
+            request = PullTransactionsQueryRequest(**request)
+        result = await self._post("PULL_TRANSACTIONS_QUERY", request.model_dump())
+        return PullTransactionsQueryResponse(**result)
+
+    async def swap(self, request: SwapRequest | dict) -> SwapResponse:
+        if isinstance(request, dict):
+            request = SwapRequest(**request)
+        result = await self._post("SWAP", request.model_dump())
+        return SwapResponse(**result)
+
+    async def bill_manager(self, request: dict) -> BillManagerResponse:
+        result = await self._post("BILL_MANAGER", request)
+        return BillManagerResponse(**result)
+
+    async def b2b_express(self, request: B2BExpressRequest | dict) -> B2BExpressResponse:
+        if isinstance(request, dict):
+            request = B2BExpressRequest(**request)
+        result = await self._post("B2B_EXPRESS", request.model_dump())
+        return B2BExpressResponse(**result)
+
+    async def ratiba(self, request: RatibaRequest | dict) -> RatibaResponse:
+        if isinstance(request, dict):
+            request = RatibaRequest(**request)
+        result = await self._post("RATIBA", request.model_dump())
+        return RatibaResponse(**result)
+
+    async def tax_remittance(self, request: TaxRemittanceRequest | dict) -> TaxRemittanceResponse:
+        if isinstance(request, dict):
+            request = TaxRemittanceRequest(**request)
+        result = await self._post("TAX_REMITTANCE", request.model_dump())
+        return TaxRemittanceResponse(**result)
+
+    async def b2c_account_top_up(
+        self, request: B2CAccountTopUpRequest | dict
+    ) -> B2CAccountTopUpResponse:
+        if isinstance(request, dict):
+            request = B2CAccountTopUpRequest(**request)
+        result = await self._post("B2C_ACCOUNT_TOP_UP", request.model_dump())
+        return B2CAccountTopUpResponse(**result)
 
     async def rotate_credentials(self, consumer_key: str, consumer_secret: str) -> None:
         self._config.consumer_key = consumer_key

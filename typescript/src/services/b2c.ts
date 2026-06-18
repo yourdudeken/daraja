@@ -11,13 +11,6 @@ export class B2CService {
     );
   }
 
-  async topUp(request: B2CRequest): Promise<B2CResponse> {
-    return this.client.post<B2CResponse>(
-      this.client.getEndpoint("B2C"),
-      request,
-    );
-  }
-
   static parseCallback(payload: B2CCallbackPayload): {
     success: boolean;
     transactionId: string;

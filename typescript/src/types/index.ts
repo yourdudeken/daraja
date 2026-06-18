@@ -287,41 +287,6 @@ export interface B2CCallbackPayload {
 }
 
 // ============================================================
-// B2B
-// ============================================================
-export type B2BCommandID =
-  | "BusinessPayBill"
-  | "BusinessBuyGoods"
-  | "MerchantToMerchantTransfer"
-  | "MerchantTransferFromMerchantToWorking"
-  | "MerchantServicesMMFAccountBalance"
-  | "AgencyFloatAdvance";
-
-export interface B2BRequest {
-  Initiator: string;
-  SecurityCredential: string;
-  CommandID: B2BCommandID;
-  SenderIdentifierType?: number;
-  RecieverIdentifierType?: number;
-  Amount: number;
-  PartyA: number;
-  PartyB: number;
-  Requester?: number;
-  AccountReference?: string;
-  Remarks: string;
-  QueueTimeOutURL: string;
-  ResultURL: string;
-  Occassion?: string;
-}
-
-export interface B2BResponse {
-  OriginatorConversationID: string;
-  ConversationID: string;
-  ResponseCode: string;
-  ResponseDescription: string;
-}
-
-// ============================================================
 // REVERSAL
 // ============================================================
 export interface ReversalRequest {
@@ -495,44 +460,262 @@ export interface QueryOrgInfoResponse {
 // IMSI
 // ============================================================
 export interface IMSIRequest {
-  PhoneNumber: string;
-  AccessToken?: string;
+  customerNumber: string;
 }
 
 export interface IMSIResponse {
-  ResponseCode: string;
-  ResponseDescription: string;
-  PhoneNumber: string;
-  IMSI: string;
-  SubscriberStatus: string;
-  NetworkOperator: string;
+  requestRefID: string;
+  responseCode: string;
+  responseDesc: string;
+  imsi: string;
+  lastSwapDate: string;
+  msisdnRegistrationDate: string;
+  customerNumber: string;
 }
 
 // ============================================================
 // IoT SIM MANAGEMENT
 // ============================================================
-export type IoTCommandID = "ActivateIOTSIM" | "DeactivateIOTSIM" | "CheckStatus" | "UpdateDataPlan" | "ReportUsage" | "SuspendSIM";
-
-export interface IoTSIMRequest {
-  InitiatorName: string;
-  SecurityCredential: string;
-  CommandID: IoTCommandID;
-  ICCID: string;
-  IMEI?: string;
-  DeviceName?: string;
-  DeviceLocation?: string;
-  DataPlan?: string;
-  BillingCycle?: string;
+export interface IoTHeader {
+  requestRefId: string;
+  responseCode: number;
+  responseMessage: string;
+  customerMessage: string;
+  timestamp: string;
 }
 
-export interface IoTSIMResponse {
-  ResponseCode: string;
-  ResponseDescription: string;
-  ICCID: string;
-  Status: string;
-  ActivationDate?: string;
-  DataPlan?: string;
-  ExpiryDate?: string;
+// Get All SIMs
+export interface IoTAllSIMsRequest {
+  vpnGroup: string[];
+  startAtInde: string;
+  pageSize: string;
+  username: string;
+}
+
+export interface IoTAllSIMsResponse {
+  header: IoTHeader;
+  body: {
+    Desc: Array<{
+      life_cycle_status: string;
+      iccid: string;
+      asset_name: string;
+      activation_date: string;
+      expiry_date: string;
+      imei: string;
+      product_status: string;
+      imsi: string;
+      msisdn: string;
+      vpn_group: string;
+      activation_agent: string;
+    }>;
+  };
+}
+
+// Query Life Cycle Status
+export interface IoTQueryLifeCycleRequest {
+  msisdn: string;
+  vpnGroup: string;
+  username: string;
+}
+
+export interface IoTQueryLifeCycleResponse {
+  header: IoTHeader;
+  body: {
+    desc: string;
+    status: string;
+    statusCode: string;
+  };
+}
+
+// Query Customer Info
+export interface IoTQueryCustomerInfoRequest {
+  msisdn: string;
+  vpnGroup: string;
+  username: string;
+}
+
+export interface IoTQueryCustomerInfoResponse {
+  header: IoTHeader;
+  body: {
+    offeringName: string;
+    offeringStatus: string;
+    subscriberStatus: string;
+    offeringId: string;
+    vpnGroup: string;
+  };
+}
+
+// SIM Activation
+export interface IoTSIMActivationRequest {
+  msisdn: string;
+  vpnGroup: string;
+  username: string;
+}
+
+export interface IoTSIMActivationResponse {
+  header: IoTHeader;
+  body: {
+    Desc: string;
+    requestId: string;
+    ID: string;
+  };
+}
+
+// Get Activation Trends
+export interface IoTActivationTrendsRequest {
+  vpnGroup: string;
+  startDate: string;
+  stopDate: string;
+  username: string;
+}
+
+export interface IoTActivationTrendsResponse {
+  header: IoTHeader;
+  body: {
+    body: Array<{
+      pooledTrend: string[];
+      suspendedTrend: string[];
+      dates: string[];
+      activeTrend: string[];
+      idleTrend: string[];
+    }>;
+  };
+}
+
+// Rename Asset
+export interface IoTRenameAssetRequest {
+  msisdn: string;
+  vpnGroup: string;
+  username: string;
+  assetName: string;
+}
+
+export interface IoTRenameAssetResponse {
+  header: IoTHeader;
+  body: {
+    result: string;
+    desc: string;
+  };
+}
+
+// Suspend/Unsuspend
+export interface IoTSuspendUnsuspendRequest {
+  msisdn: string;
+  username: string;
+  vpnGroup: string;
+  product: string;
+  operation: string;
+}
+
+export interface IoTSuspendUnsuspendResponse {
+  header: IoTHeader;
+  body: {
+    statusCode: number;
+    statusDesc: string;
+  };
+}
+
+// Search Messages
+export interface IoTSearchMessagesRequest {
+  searchValue: string;
+}
+
+export interface IoTMessage {
+  id: number;
+  recepitId: number;
+  sourceAddr: string;
+  msisdn: string;
+  message: string;
+  sourceSystem: string;
+  processingStatus: string;
+  messageId: string;
+  date: string;
+  deliverTime: string;
+  description: string;
+  vpnGroup: string;
+}
+
+export interface IoTPageable {
+  pageNumber: number;
+  pageSize: number;
+  sort: { unsorted: boolean; sorted: boolean; empty: boolean };
+  offset: number;
+  unpaged: boolean;
+  paged: boolean;
+}
+
+export interface IoTSearchMessagesResponse {
+  header: IoTHeader;
+  body: {
+    content: IoTMessage[];
+    pageable: IoTPageable;
+    totalPages: number;
+    totalElements: number;
+    last: boolean;
+    numberOfElements: number;
+    size: number;
+    number: number;
+    first: boolean;
+    empty: boolean;
+  };
+}
+
+// Filter Messages
+export interface IoTFilterMessagesRequest {
+  startDate: string;
+  endDate: string;
+  status: string;
+}
+
+export type IoTFilterMessagesResponse = IoTSearchMessagesResponse;
+
+// Delete Message Thread
+export interface IoTDeleteThreadRequest {
+  msisdn: string;
+}
+
+export interface IoTDeleteResponse {
+  header: IoTHeader;
+  body: null;
+}
+
+// Get All Messages
+export interface IoTAllMessagesRequest {
+  vpnGroup: string;
+}
+
+export type IoTAllMessagesResponse = IoTSearchMessagesResponse;
+
+// Send Single Message
+export interface IoTSendSingleMessageRequest {
+  msisdn: string;
+  message: string;
+  vpnGroup: string;
+}
+
+export interface IoTMessageDetail {
+  id: number;
+  receiptId: number;
+  sourceAddr: string;
+  msisdn: string;
+  message: string;
+  sourceSystem: string;
+  processingStatus: string;
+  messageId: string;
+  date: string;
+  deliverTime: string;
+  description: string;
+  vpnGroup: string;
+}
+
+export interface IoTSendSingleMessageResponse {
+  header: IoTHeader;
+  body: IoTMessageDetail;
+}
+
+// Delete Message
+export interface IoTDeleteMessageRequest {
+  id: number;
 }
 
 // ============================================================
@@ -639,22 +822,80 @@ export interface SwapResponse {
 // ============================================================
 // BILL MANAGER
 // ============================================================
-export interface BillManagerRequest {
-  BillRefName: string;
-  DueDate: string;
-  Amount: string;
-  InvoiceNumber: string;
-  AccountReference: string;
-  PhoneNumber: string;
-  Email?: string;
-  Description: string;
+// Bill Manager Opt-In
+export interface BillManagerOptInRequest {
+  shortcode: string;
+  email: string;
+  officialContact: string;
+  sendReminders: string;
+  logo?: string;
+  callbackurl: string;
 }
 
+export interface BillManagerOptInResponse {
+  app_key?: string;
+  resmsg: string;
+  rescode: string;
+}
+
+// Bill Manager Invoice Item
+export interface BillManagerInvoiceItem {
+  itemName: string;
+  amount: string;
+}
+
+// Single Invoice
+export interface BillManagerSingleInvoiceRequest {
+  externalReference: string;
+  billedFullName: string;
+  billedPhoneNumber: string;
+  billedPeriod: string;
+  invoiceName: string;
+  dueDate: string;
+  accountReference: string;
+  amount: string;
+  invoiceItems?: BillManagerInvoiceItem[];
+}
+
+// Bulk Invoice (array of singles)
+export type BillManagerBulkInvoiceRequest = BillManagerSingleInvoiceRequest[];
+
+// Reconciliation (acknowledgment)
+export interface BillManagerReconciliationRequest {
+  paymentDate: string;
+  paidAmount: string;
+  accountReference: string;
+  transactionId: string;
+  phoneNumber: string;
+  fullName: string;
+  invoiceName: string;
+  externalReference?: string;
+}
+
+// Cancel Single
+export interface BillManagerCancelSingleRequest {
+  externalReference: string;
+}
+
+// Cancel Bulk
+export type BillManagerCancelBulkRequest = Array<{ externalReference: string }>;
+
+// Change Opt-In
+export interface BillManagerChangeOptInRequest {
+  shortcode: string;
+  email: string;
+  officialContact: string;
+  sendReminders: string;
+  logo?: string;
+  callbackurl: string;
+}
+
+// Generic Bill Manager response (used by multiple sub-APIs)
 export interface BillManagerResponse {
-  OriginatorConversationID: string;
-  ConversationID: string;
-  ResponseCode: string;
-  ResponseDescription: string;
+  Status_Message?: string;
+  resmsg: string;
+  rescode: string;
+  errors?: string[];
 }
 
 // ============================================================
@@ -687,63 +928,104 @@ export interface B2BExpressCallbackPayload {
 }
 
 // ============================================================
-// M-PESA RATIBA
+// M-PESA RATIBA (Standing Order)
 // ============================================================
-export interface RatibaPayment {
-  EmployeeID: string;
-  EmployeeName: string;
-  PhoneNumber: string;
+export interface RatibaRequest {
+  StandingOrderName: string;
+  StartDate: string;
+  EndDate: string;
+  BusinessShortCode: string;
+  TransactionType: string;
+  ReceiverPartyIdentifierType: string;
   Amount: string;
-  Remarks: string;
+  PartyA: string;
+  CallBackURL: string;
+  AccountReference: string;
+  TransactionDesc: string;
+  Frequency: string;
 }
 
-export interface RatibaRequest {
-  InitiatorName: string;
-  SecurityCredential: string;
-  CommandID: string;
-  BatchName: string;
-  BatchNumber: string;
-  BatchDescription: string;
-  ProcessingMethod: string;
-  ScheduleDateTime?: string;
-  Payments: RatibaPayment[];
+export interface RatibaResponseHeader {
+  responseRefID: string;
+  responseCode: string;
+  responseDescription: string;
+  ResultDesc: string;
+}
+
+export interface RatibaResponseBody {
+  responseDescription: string;
+  responseCode: string;
 }
 
 export interface RatibaResponse {
-  BatchID: string;
-  ResponseCode: string;
-  ResponseDescription: string;
-  TotalAmount: string;
-  PaymentCount: string;
-  ProcessingStatus: string;
-  ScheduledDateTime?: string;
+  ResponseHeader: RatibaResponseHeader;
+  ResponseBody: RatibaResponseBody;
+}
+
+export interface RatibaCallbackResponse {
+  responseHeader: {
+    responseRefID: string;
+    requestRefID: string;
+    responseCode: string;
+    responseDescription: string;
+  };
+  responseBody: {
+    responseData: Array<{
+      name: string;
+      value: string;
+    }>;
+  };
 }
 
 // ============================================================
 // TAX REMITTANCE
 // ============================================================
 export interface TaxRemittanceRequest {
-  InitiatorName: string;
+  Initiator: string;
   SecurityCredential: string;
   CommandID: string;
-  ShortCode: string;
-  TaxType: string;
-  KRAPINNumber: string;
+  SenderIdentifierType: string;
+  RecieverIdentifierType: string;
   Amount: string;
-  TransactionReference: string;
-  Description: string;
+  PartyA: string;
+  PartyB: string;
+  AccountReference: string;
+  Remarks: string;
+  QueueTimeOutURL: string;
+  ResultURL: string;
 }
 
 export interface TaxRemittanceResponse {
+  OriginatorConversationID: string;
+  ConversationID: string;
   ResponseCode: string;
   ResponseDescription: string;
-  TransactionID: string;
-  KRAPINNumber: string;
-  TaxType: string;
+}
+
+// ============================================================
+// B2C ACCOUNT TOP UP
+// ============================================================
+export interface B2CAccountTopUpRequest {
+  Initiator: string;
+  SecurityCredential: string;
+  CommandID: string;
+  SenderIdentifierType: string;
+  RecieverIdentifierType: string;
   Amount: string;
-  ReceiptNumber: string;
-  PaymentDate: string;
-  Status: string;
+  PartyA: string;
+  PartyB: string;
+  AccountReference: string;
+  Requester?: string;
+  Remarks: string;
+  QueueTimeOutURL: string;
+  ResultURL: string;
+}
+
+export interface B2CAccountTopUpResponse {
+  OriginatorConversationID: string;
+  ConversationID: string;
+  ResponseCode: string;
+  ResponseDescription: string;
 }
 
 // ============================================================

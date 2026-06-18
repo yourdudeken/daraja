@@ -299,46 +299,226 @@ func (s *Service) QueryOrgInfo(ctx context.Context, _ svctypes.QueryOrgInfoInput
 
 func (s *Service) IMSI(ctx context.Context, input svctypes.IMSIInput) (*svctypes.IMSIResult, error) {
 	req := types.IMSIRequest{
-		PhoneNumber: input.PhoneNumber,
+		CustomerNumber: input.CustomerNumber,
 	}
 	resp, err := s.client.IMSI(ctx, req)
 	if err != nil {
 		return nil, err
 	}
 	return &svctypes.IMSIResult{
-		ResponseCode:        resp.ResponseCode,
-		ResponseDescription: resp.ResponseDescription,
-		PhoneNumber:         resp.PhoneNumber,
-		IMSI:                resp.IMSI,
-		SubscriberStatus:    resp.SubscriberStatus,
-		NetworkOperator:     resp.NetworkOperator,
+		RequestRefID:           resp.RequestRefID,
+		ResponseCode:           resp.ResponseCode,
+		ResponseDesc:           resp.ResponseDesc,
+		IMSI:                   resp.IMSI,
+		LastSwapDate:           resp.LastSwapDate,
+		MsisdnRegistrationDate: resp.MsisdnRegistrationDate,
+		CustomerNumber:         resp.CustomerNumber,
 	}, nil
 }
 
-func (s *Service) IoTManage(ctx context.Context, input svctypes.IoTInput) (*svctypes.IoTResult, error) {
-	req := types.IoTSIMRequest{
-		InitiatorName:      input.InitiatorName,
-		SecurityCredential: input.SecurityCredential,
-		CommandID:          input.CommandID,
-		ICCID:              input.ICCID,
-		IMEI:               input.IMEI,
-		DeviceName:         input.DeviceName,
-		DeviceLocation:     input.DeviceLocation,
-		DataPlan:           input.DataPlan,
-		BillingCycle:       input.BillingCycle,
+func (s *Service) IoTGetAllSIMs(ctx context.Context, input svctypes.IoTGetAllSIMsInput) (*svctypes.IoTGetAllSIMsResult, error) {
+	req := types.IoTGetAllSIMsRequest{
+		VpnGroup:     input.VpnGroup,
+		StartAtIndex: input.StartAtIndex,
+		PageSize:     input.PageSize,
+		Username:     input.Username,
 	}
-	resp, err := s.client.IoTManage(ctx, req)
+	resp, err := s.client.IoTGetAllSIMs(ctx, req)
 	if err != nil {
 		return nil, err
 	}
-	return &svctypes.IoTResult{
-		ResponseCode:        resp.ResponseCode,
-		ResponseDescription: resp.ResponseDescription,
-		ICCID:               resp.ICCID,
-		Status:              resp.Status,
-		ActivationDate:      resp.ActivationDate,
-		DataPlan:            resp.DataPlan,
-		ExpiryDate:          resp.ExpiryDate,
+	return &svctypes.IoTGetAllSIMsResult{
+		Header: resp.Header,
+		Body:   resp.Body,
+	}, nil
+}
+
+func (s *Service) IoTQueryLifeCycle(ctx context.Context, input svctypes.IoTQueryLifeCycleInput) (*svctypes.IoTQueryLifeCycleResult, error) {
+	req := types.IoTQueryLifeCycleRequest{
+		Msisdn:   input.Msisdn,
+		VpnGroup: input.VpnGroup,
+		Username: input.Username,
+	}
+	resp, err := s.client.IoTQueryLifeCycle(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return &svctypes.IoTQueryLifeCycleResult{
+		Header: resp.Header,
+		Body:   resp.Body,
+	}, nil
+}
+
+func (s *Service) IoTQueryCustomerInfo(ctx context.Context, input svctypes.IoTQueryCustomerInfoInput) (*svctypes.IoTQueryCustomerInfoResult, error) {
+	req := types.IoTQueryCustomerInfoRequest{
+		Msisdn:   input.Msisdn,
+		VpnGroup: input.VpnGroup,
+		Username: input.Username,
+	}
+	resp, err := s.client.IoTQueryCustomerInfo(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return &svctypes.IoTQueryCustomerInfoResult{
+		Header: resp.Header,
+		Body:   resp.Body,
+	}, nil
+}
+
+func (s *Service) IoTSimActivation(ctx context.Context, input svctypes.IoTSimActivationInput) (*svctypes.IoTSimActivationResult, error) {
+	req := types.IoTSimActivationRequest{
+		Msisdn:   input.Msisdn,
+		VpnGroup: input.VpnGroup,
+		Username: input.Username,
+	}
+	resp, err := s.client.IoTSimActivation(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return &svctypes.IoTSimActivationResult{
+		Header: resp.Header,
+		Body:   resp.Body,
+	}, nil
+}
+
+func (s *Service) IoTGetActivationTrends(ctx context.Context, input svctypes.IoTGetActivationTrendsInput) (*svctypes.IoTGetActivationTrendsResult, error) {
+	req := types.IoTGetActivationTrendsRequest{
+		VpnGroup:  input.VpnGroup,
+		StartDate: input.StartDate,
+		StopDate:  input.StopDate,
+		Username:  input.Username,
+	}
+	resp, err := s.client.IoTGetActivationTrends(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	bodyBytes, _ := resp.Body.MarshalJSON()
+	return &svctypes.IoTGetActivationTrendsResult{
+		Header: resp.Header,
+		Body:   bodyBytes,
+	}, nil
+}
+
+func (s *Service) IoTRenameAsset(ctx context.Context, input svctypes.IoTRenameAssetInput) (*svctypes.IoTRenameAssetResult, error) {
+	req := types.IoTRenameAssetRequest{
+		Msisdn:    input.Msisdn,
+		VpnGroup:  input.VpnGroup,
+		Username:  input.Username,
+		AssetName: input.AssetName,
+	}
+	resp, err := s.client.IoTRenameAsset(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return &svctypes.IoTRenameAssetResult{
+		Header: resp.Header,
+		Body:   resp.Body,
+	}, nil
+}
+
+func (s *Service) IoTSuspendUnsuspend(ctx context.Context, input svctypes.IoTSuspendUnsuspendInput) (*svctypes.IoTSuspendUnsuspendResult, error) {
+	req := types.IoTSuspendUnsuspendRequest{
+		Msisdn:    input.Msisdn,
+		Username:  input.Username,
+		VpnGroup:  input.VpnGroup,
+		Product:   input.Product,
+		Operation: input.Operation,
+	}
+	resp, err := s.client.IoTSuspendUnsuspend(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return &svctypes.IoTSuspendUnsuspendResult{
+		Header: resp.Header,
+		Body:   resp.Body,
+	}, nil
+}
+
+func (s *Service) IoTSearchMessages(ctx context.Context, input svctypes.IoTSearchMessagesInput) (*svctypes.IoTSearchMessagesResult, error) {
+	req := types.IoTSearchMessagesRequest{
+		SearchValue: input.SearchValue,
+	}
+	resp, err := s.client.IoTSearchMessages(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return &svctypes.IoTSearchMessagesResult{
+		Header: resp.Header,
+		Body:   resp.Body,
+	}, nil
+}
+
+func (s *Service) IoTFilterMessages(ctx context.Context, input svctypes.IoTFilterMessagesInput) (*svctypes.IoTFilterMessagesResult, error) {
+	req := types.IoTFilterMessagesRequest{
+		StartDate: input.StartDate,
+		EndDate:   input.EndDate,
+		Status:    input.Status,
+	}
+	resp, err := s.client.IoTFilterMessages(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return &svctypes.IoTFilterMessagesResult{
+		Header: resp.Header,
+		Body:   resp.Body,
+	}, nil
+}
+
+func (s *Service) IoTDeleteMessageThread(ctx context.Context, input svctypes.IoTDeleteMessageThreadInput) (*svctypes.IoTDeleteMessageThreadResult, error) {
+	req := types.IoTDeleteMessageThreadRequest{
+		Msisdn: input.Msisdn,
+	}
+	resp, err := s.client.IoTDeleteMessageThread(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return &svctypes.IoTDeleteMessageThreadResult{
+		Header: resp.Header,
+	}, nil
+}
+
+func (s *Service) IoTGetAllMessages(ctx context.Context, input svctypes.IoTGetAllMessagesInput) (*svctypes.IoTGetAllMessagesResult, error) {
+	req := types.IoTGetAllMessagesRequest{
+		VpnGroup: input.VpnGroup,
+		PageNo:   input.PageNo,
+		PageSize: input.PageSize,
+	}
+	resp, err := s.client.IoTGetAllMessages(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return &svctypes.IoTGetAllMessagesResult{
+		Header: resp.Header,
+		Body:   resp.Body,
+	}, nil
+}
+
+func (s *Service) IoTSendSingleMessage(ctx context.Context, input svctypes.IoTSendSingleMessageInput) (*svctypes.IoTSendSingleMessageResult, error) {
+	req := types.IoTSendSingleMessageRequest{
+		Msisdn:   input.Msisdn,
+		Message:  input.Message,
+		VpnGroup: input.VpnGroup,
+	}
+	resp, err := s.client.IoTSendSingleMessage(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return &svctypes.IoTSendSingleMessageResult{
+		Header: resp.Header,
+		Body:   resp.Body,
+	}, nil
+}
+
+func (s *Service) IoTDeleteMessage(ctx context.Context, input svctypes.IoTDeleteMessageInput) (*svctypes.IoTDeleteMessageResult, error) {
+	req := types.IoTDeleteMessageRequest{
+		ID: input.ID,
+	}
+	resp, err := s.client.IoTDeleteMessage(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return &svctypes.IoTDeleteMessageResult{
+		Header: resp.Header,
 	}, nil
 }
 
@@ -445,29 +625,6 @@ func (s *Service) Swap(ctx context.Context, input svctypes.SwapInput) (*svctypes
 	}, nil
 }
 
-func (s *Service) BillManager(ctx context.Context, input svctypes.BillManagerInput) (*svctypes.BillManagerResult, error) {
-	req := types.BillManagerRequest{
-		BillRefName:      input.BillRefName,
-		DueDate:          input.DueDate,
-		Amount:           input.Amount,
-		InvoiceNumber:    input.InvoiceNumber,
-		AccountReference: input.AccountReference,
-		PhoneNumber:      input.PhoneNumber,
-		Email:            input.Email,
-		Description:      input.Description,
-	}
-	resp, err := s.client.BillManager(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-	return &svctypes.BillManagerResult{
-		OriginatorConversationID: resp.OriginatorConversationID,
-		ConversationID:           resp.ConversationID,
-		ResponseCode:             resp.ResponseCode,
-		ResponseDescription:      resp.ResponseDescription,
-	}, nil
-}
-
 func (s *Service) B2BExpress(ctx context.Context, input svctypes.B2BExpressInput) (*svctypes.B2BExpressResult, error) {
 	req := types.B2BExpressRequest{
 		PrimaryShortCode:  input.PrimaryShortCode,
@@ -488,69 +645,239 @@ func (s *Service) B2BExpress(ctx context.Context, input svctypes.B2BExpressInput
 	}, nil
 }
 
-func (s *Service) Ratiba(ctx context.Context, input svctypes.RatibaInput) (*svctypes.RatibaResult, error) {
-	payments := make([]types.RatibaPayment, len(input.Payments))
-	for i, p := range input.Payments {
-		payments[i] = types.RatibaPayment{
-			EmployeeID:   p.EmployeeID,
-			EmployeeName: p.EmployeeName,
-			PhoneNumber:  p.PhoneNumber,
-			Amount:       p.Amount,
-			Remarks:      p.Remarks,
+func (s *Service) AccountTopUp(ctx context.Context, input svctypes.B2CAccountTopUpInput) (*svctypes.B2CAccountTopUpResult, error) {
+	req := types.B2CAccountTopUpRequest{
+		Initiator:              input.Initiator,
+		SecurityCredential:     input.SecurityCredential,
+		CommandID:              input.CommandID,
+		SenderIdentifierType:   input.SenderIdentifierType,
+		RecieverIdentifierType: input.RecieverIdentifierType,
+		Amount:                 input.Amount,
+		PartyA:                 input.PartyA,
+		PartyB:                 input.PartyB,
+		AccountReference:       input.AccountReference,
+		Requester:              input.Requester,
+		Remarks:                input.Remarks,
+		QueueTimeOutURL:        input.QueueTimeOutURL,
+		ResultURL:              input.ResultURL,
+	}
+	resp, err := s.client.AccountTopUp(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return &svctypes.B2CAccountTopUpResult{
+		OriginatorConversationID: resp.OriginatorConversationID,
+		ConversationID:           resp.ConversationID,
+		ResponseCode:             resp.ResponseCode,
+		ResponseDescription:      resp.ResponseDescription,
+	}, nil
+}
+
+func (s *Service) BillManagerOptin(ctx context.Context, input svctypes.BillManagerOptinInput) (*svctypes.BillManagerOptinResult, error) {
+	req := types.BillManagerOptinRequest{
+		ShortCode:       input.ShortCode,
+		Email:           input.Email,
+		OfficialContact: input.OfficialContact,
+		SendReminders:   input.SendReminders,
+		Logo:            input.Logo,
+		CallbackURL:     input.CallbackURL,
+	}
+	resp, err := s.client.BillManagerOptin(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return &svctypes.BillManagerOptinResult{
+		AppKey:  resp.AppKey,
+		ResMsg:  resp.ResMsg,
+		ResCode: resp.ResCode,
+	}, nil
+}
+
+func (s *Service) BillManagerSingleInvoice(ctx context.Context, input svctypes.BillManagerSingleInvoiceInput) (*svctypes.BillManagerSingleInvoiceResult, error) {
+	items := make([]types.BillManagerInvoiceItem, len(input.InvoiceItems))
+	for i, item := range input.InvoiceItems {
+		items[i] = types.BillManagerInvoiceItem{
+			ItemName: item.ItemName,
+			Amount:   item.Amount,
 		}
 	}
-	req := types.RatibaRequest{
-		InitiatorName:      input.InitiatorName,
-		SecurityCredential: input.SecurityCredential,
-		CommandID:          input.CommandID,
-		BatchName:          input.BatchName,
-		BatchNumber:        input.BatchNumber,
-		BatchDescription:   input.BatchDescription,
-		ProcessingMethod:   input.ProcessingMethod,
-		ScheduleDateTime:   input.ScheduleDateTime,
-		Payments:           payments,
+	req := types.BillManagerSingleInvoiceRequest{
+		ExternalReference: input.ExternalReference,
+		BilledFullName:    input.BilledFullName,
+		BilledPhoneNumber: input.BilledPhoneNumber,
+		BilledPeriod:      input.BilledPeriod,
+		InvoiceName:       input.InvoiceName,
+		DueDate:           input.DueDate,
+		AccountReference:  input.AccountReference,
+		Amount:            input.Amount,
+		InvoiceItems:      items,
 	}
-	resp, err := s.client.Ratiba(ctx, req)
+	resp, err := s.client.BillManagerSingleInvoice(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return &svctypes.BillManagerSingleInvoiceResult{
+		StatusMessage: resp.StatusMessage,
+		ResMsg:        resp.ResMsg,
+		ResCode:       resp.ResCode,
+	}, nil
+}
+
+func (s *Service) BillManagerBulkInvoice(ctx context.Context, input svctypes.BillManagerBulkInvoiceInput) (*svctypes.BillManagerBulkInvoiceResult, error) {
+	req := make(types.BillManagerBulkInvoiceRequest, len(input))
+	for i, inv := range input {
+		items := make([]types.BillManagerInvoiceItem, len(inv.InvoiceItems))
+		for j, item := range inv.InvoiceItems {
+			items[j] = types.BillManagerInvoiceItem{
+				ItemName: item.ItemName,
+				Amount:   item.Amount,
+			}
+		}
+		req[i] = types.BillManagerSingleInvoiceRequest{
+			ExternalReference: inv.ExternalReference,
+			BilledFullName:    inv.BilledFullName,
+			BilledPhoneNumber: inv.BilledPhoneNumber,
+			BilledPeriod:      inv.BilledPeriod,
+			InvoiceName:       inv.InvoiceName,
+			DueDate:           inv.DueDate,
+			AccountReference:  inv.AccountReference,
+			Amount:            inv.Amount,
+			InvoiceItems:      items,
+		}
+	}
+	resp, err := s.client.BillManagerBulkInvoice(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return &svctypes.BillManagerBulkInvoiceResult{
+		StatusMessage: resp.StatusMessage,
+		ResMsg:        resp.ResMsg,
+		ResCode:       resp.ResCode,
+	}, nil
+}
+
+func (s *Service) BillManagerReconciliation(ctx context.Context, input svctypes.BillManagerReconciliationInput) (*svctypes.BillManagerReconciliationResult, error) {
+	req := types.BillManagerReconciliationRequest{
+		PaymentDate:       input.PaymentDate,
+		PaidAmount:        input.PaidAmount,
+		AccountReference:  input.AccountReference,
+		TransactionID:     input.TransactionID,
+		PhoneNumber:       input.PhoneNumber,
+		FullName:          input.FullName,
+		InvoiceName:       input.InvoiceName,
+		ExternalReference: input.ExternalReference,
+	}
+	resp, err := s.client.BillManagerReconciliation(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return &svctypes.BillManagerReconciliationResult{
+		ResMsg:  resp.ResMsg,
+		ResCode: resp.ResCode,
+	}, nil
+}
+
+func (s *Service) BillManagerCancelSingle(ctx context.Context, input svctypes.BillManagerCancelSingleInput) (*svctypes.BillManagerCancelResult, error) {
+	req := types.BillManagerCancelSingleRequest{
+		ExternalReference: input.ExternalReference,
+	}
+	resp, err := s.client.BillManagerCancelSingle(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return &svctypes.BillManagerCancelResult{
+		StatusMessage: resp.StatusMessage,
+		ResMsg:        resp.ResMsg,
+		ResCode:       resp.ResCode,
+	}, nil
+}
+
+func (s *Service) BillManagerCancelBulk(ctx context.Context, input svctypes.BillManagerCancelBulkInput) (*svctypes.BillManagerCancelResult, error) {
+	req := make(types.BillManagerCancelBulkRequest, len(input.ExternalReferences))
+	for i, ref := range input.ExternalReferences {
+		req[i] = types.BillManagerCancelSingleRequest{
+			ExternalReference: ref,
+		}
+	}
+	resp, err := s.client.BillManagerCancelBulk(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return &svctypes.BillManagerCancelResult{
+		StatusMessage: resp.StatusMessage,
+		ResMsg:        resp.ResMsg,
+		ResCode:       resp.ResCode,
+	}, nil
+}
+
+func (s *Service) BillManagerChangeOptin(ctx context.Context, input svctypes.BillManagerChangeOptinInput) (*svctypes.BillManagerChangeOptinResult, error) {
+	req := types.BillManagerChangeOptinRequest{
+		ShortCode:       input.ShortCode,
+		Email:           input.Email,
+		OfficialContact: input.OfficialContact,
+		SendReminders:   input.SendReminders,
+		Logo:            input.Logo,
+		CallbackURL:     input.CallbackURL,
+	}
+	resp, err := s.client.BillManagerChangeOptin(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return &svctypes.BillManagerChangeOptinResult{
+		ResMsg:  resp.ResMsg,
+		ResCode: resp.ResCode,
+	}, nil
+}
+
+func (s *Service) CreateStandingOrder(ctx context.Context, input svctypes.RatibaInput) (*svctypes.RatibaResult, error) {
+	req := types.RatibaRequest{
+		StandingOrderName:           input.StandingOrderName,
+		StartDate:                   input.StartDate,
+		EndDate:                     input.EndDate,
+		BusinessShortCode:           input.BusinessShortCode,
+		TransactionType:             input.TransactionType,
+		ReceiverPartyIdentifierType: input.ReceiverPartyIdentifierType,
+		Amount:                      input.Amount,
+		PartyA:                      input.PartyA,
+		CallBackURL:                 input.CallBackURL,
+		AccountReference:            input.AccountReference,
+		TransactionDesc:             input.TransactionDesc,
+		Frequency:                   input.Frequency,
+	}
+	resp, err := s.client.CreateStandingOrder(ctx, req)
 	if err != nil {
 		return nil, err
 	}
 	return &svctypes.RatibaResult{
-		BatchID:             resp.BatchID,
-		ResponseCode:        resp.ResponseCode,
-		ResponseDescription: resp.ResponseDescription,
-		TotalAmount:         resp.TotalAmount,
-		PaymentCount:        resp.PaymentCount,
-		ProcessingStatus:    resp.ProcessingStatus,
-		ScheduledDateTime:   resp.ScheduledDateTime,
+		ResponseHeader: resp.ResponseHeader,
+		ResponseBody:   resp.ResponseBody,
 	}, nil
 }
 
 func (s *Service) TaxRemittance(ctx context.Context, input svctypes.TaxRemittanceInput) (*svctypes.TaxRemittanceResult, error) {
 	req := types.TaxRemittanceRequest{
-		InitiatorName:        input.InitiatorName,
-		SecurityCredential:   input.SecurityCredential,
-		CommandID:            input.CommandID,
-		ShortCode:            input.ShortCode,
-		TaxType:              input.TaxType,
-		KRAPINNumber:         input.KRAPINNumber,
-		Amount:               input.Amount,
-		TransactionReference: input.TransactionReference,
-		Description:          input.Description,
+		Initiator:              input.Initiator,
+		SecurityCredential:     input.SecurityCredential,
+		CommandID:              input.CommandID,
+		SenderIdentifierType:   input.SenderIdentifierType,
+		RecieverIdentifierType: input.RecieverIdentifierType,
+		Amount:                 input.Amount,
+		PartyA:                 input.PartyA,
+		PartyB:                 input.PartyB,
+		AccountReference:       input.AccountReference,
+		Remarks:                input.Remarks,
+		QueueTimeOutURL:        input.QueueTimeOutURL,
+		ResultURL:              input.ResultURL,
 	}
 	resp, err := s.client.TaxRemittance(ctx, req)
 	if err != nil {
 		return nil, err
 	}
 	return &svctypes.TaxRemittanceResult{
-		ResponseCode:        resp.ResponseCode,
-		ResponseDescription: resp.ResponseDescription,
-		TransactionID:       resp.TransactionID,
-		KRAPINNumber:        resp.KRAPINNumber,
-		TaxType:             resp.TaxType,
-		Amount:              resp.Amount,
-		ReceiptNumber:       resp.ReceiptNumber,
-		PaymentDate:         resp.PaymentDate,
-		Status:              resp.Status,
+		OriginatorConversationID: resp.OriginatorConversationID,
+		ConversationID:           resp.ConversationID,
+		ResponseCode:             resp.ResponseCode,
+		ResponseDescription:      resp.ResponseDescription,
 	}, nil
 }
 
