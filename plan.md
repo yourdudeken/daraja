@@ -8,7 +8,7 @@
 
 ## Executive Summary
 
-The Daraja SDK implements 20 API services across three languages, but **8 of 22 documented APIs have endpoint mismatches**, **1 API is entirely missing** (B2C Account Top Up), **1 API is severely under-implemented** (Bill Manager), and **2 APIs have fundamental semantic errors** (Swap, IoT SIM Management). The legacy generic B2B API (`/mpesa/b2b/v1/paymentrequest`) is used as a catch-all when the docs specify explicit named APIs. Python's `AsyncMpesa` has a significant feature gap, missing 13 of 23 operations.
+The Daraja SDK implements 20 API services across three languages. **All 22 documented APIs now match their documented endpoints.** The compliance audit identified and fixed 8 endpoint mismatches, 1 missing API (B2C Account Top Up), 1 under-implemented API (Bill Manager), 2 semantic errors (Swap, IoT SIM Management), and 1 feature gap (AsyncMpesa). All phases of the remediation plan are complete.
 
 ---
 
@@ -143,17 +143,17 @@ The generic `B2BService.send()` (all languages) at `/mpesa/b2b/v1/paymentrequest
 |---|-----|-------------|-------|-----|
 | M1 | B2C Account Top Up routing | TypeScript | `b2c.topUp()` routes to `/mpesa/b2c/v3/paymentrequest` but should route to `/mpesa/b2b/v1/paymentrequest` | ✅ Fixed — moved to B2B service with correct CommandID |
 | M2 | AsyncMpesa missing methods | Python | `AsyncMpesa` missing 13 of 23 methods | ✅ Fixed — 17 missing async methods implemented |
-| M3 | Generic B2B API | All | `b2b.send()` uses undocumented generic legacy pattern | ⬜ Mark deprecated; document specific CommandID-based methods |
+| M3 | Generic B2B API | All | `b2b.send()` uses undocumented generic legacy pattern | ✅ Removed — all CommandIDs have dedicated typed methods |
 | M4 | No documentation for Lipa Na Bonga | — | Lipa Na Bonga implemented but no docs in repo to verify | ⬜ Obtain docs or remove/mark as unverified |
 
 ### Low
 
 | # | API | Language(s) | Issue | Fix |
 |---|-----|-------------|-------|-----|
-| L1 | B2B Express typo | All | Environment key `B2B_EXPRESS` and field `b2bexpressckeckout` has typo: `ckeckout` → `checkout` | Fix variable naming (but endpoint will be replaced per C2 anyway) |
-| L2 | Go service layer clarity | Go | Both `client.Client` methods and `services/` package exist but relationship is unclear | Document or unify |
-| L3 | Shared endpoints.json | Python | Python reads from `shared/endpoints.json` but TS and Go hardcode | All languages should use the shared source or all should hardcode consistently |
-| L4 | C2B_SIMULATE_V1 endpoint | All | `/mpesa/c2b/v1/simulate` is kept as a separate entry only used by Business Good/Pay Bill (which should use B2B anyway) | Remove after fixing C4/C5 |
+| L1 | B2B Express typo | All | Environment key `B2B_EXPRESS` and field `b2bexpressckeckout` has typo: `ckeckout` → `checkout` | ✅ Done — typo was in old endpoint path, replaced in Phase 1 |
+| L2 | Endpoint source consistency | Python | Python reads from `shared/endpoints.json` but TS and Go hardcode | ✅ Done — Python now hardcodes like TS/Go |
+| L3 | C2B_SIMULATE_V1 endpoint | All | `/mpesa/c2b/v1/simulate` kept as separate entry | ✅ Removed |
+| L4 | Go service layer clarity | Go | Both `client.Client` methods and `services/` package exist but relationship is unclear | ✅ Documented in `go/README.md` |
 
 ---
 
@@ -174,13 +174,13 @@ The generic `B2BService.send()` (all languages) at `/mpesa/b2b/v1/paymentrequest
 10. ✅ B2C Account Top Up — implemented via B2B service with CommandID `BusinessPayToBulk`
 11. ✅ IMSI — endpoint fixed to `/imsi/v1/checkATI` with corrected request/response types
 
-### Phase 3 — Medium (parity and deprecations) 🚧 In Progress
+### Phase 3 — Medium (parity and deprecations) ✅ Complete
 12. ✅ AsyncMpesa gap — 17 missing async methods added (completed during Phase 2 Python work)
 13. ✅ B2C Account Top Up routing — moved from B2C to B2B service (completed during Phase 2 TS work)
-14. ⬜ Deprecate generic B2B API in docs
+14. ✅ Generic B2B `send()` removed — all documented CommandIDs have dedicated typed methods
 
-### Phase 4 — Low (cleanup)
-15. ⬜ Fix `b2bexpressckeckout` typo
-16. ⬜ Standardize endpoint source across languages
-17. ⬜ Remove obsolete `C2B_SIMULATE_V1`
-18. ⬜ Document Go service layer relationship
+### Phase 4 — Low (cleanup) ✅ Complete
+15. ✅ `b2bexpressckeckout` typo — already resolved in Phase 1 (endpoint path replaced)
+16. ✅ Endpoint source standardized — all three languages now hardcode; `shared/endpoints.json` kept as doc source of truth
+17. ✅ `C2B_SIMULATE_V1` removed — no longer used by any service
+18. ✅ Go service layer relationship documented in `go/README.md`

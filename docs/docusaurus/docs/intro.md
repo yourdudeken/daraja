@@ -14,7 +14,7 @@ sidebar_position: 1
 - **STK Query** to check transaction status
 - **C2B APIs** for Customer-to-Business payments
 - **B2C APIs** for Business-to-Customer disbursements
-- **B2B APIs** for Business-to-Business transfers
+- **B2B APIs** for Business-to-Business payments (BusinessBuyGoods, BusinessPayBill, AccountTopUp, TaxRemittance)
 - **Transaction Reversal** with full callback parsing
 - **Transaction Status Query** for reconciliation
 - **Account Balance Query** with structured balance parsing

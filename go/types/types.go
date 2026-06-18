@@ -259,42 +259,6 @@ type B2CAccountTopUpResponse struct {
 	ResponseDescription      string `json:"ResponseDescription"`
 }
 
-// ---- B2B ----
-type B2BCommandID string
-
-const (
-	BusinessPayBill                       B2BCommandID = "BusinessPayBill"
-	BusinessBuyGoods                      B2BCommandID = "BusinessBuyGoods"
-	MerchantToMerchantTransfer            B2BCommandID = "MerchantToMerchantTransfer"
-	MerchantTransferFromMerchantToWorking B2BCommandID = "MerchantTransferFromMerchantToWorking"
-	MerchantServicesMMFAccountBalance     B2BCommandID = "MerchantServicesMMFAccountBalance"
-	AgencyFloatAdvance                    B2BCommandID = "AgencyFloatAdvance"
-)
-
-type B2BRequest struct {
-	Initiator              string       `json:"Initiator"`
-	SecurityCredential     string       `json:"SecurityCredential"`
-	CommandID              B2BCommandID `json:"CommandID"`
-	SenderIdentifierType   int          `json:"SenderIdentifierType"`
-	RecieverIdentifierType int          `json:"RecieverIdentifierType"`
-	Amount                 int          `json:"Amount"`
-	PartyA                 int          `json:"PartyA"`
-	PartyB                 int          `json:"PartyB"`
-	Requester              int          `json:"Requester,omitempty"`
-	AccountReference       string       `json:"AccountReference,omitempty"`
-	Remarks                string       `json:"Remarks"`
-	QueueTimeOutURL        string       `json:"QueueTimeOutURL"`
-	ResultURL              string       `json:"ResultURL"`
-	Occassion              string       `json:"Occassion,omitempty"`
-}
-
-type B2BResponse struct {
-	OriginatorConversationID string `json:"OriginatorConversationID"`
-	ConversationID           string `json:"ConversationID"`
-	ResponseCode             string `json:"ResponseCode"`
-	ResponseDescription      string `json:"ResponseDescription"`
-}
-
 // ---- Reversal ----
 type ReversalRequest struct {
 	Initiator              string `json:"Initiator"`

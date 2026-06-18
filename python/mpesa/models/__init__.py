@@ -189,37 +189,6 @@ class B2CResponse(BaseModel):
     ResponseDescription: str
 
 
-class B2BRequest(BaseModel):
-    Initiator: str
-    SecurityCredential: str
-    CommandID: Literal[
-        "BusinessPayBill",
-        "BusinessBuyGoods",
-        "MerchantToMerchantTransfer",
-        "MerchantTransferFromMerchantToWorking",
-        "MerchantServicesMMFAccountBalance",
-        "AgencyFloatAdvance",
-    ]
-    SenderIdentifierType: int = 4
-    RecieverIdentifierType: int = 4
-    Amount: int
-    PartyA: int
-    PartyB: int
-    Requester: Optional[int] = None
-    AccountReference: Optional[str] = Field(default=None, max_length=13)
-    Remarks: str = Field(max_length=100)
-    QueueTimeOutURL: str
-    ResultURL: str
-    Occassion: Optional[str] = Field(default=None, max_length=100)
-
-
-class B2BResponse(BaseModel):
-    OriginatorConversationID: str
-    ConversationID: str
-    ResponseCode: str
-    ResponseDescription: str
-
-
 class ReversalRequest(BaseModel):
     Initiator: str
     SecurityCredential: str
@@ -886,8 +855,6 @@ __all__ = [
     "C2BValidationResponse",
     "B2CRequest",
     "B2CResponse",
-    "B2BRequest",
-    "B2BResponse",
     "ReversalRequest",
     "ReversalResponse",
     "TransactionStatusRequest",

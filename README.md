@@ -24,7 +24,6 @@ Production-grade SDK ecosystem for Safaricom M-Pesa Daraja APIs.
 - **STK Query** - Check transaction status
 - **C2B** - Register URLs & simulate transactions
 - **B2C** - Business to Customer payments
-- **B2B** - Business to Business payments
 - **Transaction Reversal** - Reverse C2B transactions
 - **Transaction Status Query** - Reconciliation
 - **Account Balance Query** - Check balances

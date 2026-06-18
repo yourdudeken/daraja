@@ -19,8 +19,6 @@ from mpesa.models import (
     AccessTokenResponse,
     B2BExpressRequest,
     B2BExpressResponse,
-    B2BRequest,
-    B2BResponse,
     B2CAccountTopUpRequest,
     B2CAccountTopUpResponse,
     B2CRequest,
@@ -428,12 +426,6 @@ class AsyncMpesa:
             request = B2CRequest(**request)
         result = await self._post("B2C", request.model_dump())
         return B2CResponse(**result)
-
-    async def b2b(self, request: B2BRequest | dict) -> B2BResponse:
-        if isinstance(request, dict):
-            request = B2BRequest(**request)
-        result = await self._post("B2B", request.model_dump())
-        return B2BResponse(**result)
 
     async def reversal(self, request: ReversalRequest | dict) -> ReversalResponse:
         if isinstance(request, dict):

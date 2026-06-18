@@ -123,7 +123,6 @@ var endpoints = map[string]string{
 	"STK_QUERY":                   "/mpesa/stkpushquery/v1/query",
 	"C2B_REGISTER_URL":            "/mpesa/c2b/v2/registerurl",
 	"C2B_SIMULATE":                "/mpesa/c2b/v2/simulate",
-	"C2B_SIMULATE_V1":             "/mpesa/c2b/v1/simulate",
 	"B2C":                         "/mpesa/b2c/v3/paymentrequest",
 	"B2B":                         "/mpesa/b2b/v1/paymentrequest",
 	"REVERSAL":                    "/mpesa/reversal/v1/request",
@@ -169,7 +168,6 @@ type environmentEndpoints struct {
 	STKQuery                  string
 	C2BRegisterURL            string
 	C2BSimulate               string
-	C2BSimulateV1             string
 	B2C                       string
 	B2B                       string
 	Reversal                  string
@@ -221,7 +219,6 @@ func getEndpoints(env types.Environment) environmentEndpoints {
 		STKQuery:                  base + endpoints["STK_QUERY"],
 		C2BRegisterURL:            base + endpoints["C2B_REGISTER_URL"],
 		C2BSimulate:               base + endpoints["C2B_SIMULATE"],
-		C2BSimulateV1:             base + endpoints["C2B_SIMULATE_V1"],
 		B2C:                       base + endpoints["B2C"],
 		B2B:                       base + endpoints["B2B"],
 		Reversal:                  base + endpoints["REVERSAL"],

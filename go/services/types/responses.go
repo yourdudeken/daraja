@@ -34,13 +34,6 @@ type B2CResult struct {
 	ResponseDescription      string
 }
 
-type B2BResult struct {
-	OriginatorConversationID string
-	ConversationID           string
-	ResponseCode             string
-	ResponseDescription      string
-}
-
 type ReversalResult struct {
 	OriginatorConversationID string
 	ConversationID           string

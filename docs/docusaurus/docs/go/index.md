@@ -64,7 +64,6 @@ func main() {
 | `C2BRegisterURL()` | Register C2B URLs |
 | `C2BSimulate()` | Simulate C2B transaction |
 | `B2C()` | Send B2C payment |
-| `B2B()` | Send B2B payment |
 | `Reversal()` | Reverse a transaction |
 | `TransactionStatus()` | Query transaction status |
 | `AccountBalance()` | Query account balance |

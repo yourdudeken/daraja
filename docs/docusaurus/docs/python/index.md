@@ -48,7 +48,6 @@ print(f"Checkout ID: {response.CheckoutRequestID}")
 | `c2b_register_url()` | Register C2B URLs |
 | `c2b_simulate()` | Simulate C2B transaction |
 | `b2c()` | Send B2C payment |
-| `b2b()` | Send B2B payment |
 | `reversal()` | Reverse a transaction |
 | `transaction_status()` | Query transaction status |
 | `account_balance()` | Query account balance |

@@ -572,20 +572,6 @@ func (c *Client) B2C(ctx context.Context, req types.B2CRequest) (*types.B2CRespo
 	return &resp, nil
 }
 
-// ---- B2B ----
-func (c *Client) B2B(ctx context.Context, req types.B2BRequest) (*types.B2BResponse, error) {
-	respBody, err := c.doRequest(ctx, "POST", c.endpoints.B2B, req)
-	if err != nil {
-		return nil, err
-	}
-
-	var resp types.B2BResponse
-	if err := json.Unmarshal(respBody, &resp); err != nil {
-		return nil, err
-	}
-	return &resp, nil
-}
-
 // ---- Reversal ----
 func (c *Client) Reversal(ctx context.Context, req types.ReversalRequest) (*types.ReversalResponse, error) {
 	req.CommandID = "TransactionReversal"

@@ -109,29 +109,6 @@ func b2cPayment() {
 	fmt.Printf("B2C: %s\n", resp.OriginatorConversationID)
 }
 
-func b2bPayment() {
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-	resp, err := mpesa.B2B(ctx, types.B2BRequest{
-		Initiator:              os.Getenv("MPESA_INITIATOR_NAME"),
-		SecurityCredential:     os.Getenv("MPESA_SECURITY_CREDENTIAL"),
-		CommandID:              types.BusinessPayBill,
-		SenderIdentifierType:   4,
-		RecieverIdentifierType: 4,
-		Amount:                 5000,
-		PartyA:                 123456,
-		PartyB:                 654321,
-		Remarks:                "Supplier payment",
-		QueueTimeOutURL:        "https://your-domain.com/api/b2b/queue",
-		ResultURL:              "https://your-domain.com/api/b2b/result",
-		AccountReference:       "SUPP-001",
-	})
-	if err != nil {
-		log.Fatalf("B2B failed: %v", err)
-	}
-	fmt.Printf("B2B: %s\n", resp.OriginatorConversationID)
-}
-
 func reversal(txnID string) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
@@ -267,7 +244,7 @@ func lipaNaBonga() {
 func pullTransactions() {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	resp, err := mpesa.PullTransactions(ctx, types.PullTransactionsRequest{
+	resp, err := mpesa.PullTransactionsQuery(ctx, types.PullTransactionsRequest{
 		ShortCode: 174379,
 		StartDate: "2026-01-01",
 		EndDate:   "2026-06-04",
@@ -284,25 +261,27 @@ func imsiQuery() {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 	resp, err := mpesa.IMSI(ctx, types.IMSIRequest{
-		PhoneNumber: 254708374149,
+		CustomerNumber: "254708374149",
 	})
 	if err != nil {
 		log.Fatalf("IMSI Query failed: %v", err)
 	}
-	fmt.Printf("IMSI: %s\n", resp.IMSI)
+	fmt.Printf("IMSI: %s\n", resp.ResponseDesc)
 }
 
-func iotManage() {
+func iotGetAllSIMs() {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	resp, err := mpesa.IoTManage(ctx, types.IoTSIMRequest{
-		SimSerialNumber: "89410123456789012345",
-		Action:          "activate",
+	resp, err := mpesa.IoTGetAllSIMs(ctx, types.IoTAllSIMsRequest{
+		VpnGroup:    []string{"1-225560081663_VPN"},
+		StartAtInde: "0",
+		PageSize:    "10",
+		Username:    "user@safaricom.co.ke",
 	})
 	if err != nil {
-		log.Fatalf("IoT Manage failed: %v", err)
+		log.Fatalf("IoT All SIMs failed: %v", err)
 	}
-	fmt.Printf("IoT: %s\n", resp.ResponseDescription)
+	fmt.Printf("IoT All SIMs: %d records\n", len(resp.Body.Desc))
 }
 
 func dynamicQR() {
@@ -330,7 +309,6 @@ func main() {
 	c2bRegisterURL()
 	c2bSimulate()
 	b2cPayment()
-	b2bPayment()
 	reversal("NLA12345XX")
 	transactionStatus("NLA12345XX")
 	accountBalance()

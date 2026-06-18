@@ -5,7 +5,6 @@ from mpesa.models import (
     STKCallbackPayload,
     C2BRegisterURLRequest,
     B2CRequest,
-    B2BRequest,
     ReversalRequest,
     TransactionStatusRequest,
     AccountBalanceRequest,
@@ -46,22 +45,24 @@ class TestModels:
         assert resp.ResponseCode == "0"
 
     def test_stk_callback_payload(self):
-        payload = STKCallbackPayload.model_validate({
-            "Body": {
-                "stkCallback": {
-                    "MerchantRequestID": "mri-1",
-                    "CheckoutRequestID": "cri-1",
-                    "ResultCode": 0,
-                    "ResultDesc": "Success",
-                    "CallbackMetadata": {
-                        "Item": [
-                            {"Name": "Amount", "Value": 100},
-                            {"Name": "MpesaReceiptNumber", "Value": "ABC123"},
-                        ],
+        payload = STKCallbackPayload.model_validate(
+            {
+                "Body": {
+                    "stkCallback": {
+                        "MerchantRequestID": "mri-1",
+                        "CheckoutRequestID": "cri-1",
+                        "ResultCode": 0,
+                        "ResultDesc": "Success",
+                        "CallbackMetadata": {
+                            "Item": [
+                                {"Name": "Amount", "Value": 100},
+                                {"Name": "MpesaReceiptNumber", "Value": "ABC123"},
+                            ],
+                        },
                     },
                 },
-            },
-        })
+            }
+        )
         assert payload.Body.stkCallback.ResultCode == 0
         assert len(payload.Body.stkCallback.CallbackMetadata.Item) == 2
 
@@ -87,20 +88,6 @@ class TestModels:
             ResultURL="https://example.com/result",
         )
         assert req.CommandID == "BusinessPayment"
-
-    def test_b2b_request(self):
-        req = B2BRequest(
-            Initiator="testapi",
-            SecurityCredential="cred",
-            CommandID="BusinessPayBill",
-            Amount=100,
-            PartyA=123456,
-            PartyB=654321,
-            Remarks="b2b payment",
-            QueueTimeOutURL="https://example.com/timeout",
-            ResultURL="https://example.com/result",
-        )
-        assert req.CommandID == "BusinessPayBill"
 
     def test_reversal_request(self):
         req = ReversalRequest(

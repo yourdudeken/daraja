@@ -9,7 +9,6 @@ export const SANDBOX_ENDPOINTS = {
   STK_QUERY: "/mpesa/stkpushquery/v1/query",
   C2B_REGISTER_URL: "/mpesa/c2b/v2/registerurl",
   C2B_SIMULATE: "/mpesa/c2b/v2/simulate",
-  C2B_SIMULATE_V1: "/mpesa/c2b/v1/simulate",
   B2C: "/mpesa/b2c/v3/paymentrequest",
   B2B: "/mpesa/b2b/v1/paymentrequest",
   REVERSAL: "/mpesa/reversal/v1/request",

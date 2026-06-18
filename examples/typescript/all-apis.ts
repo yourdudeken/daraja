@@ -85,22 +85,6 @@ export async function b2cPayment() {
   return response;
 }
 
-export async function b2bPayment() {
-  const response = await mpesa.b2b.send({
-    Initiator: process.env.MPESA_INITIATOR_NAME!,
-    SecurityCredential: process.env.MPESA_SECURITY_CREDENTIAL!,
-    CommandID: "BusinessPayBill",
-    Amount: 5000,
-    PartyA: 123456,
-    PartyB: 654321,
-    Remarks: "Supplier payment",
-    QueueTimeOutURL: "https://your-domain.com/api/b2b/queue",
-    ResultURL: "https://your-domain.com/api/b2b/result",
-    AccountReference: "SUPP-001",
-  });
-  return response;
-}
-
 export async function reverseTransaction(transactionId: string) {
   const response = await mpesa.reversal.reverse({
     Initiator: process.env.MPESA_INITIATOR_NAME!,
@@ -220,43 +204,35 @@ export async function queryOrgInfo() {
 
 export async function imsiQuery() {
   const response = await mpesa.imsi.query({
-    PhoneNumber: 254708374149,
+    customerNumber: "254708374149",
   });
   return response;
 }
 
-export async function iotManage() {
-  const response = await mpesa.iot.manage({
-    SimSerialNumber: "89410123456789012345",
-    Action: "activate",
+export async function iotGetAllSIMs() {
+  const response = await mpesa.iot.getAllSIMs({
+    vpnGroup: ["1-225560081663_VPN"],
+    startAtInde: "0",
+    pageSize: "10",
+    username: "user@safaricom.co.ke",
   });
   return response;
 }
 
-export async function swapTransfer() {
-  const response = await mpesa.swap.transfer({
-    Initiator: process.env.MPESA_INITIATOR_NAME!,
-    SecurityCredential: process.env.MPESA_SECURITY_CREDENTIAL!,
-    CommandID: "BusinessPayBill",
-    Amount: 1000,
-    PartyA: resolveShortcode(),
-    PartyB: 654321,
-    Remarks: "Account transfer",
-    QueueTimeOutURL: "https://your-domain.com/api/swap/queue",
-    ResultURL: "https://your-domain.com/api/swap/result",
+export async function swapQuery() {
+  const response = await mpesa.swap.query({
+    customerNumber: "254722000000",
   });
   return response;
 }
 
-export async function billManager() {
-  const response = await mpesa.billManager.updateBill({
-    ShortCode: resolveShortcode(),
-    BillReference: "BILL-001",
-    BillAmount: 5000,
-    BillPaidAmount: 0,
-    BillStatus: "pending",
-    CustomerName: "John Doe",
-    CustomerPhone: 254708374149,
+export async function billManagerOptIn() {
+  const response = await mpesa.billManager.optIn({
+    shortcode: String(resolveShortcode()),
+    email: "business@example.com",
+    officialContact: "0710000000",
+    sendReminders: "1",
+    callbackurl: "https://your-domain.com/api/billmanager/callback",
   });
   return response;
 }
@@ -276,18 +252,20 @@ export async function b2bExpress() {
   return response;
 }
 
-export async function ratibaProcess() {
-  const response = await mpesa.ratiba.process({
-    Initiator: process.env.MPESA_INITIATOR_NAME!,
-    SecurityCredential: process.env.MPESA_SECURITY_CREDENTIAL!,
-    CommandID: "SalaryPayment",
-    Amount: 50000,
-    PartyA: resolveShortcode(),
-    PartyB: 254708374149,
-    Remarks: "Monthly salary",
-    QueueTimeOutURL: "https://your-domain.com/api/ratiba/queue",
-    ResultURL: "https://your-domain.com/api/ratiba/result",
-    Occasion: "June 2026",
+export async function createStandingOrder() {
+  const response = await mpesa.ratiba.createStandingOrder({
+    StandingOrderName: "Monthly Rent Payment",
+    StartDate: "20260101",
+    EndDate: "20261231",
+    BusinessShortCode: String(resolveShortcode()),
+    TransactionType: "Standing Order Customer Pay Bill",
+    ReceiverPartyIdentifierType: "4",
+    Amount: "50000",
+    PartyA: "254722000000",
+    CallBackURL: "https://your-domain.com/api/ratiba/callback",
+    AccountReference: "RENT-001",
+    TransactionDesc: "Monthly rent",
+    Frequency: "4",
   });
   return response;
 }
@@ -297,9 +275,12 @@ export async function taxRemittance() {
     Initiator: process.env.MPESA_INITIATOR_NAME!,
     SecurityCredential: process.env.MPESA_SECURITY_CREDENTIAL!,
     CommandID: "PayTaxToKRA",
-    Amount: 50000,
-    PartyA: resolveShortcode(),
-    PartyB: 572572,
+    SenderIdentifierType: "4",
+    RecieverIdentifierType: "4",
+    Amount: "50000",
+    PartyA: String(resolveShortcode()),
+    PartyB: "572572",
+    AccountReference: "PRN12345",
     Remarks: "Monthly tax remittance",
     QueueTimeOutURL: "https://your-domain.com/api/tax/queue",
     ResultURL: "https://your-domain.com/api/tax/result",

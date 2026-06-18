@@ -44,7 +44,6 @@ print(f"Checkout ID: {response.CheckoutRequestID}")
 - STK Query
 - C2B (Register URL & Simulate)
 - B2C (Business to Customer)
-- B2B (Business to Business)
 - Transaction Reversal
 - Transaction Status Query
 - Account Balance Query

@@ -175,38 +175,6 @@ func TestIntegrationB2C(t *testing.T) {
 	}
 }
 
-func TestIntegrationB2B(t *testing.T) {
-	skipIfNoCredentials(t)
-	cfg := integrationConfig()
-	cfg.InitiatorPassword = os.Getenv("MPESA_INITIATOR_PASSWORD")
-	client := NewClient(cfg)
-	ctx := context.Background()
-
-	_, err := client.GetAccessToken(ctx)
-	if err != nil {
-		t.Fatalf("failed to acquire token: %v", err)
-	}
-
-	req := types.B2BRequest{
-		Initiator:              cfg.InitiatorName,
-		SecurityCredential:     getEnvOrDefault("MPESA_INITIATOR_PASSWORD", "test"),
-		CommandID:              types.BusinessPayBill,
-		Amount:                 10,
-		SenderIdentifierType:   4,
-		RecieverIdentifierType: 4,
-		PartyA:                 600984,
-		PartyB:                 600000,
-		Remarks:                "test",
-		QueueTimeOutURL:        "https://example.com/timeout",
-		ResultURL:              "https://example.com/result",
-	}
-
-	_, err = client.B2B(ctx, req)
-	if err != nil {
-		t.Logf("B2B returned expected sandbox error: %v", err)
-	}
-}
-
 func TestIntegrationAccountBalance(t *testing.T) {
 	skipIfNoCredentials(t)
 	cfg := integrationConfig()

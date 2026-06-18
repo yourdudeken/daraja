@@ -26,15 +26,17 @@ def _url(key: str) -> str:
 
 @pytest.fixture
 def client() -> Mpesa:
-    c = Mpesa({
-        "consumer_key": CONSUMER_KEY,
-        "consumer_secret": CONSUMER_SECRET,
-        "environment": ENVIRONMENT,
-        "passkey": PASSKEY or None,
-        "initiator_name": INITIATOR,
-        "initiator_password": INITIATOR_PWD or None,
-        "timeout": 30,
-    })
+    c = Mpesa(
+        {
+            "consumer_key": CONSUMER_KEY,
+            "consumer_secret": CONSUMER_SECRET,
+            "environment": ENVIRONMENT,
+            "passkey": PASSKEY or None,
+            "initiator_name": INITIATOR,
+            "initiator_password": INITIATOR_PWD or None,
+            "timeout": 30,
+        }
+    )
     yield c
     c.close()
 
@@ -62,21 +64,26 @@ class TestSTKPush:
     def test_stk_push_request(self, client: Mpesa) -> None:
         try:
             from mpesa.utils import generate_password, generate_timestamp
+
             ts = generate_timestamp()
             pwd = generate_password(SHORTCODE, PASSKEY, ts)
-            result = client._request("POST", _url("STK_PUSH"), {
-                "BusinessShortCode": SHORTCODE,
-                "TransactionType": "CustomerPayBillOnline",
-                "Amount": 1,
-                "PartyA": PHONE,
-                "PartyB": SHORTCODE,
-                "PhoneNumber": PHONE,
-                "CallBackURL": "https://example.com/callback",
-                "AccountReference": "test",
-                "TransactionDesc": "test",
-                "Password": pwd,
-                "Timestamp": ts,
-            })
+            result = client._request(
+                "POST",
+                _url("STK_PUSH"),
+                {
+                    "BusinessShortCode": SHORTCODE,
+                    "TransactionType": "CustomerPayBillOnline",
+                    "Amount": 1,
+                    "PartyA": PHONE,
+                    "PartyB": SHORTCODE,
+                    "PhoneNumber": PHONE,
+                    "CallBackURL": "https://example.com/callback",
+                    "AccountReference": "test",
+                    "TransactionDesc": "test",
+                    "Password": pwd,
+                    "Timestamp": ts,
+                },
+            )
             assert "ResponseCode" in result
         except MpesaAPIError:
             pass
@@ -84,14 +91,19 @@ class TestSTKPush:
     def test_stk_query(self, client: Mpesa) -> None:
         try:
             from mpesa.utils import generate_password, generate_timestamp
+
             ts = generate_timestamp()
             pwd = generate_password(SHORTCODE, PASSKEY, ts)
-            result = client._request("POST", _url("STK_QUERY"), {
-                "BusinessShortCode": SHORTCODE,
-                "Password": pwd,
-                "Timestamp": ts,
-                "CheckoutRequestID": "test-checkout-id",
-            })
+            result = client._request(
+                "POST",
+                _url("STK_QUERY"),
+                {
+                    "BusinessShortCode": SHORTCODE,
+                    "Password": pwd,
+                    "Timestamp": ts,
+                    "CheckoutRequestID": "test-checkout-id",
+                },
+            )
             assert "ResponseCode" in result
         except MpesaAPIError:
             pass
@@ -100,25 +112,33 @@ class TestSTKPush:
 class TestC2B:
     def test_register_url(self, client: Mpesa) -> None:
         try:
-            result = client._request("POST", _url("C2B_REGISTER_URL"), {
-                "ShortCode": str(SHORTCODE),
-                "ResponseType": "Completed",
-                "ConfirmationURL": "https://example.com/confirm",
-                "ValidationURL": "https://example.com/validate",
-            })
+            result = client._request(
+                "POST",
+                _url("C2B_REGISTER_URL"),
+                {
+                    "ShortCode": str(SHORTCODE),
+                    "ResponseType": "Completed",
+                    "ConfirmationURL": "https://example.com/confirm",
+                    "ValidationURL": "https://example.com/validate",
+                },
+            )
             assert "ResponseCode" in result
         except MpesaAPIError:
             pass
 
     def test_simulate(self, client: Mpesa) -> None:
         try:
-            result = client._request("POST", _url("C2B_SIMULATE"), {
-                "ShortCode": SHORTCODE,
-                "CommandID": "CustomerPayBillOnline",
-                "Amount": 1,
-                "Msisdn": PHONE,
-                "BillRefNumber": "test",
-            })
+            result = client._request(
+                "POST",
+                _url("C2B_SIMULATE"),
+                {
+                    "ShortCode": SHORTCODE,
+                    "CommandID": "CustomerPayBillOnline",
+                    "Amount": 1,
+                    "Msisdn": PHONE,
+                    "BillRefNumber": "test",
+                },
+            )
             assert "ResponseCode" in result
         except MpesaAPIError:
             pass
@@ -127,17 +147,21 @@ class TestC2B:
 class TestB2C:
     def test_b2c_payment(self, client: Mpesa) -> None:
         try:
-            result = client._request("POST", _url("B2C"), {
-                "InitiatorName": INITIATOR,
-                "SecurityCredential": INITIATOR_PWD or "test",
-                "CommandID": "BusinessPayment",
-                "Amount": 10,
-                "PartyA": SHORTCODE,
-                "PartyB": PHONE,
-                "Remarks": "test",
-                "QueueTimeOutURL": "https://example.com/timeout",
-                "ResultURL": "https://example.com/result",
-            })
+            result = client._request(
+                "POST",
+                _url("B2C"),
+                {
+                    "InitiatorName": INITIATOR,
+                    "SecurityCredential": INITIATOR_PWD or "test",
+                    "CommandID": "BusinessPayment",
+                    "Amount": 10,
+                    "PartyA": SHORTCODE,
+                    "PartyB": PHONE,
+                    "Remarks": "test",
+                    "QueueTimeOutURL": "https://example.com/timeout",
+                    "ResultURL": "https://example.com/result",
+                },
+            )
             assert "ResponseCode" in result
         except MpesaAPIError:
             pass
@@ -146,17 +170,21 @@ class TestB2C:
 class TestB2B:
     def test_b2b_payment(self, client: Mpesa) -> None:
         try:
-            result = client._request("POST", _url("B2B"), {
-                "Initiator": INITIATOR,
-                "SecurityCredential": INITIATOR_PWD or "test",
-                "CommandID": "BusinessPayBill",
-                "Amount": 10,
-                "PartyA": SHORTCODE,
-                "PartyB": 600000,
-                "Remarks": "test",
-                "QueueTimeOutURL": "https://example.com/timeout",
-                "ResultURL": "https://example.com/result",
-            })
+            result = client._request(
+                "POST",
+                _url("B2B"),
+                {
+                    "Initiator": INITIATOR,
+                    "SecurityCredential": INITIATOR_PWD or "test",
+                    "CommandID": "BusinessPayBill",
+                    "Amount": 10,
+                    "PartyA": SHORTCODE,
+                    "PartyB": 600000,
+                    "Remarks": "test",
+                    "QueueTimeOutURL": "https://example.com/timeout",
+                    "ResultURL": "https://example.com/result",
+                },
+            )
             assert "ResponseCode" in result
         except MpesaAPIError:
             pass
@@ -165,16 +193,20 @@ class TestB2B:
 class TestAccountBalance:
     def test_account_balance(self, client: Mpesa) -> None:
         try:
-            result = client._request("POST", _url("ACCOUNT_BALANCE"), {
-                "Initiator": INITIATOR,
-                "SecurityCredential": INITIATOR_PWD or "test",
-                "CommandID": "AccountBalance",
-                "PartyA": SHORTCODE,
-                "IdentifierType": 4,
-                "Remarks": "test",
-                "QueueTimeOutURL": "https://example.com/timeout",
-                "ResultURL": "https://example.com/result",
-            })
+            result = client._request(
+                "POST",
+                _url("ACCOUNT_BALANCE"),
+                {
+                    "Initiator": INITIATOR,
+                    "SecurityCredential": INITIATOR_PWD or "test",
+                    "CommandID": "AccountBalance",
+                    "PartyA": SHORTCODE,
+                    "IdentifierType": 4,
+                    "Remarks": "test",
+                    "QueueTimeOutURL": "https://example.com/timeout",
+                    "ResultURL": "https://example.com/result",
+                },
+            )
             assert "ResponseCode" in result
         except MpesaAPIError:
             pass
@@ -183,16 +215,20 @@ class TestAccountBalance:
 class TestTransactionStatus:
     def test_transaction_status(self, client: Mpesa) -> None:
         try:
-            result = client._request("POST", _url("TRANSACTION_STATUS"), {
-                "Initiator": INITIATOR,
-                "SecurityCredential": INITIATOR_PWD or "test",
-                "CommandID": "TransactionStatusQuery",
-                "PartyA": SHORTCODE,
-                "IdentifierType": 4,
-                "Remarks": "test",
-                "QueueTimeOutURL": "https://example.com/timeout",
-                "ResultURL": "https://example.com/result",
-            })
+            result = client._request(
+                "POST",
+                _url("TRANSACTION_STATUS"),
+                {
+                    "Initiator": INITIATOR,
+                    "SecurityCredential": INITIATOR_PWD or "test",
+                    "CommandID": "TransactionStatusQuery",
+                    "PartyA": SHORTCODE,
+                    "IdentifierType": 4,
+                    "Remarks": "test",
+                    "QueueTimeOutURL": "https://example.com/timeout",
+                    "ResultURL": "https://example.com/result",
+                },
+            )
             assert "ResponseCode" in result
         except MpesaAPIError:
             pass
@@ -201,17 +237,21 @@ class TestTransactionStatus:
 class TestReversal:
     def test_reversal(self, client: Mpesa) -> None:
         try:
-            result = client._request("POST", _url("REVERSAL"), {
-                "Initiator": INITIATOR,
-                "SecurityCredential": INITIATOR_PWD or "test",
-                "CommandID": "TransactionReversal",
-                "TransactionID": "dummy-tx-id",
-                "Amount": 1,
-                "ReceiverParty": PHONE,
-                "RecieverIdentifierType": 11,
-                "QueueTimeOutURL": "https://example.com/timeout",
-                "ResultURL": "https://example.com/result",
-            })
+            result = client._request(
+                "POST",
+                _url("REVERSAL"),
+                {
+                    "Initiator": INITIATOR,
+                    "SecurityCredential": INITIATOR_PWD or "test",
+                    "CommandID": "TransactionReversal",
+                    "TransactionID": "dummy-tx-id",
+                    "Amount": 1,
+                    "ReceiverParty": PHONE,
+                    "RecieverIdentifierType": 11,
+                    "QueueTimeOutURL": "https://example.com/timeout",
+                    "ResultURL": "https://example.com/result",
+                },
+            )
             assert "ResponseCode" in result
         except MpesaAPIError:
             pass
@@ -220,14 +260,18 @@ class TestReversal:
 class TestDynamicQR:
     def test_dynamic_qr(self, client: Mpesa) -> None:
         try:
-            result = client._request("POST", _url("DYNAMIC_QR"), {
-                "MerchantName": "Test Merchant",
-                "RefNo": "REF-001",
-                "Amount": 100,
-                "TrxCode": "BG",
-                "CPI": str(SHORTCODE),
-                "Size": "300",
-            })
+            result = client._request(
+                "POST",
+                _url("DYNAMIC_QR"),
+                {
+                    "MerchantName": "Test Merchant",
+                    "RefNo": "REF-001",
+                    "Amount": 100,
+                    "TrxCode": "BG",
+                    "CPI": str(SHORTCODE),
+                    "Size": "300",
+                },
+            )
             assert "ResponseCode" in result
         except MpesaAPIError:
             pass
@@ -236,24 +280,46 @@ class TestDynamicQR:
 class TestBusinessGoods:
     def test_business_buy_goods(self, client: Mpesa) -> None:
         try:
-            result = client._request("POST", _url("C2B_SIMULATE_V1"), {
-                "ShortCode": SHORTCODE,
-                "CommandID": "BuyGoods",
-                "Amount": 1,
-                "Msisdn": PHONE,
-            })
+            result = client._request(
+                "POST",
+                _url("B2B"),
+                {
+                    "Initiator": "testapi",
+                    "SecurityCredential": "<dummy>",
+                    "CommandID": "BusinessBuyGoods",
+                    "SenderIdentifierType": 4,
+                    "RecieverIdentifierType": 4,
+                    "Amount": 1,
+                    "PartyA": SHORTCODE,
+                    "PartyB": SHORTCODE,
+                    "Remarks": "test",
+                    "QueueTimeOutURL": "https://example.com/timeout",
+                    "ResultURL": "https://example.com/result",
+                },
+            )
             assert "ResponseCode" in result
         except MpesaAPIError:
             pass
 
     def test_business_pay_bill(self, client: Mpesa) -> None:
         try:
-            result = client._request("POST", _url("C2B_SIMULATE_V1"), {
-                "ShortCode": SHORTCODE,
-                "CommandID": "PayBill",
-                "Amount": 1,
-                "Msisdn": PHONE,
-            })
+            result = client._request(
+                "POST",
+                _url("B2B"),
+                {
+                    "Initiator": "testapi",
+                    "SecurityCredential": "<dummy>",
+                    "CommandID": "BusinessPayBill",
+                    "SenderIdentifierType": 4,
+                    "RecieverIdentifierType": 4,
+                    "Amount": 1,
+                    "PartyA": SHORTCODE,
+                    "PartyB": SHORTCODE,
+                    "Remarks": "test",
+                    "QueueTimeOutURL": "https://example.com/timeout",
+                    "ResultURL": "https://example.com/result",
+                },
+            )
             assert "ResponseCode" in result
         except MpesaAPIError:
             pass
@@ -271,9 +337,13 @@ class TestQueryOrgInfo:
 class TestIMSI:
     def test_imsi_query(self, client: Mpesa) -> None:
         try:
-            result = client._request("POST", _url("IMSI"), {
-                "PhoneNumber": "254722000000",
-            })
+            result = client._request(
+                "POST",
+                _url("IMSI"),
+                {
+                    "PhoneNumber": "254722000000",
+                },
+            )
             assert "ResponseCode" in result
         except MpesaAPIError:
             pass
@@ -282,20 +352,24 @@ class TestIMSI:
 class TestB2Pochi:
     def test_b2pochi(self, client: Mpesa) -> None:
         try:
-            result = client._request("POST", _url("B2POCHI"), {
-                "InitiatorName": INITIATOR,
-                "SecurityCredential": INITIATOR_PWD or "test",
-                "CommandID": "BusinessPayment",
-                "Amount": 10,
-                "SenderIdentifier": SHORTCODE,
-                "ReceiverIdentifier": PHONE,
-                "PartyA": SHORTCODE,
-                "PartyB": PHONE,
-                "AccountReference": "test",
-                "Remarks": "test",
-                "QueueTimeOutURL": "https://example.com/timeout",
-                "ResultURL": "https://example.com/result",
-            })
+            result = client._request(
+                "POST",
+                _url("B2POCHI"),
+                {
+                    "InitiatorName": INITIATOR,
+                    "SecurityCredential": INITIATOR_PWD or "test",
+                    "CommandID": "BusinessPayment",
+                    "Amount": 10,
+                    "SenderIdentifier": SHORTCODE,
+                    "ReceiverIdentifier": PHONE,
+                    "PartyA": SHORTCODE,
+                    "PartyB": PHONE,
+                    "AccountReference": "test",
+                    "Remarks": "test",
+                    "QueueTimeOutURL": "https://example.com/timeout",
+                    "ResultURL": "https://example.com/result",
+                },
+            )
             assert "ResponseCode" in result
         except MpesaAPIError:
             pass
@@ -304,14 +378,18 @@ class TestB2Pochi:
 class TestPullTransactions:
     def test_pull_transactions(self, client: Mpesa) -> None:
         try:
-            result = client._request("POST", _url("PULL_TRANSACTIONS"), {
-                "ShortCode": str(SHORTCODE),
-                "StartDate": "2026-01-01",
-                "EndDate": "2026-06-01",
-                "TransactionType": "All",
-                "PageNumber": 1,
-                "PageSize": 10,
-            })
+            result = client._request(
+                "POST",
+                _url("PULL_TRANSACTIONS"),
+                {
+                    "ShortCode": str(SHORTCODE),
+                    "StartDate": "2026-01-01",
+                    "EndDate": "2026-06-01",
+                    "TransactionType": "All",
+                    "PageNumber": 1,
+                    "PageSize": 10,
+                },
+            )
             assert "ResponseCode" in result
         except MpesaAPIError:
             pass
@@ -319,11 +397,14 @@ class TestPullTransactions:
 
 class TestErrorHandling:
     def test_invalid_credentials(self) -> None:
-        bad_client = Mpesa({
-            "consumer_key": "invalid",
-            "consumer_secret": "invalid",
-        })
+        bad_client = Mpesa(
+            {
+                "consumer_key": "invalid",
+                "consumer_secret": "invalid",
+            }
+        )
         from httpx import HTTPStatusError
+
         with pytest.raises((AuthenticationError, MpesaAPIError, HTTPStatusError)):
             bad_client._token_manager.get_token()
         bad_client.close()

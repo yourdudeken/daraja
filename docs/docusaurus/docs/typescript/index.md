@@ -47,7 +47,7 @@ console.log(response.CheckoutRequestID);
 | `stkPush` | `STKPushService` | STK Push operations |
 | `c2b` | `C2BService` | C2B operations |
 | `b2c` | `B2CService` | B2C payments + top up |
-| `b2b` | `B2BService` | B2B operations |
+| `b2b` | `B2BService` | BusinessBuyGoods, BusinessPayBill, AccountTopUp |
 | `reversal` | `ReversalService` | Reversal operations |
 | `transactionStatus` | `TransactionStatusService` | Transaction status queries |
 | `accountBalance` | `AccountBalanceService` | Account balance queries |

@@ -1,10 +1,4 @@
-import json
-from pathlib import Path
 from typing import Literal
-
-_SHARED_ENDPOINTS_PATH = (
-    Path(__file__).resolve().parent.parent.parent.parent / "shared" / "endpoints.json"
-)
 
 SANDBOX_BASE_URL = "https://sandbox.safaricom.co.ke"
 PRODUCTION_BASE_URL = "https://api.safaricom.co.ke"
@@ -15,7 +9,6 @@ _ENDPOINT_KEYS = [
     "stk_query",
     "c2b_register_url",
     "c2b_simulate",
-    "c2b_simulate_v1",
     "b2c",
     "b2b",
     "reversal",
@@ -57,62 +50,52 @@ _ENDPOINT_KEYS = [
     "iot_delete_message",
 ]
 
-ENDPOINTS: dict[str, str] = {}
-
-if _SHARED_ENDPOINTS_PATH.exists():
-    with open(_SHARED_ENDPOINTS_PATH) as f:
-        data = json.load(f)
-    sandbox_eps = data["environments"]["sandbox"]["endpoints"]
-    for key in _ENDPOINT_KEYS:
-        ENDPOINTS[key.upper()] = sandbox_eps[key]
-else:
-    ENDPOINTS = {
-        "AUTH": "/oauth/v1/generate",
-        "STK_PUSH": "/mpesa/stkpush/v1/processrequest",
-        "STK_QUERY": "/mpesa/stkpushquery/v1/query",
-        "C2B_REGISTER_URL": "/mpesa/c2b/v2/registerurl",
-        "C2B_SIMULATE": "/mpesa/c2b/v2/simulate",
-        "B2C": "/mpesa/b2c/v3/paymentrequest",
-        "B2B": "/mpesa/b2b/v1/paymentrequest",
-        "REVERSAL": "/mpesa/reversal/v1/request",
-        "TRANSACTION_STATUS": "/mpesa/transactionstatus/v1/query",
-        "ACCOUNT_BALANCE": "/mpesa/accountbalance/v1/query",
-        "DYNAMIC_QR": "/mpesa/qrcode/v1/generate",
-        "C2B_SIMULATE_V1": "/mpesa/c2b/v1/simulate",
-        "QUERY_ORG_INFO": "/mpesa/queryorginfo/v1/query",
-        "IMSI": "/imsi/v1/checkATI",
-        "IOT_MANAGE": "/mpesa/iot/v1/manage",
-        "B2POCHI": "/mpesa/b2pochi/v1/paymentrequest",
-        "LIPA_NA_BONGA": "/mpesa/lipanabonga/v1/redeem",
-        "PULL_TRANSACTIONS_REGISTER": "/pulltransactions/v1/register",
-        "PULL_TRANSACTIONS_QUERY": "/pulltransactions/v1/query",
-        "SWAP": "/imsi/v2/checkATI",
-        "BILL_MANAGER": "/v1/billmanager-invoice",
-        "B2B_EXPRESS": "/v1/ussdpush/get-msisdn",
-        "RATIBA": "/standingorder/v1/createStandingOrderExternal",
-        "TAX_REMITTANCE": "/mpesa/b2b/v1/remittax",
-        "B2C_ACCOUNT_TOP_UP": "/mpesa/b2b/v1/paymentrequest",
-        "BILL_MANAGER_OPTIN": "/v1/billmanager-invoice/optin",
-        "BILL_MANAGER_SINGLE_INVOICE": "/v1/billmanager-invoice/single-invoicing",
-        "BILL_MANAGER_BULK_INVOICE": "/v1/billmanager-invoice/bulk-invoicing",
-        "BILL_MANAGER_RECONCILIATION": "/v1/billmanager-invoice/reconciliation",
-        "BILL_MANAGER_CANCEL_SINGLE": "/v1/billmanager-invoice/cancel-single-invoice",
-        "BILL_MANAGER_CANCEL_BULK": "/v1/billmanager-invoice/cancel-bulk-invoices",
-        "BILL_MANAGER_CHANGE_OPTIN": "/v1/billmanager-invoice/change-optin-details",
-        "IOT_ALLSIMS": "/simportal/v1/allsims",
-        "IOT_QUERY_LIFECYCLE": "/simportal/v1/queryLifeCycleStatus",
-        "IOT_QUERY_CUSTOMER_INFO": "/simportal/v1/querycustomerinfo",
-        "IOT_SIM_ACTIVATION": "/simportal/v1/simactivation",
-        "IOT_ACTIVATION_TRENDS": "/simportal/v1/getactivationtrends",
-        "IOT_RENAME_ASSET": "/simportal/v1/renameasset",
-        "IOT_SUSPEND_UNSUSPEND": "/simportal/v1/suspend_unsuspend_sub",
-        "IOT_SEARCH_MESSAGES": "/simportal/v1/searchmessages",
-        "IOT_FILTER_MESSAGES": "/simportal/v1/filtermessages",
-        "IOT_DELETE_THREAD": "/simportal/v1/deleteMessageThread",
-        "IOT_ALL_MESSAGES": "/simportal/v1/getallmessages",
-        "IOT_SEND_SINGLE_MESSAGE": "/simportal/v1/sendsinglemessage",
-        "IOT_DELETE_MESSAGE": "/simportal/v1/deletemessage",
-    }
+ENDPOINTS: dict[str, str] = {
+    "AUTH": "/oauth/v1/generate",
+    "STK_PUSH": "/mpesa/stkpush/v1/processrequest",
+    "STK_QUERY": "/mpesa/stkpushquery/v1/query",
+    "C2B_REGISTER_URL": "/mpesa/c2b/v2/registerurl",
+    "C2B_SIMULATE": "/mpesa/c2b/v2/simulate",
+    "B2C": "/mpesa/b2c/v3/paymentrequest",
+    "B2B": "/mpesa/b2b/v1/paymentrequest",
+    "REVERSAL": "/mpesa/reversal/v1/request",
+    "TRANSACTION_STATUS": "/mpesa/transactionstatus/v1/query",
+    "ACCOUNT_BALANCE": "/mpesa/accountbalance/v1/query",
+    "DYNAMIC_QR": "/mpesa/qrcode/v1/generate",
+    "QUERY_ORG_INFO": "/mpesa/queryorginfo/v1/query",
+    "IMSI": "/imsi/v1/checkATI",
+    "IOT_MANAGE": "/mpesa/iot/v1/manage",
+    "B2POCHI": "/mpesa/b2pochi/v1/paymentrequest",
+    "LIPA_NA_BONGA": "/mpesa/lipanabonga/v1/redeem",
+    "PULL_TRANSACTIONS_REGISTER": "/pulltransactions/v1/register",
+    "PULL_TRANSACTIONS_QUERY": "/pulltransactions/v1/query",
+    "SWAP": "/imsi/v2/checkATI",
+    "BILL_MANAGER": "/v1/billmanager-invoice",
+    "B2B_EXPRESS": "/v1/ussdpush/get-msisdn",
+    "RATIBA": "/standingorder/v1/createStandingOrderExternal",
+    "TAX_REMITTANCE": "/mpesa/b2b/v1/remittax",
+    "B2C_ACCOUNT_TOP_UP": "/mpesa/b2b/v1/paymentrequest",
+    "BILL_MANAGER_OPTIN": "/v1/billmanager-invoice/optin",
+    "BILL_MANAGER_SINGLE_INVOICE": "/v1/billmanager-invoice/single-invoicing",
+    "BILL_MANAGER_BULK_INVOICE": "/v1/billmanager-invoice/bulk-invoicing",
+    "BILL_MANAGER_RECONCILIATION": "/v1/billmanager-invoice/reconciliation",
+    "BILL_MANAGER_CANCEL_SINGLE": "/v1/billmanager-invoice/cancel-single-invoice",
+    "BILL_MANAGER_CANCEL_BULK": "/v1/billmanager-invoice/cancel-bulk-invoices",
+    "BILL_MANAGER_CHANGE_OPTIN": "/v1/billmanager-invoice/change-optin-details",
+    "IOT_ALLSIMS": "/simportal/v1/allsims",
+    "IOT_QUERY_LIFECYCLE": "/simportal/v1/queryLifeCycleStatus",
+    "IOT_QUERY_CUSTOMER_INFO": "/simportal/v1/querycustomerinfo",
+    "IOT_SIM_ACTIVATION": "/simportal/v1/simactivation",
+    "IOT_ACTIVATION_TRENDS": "/simportal/v1/getactivationtrends",
+    "IOT_RENAME_ASSET": "/simportal/v1/renameasset",
+    "IOT_SUSPEND_UNSUSPEND": "/simportal/v1/suspend_unsuspend_sub",
+    "IOT_SEARCH_MESSAGES": "/simportal/v1/searchmessages",
+    "IOT_FILTER_MESSAGES": "/simportal/v1/filtermessages",
+    "IOT_DELETE_THREAD": "/simportal/v1/deleteMessageThread",
+    "IOT_ALL_MESSAGES": "/simportal/v1/getallmessages",
+    "IOT_SEND_SINGLE_MESSAGE": "/simportal/v1/sendsinglemessage",
+    "IOT_DELETE_MESSAGE": "/simportal/v1/deletemessage",
+}
 
 Environment = Literal["sandbox", "production"]
 

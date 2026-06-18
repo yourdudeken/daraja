@@ -65,23 +65,6 @@ type B2CInput struct {
 	Occassion          string
 }
 
-type B2BInput struct {
-	Initiator              string
-	SecurityCredential     string
-	CommandID              types.B2BCommandID
-	SenderIdentifierType   int
-	RecieverIdentifierType int
-	Amount                 int
-	PartyA                 int
-	PartyB                 int
-	Requester              int
-	AccountReference       string
-	Remarks                string
-	QueueTimeOutURL        string
-	ResultURL              string
-	Occassion              string
-}
-
 type ReversalInput struct {
 	Initiator          string
 	SecurityCredential string

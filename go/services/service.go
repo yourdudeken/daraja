@@ -123,35 +123,6 @@ func (s *Service) B2C(ctx context.Context, input svctypes.B2CInput) (*svctypes.B
 	}, nil
 }
 
-func (s *Service) B2B(ctx context.Context, input svctypes.B2BInput) (*svctypes.B2BResult, error) {
-	req := types.B2BRequest{
-		Initiator:              input.Initiator,
-		SecurityCredential:     input.SecurityCredential,
-		CommandID:              input.CommandID,
-		SenderIdentifierType:   input.SenderIdentifierType,
-		RecieverIdentifierType: input.RecieverIdentifierType,
-		Amount:                 input.Amount,
-		PartyA:                 input.PartyA,
-		PartyB:                 input.PartyB,
-		Requester:              input.Requester,
-		AccountReference:       input.AccountReference,
-		Remarks:                input.Remarks,
-		QueueTimeOutURL:        input.QueueTimeOutURL,
-		ResultURL:              input.ResultURL,
-		Occassion:              input.Occassion,
-	}
-	resp, err := s.client.B2B(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-	return &svctypes.B2BResult{
-		OriginatorConversationID: resp.OriginatorConversationID,
-		ConversationID:           resp.ConversationID,
-		ResponseCode:             resp.ResponseCode,
-		ResponseDescription:      resp.ResponseDescription,
-	}, nil
-}
-
 func (s *Service) Reversal(ctx context.Context, input svctypes.ReversalInput) (*svctypes.ReversalResult, error) {
 	req := types.ReversalRequest{
 		Initiator:          input.Initiator,

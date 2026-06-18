@@ -432,12 +432,6 @@ class Mpesa:
         result = self._post("B2C", request.model_dump())
         return B2CResponse(**result)
 
-    def b2b(self, request: B2BRequest | dict) -> B2BResponse:
-        if isinstance(request, dict):
-            request = B2BRequest(**request)
-        result = self._post("B2B", request.model_dump())
-        return B2BResponse(**result)
-
     def reversal(self, request: ReversalRequest | dict) -> ReversalResponse:
         if isinstance(request, dict):
             request = ReversalRequest(**request)

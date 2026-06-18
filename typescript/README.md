@@ -43,23 +43,22 @@ All methods return typed responses.
 |---------|---------|
 | `mpesa.stkPush` | `initiate()`, `query()` |
 | `mpesa.c2b` | `registerURL()`, `simulate()` |
-| `mpesa.b2c` | `send()`, `topUp()` |
-| `mpesa.b2b` | `send()` |
+| `mpesa.b2c` | `send()` |
 | `mpesa.reversal` | `reverse()` |
 | `mpesa.transactionStatus` | `query()` |
 | `mpesa.accountBalance` | `query()` |
 | `mpesa.dynamicQR` | `generate()` |
 | `mpesa.businessGoods` | `buyGoods()`, `payBill()` |
+| `mpesa.queryOrgInfo` | `query()` |
 | `mpesa.b2Pochi` | `send()` |
 | `mpesa.lipaNaBonga` | `redeem()` |
-| `mpesa.pullTransactions` | `query()` |
-| `mpesa.queryOrgInfo` | `query()` |
+| `mpesa.pullTransactions` | `register()`, `query()` |
 | `mpesa.imsi` | `query()` |
-| `mpesa.iot` | `manage()` |
-| `mpesa.swap` | `transfer()` |
-| `mpesa.billManager` | `updateBill()` |
+| `mpesa.swap` | `query()` |
+| `mpesa.iot` | `getAllSIMs()`, `queryLifeCycleStatus()`, `queryCustomerInfo()`, `activateSIM()`, `getActivationTrends()`, `renameAsset()`, `suspendUnsuspend()`, `searchMessages()`, `filterMessages()`, `deleteMessageThread()`, `getAllMessages()`, `sendSingleMessage()`, `deleteMessage()` |
+| `mpesa.billManager` | `optIn()`, `sendSingleInvoice()`, `sendBulkInvoice()`, `reconciliation()`, `cancelSingleInvoice()`, `cancelBulkInvoices()`, `changeOptIn()` |
 | `mpesa.b2bExpress` | `send()` |
-| `mpesa.ratiba` | `process()` |
+| `mpesa.ratiba` | `createStandingOrder()` |
 | `mpesa.taxRemittance` | `remit()` |
 | `mpesa.webhooks` | `on()`, `off()`, `handleEvent()` |
 | `mpesa.client` | Low-level HTTP client |

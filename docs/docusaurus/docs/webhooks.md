@@ -12,7 +12,7 @@ M-Pesa APIs are asynchronous. Results are sent to your callback URLs via webhook
 |-------|-------------|
 | `stk:callback` | STK Push transaction result |
 | `b2c:result` | B2C payment result |
-| `b2b:result` | B2B payment result |
+| `b2b:result` | B2B payment result (BusinessBuyGoods, BusinessPayBill, AccountTopUp, TaxRemittance) |
 | `reversal:result` | Transaction reversal result |
 | `transaction:status` | Transaction status query result |
 | `account:balance` | Account balance query result |
