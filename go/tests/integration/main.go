@@ -38,9 +38,14 @@ func main() {
 		SecurityCredential: os.Getenv("MPESA_SECURITY_CREDENTIAL"),
 	})
 
-	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
 	defer cancel()
 
+	sleep := func() { time.Sleep(3 * time.Second) }
+
+	// Test 1: OAuth (implicit, done during first call)
+
+	sleep()
 	// Test 2: STK Push
 	fmt.Println("\n2. STK Push (M-Pesa Express)")
 	shortcode := 174379
@@ -66,6 +71,7 @@ func main() {
 		fmt.Printf("   ResponseDescription: %s\n", stkResp.ResponseDescription)
 
 		// Test 3: STK Query
+		sleep()
 		checkoutID := stkResp.CheckoutRequestID
 		fmt.Printf("\n3. STK Query (%s)\n", checkoutID)
 		stkQResp, err := mpesa.STKQuery(ctx, types.STKQueryRequest{
@@ -80,6 +86,7 @@ func main() {
 		}
 	}
 
+	sleep()
 	// Test 4: C2B Register URL
 	fmt.Println("\n4. C2B Register URL")
 	c2bRegResp, err := mpesa.C2BRegisterURL(ctx, types.C2BRegisterURLRequest{
@@ -95,6 +102,7 @@ func main() {
 		fmt.Printf("   ResponseDescription: %s\n", c2bRegResp.ResponseDescription)
 	}
 
+	sleep()
 	// Test 5: C2B Simulate
 	fmt.Println("\n5. C2B Simulate")
 	c2bSimResp, err := mpesa.C2BSimulate(ctx, types.C2BSimulateRequest{
@@ -111,6 +119,7 @@ func main() {
 		fmt.Printf("   ResponseDescription: %s\n", c2bSimResp.ResponseDescription)
 	}
 
+	sleep()
 	// Test 6: B2C
 	fmt.Println("\n6. B2C Payment")
 	if os.Getenv("MPESA_INITIATOR_NAME") == "" || os.Getenv("MPESA_SECURITY_CREDENTIAL") == "" {
@@ -136,6 +145,7 @@ func main() {
 		}
 	}
 
+	sleep()
 	// Test 7: Reversal
 	fmt.Println("\n7. Transaction Reversal")
 	if os.Getenv("MPESA_INITIATOR_NAME") == "" || os.Getenv("MPESA_SECURITY_CREDENTIAL") == "" {
@@ -161,6 +171,7 @@ func main() {
 		}
 	}
 
+	sleep()
 	// Test 8: Transaction Status
 	fmt.Println("\n8. Transaction Status Query")
 	if os.Getenv("MPESA_INITIATOR_NAME") == "" || os.Getenv("MPESA_SECURITY_CREDENTIAL") == "" {
@@ -185,6 +196,7 @@ func main() {
 		}
 	}
 
+	sleep()
 	// Test 9: Account Balance
 	fmt.Println("\n9. Account Balance Query")
 	if os.Getenv("MPESA_INITIATOR_NAME") == "" || os.Getenv("MPESA_SECURITY_CREDENTIAL") == "" {
@@ -208,6 +220,7 @@ func main() {
 		}
 	}
 
+	sleep()
 	// Test 10: Dynamic QR
 	fmt.Println("\n10. Dynamic QR")
 	qrResp, err := mpesa.DynamicQR(ctx, types.DynamicQRRequest{
@@ -225,6 +238,7 @@ func main() {
 		fmt.Printf("   QRCode length: %d\n", len(qrResp.QRCode))
 	}
 
+	sleep()
 	// Test 11: Business Buy Goods
 	fmt.Println("\n11. Business Buy Goods")
 	if os.Getenv("MPESA_INITIATOR_NAME") == "" || os.Getenv("MPESA_SECURITY_CREDENTIAL") == "" {
@@ -251,6 +265,7 @@ func main() {
 		}
 	}
 
+	sleep()
 	// Test 12: Business Pay Bill
 	fmt.Println("\n12. Business Pay Bill")
 	if os.Getenv("MPESA_INITIATOR_NAME") == "" || os.Getenv("MPESA_SECURITY_CREDENTIAL") == "" {
@@ -277,6 +292,7 @@ func main() {
 		}
 	}
 
+	sleep()
 	// Test 13: B2Pochi
 	fmt.Println("\n13. B2Pochi")
 	if os.Getenv("MPESA_INITIATOR_NAME") == "" || os.Getenv("MPESA_SECURITY_CREDENTIAL") == "" {
@@ -304,6 +320,7 @@ func main() {
 		}
 	}
 
+	sleep()
 	// Test 14: Lipa na Bonga
 	fmt.Println("\n14. Lipa na Bonga")
 	lnbResp, err := mpesa.LipaNaBongaCalculate(ctx, types.LipaNaBongaCalculateRequest{
@@ -315,6 +332,7 @@ func main() {
 		fmt.Printf("   Amount: %s, Points: %s\n", lnbResp.Amount, lnbResp.Points)
 	}
 
+	sleep()
 	// Test 15: Pull Transactions
 	fmt.Println("\n15. Pull Transactions")
 	ptResp, err := mpesa.PullTransactionsQuery(ctx, types.PullTransactionsQueryRequest{
@@ -329,6 +347,7 @@ func main() {
 		fmt.Printf("   ResponseCode: %s\n", ptResp.ResponseCode)
 	}
 
+	sleep()
 	// Test 16: Query Org Info
 	fmt.Println("\n16. Query Org Info")
 	qoResp, err := mpesa.QueryOrgInfo(ctx, types.QueryOrgInfoRequest{})
@@ -338,6 +357,7 @@ func main() {
 		fmt.Printf("   ResponseCode: %s\n", qoResp.ResponseCode)
 	}
 
+	sleep()
 	// Test 17: IMSI
 	fmt.Println("\n17. IMSI Query")
 	imsiResp, err := mpesa.IMSI(ctx, types.IMSIRequest{
@@ -349,6 +369,7 @@ func main() {
 		fmt.Printf("   responseCode: %s\n", imsiResp.ResponseCode)
 	}
 
+	sleep()
 	// Test 18: IoT
 	fmt.Println("\n18. IoT SIM Management")
 	iotResp, err := mpesa.IoTGetAllSIMs(ctx, types.IoTGetAllSIMsRequest{
@@ -363,6 +384,7 @@ func main() {
 		fmt.Printf("   Header responseCode: %d\n", iotResp.Header.ResponseCode)
 	}
 
+	sleep()
 	// Test 19: Swap
 	fmt.Println("\n19. Swap Query")
 	swapResp, err := mpesa.Swap(ctx, types.SwapRequest{
@@ -375,6 +397,7 @@ func main() {
 		fmt.Printf("   responseDesc: %s\n", swapResp.ResponseDesc)
 	}
 
+	sleep()
 	// Test 20: Bill Manager
 	fmt.Println("\n20. Bill Manager")
 	bmResp, err := mpesa.BillManagerOptin(ctx, types.BillManagerOptinRequest{
@@ -390,6 +413,7 @@ func main() {
 		fmt.Printf("   ResMsg: %s\n", bmResp.ResMsg)
 	}
 
+	sleep()
 	// Test 21: B2B Express
 	fmt.Println("\n21. B2B Express CheckOut")
 	b2bResp, err := mpesa.B2BExpress(ctx, types.B2BExpressRequest{
@@ -407,6 +431,7 @@ func main() {
 		fmt.Printf("   code: %s, status: %s\n", b2bResp.Code, b2bResp.Status)
 	}
 
+	sleep()
 	// Test 22: Ratiba
 	fmt.Println("\n22. M-Pesa Ratiba (Standing Order)")
 	ratResp, err := mpesa.CreateStandingOrder(ctx, types.RatibaRequest{
@@ -429,6 +454,7 @@ func main() {
 		fmt.Printf("   responseCode: %s\n", ratResp.ResponseHeader.ResponseCode)
 	}
 
+	sleep()
 	// Test 23: Tax Remittance
 	fmt.Println("\n23. Tax Remittance")
 	if os.Getenv("MPESA_INITIATOR_NAME") == "" || os.Getenv("MPESA_SECURITY_CREDENTIAL") == "" {
@@ -456,6 +482,7 @@ func main() {
 		}
 	}
 
+	sleep()
 	// Test 24: Webhook Handling
 	fmt.Println("\n24. Webhook Handling")
 	payload := types.STKCallbackPayload{}

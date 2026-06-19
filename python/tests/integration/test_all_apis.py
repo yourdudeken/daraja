@@ -278,15 +278,22 @@ def test_10_dynamic_qr():
 
 def test_11_business_buy_goods():
     print("\n11. Business Buy Goods")
+    if not CONFIG["initiator_name"] or not CONFIG["security_credential"]:
+        print("   SKIP: initiator_name/security_credential not set")
+        return
     client = Mpesa(CONFIG)
     try:
         resp = client.business_buy_goods(
             {
-                "ShortCode": SHORTCODE,
-                "CommandID": "CustomerBuyGoodsOnline",
+                "Initiator": CONFIG["initiator_name"],
+                "SecurityCredential": CONFIG["security_credential"],
+                "CommandID": "BusinessBuyGoods",
                 "Amount": 100,
-                "Msisdn": PHONE,
-                "BillRefNumber": "BG-001",
+                "PartyA": SHORTCODE,
+                "PartyB": PHONE,
+                "Remarks": "Buy goods test",
+                "QueueTimeOutURL": f"{CALLBACK_BASE}/buygoods/queue",
+                "ResultURL": f"{CALLBACK_BASE}/buygoods/result",
             }
         )
         print(f"   ResponseCode: {resp.ResponseCode}")
@@ -299,15 +306,22 @@ def test_11_business_buy_goods():
 
 def test_12_business_pay_bill():
     print("\n12. Business Pay Bill")
+    if not CONFIG["initiator_name"] or not CONFIG["security_credential"]:
+        print("   SKIP: initiator_name/security_credential not set")
+        return
     client = Mpesa(CONFIG)
     try:
         resp = client.business_pay_bill(
             {
-                "ShortCode": SHORTCODE,
-                "CommandID": "CustomerPayBillOnline",
+                "Initiator": CONFIG["initiator_name"],
+                "SecurityCredential": CONFIG["security_credential"],
+                "CommandID": "BusinessPayBill",
                 "Amount": 100,
-                "Msisdn": PHONE,
-                "BillRefNumber": "PB-001",
+                "PartyA": SHORTCODE,
+                "PartyB": PHONE,
+                "Remarks": "Pay bill test",
+                "QueueTimeOutURL": f"{CALLBACK_BASE}/paybill/queue",
+                "ResultURL": f"{CALLBACK_BASE}/paybill/result",
             }
         )
         print(f"   ResponseCode: {resp.ResponseCode}")
@@ -331,8 +345,11 @@ def test_13_b2pochi():
                 "SecurityCredential": CONFIG["security_credential"],
                 "CommandID": "BusinessPayment",
                 "Amount": 10,
+                "SenderIdentifier": 4,
+                "ReceiverIdentifier": 4,
                 "PartyA": SHORTCODE,
                 "PartyB": PHONE,
+                "AccountReference": "POCHI-TEST",
                 "Remarks": "Pochi test",
                 "QueueTimeOutURL": f"{CALLBACK_BASE}/b2pochi/queue",
                 "ResultURL": f"{CALLBACK_BASE}/b2pochi/result",
@@ -381,12 +398,7 @@ def test_16_query_org_info():
     print("\n16. Query Org Info")
     client = Mpesa(CONFIG)
     try:
-        resp = client.query_org_info(
-            {
-                "ShortCode": str(SHORTCODE),
-                "IdentifierType": 4,
-            }
-        )
+        resp = client.query_org_info()
         print(f"   ResponseCode: {resp.ResponseCode}")
     except Exception as e:
         log_error("Query Org Info", e)
@@ -399,7 +411,7 @@ def test_17_imsi():
     client = Mpesa(CONFIG)
     try:
         resp = client.imsi_query({"customerNumber": str(PHONE)})
-        print(f"   ResponseCode: {resp.ResponseCode}")
+        print(f"   responseCode: {resp.ResponseCode}")
     except Exception as e:
         log_error("IMSI", e)
     finally:
@@ -430,8 +442,8 @@ def test_19_swap():
     client = Mpesa(CONFIG)
     try:
         resp = client.swap_service.query({"customerNumber": str(PHONE)})
-        print(f"   ResponseCode: {resp.ResponseCode}")
-        print(f"   ResponseDesc: {resp.ResponseDesc}")
+        print(f"   responseCode: {resp.ResponseCode}")
+        print(f"   responseDesc: {resp.ResponseDesc}")
     except Exception as e:
         log_error("Swap", e)
     finally:
@@ -557,40 +569,67 @@ def test_24_webhook_handling():
             }
         }
         result = wm.parse_stk_callback(payload)
-        print(f"   Parsed STK callback: success={result.success}")
+        print(f"   Parsed STK callback: success={result['success']}")
     except Exception as e:
         log_error("Webhook Handling", e)
 
+
+DELAY = 2
 
 if __name__ == "__main__":
     print("=" * 60)
     print("Python SDK - Core API Integration Tests")
     print("=" * 60)
 
+    import time
+
     test_01_oauth()
+    time.sleep(DELAY)
     checkout_id = test_02_stk_push()
     if checkout_id:
+        time.sleep(DELAY)
         test_03_stk_query(checkout_id)
+    time.sleep(DELAY)
     test_04_c2b_register_url()
+    time.sleep(DELAY)
     test_05_c2b_simulate()
+    time.sleep(DELAY)
     test_06_b2c()
+    time.sleep(DELAY)
     test_07_reversal()
+    time.sleep(DELAY)
     test_08_transaction_status()
+    time.sleep(DELAY)
     test_09_account_balance()
+    time.sleep(DELAY)
     test_10_dynamic_qr()
+    time.sleep(DELAY)
     test_11_business_buy_goods()
+    time.sleep(DELAY)
     test_12_business_pay_bill()
+    time.sleep(DELAY)
     test_13_b2pochi()
+    time.sleep(DELAY)
     test_14_lipa_na_bonga()
+    time.sleep(DELAY)
     test_15_pull_transactions()
+    time.sleep(DELAY)
     test_16_query_org_info()
+    time.sleep(DELAY)
     test_17_imsi()
+    time.sleep(DELAY)
     test_18_iot()
+    time.sleep(DELAY)
     test_19_swap()
+    time.sleep(DELAY)
     test_20_bill_manager()
+    time.sleep(DELAY)
     test_21_b2b_express()
+    time.sleep(DELAY)
     test_22_ratiba()
+    time.sleep(DELAY)
     test_23_tax_remittance()
+    time.sleep(DELAY)
     test_24_webhook_handling()
 
     print("\n" + "=" * 60)

@@ -510,29 +510,57 @@ async function main() {
   console.log("TypeScript SDK - Core API Integration Tests");
   console.log("=".repeat(60));
 
+  const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+  const DELAY = 3000;
+
   test01OAuth();
+  await sleep(DELAY);
   const checkoutId = await test02STKPush();
-  if (checkoutId) await test03STKQuery(checkoutId);
+  if (checkoutId) {
+    await sleep(DELAY);
+    await test03STKQuery(checkoutId);
+  }
+  await sleep(DELAY);
   await test04C2BRegisterURL();
+  await sleep(DELAY);
   await test05C2BSimulate();
+  await sleep(DELAY);
   await test06B2C();
+  await sleep(DELAY);
   await test07Reversal();
+  await sleep(DELAY);
   await test08TransactionStatus();
+  await sleep(DELAY);
   await test09AccountBalance();
+  await sleep(DELAY);
   await test10DynamicQR();
+  await sleep(DELAY);
   await test11BusinessBuyGoods();
+  await sleep(DELAY);
   await test12BusinessPayBill();
+  await sleep(DELAY);
   await test13B2Pochi();
+  await sleep(DELAY);
   await test14LipaNaBonga();
+  await sleep(DELAY);
   await test15PullTransactions();
+  await sleep(DELAY);
   await test16QueryOrgInfo();
+  await sleep(DELAY);
   await test17IMSI();
+  await sleep(DELAY);
   await test18IoT();
+  await sleep(DELAY);
   await test19Swap();
+  await sleep(DELAY);
   await test20BillManager();
+  await sleep(DELAY);
   await test21B2BExpress();
+  await sleep(DELAY);
   await test22Ratiba();
+  await sleep(DELAY);
   await test23TaxRemittance();
+  await sleep(DELAY);
   test24WebhookHandling();
 
   console.log("\n" + "=".repeat(60));
