@@ -258,10 +258,10 @@ class DynamicQRRequest(BaseModel):
 
 
 class DynamicQRResponse(BaseModel):
-    ResponseCode: str
-    RequestID: str
-    ResponseDescription: str
-    QRCode: str
+    ResponseCode: str = ""
+    RequestID: str = ""
+    ResponseDescription: str = ""
+    QRCode: str = ""
 
 
 class ResultParameterItem(BaseModel):
@@ -580,6 +580,7 @@ class IoTDeleteMessageResponse(BaseModel):
 
 
 class B2PochiRequest(BaseModel):
+    OriginatorConversationID: Optional[str] = None
     InitiatorName: str
     SecurityCredential: str
     CommandID: str
@@ -677,10 +678,10 @@ class SwapRequest(BaseModel):
 
 
 class SwapResponse(BaseModel):
-    requestRefID: str
-    responseCode: str
-    responseDesc: str
-    lastSwapDate: str
+    requestRefID: str = ""
+    responseCode: str = ""
+    responseDesc: str = ""
+    lastSwapDate: str = ""
 
 
 class BillManagerOptInRequest(BaseModel):

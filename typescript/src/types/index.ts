@@ -722,6 +722,7 @@ export interface IoTDeleteMessageRequest {
 // B2Pochi
 // ============================================================
 export interface B2PochiRequest {
+  OriginatorConversationID?: string;
   InitiatorName?: string;
   SecurityCredential?: string;
   CommandID: string;

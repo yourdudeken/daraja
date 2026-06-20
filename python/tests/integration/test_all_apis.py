@@ -153,6 +153,12 @@ def test_05_c2b_simulate():
         client.close()
 
 
+def _originator_id() -> str:
+    import time
+
+    return f"INT_{int(time.time())}_{id({})}"
+
+
 def test_06_b2c():
     print("\n6. B2C Payment")
     if not CONFIG["initiator_name"]:
@@ -162,6 +168,7 @@ def test_06_b2c():
     try:
         resp = client.b2c(
             {
+                "OriginatorConversationID": _originator_id(),
                 "CommandID": "BusinessPayment",
                 "Amount": 10,
                 "PartyA": SHORTCODE,
@@ -296,7 +303,7 @@ def test_11_business_buy_goods():
                 "CommandID": "BusinessBuyGoods",
                 "Amount": 100,
                 "PartyA": SHORTCODE,
-                "PartyB": PHONE,
+                "PartyB": PARTY_B,
                 "Remarks": "Buy goods test",
                 "QueueTimeOutURL": f"{CALLBACK_BASE}/buygoods/queue",
                 "ResultURL": f"{CALLBACK_BASE}/buygoods/result",
@@ -323,7 +330,7 @@ def test_12_business_pay_bill():
                 "CommandID": "BusinessPayBill",
                 "Amount": 100,
                 "PartyA": SHORTCODE,
-                "PartyB": PHONE,
+                "PartyB": PARTY_B,
                 "Remarks": "Pay bill test",
                 "QueueTimeOutURL": f"{CALLBACK_BASE}/paybill/queue",
                 "ResultURL": f"{CALLBACK_BASE}/paybill/result",
@@ -347,6 +354,7 @@ def test_13_b2pochi():
     try:
         resp = client.b2pochi(
             {
+                "OriginatorConversationID": _originator_id(),
                 "CommandID": "BusinessPayment",
                 "Amount": 10,
                 "SenderIdentifier": 4,

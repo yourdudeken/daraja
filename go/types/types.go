@@ -685,18 +685,19 @@ type IoTDeleteMessageResponse struct {
 
 // ---- B2Pochi ----
 type B2PochiRequest struct {
-	InitiatorName      string `json:"InitiatorName"`
-	SecurityCredential string `json:"SecurityCredential"`
-	CommandID          string `json:"CommandID"`
-	Amount             int    `json:"Amount"`
-	SenderIdentifier   int    `json:"SenderIdentifier"`
-	ReceiverIdentifier int    `json:"ReceiverIdentifier"`
-	PartyA             int    `json:"PartyA"`
-	PartyB             int    `json:"PartyB"`
-	AccountReference   string `json:"AccountReference"`
-	Remarks            string `json:"Remarks"`
-	QueueTimeOutURL    string `json:"QueueTimeOutURL"`
-	ResultURL          string `json:"ResultURL"`
+	OriginatorConversationID string `json:"OriginatorConversationID,omitempty"`
+	InitiatorName            string `json:"InitiatorName"`
+	SecurityCredential       string `json:"SecurityCredential"`
+	CommandID                string `json:"CommandID"`
+	Amount                   int    `json:"Amount"`
+	SenderIdentifier         int    `json:"SenderIdentifier"`
+	ReceiverIdentifier       int    `json:"ReceiverIdentifier"`
+	PartyA                   int    `json:"PartyA"`
+	PartyB                   int    `json:"PartyB"`
+	AccountReference         string `json:"AccountReference"`
+	Remarks                  string `json:"Remarks"`
+	QueueTimeOutURL          string `json:"QueueTimeOutURL"`
+	ResultURL                string `json:"ResultURL"`
 }
 
 type B2PochiResponse struct {

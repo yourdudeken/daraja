@@ -139,15 +139,17 @@ func main() {
 	} else if sandboxBlocked {
 		// skip
 	} else {
+		oid := fmt.Sprintf("INT_%d_%x", time.Now().Unix(), time.Now().UnixNano())
 		b2cResp, err := mpesa.B2C(ctx, types.B2CRequest{
-			CommandID:       types.BusinessPayment,
-			Amount:          10,
-			PartyA:          shortcode,
-			PartyB:          phone,
-			Remarks:         "Test B2C",
-			QueueTimeOutURL: callbackBase + "/b2c/queue",
-			ResultURL:       callbackBase + "/b2c/result",
-			Occassion:       "Test",
+			OriginatorConversationID: oid,
+			CommandID:                types.BusinessPayment,
+			Amount:                   10,
+			PartyA:                   shortcode,
+			PartyB:                   phone,
+			Remarks:                  "Test B2C",
+			QueueTimeOutURL:          callbackBase + "/b2c/queue",
+			ResultURL:                callbackBase + "/b2c/result",
+			Occassion:                "Test",
 		})
 		if err != nil {
 			if !checkBlocked("B2C", err) {
@@ -254,7 +256,7 @@ func main() {
 			RecieverIdentifierType: 4,
 			Amount:                 100,
 			PartyA:                 shortcode,
-			PartyB:                 phone,
+			PartyB:                 600000,
 			Remarks:                "Buy goods test",
 			QueueTimeOutURL:        callbackBase + "/buygoods/queue",
 			ResultURL:              callbackBase + "/buygoods/result",
@@ -283,7 +285,7 @@ func main() {
 			RecieverIdentifierType: 4,
 			Amount:                 100,
 			PartyA:                 shortcode,
-			PartyB:                 phone,
+			PartyB:                 600000,
 			Remarks:                "Pay bill test",
 			QueueTimeOutURL:        callbackBase + "/paybill/queue",
 			ResultURL:              callbackBase + "/paybill/result",
@@ -307,16 +309,17 @@ func main() {
 		// skip
 	} else {
 		pochResp, err := mpesa.B2Pochi(ctx, types.B2PochiRequest{
-			CommandID:          "BusinessPayment",
-			Amount:             10,
-			SenderIdentifier:   4,
-			ReceiverIdentifier: 4,
-			PartyA:             shortcode,
-			PartyB:             phone,
-			AccountReference:   "POCHI-TEST",
-			Remarks:            "Pochi test",
-			QueueTimeOutURL:    callbackBase + "/b2pochi/queue",
-			ResultURL:          callbackBase + "/b2pochi/result",
+			OriginatorConversationID: fmt.Sprintf("INT_%d_%x", time.Now().Unix(), time.Now().UnixNano()),
+			CommandID:                "BusinessPayment",
+			Amount:                   10,
+			SenderIdentifier:         4,
+			ReceiverIdentifier:       4,
+			PartyA:                   shortcode,
+			PartyB:                   phone,
+			AccountReference:         "POCHI-TEST",
+			Remarks:                  "Pochi test",
+			QueueTimeOutURL:          callbackBase + "/b2pochi/queue",
+			ResultURL:                callbackBase + "/b2pochi/result",
 		})
 		if err != nil {
 			if !checkBlocked("B2Pochi", err) {

@@ -119,6 +119,10 @@ async function test05C2BSimulate() {
   }
 }
 
+function originatorId(): string {
+  return `INT_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+}
+
 async function test06B2C() {
   console.log("\n6. B2C Payment");
   if (!CONFIG.initiatorName) {
@@ -129,6 +133,7 @@ async function test06B2C() {
   const mpesa = new Mpesa(CONFIG);
   try {
     const resp = await mpesa.b2c.send({
+      OriginatorConversationID: originatorId(),
       CommandID: "BusinessPayment",
       Amount: 10,
       PartyA: SHORTCODE,
@@ -159,6 +164,7 @@ async function test07Reversal() {
       TransactionID: "NLA00TEST",
       Amount: 10,
       ReceiverParty: SHORTCODE,
+      RecieverIdentifierType: 11,
       QueueTimeOutURL: `${CALLBACK_BASE}/reversal/queue`,
       ResultURL: `${CALLBACK_BASE}/reversal/result`,
       Remarks: "Test reversal",
@@ -251,7 +257,7 @@ async function test11BusinessBuyGoods() {
       CommandID: "BusinessBuyGoods",
       Amount: 100,
       PartyA: SHORTCODE,
-      PartyB: PHONE,
+      PartyB: PARTY_B,
       Remarks: "Buy goods test",
       QueueTimeOutURL: `${CALLBACK_BASE}/buygoods/queue`,
       ResultURL: `${CALLBACK_BASE}/buygoods/result`,
@@ -276,7 +282,7 @@ async function test12BusinessPayBill() {
       CommandID: "BusinessPayBill",
       Amount: 100,
       PartyA: SHORTCODE,
-      PartyB: PHONE,
+      PartyB: PARTY_B,
       Remarks: "Pay bill test",
       QueueTimeOutURL: `${CALLBACK_BASE}/paybill/queue`,
       ResultURL: `${CALLBACK_BASE}/paybill/result`,
@@ -298,6 +304,7 @@ async function test13B2Pochi() {
   const mpesa = new Mpesa(CONFIG);
   try {
     const resp = await mpesa.b2Pochi.send({
+      OriginatorConversationID: originatorId(),
       CommandID: "BusinessPayment",
       Amount: 10,
       SenderIdentifier: 4,
