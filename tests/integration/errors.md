@@ -10,7 +10,7 @@ This document logs every error encountered while running integration tests again
 - **Party A**: 600426
 - **Party B**: 600000
 - **Phone**: 254708374149
-- **Callback URL**: https://7a3e-102-219-209-38.ngrok-free.app
+- **Callback URL**: https://webhook.site/ad79c1ec-2493-4016-b8ed-905390f58db3
 - **Security Credential**: Provided
 
 ---

@@ -23,7 +23,7 @@ const SHORTCODE = parseInt(process.env.MPESA_SHORTCODE ?? "174379", 10);
 const PARTY_B = parseInt(process.env.MPESA_PARTY_B ?? "600000", 10);
 const PHONE = parseInt(process.env.MPESA_PHONE ?? "254708374149", 10);
 const CALLBACK_BASE =
-  process.env.MPESA_CALLBACK_URL ?? "https://7a3e-102-219-209-38.ngrok-free.app";
+  process.env.MPESA_CALLBACK_URL ?? "https://webhook.site/ad79c1ec-2493-4016-b8ed-905390f58db3";
 
 function test01OAuth() {
   console.log("\n1. OAuth Authentication");

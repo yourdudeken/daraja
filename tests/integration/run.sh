@@ -27,7 +27,7 @@ MPESA_SHORTCODE="${MPESA_SHORTCODE:-174379}"
 MPESA_PARTY_A="${MPESA_PARTY_A:-600426}"
 MPESA_PARTY_B="${MPESA_PARTY_B:-600000}"
 MPESA_PHONE="${MPESA_PHONE:-254708374149}"
-MPESA_CALLBACK_URL="${MPESA_CALLBACK_URL:-https://7a3e-102-219-209-38.ngrok-free.app}"
+MPESA_CALLBACK_URL="${MPESA_CALLBACK_URL:-https://webhook.site/ad79c1ec-2493-4016-b8ed-905390f58db3}"
 
 echo "============================================================"
 echo "Safaricom M-Pesa Daraja SDK - Core API Integration Tests"

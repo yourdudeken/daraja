@@ -38,7 +38,7 @@ PARTY_A = int(os.environ.get("MPESA_PARTY_A", "600426"))
 PARTY_B = int(os.environ.get("MPESA_PARTY_B", "600000"))
 PHONE = int(os.environ.get("MPESA_PHONE", "254708374149"))
 CALLBACK_BASE = os.environ.get(
-    "MPESA_CALLBACK_URL", "https://7a3e-102-219-209-38.ngrok-free.app"
+    "MPESA_CALLBACK_URL", "https://webhook.site/ad79c1ec-2493-4016-b8ed-905390f58db3"
 )
 
 

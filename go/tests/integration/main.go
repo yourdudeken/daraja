@@ -50,7 +50,7 @@ func main() {
 	fmt.Println("\n2. STK Push (M-Pesa Express)")
 	shortcode := 174379
 	phone := 254708374149
-	callbackBase := getEnv("MPESA_CALLBACK_URL", "https://7a3e-102-219-209-38.ngrok-free.app")
+	callbackBase := getEnv("MPESA_CALLBACK_URL", "https://webhook.site/ad79c1ec-2493-4016-b8ed-905390f58db3")
 
 	stkResp, err := mpesa.STKPush(ctx, types.STKPushRequest{
 		BusinessShortCode: shortcode,
