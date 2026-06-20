@@ -30,7 +30,7 @@ export class STKPushService {
     Validation.oneOf(request.TransactionType, "TransactionType", VALID_TRANSACTION_TYPES);
     Validation.amount(request.Amount, "Amount");
     Validation.phoneNumber(request.PartyA, "PartyA");
-    Validation.phoneNumber(request.PartyB, "PartyB");
+    Validation.positiveNumber(request.PartyB, "PartyB");
     Validation.phoneNumber(request.PhoneNumber, "PhoneNumber");
     Validation.validUrl(request.CallBackURL, "CallBackURL");
     Validation.maxLength(request.AccountReference, "AccountReference", 12);

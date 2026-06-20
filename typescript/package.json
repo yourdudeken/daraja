@@ -22,52 +22,52 @@
   "author": "M-Pesa SDK Team",
   "type": "module",
   "main": "./dist/index.js",
-  "module": "./dist/index.mjs",
+  "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "import": {
         "types": "./dist/index.d.ts",
-        "default": "./dist/index.mjs"
+        "default": "./dist/index.js"
       },
       "require": {
         "types": "./dist/index.d.cts",
-        "default": "./dist/index.js"
+        "default": "./dist/index.cjs"
       }
     },
     "./webhooks": {
       "import": {
         "types": "./dist/webhooks/index.d.ts",
-        "default": "./dist/webhooks/index.mjs"
+        "default": "./dist/webhooks/index.js"
       },
       "require": {
         "types": "./dist/webhooks/index.d.cts",
-        "default": "./dist/webhooks/index.js"
+        "default": "./dist/webhooks/index.cjs"
       }
     },
     "./errors": {
       "import": {
         "types": "./dist/errors/index.d.ts",
-        "default": "./dist/errors/index.mjs"
+        "default": "./dist/errors/index.js"
       },
       "require": {
         "types": "./dist/errors/index.d.cts",
-        "default": "./dist/errors/index.js"
+        "default": "./dist/errors/index.cjs"
       }
     },
     "./types": {
       "import": {
         "types": "./dist/types/index.d.ts",
-        "default": "./dist/types/index.mjs"
+        "default": "./dist/types/index.js"
       },
       "require": {
         "types": "./dist/types/index.d.cts",
-        "default": "./dist/types/index.js"
+        "default": "./dist/types/index.cjs"
       }
     }
   },
   "bin": {
-    "mpesa": "./dist/cli/index.mjs"
+    "mpesa": "./dist/cli/index.js"
   },
   "publishConfig": {
     "access": "public"

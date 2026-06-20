@@ -6,6 +6,13 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 
+# Source .env files from each package
+set -a
+source "$REPO_ROOT/python/tests/integration/.env" 2>/dev/null || true
+source "$REPO_ROOT/typescript/tests/integration/.env" 2>/dev/null || true
+source "$REPO_ROOT/go/tests/integration/.env" 2>/dev/null || true
+set +a
+
 # ---- Required Env Vars ----
 : "${MPESA_CONSUMER_KEY:?Set MPESA_CONSUMER_KEY env var}"
 : "${MPESA_CONSUMER_SECRET:?Set MPESA_CONSUMER_SECRET env var}"
@@ -20,7 +27,7 @@ MPESA_SHORTCODE="${MPESA_SHORTCODE:-174379}"
 MPESA_PARTY_A="${MPESA_PARTY_A:-600426}"
 MPESA_PARTY_B="${MPESA_PARTY_B:-600000}"
 MPESA_PHONE="${MPESA_PHONE:-254708374149}"
-MPESA_CALLBACK_URL="${MPESA_CALLBACK_URL:-https://aeed-102-219-209-38.ngrok-free.app}"
+MPESA_CALLBACK_URL="${MPESA_CALLBACK_URL:-https://7a3e-102-219-209-38.ngrok-free.app}"
 
 echo "============================================================"
 echo "Safaricom M-Pesa Daraja SDK - Core API Integration Tests"
@@ -40,9 +47,9 @@ echo ""
 echo "============================================================"
 echo "Python SDK Integration Tests"
 echo "============================================================"
-cd "$REPO_ROOT/python"
+cd "$REPO_ROOT"
 source .venv/bin/activate 2>/dev/null || true
-python3 ./tests/integration/test_all_apis.py
+python3 python/tests/integration/test_all_apis.py
 PYTHON_EXIT=$?
 echo "Python tests exit code: ${PYTHON_EXIT}"
 echo ""
@@ -53,8 +60,8 @@ echo ""
 echo "============================================================"
 echo "TypeScript SDK Integration Tests"
 echo "============================================================"
-cd "$REPO_ROOT/typescript"
-npx -w typescript tsx ./tests/integration/test_all_apis.ts
+cd "$REPO_ROOT"
+npx tsx typescript/tests/integration/test_all_apis.ts
 TS_EXIT=$?
 echo "TypeScript tests exit code: ${TS_EXIT}"
 echo ""
