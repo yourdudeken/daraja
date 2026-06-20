@@ -163,8 +163,12 @@ Implemented across all 3 SDKs (now exercised in integration tests):
 | `python/tests/integration/test_all_apis.py` | CONFIG uses `initiator_password`; `SANDBOX_BLOCKED` flag; request bodies stripped of explicit initiator fields; C2B Register URL moved to end |
 | `typescript/tests/integration/test_all_apis.ts` | CONFIG uses `initiatorPassword`; `sandboxBlocked` flag + `checkBlocked()`; request bodies stripped; B2Pochi/BusinessBuyGoods/BusinessPayBill/TaxRemittance updated; C2B Register URL moved to end |
 | `go/tests/integration/main.go` | Config uses `InitiatorPassword`; `sandboxBlocked` flag + `checkBlocked()`; request bodies stripped of explicit initiator fields; C2B Register URL moved to end |
-| `tests/integration/run.sh` | 30s cooldown between Python/TS/Go runs; removed `MPESA_SECURITY_CREDENTIAL` from required env vars |
+| `tests/integration/run.sh` | 30s cooldown between Python/TS/Go runs; per-SDK `.env` sourcing via `setup_sdk_env()` function (was sourcing all three upfront); removed `MPESA_SECURITY_CREDENTIAL` from required env vars |
 | `typescript/src/types/index.ts` | `InitiatorName`/`Initiator`/`SecurityCredential` made optional across all request types (was already done in previous session)
+
+### Credential Isolation
+
+Each SDK now has its own consumer key/secret in per-SDK `.env` files, sourced right before that SDK's test run. Rate-limiting one SDK's credentials won't affect the others.
 
 ---
 

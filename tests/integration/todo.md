@@ -45,13 +45,15 @@ The current `run.sh` runs all 24+ tests sequentially per SDK (Python → TS → 
 - [x] TypeScript: detect 403 on first API call (`sandboxBlocked` flag) and skip remaining tests
 - [x] Go: detect 403 on OAuth patterns (`sandboxBlocked` flag) and skip remaining tests
 
-## Priority 5: Credential management
+## Priority 5: Credential management ✅
 
 **Why**: The `.env` files share the same consumer key/secret across all three SDKs. If one gets rate-limited, all are blocked.
 
-- [ ] Create separate sandbox app credentials for each SDK (3 consumer keys)
-- [ ] Store them in per-SDK `.env` files: `python/tests/integration/.env`, `typescript/tests/integration/.env`, `go/tests/integration/.env`
-- [ ] The `run.sh` should source the correct `.env` before running each SDK (it already does this)
+- [x] Create separate sandbox app credentials for each SDK (3 consumer keys) — done in per-SDK `.env` files
+- [x] Store them in per-SDK `.env` files: `python/tests/integration/.env`, `typescript/tests/integration/.env`, `go/tests/integration/.env`
+- [x] Fixed `run.sh` to source the correct `.env` **before** each SDK's test run (was sourcing all three upfront, which let Go's values win for all SDKs)
+
+**File changed**: `tests/integration/run.sh` — replaced upfront multi-source with `setup_sdk_env()` function called per-SDK
 
 ## Priority 6: Production credential testing
 
