@@ -1,4 +1,4 @@
-import { publicEncrypt } from "node:crypto";
+import { publicEncrypt, X509Certificate } from "node:crypto";
 import type { Logger } from "../types/index.js";
 import { ValidationError } from "../errors/index.js";
 export { StructuredLogger } from "./structured-logger.js";
@@ -28,8 +28,9 @@ export function generateSecurityCredential(
   password: string,
   certificate: string,
 ): string {
-  const certBuffer = Buffer.from(certificate);
-  const encrypted = publicEncrypt(certBuffer, Buffer.from(password));
+  const cert = new X509Certificate(certificate);
+  const base64Password = Buffer.from(password).toString("base64");
+  const encrypted = publicEncrypt(cert.publicKey, Buffer.from(base64Password));
   return encrypted.toString("base64");
 }
 
@@ -181,6 +182,7 @@ export class Validation {
   }
 }
 
+export { getCertificate } from "./certificates.js";
 export type { MetricsCollector, MpesaMetrics } from "./metrics.js";
 export {
   NoopMetricsCollector,

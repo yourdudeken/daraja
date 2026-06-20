@@ -99,6 +99,13 @@ func (s *Service) C2BSimulate(ctx context.Context, input svctypes.C2BSimulateInp
 }
 
 func (s *Service) B2C(ctx context.Context, input svctypes.B2CInput) (*svctypes.B2CResult, error) {
+	cfg := s.client.GetConfig()
+	if input.SecurityCredential == "" && cfg.SecurityCredential != "" {
+		input.SecurityCredential = cfg.SecurityCredential
+	}
+	if input.InitiatorName == "" && cfg.InitiatorName != "" {
+		input.InitiatorName = cfg.InitiatorName
+	}
 	req := types.B2CRequest{
 		InitiatorName:      input.InitiatorName,
 		SecurityCredential: input.SecurityCredential,
@@ -124,6 +131,13 @@ func (s *Service) B2C(ctx context.Context, input svctypes.B2CInput) (*svctypes.B
 }
 
 func (s *Service) Reversal(ctx context.Context, input svctypes.ReversalInput) (*svctypes.ReversalResult, error) {
+	cfg := s.client.GetConfig()
+	if input.SecurityCredential == "" && cfg.SecurityCredential != "" {
+		input.SecurityCredential = cfg.SecurityCredential
+	}
+	if input.Initiator == "" && cfg.InitiatorName != "" {
+		input.Initiator = cfg.InitiatorName
+	}
 	req := types.ReversalRequest{
 		Initiator:          input.Initiator,
 		SecurityCredential: input.SecurityCredential,
@@ -148,6 +162,13 @@ func (s *Service) Reversal(ctx context.Context, input svctypes.ReversalInput) (*
 }
 
 func (s *Service) TransactionStatus(ctx context.Context, input svctypes.TransactionStatusInput) (*svctypes.TransactionStatusResult, error) {
+	cfg := s.client.GetConfig()
+	if input.SecurityCredential == "" && cfg.SecurityCredential != "" {
+		input.SecurityCredential = cfg.SecurityCredential
+	}
+	if input.Initiator == "" && cfg.InitiatorName != "" {
+		input.Initiator = cfg.InitiatorName
+	}
 	req := types.TransactionStatusRequest{
 		Initiator:              input.Initiator,
 		SecurityCredential:     input.SecurityCredential,
@@ -173,6 +194,13 @@ func (s *Service) TransactionStatus(ctx context.Context, input svctypes.Transact
 }
 
 func (s *Service) AccountBalance(ctx context.Context, input svctypes.AccountBalanceInput) (*svctypes.AccountBalanceResult, error) {
+	cfg := s.client.GetConfig()
+	if input.SecurityCredential == "" && cfg.SecurityCredential != "" {
+		input.SecurityCredential = cfg.SecurityCredential
+	}
+	if input.Initiator == "" && cfg.InitiatorName != "" {
+		input.Initiator = cfg.InitiatorName
+	}
 	req := types.AccountBalanceRequest{
 		Initiator:          input.Initiator,
 		SecurityCredential: input.SecurityCredential,
@@ -196,6 +224,13 @@ func (s *Service) AccountBalance(ctx context.Context, input svctypes.AccountBala
 }
 
 func (s *Service) BusinessBuyGoods(ctx context.Context, input svctypes.BusinessBuyGoodsInput) (*svctypes.BusinessGoodsResult, error) {
+	cfg := s.client.GetConfig()
+	if input.SecurityCredential == "" && cfg.SecurityCredential != "" {
+		input.SecurityCredential = cfg.SecurityCredential
+	}
+	if input.Initiator == "" && cfg.InitiatorName != "" {
+		input.Initiator = cfg.InitiatorName
+	}
 	req := types.BusinessBuyGoodsRequest{
 		Initiator:              input.Initiator,
 		SecurityCredential:     input.SecurityCredential,
@@ -225,6 +260,13 @@ func (s *Service) BusinessBuyGoods(ctx context.Context, input svctypes.BusinessB
 }
 
 func (s *Service) BusinessPayBill(ctx context.Context, input svctypes.BusinessPayBillInput) (*svctypes.BusinessGoodsResult, error) {
+	cfg := s.client.GetConfig()
+	if input.SecurityCredential == "" && cfg.SecurityCredential != "" {
+		input.SecurityCredential = cfg.SecurityCredential
+	}
+	if input.Initiator == "" && cfg.InitiatorName != "" {
+		input.Initiator = cfg.InitiatorName
+	}
 	req := types.BusinessPayBillRequest{
 		Initiator:              input.Initiator,
 		SecurityCredential:     input.SecurityCredential,
@@ -494,6 +536,13 @@ func (s *Service) IoTDeleteMessage(ctx context.Context, input svctypes.IoTDelete
 }
 
 func (s *Service) B2Pochi(ctx context.Context, input svctypes.B2PochiInput) (*svctypes.B2PochiResult, error) {
+	cfg := s.client.GetConfig()
+	if input.SecurityCredential == "" && cfg.SecurityCredential != "" {
+		input.SecurityCredential = cfg.SecurityCredential
+	}
+	if input.InitiatorName == "" && cfg.InitiatorName != "" {
+		input.InitiatorName = cfg.InitiatorName
+	}
 	req := types.B2PochiRequest{
 		InitiatorName:      input.InitiatorName,
 		SecurityCredential: input.SecurityCredential,
@@ -637,6 +686,13 @@ func (s *Service) B2BExpress(ctx context.Context, input svctypes.B2BExpressInput
 }
 
 func (s *Service) AccountTopUp(ctx context.Context, input svctypes.B2CAccountTopUpInput) (*svctypes.B2CAccountTopUpResult, error) {
+	cfg := s.client.GetConfig()
+	if input.SecurityCredential == "" && cfg.SecurityCredential != "" {
+		input.SecurityCredential = cfg.SecurityCredential
+	}
+	if input.Initiator == "" && cfg.InitiatorName != "" {
+		input.Initiator = cfg.InitiatorName
+	}
 	req := types.B2CAccountTopUpRequest{
 		Initiator:              input.Initiator,
 		SecurityCredential:     input.SecurityCredential,
@@ -846,6 +902,13 @@ func (s *Service) CreateStandingOrder(ctx context.Context, input svctypes.Ratiba
 }
 
 func (s *Service) TaxRemittance(ctx context.Context, input svctypes.TaxRemittanceInput) (*svctypes.TaxRemittanceResult, error) {
+	cfg := s.client.GetConfig()
+	if input.SecurityCredential == "" && cfg.SecurityCredential != "" {
+		input.SecurityCredential = cfg.SecurityCredential
+	}
+	if input.Initiator == "" && cfg.InitiatorName != "" {
+		input.Initiator = cfg.InitiatorName
+	}
 	req := types.TaxRemittanceRequest{
 		Initiator:              input.Initiator,
 		SecurityCredential:     input.SecurityCredential,

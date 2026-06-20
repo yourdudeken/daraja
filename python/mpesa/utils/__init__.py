@@ -16,28 +16,32 @@ def generate_password(shortcode: int | str, passkey: str, timestamp: str) -> str
 
 
 def generate_security_credential(password: str, cert_path: str) -> str:
-    from cryptography.hazmat.primitives import serialization, hashes
+    from cryptography import x509
     from cryptography.hazmat.primitives.asymmetric import padding
 
     with open(cert_path, "rb") as f:
-        cert = serialization.load_pem_public_key(f.read())
+        cert = x509.load_pem_x509_certificate(f.read())
 
-    encrypted = cert.encrypt(
-        password.encode(),
-        padding.OAEP(
-            mgf=padding.MGF1(algorithm=hashes.SHA256()),
-            algorithm=hashes.SHA256(),
-            label=None,
-        ),
+    pub_key = cert.public_key()
+
+    b64_password = base64.b64encode(password.encode())
+    encrypted = pub_key.encrypt(
+        b64_password,
+        padding.PKCS1v15(),
     )
     return base64.b64encode(encrypted).decode()
 
 
 def mask_sensitive_data(data: dict[str, Any]) -> dict[str, Any]:
     sensitive_keys = {
-        "consumerKey", "consumerSecret", "Password",
-        "SecurityCredential", "passkey", "securityCredential",
-        "initiatorPassword", "InitiatorPassword",
+        "consumerKey",
+        "consumerSecret",
+        "Password",
+        "SecurityCredential",
+        "passkey",
+        "securityCredential",
+        "initiatorPassword",
+        "InitiatorPassword",
     }
     masked = dict(data)
     for key in sensitive_keys:
@@ -49,6 +53,7 @@ def mask_sensitive_data(data: dict[str, Any]) -> dict[str, Any]:
 
 def is_phone_number_valid(phone: int | str) -> bool:
     import re
+
     return bool(re.match(r"^2547\d{8}$", str(phone)))
 
 
@@ -67,11 +72,29 @@ def calculate_backoff(attempt: int, base_delay_ms: int = 1000, max_delay_ms: int
     return min(exponential + jitter, max_delay_ms) / 1000.0
 
 
+from mpesa.utils.certificates import get_cert_path
 from mpesa.utils.batch import execute_batch, execute_batch_async
-from mpesa.utils.idempotency import IdempotencyStore, InMemoryIdempotencyStore, generate_idempotency_key
+from mpesa.utils.idempotency import (
+    IdempotencyStore,
+    InMemoryIdempotencyStore,
+    generate_idempotency_key,
+)
 from mpesa.utils.metrics import MetricsCollector, NoopMetricsCollector, PrometheusMetricsCollector
-from mpesa.utils.token_cache import SharedTokenCache, InMemorySharedTokenCache, RedisTokenCache, build_token_cache_key
-from mpesa.utils.tracing import Tracer, NoopTracer, Span, SpanContext, OpenTelemetryTracer, create_tracer, with_span
+from mpesa.utils.token_cache import (
+    SharedTokenCache,
+    InMemorySharedTokenCache,
+    RedisTokenCache,
+    build_token_cache_key,
+)
+from mpesa.utils.tracing import (
+    Tracer,
+    NoopTracer,
+    Span,
+    SpanContext,
+    OpenTelemetryTracer,
+    create_tracer,
+    with_span,
+)
 from mpesa.utils.structured_logger import StructuredLogger
 
 
@@ -79,6 +102,7 @@ __all__ = [
     "generate_timestamp",
     "generate_password",
     "generate_security_credential",
+    "get_cert_path",
     "mask_sensitive_data",
     "is_phone_number_valid",
     "format_phone_number",

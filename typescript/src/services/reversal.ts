@@ -5,9 +5,15 @@ export class ReversalService {
   constructor(private readonly client: MpesaApiClient) {}
 
   async reverse(request: ReversalRequest): Promise<ReversalResponse> {
+    const config = this.client.getConfig();
+    const payload: ReversalRequest = {
+      ...request,
+      SecurityCredential: request.SecurityCredential || config.securityCredential,
+      Initiator: request.Initiator || config.initiatorName,
+    };
     return this.client.post<ReversalResponse>(
       this.client.getEndpoint("REVERSAL"),
-      request,
+      payload,
     );
   }
 

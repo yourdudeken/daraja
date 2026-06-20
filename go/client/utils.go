@@ -43,7 +43,8 @@ func GenerateSecurityCredential(password string, certPEM []byte) (string, error)
 		return "", fmt.Errorf("certificate does not contain RSA public key")
 	}
 
-	encrypted, err := rsa.EncryptPKCS1v15(rand.Reader, rsaPub, []byte(password))
+	base64Password := base64.StdEncoding.EncodeToString([]byte(password))
+	encrypted, err := rsa.EncryptPKCS1v15(rand.Reader, rsaPub, []byte(base64Password))
 	if err != nil {
 		return "", fmt.Errorf("failed to encrypt password: %w", err)
 	}

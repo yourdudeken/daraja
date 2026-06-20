@@ -123,56 +123,106 @@ class C2BService:
 
 
 class B2CService:
-    def __init__(self, post: PostFn) -> None:
+    def __init__(self, post: PostFn, config: Optional[MpesaConfig] = None) -> None:
         self._post = post
+        self._config = config
 
     def send(self, request: B2CRequest | dict) -> B2CResponse:
         if isinstance(request, dict):
+            if self._config:
+                request.setdefault("SecurityCredential", self._config.security_credential)
+                request.setdefault("InitiatorName", self._config.initiator_name)
             request = B2CRequest(**request)
+        else:
+            if self._config:
+                if not request.SecurityCredential and self._config.security_credential:
+                    request.SecurityCredential = self._config.security_credential
+                if not request.InitiatorName and self._config.initiator_name:
+                    request.InitiatorName = self._config.initiator_name
         result = self._post("B2C", request.model_dump())
         return B2CResponse(**result)
 
 
 class B2BService:
-    def __init__(self, post: PostFn) -> None:
+    def __init__(self, post: PostFn, config: Optional[MpesaConfig] = None) -> None:
         self._post = post
+        self._config = config
 
     def top_up(self, request: B2CAccountTopUpRequest | dict) -> B2CAccountTopUpResponse:
         if isinstance(request, dict):
+            if self._config:
+                request.setdefault("SecurityCredential", self._config.security_credential)
+                request.setdefault("Initiator", self._config.initiator_name)
             request = B2CAccountTopUpRequest(**request)
+        else:
+            if self._config:
+                if not request.SecurityCredential and self._config.security_credential:
+                    request.SecurityCredential = self._config.security_credential
+                if not request.Initiator and self._config.initiator_name:
+                    request.Initiator = self._config.initiator_name
         result = self._post("B2C_ACCOUNT_TOP_UP", request.model_dump())
         return B2CAccountTopUpResponse(**result)
 
 
 class ReversalService:
-    def __init__(self, post: PostFn) -> None:
+    def __init__(self, post: PostFn, config: Optional[MpesaConfig] = None) -> None:
         self._post = post
+        self._config = config
 
     def reverse(self, request: ReversalRequest | dict) -> ReversalResponse:
         if isinstance(request, dict):
+            if self._config:
+                request.setdefault("SecurityCredential", self._config.security_credential)
+                request.setdefault("Initiator", self._config.initiator_name)
             request = ReversalRequest(**request)
+        else:
+            if self._config:
+                if not request.SecurityCredential and self._config.security_credential:
+                    request.SecurityCredential = self._config.security_credential
+                if not request.Initiator and self._config.initiator_name:
+                    request.Initiator = self._config.initiator_name
         result = self._post("REVERSAL", request.model_dump())
         return ReversalResponse(**result)
 
 
 class TransactionStatusService:
-    def __init__(self, post: PostFn) -> None:
+    def __init__(self, post: PostFn, config: Optional[MpesaConfig] = None) -> None:
         self._post = post
+        self._config = config
 
     def query(self, request: TransactionStatusRequest | dict) -> TransactionStatusResponse:
         if isinstance(request, dict):
+            if self._config:
+                request.setdefault("SecurityCredential", self._config.security_credential)
+                request.setdefault("Initiator", self._config.initiator_name)
             request = TransactionStatusRequest(**request)
+        else:
+            if self._config:
+                if not request.SecurityCredential and self._config.security_credential:
+                    request.SecurityCredential = self._config.security_credential
+                if not request.Initiator and self._config.initiator_name:
+                    request.Initiator = self._config.initiator_name
         result = self._post("TRANSACTION_STATUS", request.model_dump())
         return TransactionStatusResponse(**result)
 
 
 class AccountBalanceService:
-    def __init__(self, post: PostFn) -> None:
+    def __init__(self, post: PostFn, config: Optional[MpesaConfig] = None) -> None:
         self._post = post
+        self._config = config
 
     def query(self, request: AccountBalanceRequest | dict) -> AccountBalanceResponse:
         if isinstance(request, dict):
+            if self._config:
+                request.setdefault("SecurityCredential", self._config.security_credential)
+                request.setdefault("Initiator", self._config.initiator_name)
             request = AccountBalanceRequest(**request)
+        else:
+            if self._config:
+                if not request.SecurityCredential and self._config.security_credential:
+                    request.SecurityCredential = self._config.security_credential
+                if not request.Initiator and self._config.initiator_name:
+                    request.Initiator = self._config.initiator_name
         result = self._post("ACCOUNT_BALANCE", request.model_dump())
         return AccountBalanceResponse(**result)
 
@@ -189,18 +239,37 @@ class DynamicQRService:
 
 
 class BusinessGoodsService:
-    def __init__(self, post: PostFn) -> None:
+    def __init__(self, post: PostFn, config: Optional[MpesaConfig] = None) -> None:
         self._post = post
+        self._config = config
 
     def buy_goods(self, request: BusinessBuyGoodsRequest | dict) -> BusinessGoodsResponse:
         if isinstance(request, dict):
+            if self._config:
+                request.setdefault("SecurityCredential", self._config.security_credential)
+                request.setdefault("Initiator", self._config.initiator_name)
             request = BusinessBuyGoodsRequest(**request)
+        else:
+            if self._config:
+                if not request.SecurityCredential and self._config.security_credential:
+                    request.SecurityCredential = self._config.security_credential
+                if not request.Initiator and self._config.initiator_name:
+                    request.Initiator = self._config.initiator_name
         result = self._post("B2B", request.model_dump())
         return BusinessGoodsResponse(**result)
 
     def pay_bill(self, request: BusinessPayBillRequest | dict) -> BusinessGoodsResponse:
         if isinstance(request, dict):
+            if self._config:
+                request.setdefault("SecurityCredential", self._config.security_credential)
+                request.setdefault("Initiator", self._config.initiator_name)
             request = BusinessPayBillRequest(**request)
+        else:
+            if self._config:
+                if not request.SecurityCredential and self._config.security_credential:
+                    request.SecurityCredential = self._config.security_credential
+                if not request.Initiator and self._config.initiator_name:
+                    request.Initiator = self._config.initiator_name
         result = self._post("B2B", request.model_dump())
         return BusinessGoodsResponse(**result)
 
@@ -306,12 +375,22 @@ class IoTSIMService:
 
 
 class B2PochiService:
-    def __init__(self, post: PostFn) -> None:
+    def __init__(self, post: PostFn, config: Optional[MpesaConfig] = None) -> None:
         self._post = post
+        self._config = config
 
     def send(self, request: B2PochiRequest | dict) -> B2PochiResponse:
         if isinstance(request, dict):
+            if self._config:
+                request.setdefault("SecurityCredential", self._config.security_credential)
+                request.setdefault("InitiatorName", self._config.initiator_name)
             request = B2PochiRequest(**request)
+        else:
+            if self._config:
+                if not request.SecurityCredential and self._config.security_credential:
+                    request.SecurityCredential = self._config.security_credential
+                if not request.InitiatorName and self._config.initiator_name:
+                    request.InitiatorName = self._config.initiator_name
         result = self._post("B2POCHI", request.model_dump())
         return B2PochiResponse(**result)
 
@@ -457,12 +536,22 @@ class RatibaService:
 
 
 class TaxRemittanceService:
-    def __init__(self, post: PostFn) -> None:
+    def __init__(self, post: PostFn, config: Optional[MpesaConfig] = None) -> None:
         self._post = post
+        self._config = config
 
     def remit(self, request: TaxRemittanceRequest | dict) -> TaxRemittanceResponse:
         if isinstance(request, dict):
+            if self._config:
+                request.setdefault("SecurityCredential", self._config.security_credential)
+                request.setdefault("Initiator", self._config.initiator_name)
             request = TaxRemittanceRequest(**request)
+        else:
+            if self._config:
+                if not request.SecurityCredential and self._config.security_credential:
+                    request.SecurityCredential = self._config.security_credential
+                if not request.Initiator and self._config.initiator_name:
+                    request.Initiator = self._config.initiator_name
         result = self._post("TAX_REMITTANCE", request.model_dump())
         return TaxRemittanceResponse(**result)
 

@@ -65,7 +65,14 @@ from mpesa.models import (
     TransactionStatusResponse,
     _get_logger,
 )
-from mpesa.utils import generate_password, generate_timestamp, create_tracer, with_span
+from mpesa.utils import (
+    generate_password,
+    generate_security_credential,
+    generate_timestamp,
+    get_cert_path,
+    create_tracer,
+    with_span,
+)
 from mpesa.utils.circuit_breaker import (
     CircuitBreaker,
     CircuitBreakerOpenError,
@@ -156,6 +163,12 @@ class Mpesa:
     def __init__(self, config: MpesaConfig | dict[str, Any]) -> None:
         if isinstance(config, dict):
             config = MpesaConfig(**config)
+
+        if not config.security_credential and config.initiator_password:
+            cert_path = get_cert_path(config.environment)
+            config.security_credential = generate_security_credential(
+                config.initiator_password, cert_path
+            )
 
         self._config = config
         self._logger = _get_logger(config.logger)
@@ -430,13 +443,27 @@ class Mpesa:
 
     def b2c(self, request: B2CRequest | dict) -> B2CResponse:
         if isinstance(request, dict):
+            request.setdefault("SecurityCredential", self._config.security_credential)
+            request.setdefault("InitiatorName", self._config.initiator_name)
             request = B2CRequest(**request)
+        else:
+            if not request.SecurityCredential and self._config.security_credential:
+                request.SecurityCredential = self._config.security_credential
+            if not request.InitiatorName and self._config.initiator_name:
+                request.InitiatorName = self._config.initiator_name
         result = self._post("B2C", request.model_dump())
         return B2CResponse(**result)
 
     def reversal(self, request: ReversalRequest | dict) -> ReversalResponse:
         if isinstance(request, dict):
+            request.setdefault("SecurityCredential", self._config.security_credential)
+            request.setdefault("Initiator", self._config.initiator_name)
             request = ReversalRequest(**request)
+        else:
+            if not request.SecurityCredential and self._config.security_credential:
+                request.SecurityCredential = self._config.security_credential
+            if not request.Initiator and self._config.initiator_name:
+                request.Initiator = self._config.initiator_name
         result = self._post("REVERSAL", request.model_dump())
         return ReversalResponse(**result)
 
@@ -444,13 +471,27 @@ class Mpesa:
         self, request: TransactionStatusRequest | dict
     ) -> TransactionStatusResponse:
         if isinstance(request, dict):
+            request.setdefault("SecurityCredential", self._config.security_credential)
+            request.setdefault("Initiator", self._config.initiator_name)
             request = TransactionStatusRequest(**request)
+        else:
+            if not request.SecurityCredential and self._config.security_credential:
+                request.SecurityCredential = self._config.security_credential
+            if not request.Initiator and self._config.initiator_name:
+                request.Initiator = self._config.initiator_name
         result = self._post("TRANSACTION_STATUS", request.model_dump())
         return TransactionStatusResponse(**result)
 
     def account_balance(self, request: AccountBalanceRequest | dict) -> AccountBalanceResponse:
         if isinstance(request, dict):
+            request.setdefault("SecurityCredential", self._config.security_credential)
+            request.setdefault("Initiator", self._config.initiator_name)
             request = AccountBalanceRequest(**request)
+        else:
+            if not request.SecurityCredential and self._config.security_credential:
+                request.SecurityCredential = self._config.security_credential
+            if not request.Initiator and self._config.initiator_name:
+                request.Initiator = self._config.initiator_name
         result = self._post("ACCOUNT_BALANCE", request.model_dump())
         return AccountBalanceResponse(**result)
 
@@ -476,31 +517,31 @@ class Mpesa:
     def b2c_service(self):
         from mpesa.services import B2CService
 
-        return B2CService(self._post)
+        return B2CService(self._post, self._config)
 
     @property
     def b2b_service(self):
         from mpesa.services import B2BService
 
-        return B2BService(self._post)
+        return B2BService(self._post, self._config)
 
     @property
     def reversal_service(self):
         from mpesa.services import ReversalService
 
-        return ReversalService(self._post)
+        return ReversalService(self._post, self._config)
 
     @property
     def transaction_status_service(self):
         from mpesa.services import TransactionStatusService
 
-        return TransactionStatusService(self._post)
+        return TransactionStatusService(self._post, self._config)
 
     @property
     def account_balance_service(self):
         from mpesa.services import AccountBalanceService
 
-        return AccountBalanceService(self._post)
+        return AccountBalanceService(self._post, self._config)
 
     @property
     def dynamic_qr_service(self):
@@ -510,13 +551,27 @@ class Mpesa:
 
     def business_buy_goods(self, request: BusinessBuyGoodsRequest | dict) -> BusinessGoodsResponse:
         if isinstance(request, dict):
+            request.setdefault("SecurityCredential", self._config.security_credential)
+            request.setdefault("Initiator", self._config.initiator_name)
             request = BusinessBuyGoodsRequest(**request)
+        else:
+            if not request.SecurityCredential and self._config.security_credential:
+                request.SecurityCredential = self._config.security_credential
+            if not request.Initiator and self._config.initiator_name:
+                request.Initiator = self._config.initiator_name
         result = self._post("B2B", request.model_dump())
         return BusinessGoodsResponse(**result)
 
     def business_pay_bill(self, request: BusinessPayBillRequest | dict) -> BusinessGoodsResponse:
         if isinstance(request, dict):
+            request.setdefault("SecurityCredential", self._config.security_credential)
+            request.setdefault("Initiator", self._config.initiator_name)
             request = BusinessPayBillRequest(**request)
+        else:
+            if not request.SecurityCredential and self._config.security_credential:
+                request.SecurityCredential = self._config.security_credential
+            if not request.Initiator and self._config.initiator_name:
+                request.Initiator = self._config.initiator_name
         result = self._post("B2B", request.model_dump())
         return BusinessGoodsResponse(**result)
 
@@ -546,7 +601,7 @@ class Mpesa:
     def business_goods_service(self):
         from mpesa.services import BusinessGoodsService
 
-        return BusinessGoodsService(self._post)
+        return BusinessGoodsService(self._post, self._config)
 
     @property
     def query_org_info_service(self):
@@ -568,7 +623,14 @@ class Mpesa:
 
     def b2pochi(self, request: B2PochiRequest | dict) -> B2PochiResponse:
         if isinstance(request, dict):
+            request.setdefault("SecurityCredential", self._config.security_credential)
+            request.setdefault("InitiatorName", self._config.initiator_name)
             request = B2PochiRequest(**request)
+        else:
+            if not request.SecurityCredential and self._config.security_credential:
+                request.SecurityCredential = self._config.security_credential
+            if not request.InitiatorName and self._config.initiator_name:
+                request.InitiatorName = self._config.initiator_name
         result = self._post("B2POCHI", request.model_dump())
         return B2PochiResponse(**result)
 
@@ -622,7 +684,14 @@ class Mpesa:
 
     def b2c_account_top_up(self, request: B2CAccountTopUpRequest | dict) -> B2CAccountTopUpResponse:
         if isinstance(request, dict):
+            request.setdefault("SecurityCredential", self._config.security_credential)
+            request.setdefault("Initiator", self._config.initiator_name)
             request = B2CAccountTopUpRequest(**request)
+        else:
+            if not request.SecurityCredential and self._config.security_credential:
+                request.SecurityCredential = self._config.security_credential
+            if not request.Initiator and self._config.initiator_name:
+                request.Initiator = self._config.initiator_name
         result = self._post("B2C_ACCOUNT_TOP_UP", request.model_dump())
         return B2CAccountTopUpResponse(**result)
 
@@ -634,7 +703,14 @@ class Mpesa:
 
     def tax_remittance(self, request: TaxRemittanceRequest | dict) -> TaxRemittanceResponse:
         if isinstance(request, dict):
+            request.setdefault("SecurityCredential", self._config.security_credential)
+            request.setdefault("Initiator", self._config.initiator_name)
             request = TaxRemittanceRequest(**request)
+        else:
+            if not request.SecurityCredential and self._config.security_credential:
+                request.SecurityCredential = self._config.security_credential
+            if not request.Initiator and self._config.initiator_name:
+                request.Initiator = self._config.initiator_name
         result = self._post("TAX_REMITTANCE", request.model_dump())
         return TaxRemittanceResponse(**result)
 
@@ -642,7 +718,7 @@ class Mpesa:
     def b2pochi_service(self):
         from mpesa.services import B2PochiService
 
-        return B2PochiService(self._post)
+        return B2PochiService(self._post, self._config)
 
     @property
     def lipa_na_bonga_service(self):
@@ -684,13 +760,13 @@ class Mpesa:
     def tax_remittance_service(self):
         from mpesa.services import TaxRemittanceService
 
-        return TaxRemittanceService(self._post)
+        return TaxRemittanceService(self._post, self._config)
 
     @property
     def b2c_account_top_up_service(self):
         from mpesa.services import B2BService
 
-        return B2BService(self._post)
+        return B2BService(self._post, self._config)
 
     def rotate_credentials(self, consumer_key: str, consumer_secret: str) -> None:
         self._config.consumer_key = consumer_key

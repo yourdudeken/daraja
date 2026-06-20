@@ -6,6 +6,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"io"
 	"math"
 	"net/http"
@@ -130,6 +131,10 @@ func (tm *TokenManager) GetToken(ctx context.Context) (string, error) {
 	return tm.token, nil
 }
 
+func (c *Client) GetConfig() types.MpesaConfig {
+	return c.config
+}
+
 func (c *Client) Logger() types.Logger {
 	return c.logger
 }
@@ -160,6 +165,15 @@ type Client struct {
 func NewClient(config types.MpesaConfig) *Client {
 	if config.Timeout == 0 {
 		config.Timeout = 30 * time.Second
+	}
+	if config.SecurityCredential == "" && config.InitiatorPassword != "" {
+		certPEM, err := GetCertificatePEM(config.Environment)
+		if err == nil {
+			cred, err := GenerateSecurityCredential(config.InitiatorPassword, []byte(certPEM))
+			if err == nil {
+				config.SecurityCredential = cred
+			}
+		}
 	}
 	if config.RetryConfig.MaxRetries == 0 {
 		config.RetryConfig = types.RetryConfig{
@@ -370,6 +384,12 @@ func (c *Client) doRequest(ctx context.Context, method, url string, body interfa
 			return nil, err
 		}
 
+		contentType := resp.Header.Get("Content-Type")
+		if contentType != "" && !strings.Contains(contentType, "application/json") && !strings.Contains(contentType, "application/problem+json") {
+			return nil, fmt.Errorf("expected JSON response, got Content-Type: %s (status %d): %s",
+				contentType, resp.StatusCode, string(respBody))
+		}
+
 		if retryableStatusCodes[resp.StatusCode] && attempt < c.config.RetryConfig.MaxRetries {
 			select {
 			case <-ctx.Done():
@@ -560,6 +580,12 @@ func (c *Client) C2BSimulate(ctx context.Context, req types.C2BSimulateRequest) 
 
 // ---- B2C ----
 func (c *Client) B2C(ctx context.Context, req types.B2CRequest) (*types.B2CResponse, error) {
+	if req.SecurityCredential == "" && c.config.SecurityCredential != "" {
+		req.SecurityCredential = c.config.SecurityCredential
+	}
+	if req.InitiatorName == "" && c.config.InitiatorName != "" {
+		req.InitiatorName = c.config.InitiatorName
+	}
 	respBody, err := c.doRequest(ctx, "POST", c.endpoints.B2C, req)
 	if err != nil {
 		return nil, err
@@ -574,6 +600,12 @@ func (c *Client) B2C(ctx context.Context, req types.B2CRequest) (*types.B2CRespo
 
 // ---- Reversal ----
 func (c *Client) Reversal(ctx context.Context, req types.ReversalRequest) (*types.ReversalResponse, error) {
+	if req.SecurityCredential == "" && c.config.SecurityCredential != "" {
+		req.SecurityCredential = c.config.SecurityCredential
+	}
+	if req.Initiator == "" && c.config.InitiatorName != "" {
+		req.Initiator = c.config.InitiatorName
+	}
 	req.CommandID = "TransactionReversal"
 	respBody, err := c.doRequest(ctx, "POST", c.endpoints.Reversal, req)
 	if err != nil {
@@ -589,6 +621,12 @@ func (c *Client) Reversal(ctx context.Context, req types.ReversalRequest) (*type
 
 // ---- Transaction Status ----
 func (c *Client) TransactionStatus(ctx context.Context, req types.TransactionStatusRequest) (*types.TransactionStatusResponse, error) {
+	if req.SecurityCredential == "" && c.config.SecurityCredential != "" {
+		req.SecurityCredential = c.config.SecurityCredential
+	}
+	if req.Initiator == "" && c.config.InitiatorName != "" {
+		req.Initiator = c.config.InitiatorName
+	}
 	respBody, err := c.doRequest(ctx, "POST", c.endpoints.TransactionStatus, req)
 	if err != nil {
 		return nil, err
@@ -603,6 +641,12 @@ func (c *Client) TransactionStatus(ctx context.Context, req types.TransactionSta
 
 // ---- Account Balance ----
 func (c *Client) AccountBalance(ctx context.Context, req types.AccountBalanceRequest) (*types.AccountBalanceResponse, error) {
+	if req.SecurityCredential == "" && c.config.SecurityCredential != "" {
+		req.SecurityCredential = c.config.SecurityCredential
+	}
+	if req.Initiator == "" && c.config.InitiatorName != "" {
+		req.Initiator = c.config.InitiatorName
+	}
 	respBody, err := c.doRequest(ctx, "POST", c.endpoints.AccountBalance, req)
 	if err != nil {
 		return nil, err
@@ -617,6 +661,12 @@ func (c *Client) AccountBalance(ctx context.Context, req types.AccountBalanceReq
 
 // ---- Business Buy Goods ----
 func (c *Client) BusinessBuyGoods(ctx context.Context, req types.BusinessBuyGoodsRequest) (*types.BusinessGoodsResponse, error) {
+	if req.SecurityCredential == "" && c.config.SecurityCredential != "" {
+		req.SecurityCredential = c.config.SecurityCredential
+	}
+	if req.Initiator == "" && c.config.InitiatorName != "" {
+		req.Initiator = c.config.InitiatorName
+	}
 	respBody, err := c.doRequest(ctx, "POST", c.endpoints.B2B, req)
 	if err != nil {
 		return nil, err
@@ -631,6 +681,12 @@ func (c *Client) BusinessBuyGoods(ctx context.Context, req types.BusinessBuyGood
 
 // ---- Business Pay Bill ----
 func (c *Client) BusinessPayBill(ctx context.Context, req types.BusinessPayBillRequest) (*types.BusinessGoodsResponse, error) {
+	if req.SecurityCredential == "" && c.config.SecurityCredential != "" {
+		req.SecurityCredential = c.config.SecurityCredential
+	}
+	if req.Initiator == "" && c.config.InitiatorName != "" {
+		req.Initiator = c.config.InitiatorName
+	}
 	respBody, err := c.doRequest(ctx, "POST", c.endpoints.B2B, req)
 	if err != nil {
 		return nil, err
@@ -673,6 +729,12 @@ func (c *Client) IMSI(ctx context.Context, req types.IMSIRequest) (*types.IMSIRe
 
 // ---- B2C Account Top Up ----
 func (c *Client) AccountTopUp(ctx context.Context, req types.B2CAccountTopUpRequest) (*types.B2CAccountTopUpResponse, error) {
+	if req.SecurityCredential == "" && c.config.SecurityCredential != "" {
+		req.SecurityCredential = c.config.SecurityCredential
+	}
+	if req.Initiator == "" && c.config.InitiatorName != "" {
+		req.Initiator = c.config.InitiatorName
+	}
 	respBody, err := c.doRequest(ctx, "POST", c.endpoints.B2CAccountTopUp, req)
 	if err != nil {
 		return nil, err
@@ -857,6 +919,12 @@ func (c *Client) IoTDeleteMessage(ctx context.Context, req types.IoTDeleteMessag
 
 // ---- B2Pochi ----
 func (c *Client) B2Pochi(ctx context.Context, req types.B2PochiRequest) (*types.B2PochiResponse, error) {
+	if req.SecurityCredential == "" && c.config.SecurityCredential != "" {
+		req.SecurityCredential = c.config.SecurityCredential
+	}
+	if req.InitiatorName == "" && c.config.InitiatorName != "" {
+		req.InitiatorName = c.config.InitiatorName
+	}
 	respBody, err := c.doRequest(ctx, "POST", c.endpoints.B2Pochi, req)
 	if err != nil {
 		return nil, err
@@ -1059,6 +1127,12 @@ func (c *Client) CreateStandingOrder(ctx context.Context, req types.RatibaReques
 
 // ---- Tax Remittance ----
 func (c *Client) TaxRemittance(ctx context.Context, req types.TaxRemittanceRequest) (*types.TaxRemittanceResponse, error) {
+	if req.SecurityCredential == "" && c.config.SecurityCredential != "" {
+		req.SecurityCredential = c.config.SecurityCredential
+	}
+	if req.Initiator == "" && c.config.InitiatorName != "" {
+		req.Initiator = c.config.InitiatorName
+	}
 	respBody, err := c.doRequest(ctx, "POST", c.endpoints.TaxRemittance, req)
 	if err != nil {
 		return nil, err

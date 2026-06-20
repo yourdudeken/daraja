@@ -25,9 +25,15 @@ export class AccountBalanceService {
   constructor(private readonly client: MpesaApiClient) {}
 
   async query(request: AccountBalanceRequest): Promise<AccountBalanceResponse> {
+    const config = this.client.getConfig();
+    const payload: AccountBalanceRequest = {
+      ...request,
+      SecurityCredential: request.SecurityCredential || config.securityCredential,
+      Initiator: request.Initiator || config.initiatorName,
+    };
     return this.client.post<AccountBalanceResponse>(
       this.client.getEndpoint("ACCOUNT_BALANCE"),
-      request,
+      payload,
     );
   }
 

@@ -5,9 +5,15 @@ export class B2BService {
   constructor(private readonly client: MpesaApiClient) {}
 
   async topUp(request: B2CAccountTopUpRequest): Promise<B2CAccountTopUpResponse> {
+    const config = this.client.getConfig();
+    const payload: B2CAccountTopUpRequest = {
+      ...request,
+      SecurityCredential: request.SecurityCredential || config.securityCredential,
+      Initiator: request.Initiator || config.initiatorName,
+    };
     return this.client.post<B2CAccountTopUpResponse>(
       this.client.getEndpoint("B2C_ACCOUNT_TOP_UP"),
-      request,
+      payload,
     );
   }
 

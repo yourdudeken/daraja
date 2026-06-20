@@ -2,6 +2,7 @@ import http from "node:http";
 import https from "node:https";
 import axios, { type AxiosInstance, type AxiosRequestConfig } from "axios";
 import { getBaseUrl, getEndpoints } from "../environment.js";
+import { generateSecurityCredential, getCertificate } from "../utils/index.js";
 import type { MpesaConfig, ResolvedConfig, Logger, LoggingHook, AccessTokenResponse, TokenCache, Tracer, ConnectionPoolConfig } from "../types/index.js";
 import { maskSensitiveData, noopLogger, generateRequestId, createTracer, withSpan } from "../utils/index.js";
 import { setupRetryInterceptor, mapAxiosError } from "../interceptors/retry.js";
@@ -53,14 +54,21 @@ export class MpesaApiClient {
 
     this.endpoints = getEndpoints(config.environment ?? "sandbox");
 
+    const environment = config.environment ?? "sandbox";
+    const resolvedSecurityCredential =
+      config.securityCredential ??
+      (config.initiatorPassword
+        ? generateSecurityCredential(config.initiatorPassword, getCertificate(environment))
+        : "");
+
     this.config = {
       consumerKey: config.consumerKey,
       consumerSecret: config.consumerSecret,
-      environment: config.environment ?? "sandbox",
+      environment,
       initiatorPassword: config.initiatorPassword ?? "",
       initiatorName: config.initiatorName ?? "",
       passkey: config.passkey ?? "",
-      securityCredential: config.securityCredential ?? "",
+      securityCredential: resolvedSecurityCredential,
       retryConfig: config.retryConfig ?? {
         maxRetries: 3,
         baseDelayMs: 1000,

@@ -9,9 +9,15 @@ export class TransactionStatusService {
   constructor(private readonly client: MpesaApiClient) {}
 
   async query(request: TransactionStatusRequest): Promise<TransactionStatusResponse> {
+    const config = this.client.getConfig();
+    const payload: TransactionStatusRequest = {
+      ...request,
+      SecurityCredential: request.SecurityCredential || config.securityCredential,
+      Initiator: request.Initiator || config.initiatorName,
+    };
     return this.client.post<TransactionStatusResponse>(
       this.client.getEndpoint("TRANSACTION_STATUS"),
-      request,
+      payload,
     );
   }
 
