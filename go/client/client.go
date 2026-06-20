@@ -384,12 +384,6 @@ func (c *Client) doRequest(ctx context.Context, method, url string, body interfa
 			return nil, err
 		}
 
-		contentType := resp.Header.Get("Content-Type")
-		if contentType != "" && !strings.Contains(contentType, "application/json") && !strings.Contains(contentType, "application/problem+json") {
-			return nil, fmt.Errorf("expected JSON response, got Content-Type: %s (status %d): %s",
-				contentType, resp.StatusCode, string(respBody))
-		}
-
 		if retryableStatusCodes[resp.StatusCode] && attempt < c.config.RetryConfig.MaxRetries {
 			select {
 			case <-ctx.Done():
@@ -441,6 +435,12 @@ func (c *Client) doRequest(ctx context.Context, method, url string, body interfa
 		}
 
 		if resp.StatusCode >= 400 {
+			contentType := resp.Header.Get("Content-Type")
+			if !strings.Contains(contentType, "application/json") && !strings.Contains(contentType, "application/problem+json") {
+				return nil, fmt.Errorf("expected JSON response, got Content-Type: %q (status %d): %s",
+					contentType, resp.StatusCode, string(respBody))
+			}
+
 			var errResp struct {
 				RequestID    string `json:"requestId"`
 				ErrorCode    string `json:"errorCode"`
