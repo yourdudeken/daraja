@@ -380,7 +380,7 @@ class TestPullTransactions:
         try:
             result = client._request(
                 "POST",
-                _url("PULL_TRANSACTIONS"),
+                _url("PULL_TRANSACTIONS_QUERY"),
                 {
                     "ShortCode": str(SHORTCODE),
                     "StartDate": "2026-01-01",

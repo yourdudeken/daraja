@@ -1,7 +1,12 @@
+import base64
+import os
+
 import pytest
 from mpesa.utils import (
     generate_timestamp,
     generate_password,
+    generate_security_credential,
+    get_cert_path,
     mask_sensitive_data,
     is_phone_number_valid,
     format_phone_number,
@@ -17,7 +22,6 @@ class TestUtils:
 
     def test_generate_password(self):
         pwd = generate_password(174379, "passkey123", "20210628092408")
-        import base64
         decoded = base64.b64decode(pwd).decode()
         assert decoded == "174379passkey12320210628092408"
 
@@ -43,3 +47,39 @@ class TestUtils:
         delay = calculate_backoff(1, 1000, 30000)
         assert delay >= 2.0
         assert delay <= 30.0
+
+
+class TestSecurityCredential:
+    def test_get_cert_path_sandbox(self):
+        path = get_cert_path("sandbox")
+        assert path.endswith("SandboxCertificate.cer")
+        assert os.path.isfile(path)
+
+    def test_get_cert_path_production(self):
+        path = get_cert_path("production")
+        assert path.endswith("ProductionCertificate.cer")
+        assert os.path.isfile(path)
+
+    def test_get_cert_path_case_insensitive(self):
+        assert get_cert_path("PRODUCTION").endswith("ProductionCertificate.cer")
+        assert get_cert_path("Sandbox").endswith("SandboxCertificate.cer")
+
+    def test_generate_security_credential_returns_string(self):
+        cert_path = get_cert_path("sandbox")
+        result = generate_security_credential("Safaricom123!!", cert_path)
+        assert isinstance(result, str)
+        assert len(result) > 0
+        decoded = base64.b64decode(result)
+        assert len(decoded) > 0
+
+    def test_generate_security_credential_differs_for_diff_passwords(self):
+        cert_path = get_cert_path("sandbox")
+        r1 = generate_security_credential("pass1", cert_path)
+        r2 = generate_security_credential("pass2", cert_path)
+        assert r1 != r2
+
+    def test_generate_security_credential_production_cert(self):
+        cert_path = get_cert_path("production")
+        result = generate_security_credential("Safaricom123!!", cert_path)
+        assert isinstance(result, str)
+        assert len(result) > 0
