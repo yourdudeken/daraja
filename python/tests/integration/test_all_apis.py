@@ -578,7 +578,7 @@ def test_24_webhook_handling():
         log_error("Webhook Handling", e)
 
 
-DELAY = 2
+DELAY = 30
 
 
 def _run_test(test_fn, *args, **kwargs):

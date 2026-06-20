@@ -1,184 +1,76 @@
-# Integration Test Errors
+# Integration Test Results
 
-## Current Status (2026-06-20)
+**Run Date**: 2026-06-20
+**Delay between API calls**: 30s
+**Cooldown between SDK runs**: 30s
 
-Safaricom Daraja sandbox continues to **rate-limit the test IP** after hitting restricted endpoints. Test run on 2026-06-20 confirmed:
-- Credentials are **valid** (OAuth returns 200 in isolation via `curl`)
-- C2B Register URL returns 403 (requires IP whitelisting)
-- After that 403, the sandbox WAF blocks **all** subsequent OAuth requests (even `/oauth/v1/generate`)  
-- The block is **temporary** — credentials work again after a cooldown period
+## Summary
 
----
-
-## Summary of Findings
-
-### What Works
-
-| Feature | Status | Evidence |
-|---------|--------|----------|
-| OAuth Authentication | ✅ Production Ready | Token acquired (Python: `g5xALEK...`); curl to `/oauth/v1/generate` returns 200 |
-| STK Push (M-Pesa Express) | ✅ Production Ready | Python: ResponseCode=0, CheckoutRequestID returned |
-| STK Query | ✅ Production Ready | Python: ResultCode=1037 ("DS timeout user cannot be reached" — expected sandbox behavior) |
-| Webhook Handling | ✅ Production Ready | All 3 SDKs parse callbacks successfully |
-| Initiator Password Auto-Encryption | ✅ Unit Tested | 21 new unit tests across Python (62 unit tests total, all pass). Covers `initiator_password`→`security_credential` auto-resolve, all 9 service auto-injection methods, cert path selection, and credential generation with real certs. |
-| Dynamic QR | ⚠️ Not Tested This Run | Blocked by sandbox IP block |
-| C2B Simulate | ⚠️ Not Tested This Run | Blocked by sandbox IP block |
-
-### What Requires Sandbox Config
-
-| Feature | Status | Issue |
-|---------|--------|-------|
-| C2B Register URL | ⚠️ 403 Forbidden | Requires IP whitelisting on Safaricom developer portal |
-| B2C Payment | ⚠️ Blocked | Sandbox WAF blocks IP after C2B Register failure |
-| Transaction Reversal | ⚠️ Blocked | Needs isolated test before C2B Register call |
-| Account Balance | ⚠️ Blocked | Same as above |
-| Business Buy Goods | ⚠️ Blocked | Same as above |
-| Business Pay Bill | ⚠️ Blocked | Same as above |
-| B2Pochi | ⚠️ Blocked | Same as above |
-| Tax Remittance | ⚠️ Blocked | Same as above |
-| Pull Transactions | ⚠️ Blocked | Same as above |
-
-### SDK Bugs Fixed
-
-| SDK | Bug | Fix |
-|-----|-----|-----|
-| All 3 | SecurityCredential encryption used OAEP/SHA256 (wrong padding) | Fixed to PKCS#1 v1.5 padding across all SDKs |
-| All 3 | Encrypted raw password instead of base64(password) first | Now base64-encodes password before RSA encryption |
-| Python | Used `load_pem_public_key()` instead of `load_pem_x509_certificate()` | Fixed cert parsing to extract pub key from X.509 cert |
-| TypeScript | Passed raw `certificate` string directly without X.509 parsing | Now uses `X509Certificate` class to extract public key |
-| Go | Content-Type check misses empty Content-Type header | Check passes through HTML when Content-Type is empty; `json.Unmarshal` still gets `invalid character '<'` |
-| TypeScript | `package.json` exports referenced `.mjs` but tsup builds `.js` (ESM) + `.cjs` (CJS) | Updated all exports to use `.js`/`.cjs` extensions |
-| TypeScript | STK Push `PartyB` validated as phone number (`2547XXXXXXXX`) but is the business shortcode | Changed validation from `phoneNumber` to `positiveNumber` |
-
-### SDK Client State — Verified Clean
-
-**Python SDK** (`python/mpesa/client/__init__.py`):
-- Token only written from successful OAuth responses
-- Token only invalidated on 401 (correct behavior)
-- Per-request Authorization header is passed as kwargs, NOT merged into shared `httpx.Client` defaults
-- No mechanism for a 4xx/5xx error to corrupt token or client state
-
-**TypeScript SDK** (`typescript/src/client/client.ts`):
-- Token only written after successful `client.get()` call
-- `invalidateToken()` only sets `tokenCache = null` — no axios defaults mutation
-- Request headers created fresh per-call via spread operator
-- No axios interceptor mutates shared state on error
-
-**The "403 cascade" is a sandbox-side block.** Verified via `curl` that the same credentials work in isolation after the test run.
+| SDK | Status | Details |
+|-----|--------|---------|
+| Python | ⏳ Running | |
+| TypeScript | ⏳ Pending | |
+| Go | ⏳ Pending | |
 
 ---
 
-## Detailed Run Results (2026-06-20)
+## Python SDK
 
-### Python SDK (22/24 tests attempted, 4 passed)
+### Results
 
 | # | Test | Result | Detail |
 |---|------|--------|--------|
-| 1 | OAuth Authentication | ✅ PASS | Token acquired |
-| 2 | STK Push | ✅ PASS | ResponseCode=0, CheckoutRequestID returned |
-| 3 | STK Query | ✅ PASS | ResultCode=1037 (user timeout — expected) |
-| 4 | C2B Register URL | ❌ 403 | IP whitelisting required |
-| 5-23 | All remaining API calls | ❌ 403 | Sandbox WAF blocked IP after test 4 |
-| 24 | Webhook Handling | ✅ PASS | Parsed callback correctly |
-
-**Key observation**: Python's token caching allowed tests 1-3 to pass even though the sandbox later blocked the IP. The cached OAuth token was acquired before the block.
-
-### TypeScript SDK (22/24 tests attempted, 0 passed)
-
-| # | Test | Result | Detail |
-|---|------|--------|--------|
-| 1 | OAuth | ✅ PASS | Client initialized |
-| 2-23 | All API calls | ❌ 403 | Sandbox blocked IP (blocked during Python run) |
-| 24 | Webhook Handling | ✅ PASS | Parsed callback correctly |
-
-**Note**: No OAuth token was cached from Python's run — each SDK uses its own client/connection pool.
-
-### Go SDK (22/24 tests attempted, 0 passed)
-
-| # | Test | Result | Detail |
-|---|------|--------|--------|
-| 2 | STK Push | ❌ `invalid character '<'` | HTML response from blocked sandbox, Content-Type empty |
-| 3-6 | 4 attempts | ❌ Same error | All got HTML 403 with empty Content-Type |
-| 7 | Transaction Status | ❌ "circuit breaker is open" | Circuit breaker opened after repeated failures |
-| 8-23 | Remaining calls | ❌ Circuit breaker open | No further network requests attempted |
-| 24 | Webhook Handling | ✅ PASS | Parsed callback correctly |
-
-**Key observation**: The Go Content-Type check (`go/client/client.go:388`) doesn't handle empty Content-Type. When the sandbox returns a 403 HTML page with no `Content-Type` header, the check is bypassed, and the HTML reaches `json.Unmarshal` at line 449, producing `invalid character '<'`. 403 is not a retryable status code, so the error propagates without retrying.
+| 1 | OAuth Authentication | — | |
+| 2 | STK Push | — | |
+| 3 | STK Query | — | |
+| 5 | C2B Simulate | — | |
+| 10 | Dynamic QR | — | |
+| 6 | B2C Payment | — | |
+| 7 | Transaction Reversal | — | |
+| 8 | Transaction Status Query | — | |
+| 9 | Account Balance Query | — | |
+| 11 | Business Buy Goods | — | |
+| 12 | Business Pay Bill | — | |
+| 13 | B2Pochi | — | |
+| 14 | Lipa na Bonga | — | |
+| 15 | Pull Transactions | — | |
+| 16 | Query Org Info | — | |
+| 17 | IMSI Query | — | |
+| 18 | IoT SIM Management | — | |
+| 19 | Swap Query | — | |
+| 20 | Bill Manager | — | |
+| 21 | B2B Express CheckOut | — | |
+| 22 | M-Pesa Ratiba | — | |
+| 23 | Tax Remittance | — | |
+| 4 | C2B Register URL | — | |
+| 24 | Webhook Handling | — | |
 
 ---
 
-## Outstanding Issues
+## TypeScript SDK
 
-### Go: Content-Type check didn't handle empty Content-Type
+### Results
 
-**Fixed** in `go/client/client.go:436` — the Content-Type check was moved from before the retry block to after, inside the `resp.StatusCode >= 400` error handler. This ensures:
-1. Retryable status codes (500+) get retried regardless of Content-Type
-2. Non-retryable error responses with non-JSON bodies get a clear error instead of `json.Unmarshal` producing `invalid character '<'`
-
-```go
-if resp.StatusCode >= 400 {
-    contentType := resp.Header.Get("Content-Type")
-    if !strings.Contains(contentType, "application/json") && !strings.Contains(contentType, "application/problem+json") {
-        return nil, fmt.Errorf("expected JSON response, got Content-Type: %q (status %d): %s",
-            contentType, resp.StatusCode, string(respBody))
-    }
-    // ... json.Unmarshal only reached if Content-Type is JSON
-}
-```
-
-### Python: Rate limiter triggered during test run
-
-The Python test showed "Retryable status code, backing off" messages before the 403 responses appeared. This suggests Python's rate limiter (TokenBucket or Endpoint rate limiter) is triggering on intermediate responses, adding delays. This is working as designed but note it for timing-dependent test scenarios.
+| # | Test | Result | Detail |
+|---|------|--------|--------|
+| 1 | OAuth Authentication | ⏳ | |
+| 2-24 | Remaining | ⏳ | |
 
 ---
 
-## New Feature: Initiator Password Auto-Encryption
+## Go SDK
 
-Implemented across all 3 SDKs (now exercised in integration tests):
+### Results
 
-| SDK | Files | Tests |
-|-----|-------|-------|
-| Python | `mpesa/client/__init__.py`, `mpesa/utils/__init__.py`, `mpesa/utils/certificates.py`, `mpesa/models/__init__.py` | 62 unit tests |
-| TypeScript | `src/client/client.ts`, `src/utils/index.ts`, `src/utils/certificates.ts`, 9 service files | 41 unit tests |
-| Go | `client/client.go`, `client/utils.go`, `client/certificates.go`, all service files | All tests pass |
-
-**Integration tests now exercise this feature** — all 3 SDKs pass `initiatorPassword` in client config instead of `securityCredential`. Explicit `SecurityCredential`/`InitiatorName`/`Initiator` removed from request bodies; auto-injection handles them.
-
-## Integration Test Improvements (2026-06-20)
-
-### Changes Made
-
-1. **Re-ordered tests**: C2B Register URL moved to **last** position in all 3 SDK integration tests. The sandbox WAF triggers a block on this endpoint, which would kill all subsequent tests.
-
-2. **Graceful degradation**: All 3 SDKs now detect 403 on OAuth (sandbox WAF block pattern) via `SANDBOX_BLOCKED`/`sandboxBlocked` flag. Once set, remaining tests are skipped with a clear message.
-
-3. **Auto-encryption exercised**: Integration tests now pass `initiatorPassword` in client config instead of `securityCredential`. Explicit `InitiatorName`/`Initiator`/`SecurityCredential` removed from request bodies — auto-injection handles them.
-
-4. **SDK run isolation**: `run.sh` now has 30s cooldown delays between Python → TypeScript → Go runs to let sandbox WAF settle.
-
-### Files Changed
-
-| File | Change |
-|------|--------|
-| `python/tests/integration/test_all_apis.py` | CONFIG uses `initiator_password`; `SANDBOX_BLOCKED` flag; request bodies stripped of explicit initiator fields; C2B Register URL moved to end |
-| `typescript/tests/integration/test_all_apis.ts` | CONFIG uses `initiatorPassword`; `sandboxBlocked` flag + `checkBlocked()`; request bodies stripped; B2Pochi/BusinessBuyGoods/BusinessPayBill/TaxRemittance updated; C2B Register URL moved to end |
-| `go/tests/integration/main.go` | Config uses `InitiatorPassword`; `sandboxBlocked` flag + `checkBlocked()`; request bodies stripped of explicit initiator fields; C2B Register URL moved to end |
-| `tests/integration/run.sh` | 30s cooldown between Python/TS/Go runs; per-SDK `.env` sourcing via `setup_sdk_env()` function (was sourcing all three upfront); removed `MPESA_SECURITY_CREDENTIAL` from required env vars |
-| `typescript/src/types/index.ts` | `InitiatorName`/`Initiator`/`SecurityCredential` made optional across all request types (was already done in previous session)
-
-### Credential Isolation
-
-Each SDK now has its own consumer key/secret in per-SDK `.env` files, sourced right before that SDK's test run. Rate-limiting one SDK's credentials won't affect the others.
+| # | Test | Result | Detail |
+|---|------|--------|--------|
+| 1-24 | All tests | ⏳ | |
 
 ---
 
 ## Environment
 
-- **Date**: 2026-06-20 (second test run)
 - **Environment**: sandbox
 - **ShortCode**: 174379
-- **Party A**: 600426
-- **Party B**: 600000
 - **Phone**: 254708374149
-- **Callback URL**: https://aeed-102-219-209-38.ngrok-free.app (updated from webhook.site)
-- **Security Credential**: Freshly generated using corrected algorithm (PKCS#1 v1.5 + base64(password))
+- **Callback URL**: https://webhook.site/ad79c1ec-2493-4016-b8ed-905390f58db3

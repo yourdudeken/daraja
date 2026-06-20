@@ -513,7 +513,7 @@ async function main() {
   console.log("=".repeat(60));
 
   const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
-  const DELAY = 3000;
+  const DELAY = 30000;
 
   test01OAuth();
   await sleep(DELAY);

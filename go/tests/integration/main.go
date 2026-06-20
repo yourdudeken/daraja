@@ -49,10 +49,10 @@ func main() {
 		InitiatorPassword: os.Getenv("MPESA_INITIATOR_PASSWORD"),
 	})
 
-	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 900*time.Second)
 	defer cancel()
 
-	sleep := func() { time.Sleep(3 * time.Second) }
+	sleep := func() { time.Sleep(30 * time.Second) }
 	shortcode := 174379
 	phone := 254708374149
 	callbackBase := getEnv("MPESA_CALLBACK_URL", "https://webhook.site/ad79c1ec-2493-4016-b8ed-905390f58db3")
