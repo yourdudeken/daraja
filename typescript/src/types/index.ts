@@ -244,8 +244,8 @@ export type B2CCommandID = "SalaryPayment" | "BusinessPayment" | "PromotionPayme
 
 export interface B2CRequest {
   OriginatorConversationID?: string;
-  InitiatorName: string;
-  SecurityCredential: string;
+  InitiatorName?: string;
+  SecurityCredential?: string;
   CommandID: B2CCommandID;
   Amount: number;
   PartyA: number;
@@ -290,8 +290,8 @@ export interface B2CCallbackPayload {
 // REVERSAL
 // ============================================================
 export interface ReversalRequest {
-  Initiator: string;
-  SecurityCredential: string;
+  Initiator?: string;
+  SecurityCredential?: string;
   CommandID: "TransactionReversal";
   TransactionID: string;
   Amount: number;
@@ -313,8 +313,8 @@ export interface ReversalResponse {
 // TRANSACTION STATUS
 // ============================================================
 export interface TransactionStatusRequest {
-  Initiator: string;
-  SecurityCredential: string;
+  Initiator?: string;
+  SecurityCredential?: string;
   CommandID: "TransactionStatusQuery";
   TransactionID?: string;
   OriginalConversationID?: string;
@@ -337,8 +337,8 @@ export interface TransactionStatusResponse {
 // ACCOUNT BALANCE
 // ============================================================
 export interface AccountBalanceRequest {
-  Initiator: string;
-  SecurityCredential: string;
+  Initiator?: string;
+  SecurityCredential?: string;
   CommandID: "AccountBalance";
   PartyA: number;
   IdentifierType?: number;
@@ -379,8 +379,8 @@ export interface DynamicQRResponse {
 // BUSINESS BUY GOODS / PAY BILL (B2B-type requests)
 // ============================================================
 export interface BusinessBuyGoodsRequest {
-  Initiator: string;
-  SecurityCredential: string;
+  Initiator?: string;
+  SecurityCredential?: string;
   CommandID: "BusinessBuyGoods";
   SenderIdentifierType?: number;
   RecieverIdentifierType?: number;
@@ -396,8 +396,8 @@ export interface BusinessBuyGoodsRequest {
 }
 
 export interface BusinessPayBillRequest {
-  Initiator: string;
-  SecurityCredential: string;
+  Initiator?: string;
+  SecurityCredential?: string;
   CommandID: "BusinessPayBill";
   SenderIdentifierType?: number;
   RecieverIdentifierType?: number;
@@ -722,8 +722,8 @@ export interface IoTDeleteMessageRequest {
 // B2Pochi
 // ============================================================
 export interface B2PochiRequest {
-  InitiatorName: string;
-  SecurityCredential: string;
+  InitiatorName?: string;
+  SecurityCredential?: string;
   CommandID: string;
   Amount: number;
   SenderIdentifier: number;
@@ -996,8 +996,8 @@ export interface RatibaCallbackResponse {
 // TAX REMITTANCE
 // ============================================================
 export interface TaxRemittanceRequest {
-  Initiator: string;
-  SecurityCredential: string;
+  Initiator?: string;
+  SecurityCredential?: string;
   CommandID: string;
   SenderIdentifierType: string;
   RecieverIdentifierType: string;
@@ -1021,8 +1021,8 @@ export interface TaxRemittanceResponse {
 // B2C ACCOUNT TOP UP
 // ============================================================
 export interface B2CAccountTopUpRequest {
-  Initiator: string;
-  SecurityCredential: string;
+  Initiator?: string;
+  SecurityCredential?: string;
   CommandID: string;
   SenderIdentifierType: string;
   RecieverIdentifierType: string;

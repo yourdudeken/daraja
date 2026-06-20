@@ -9,6 +9,17 @@ function logError(api: string, error: unknown) {
   console.log(`  [ERROR] ${api}: ${type}: ${msg}`);
 }
 
+let sandboxBlocked = false;
+
+function checkBlocked(api: string, error: unknown): boolean {
+  const msg = error instanceof Error ? error.message : String(error);
+  if (msg.includes("403") && (msg.toLowerCase().includes("oauth") || msg.toLowerCase().includes("generate"))) {
+    sandboxBlocked = true;
+    console.log("   [BLOCKED] Sandbox WAF blocked the IP. Skipping remaining tests.");
+  }
+  return sandboxBlocked;
+}
+
 const CONFIG = {
   consumerKey: process.env.MPESA_CONSUMER_KEY!,
   consumerSecret: process.env.MPESA_CONSUMER_SECRET!,
@@ -16,7 +27,6 @@ const CONFIG = {
   passkey: process.env.MPESA_PASSKEY!,
   initiatorName: process.env.MPESA_INITIATOR_NAME!,
   initiatorPassword: process.env.MPESA_INITIATOR_PASSWORD!,
-  securityCredential: process.env.MPESA_SECURITY_CREDENTIAL!,
 };
 
 const SHORTCODE = parseInt(process.env.MPESA_SHORTCODE ?? "174379", 10);
@@ -111,15 +121,14 @@ async function test05C2BSimulate() {
 
 async function test06B2C() {
   console.log("\n6. B2C Payment");
-  if (!CONFIG.initiatorName || !CONFIG.securityCredential) {
-    console.log("   SKIP: initiatorName/securityCredential not set");
+  if (!CONFIG.initiatorName) {
+    console.log("   SKIP: initiatorName not set");
     return;
   }
+  if (sandboxBlocked) return;
   const mpesa = new Mpesa(CONFIG);
   try {
     const resp = await mpesa.b2c.send({
-      InitiatorName: CONFIG.initiatorName,
-      SecurityCredential: CONFIG.securityCredential,
       CommandID: "BusinessPayment",
       Amount: 10,
       PartyA: SHORTCODE,
@@ -132,21 +141,20 @@ async function test06B2C() {
     console.log(`   OriginatorConversationID: ${resp.OriginatorConversationID}`);
     console.log(`   ResponseCode: ${resp.ResponseCode}`);
   } catch (e) {
-    logError("B2C", e);
+    if (!checkBlocked("B2C", e)) logError("B2C", e);
   }
 }
 
 async function test07Reversal() {
   console.log("\n7. Transaction Reversal");
-  if (!CONFIG.initiatorName || !CONFIG.securityCredential) {
-    console.log("   SKIP: initiatorName/securityCredential not set");
+  if (!CONFIG.initiatorName) {
+    console.log("   SKIP: initiatorName not set");
     return;
   }
+  if (sandboxBlocked) return;
   const mpesa = new Mpesa(CONFIG);
   try {
     const resp = await mpesa.reversal.reverse({
-      Initiator: CONFIG.initiatorName,
-      SecurityCredential: CONFIG.securityCredential,
       CommandID: "TransactionReversal",
       TransactionID: "NLA00TEST",
       Amount: 10,
@@ -158,21 +166,20 @@ async function test07Reversal() {
     console.log(`   ResponseCode: ${resp.ResponseCode}`);
     console.log(`   ResponseDescription: ${resp.ResponseDescription}`);
   } catch (e) {
-    logError("Reversal", e);
+    if (!checkBlocked("Reversal", e)) logError("Reversal", e);
   }
 }
 
 async function test08TransactionStatus() {
   console.log("\n8. Transaction Status Query");
-  if (!CONFIG.initiatorName || !CONFIG.securityCredential) {
-    console.log("   SKIP: initiatorName/securityCredential not set");
+  if (!CONFIG.initiatorName) {
+    console.log("   SKIP: initiatorName not set");
     return;
   }
+  if (sandboxBlocked) return;
   const mpesa = new Mpesa(CONFIG);
   try {
     const resp = await mpesa.transactionStatus.query({
-      Initiator: CONFIG.initiatorName,
-      SecurityCredential: CONFIG.securityCredential,
       CommandID: "TransactionStatusQuery",
       TransactionID: "NLA00TEST",
       PartyA: SHORTCODE,
@@ -184,21 +191,20 @@ async function test08TransactionStatus() {
     console.log(`   ResponseCode: ${resp.ResponseCode}`);
     console.log(`   ResponseDescription: ${resp.ResponseDescription}`);
   } catch (e) {
-    logError("Transaction Status", e);
+    if (!checkBlocked("Transaction Status", e)) logError("Transaction Status", e);
   }
 }
 
 async function test09AccountBalance() {
   console.log("\n9. Account Balance Query");
-  if (!CONFIG.initiatorName || !CONFIG.securityCredential) {
-    console.log("   SKIP: initiatorName/securityCredential not set");
+  if (!CONFIG.initiatorName) {
+    console.log("   SKIP: initiatorName not set");
     return;
   }
+  if (sandboxBlocked) return;
   const mpesa = new Mpesa(CONFIG);
   try {
     const resp = await mpesa.accountBalance.query({
-      Initiator: CONFIG.initiatorName,
-      SecurityCredential: CONFIG.securityCredential,
       CommandID: "AccountBalance",
       PartyA: SHORTCODE,
       IdentifierType: 4,
@@ -209,7 +215,7 @@ async function test09AccountBalance() {
     console.log(`   OriginatorConversationID: ${resp.OriginatorConversationID}`);
     console.log(`   ResponseCode: ${resp.ResponseCode}`);
   } catch (e) {
-    logError("Account Balance", e);
+    if (!checkBlocked("Account Balance", e)) logError("Account Balance", e);
   }
 }
 
@@ -234,15 +240,14 @@ async function test10DynamicQR() {
 
 async function test11BusinessBuyGoods() {
   console.log("\n11. Business Buy Goods");
-  if (!CONFIG.initiatorName || !CONFIG.securityCredential) {
-    console.log("   SKIP: initiatorName/securityCredential not set");
+  if (!CONFIG.initiatorName) {
+    console.log("   SKIP: initiatorName not set");
     return;
   }
+  if (sandboxBlocked) return;
   const mpesa = new Mpesa(CONFIG);
   try {
     const resp = await mpesa.businessGoods.buyGoods({
-      Initiator: CONFIG.initiatorName,
-      SecurityCredential: CONFIG.securityCredential,
       CommandID: "BusinessBuyGoods",
       Amount: 100,
       PartyA: SHORTCODE,
@@ -254,21 +259,20 @@ async function test11BusinessBuyGoods() {
     console.log(`   ResponseCode: ${resp.ResponseCode}`);
     console.log(`   ResponseDescription: ${resp.ResponseDescription}`);
   } catch (e) {
-    logError("Business Buy Goods", e);
+    if (!checkBlocked("Business Buy Goods", e)) logError("Business Buy Goods", e);
   }
 }
 
 async function test12BusinessPayBill() {
   console.log("\n12. Business Pay Bill");
-  if (!CONFIG.initiatorName || !CONFIG.securityCredential) {
-    console.log("   SKIP: initiatorName/securityCredential not set");
+  if (!CONFIG.initiatorName) {
+    console.log("   SKIP: initiatorName not set");
     return;
   }
+  if (sandboxBlocked) return;
   const mpesa = new Mpesa(CONFIG);
   try {
     const resp = await mpesa.businessGoods.payBill({
-      Initiator: CONFIG.initiatorName,
-      SecurityCredential: CONFIG.securityCredential,
       CommandID: "BusinessPayBill",
       Amount: 100,
       PartyA: SHORTCODE,
@@ -280,21 +284,20 @@ async function test12BusinessPayBill() {
     console.log(`   ResponseCode: ${resp.ResponseCode}`);
     console.log(`   ResponseDescription: ${resp.ResponseDescription}`);
   } catch (e) {
-    logError("Business Pay Bill", e);
+    if (!checkBlocked("Business Pay Bill", e)) logError("Business Pay Bill", e);
   }
 }
 
 async function test13B2Pochi() {
   console.log("\n13. B2Pochi");
-  if (!CONFIG.initiatorName || !CONFIG.securityCredential) {
-    console.log("   SKIP: initiatorName/securityCredential not set");
+  if (!CONFIG.initiatorName) {
+    console.log("   SKIP: initiatorName not set");
     return;
   }
+  if (sandboxBlocked) return;
   const mpesa = new Mpesa(CONFIG);
   try {
     const resp = await mpesa.b2Pochi.send({
-      InitiatorName: CONFIG.initiatorName,
-      SecurityCredential: CONFIG.securityCredential,
       CommandID: "BusinessPayment",
       Amount: 10,
       SenderIdentifier: 4,
@@ -309,7 +312,7 @@ async function test13B2Pochi() {
     console.log(`   OriginatorConversationID: ${resp.OriginatorConversationID}`);
     console.log(`   ResponseCode: ${resp.ResponseCode}`);
   } catch (e) {
-    logError("B2Pochi", e);
+    if (!checkBlocked("B2Pochi", e)) logError("B2Pochi", e);
   }
 }
 
@@ -452,15 +455,14 @@ async function test22Ratiba() {
 
 async function test23TaxRemittance() {
   console.log("\n23. Tax Remittance");
-  if (!CONFIG.initiatorName || !CONFIG.securityCredential) {
-    console.log("   SKIP: initiatorName/securityCredential not set");
+  if (!CONFIG.initiatorName) {
+    console.log("   SKIP: initiatorName not set");
     return;
   }
+  if (sandboxBlocked) return;
   const mpesa = new Mpesa(CONFIG);
   try {
     const resp = await mpesa.taxRemittance.remit({
-      Initiator: CONFIG.initiatorName,
-      SecurityCredential: CONFIG.securityCredential,
       CommandID: "PayTaxToKRA",
       SenderIdentifierType: "4",
       RecieverIdentifierType: "4",
@@ -475,7 +477,7 @@ async function test23TaxRemittance() {
     console.log(`   OriginatorConversationID: ${resp.OriginatorConversationID}`);
     console.log(`   ResponseCode: ${resp.ResponseCode}`);
   } catch (e) {
-    logError("Tax Remittance", e);
+    if (!checkBlocked("Tax Remittance", e)) logError("Tax Remittance", e);
   }
 }
 
@@ -521,9 +523,9 @@ async function main() {
     await test03STKQuery(checkoutId);
   }
   await sleep(DELAY);
-  await test04C2BRegisterURL();
-  await sleep(DELAY);
   await test05C2BSimulate();
+  await sleep(DELAY);
+  await test10DynamicQR();
   await sleep(DELAY);
   await test06B2C();
   await sleep(DELAY);
@@ -532,8 +534,6 @@ async function main() {
   await test08TransactionStatus();
   await sleep(DELAY);
   await test09AccountBalance();
-  await sleep(DELAY);
-  await test10DynamicQR();
   await sleep(DELAY);
   await test11BusinessBuyGoods();
   await sleep(DELAY);
@@ -560,6 +560,8 @@ async function main() {
   await test22Ratiba();
   await sleep(DELAY);
   await test23TaxRemittance();
+  await sleep(DELAY);
+  await test04C2BRegisterURL();
   await sleep(DELAY);
   test24WebhookHandling();
 

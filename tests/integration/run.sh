@@ -19,7 +19,7 @@ set +a
 : "${MPESA_PASSKEY:?Set MPESA_PASSKEY env var}"
 : "${MPESA_INITIATOR_NAME:?Set MPESA_INITIATOR_NAME env var}"
 : "${MPESA_INITIATOR_PASSWORD:?Set MPESA_INITIATOR_PASSWORD env var}"
-: "${MPESA_SECURITY_CREDENTIAL:?Set MPESA_SECURITY_CREDENTIAL env var}"
+# MPESA_SECURITY_CREDENTIAL no longer required — auto-generated from MPESA_INITIATOR_PASSWORD
 
 # Optional with defaults
 MPESA_ENV="${MPESA_ENV:-sandbox}"
@@ -54,6 +54,10 @@ PYTHON_EXIT=$?
 echo "Python tests exit code: ${PYTHON_EXIT}"
 echo ""
 
+# Cooldown to let sandbox WAF settle between SDK runs
+echo "Waiting 30s before TypeScript SDK run..."
+sleep 30
+
 # ============================================================
 # TypeScript SDK
 # ============================================================
@@ -65,6 +69,10 @@ npx tsx typescript/tests/integration/test_all_apis.ts
 TS_EXIT=$?
 echo "TypeScript tests exit code: ${TS_EXIT}"
 echo ""
+
+# Cooldown to let sandbox WAF settle between SDK runs
+echo "Waiting 30s before Go SDK run..."
+sleep 30
 
 # ============================================================
 # Go SDK

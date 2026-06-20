@@ -134,15 +134,37 @@ The Python test showed "Retryable status code, backing off" messages before the 
 
 ## New Feature: Initiator Password Auto-Encryption
 
-Implemented across all 3 SDKs (unit tested, not exercised in integration tests yet):
+Implemented across all 3 SDKs (now exercised in integration tests):
 
 | SDK | Files | Tests |
 |-----|-------|-------|
-| Python | `mpesa/client/__init__.py`, `mpesa/utils/__init__.py`, `mpesa/utils/certificates.py`, `mpesa/models/__init__.py` | 21 new unit tests |
-| TypeScript | `src/client/client.ts`, `src/utils/index.ts`, `src/utils/certificates.ts`, 9 service files | 41 unit tests total (all pass) |
-| Go | `client/client.go`, `client/utils.go`, `client/certificates.go`, all service files | Utils tests pass, Go vet/build clean |
+| Python | `mpesa/client/__init__.py`, `mpesa/utils/__init__.py`, `mpesa/utils/certificates.py`, `mpesa/models/__init__.py` | 62 unit tests |
+| TypeScript | `src/client/client.ts`, `src/utils/index.ts`, `src/utils/certificates.ts`, 9 service files | 41 unit tests |
+| Go | `client/client.go`, `client/utils.go`, `client/certificates.go`, all service files | All tests pass |
 
-**Integration tests do not exercise this feature** — they still pass `securityCredential` explicitly in request bodies. To test auto-encryption end-to-end, remove explicit `SecurityCredential`/`InitiatorName` from integration test request bodies and rely on the client config.
+**Integration tests now exercise this feature** — all 3 SDKs pass `initiatorPassword` in client config instead of `securityCredential`. Explicit `SecurityCredential`/`InitiatorName`/`Initiator` removed from request bodies; auto-injection handles them.
+
+## Integration Test Improvements (2026-06-20)
+
+### Changes Made
+
+1. **Re-ordered tests**: C2B Register URL moved to **last** position in all 3 SDK integration tests. The sandbox WAF triggers a block on this endpoint, which would kill all subsequent tests.
+
+2. **Graceful degradation**: All 3 SDKs now detect 403 on OAuth (sandbox WAF block pattern) via `SANDBOX_BLOCKED`/`sandboxBlocked` flag. Once set, remaining tests are skipped with a clear message.
+
+3. **Auto-encryption exercised**: Integration tests now pass `initiatorPassword` in client config instead of `securityCredential`. Explicit `InitiatorName`/`Initiator`/`SecurityCredential` removed from request bodies — auto-injection handles them.
+
+4. **SDK run isolation**: `run.sh` now has 30s cooldown delays between Python → TypeScript → Go runs to let sandbox WAF settle.
+
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `python/tests/integration/test_all_apis.py` | CONFIG uses `initiator_password`; `SANDBOX_BLOCKED` flag; request bodies stripped of explicit initiator fields; C2B Register URL moved to end |
+| `typescript/tests/integration/test_all_apis.ts` | CONFIG uses `initiatorPassword`; `sandboxBlocked` flag + `checkBlocked()`; request bodies stripped; B2Pochi/BusinessBuyGoods/BusinessPayBill/TaxRemittance updated; C2B Register URL moved to end |
+| `go/tests/integration/main.go` | Config uses `InitiatorPassword`; `sandboxBlocked` flag + `checkBlocked()`; request bodies stripped of explicit initiator fields; C2B Register URL moved to end |
+| `tests/integration/run.sh` | 30s cooldown between Python/TS/Go runs; removed `MPESA_SECURITY_CREDENTIAL` from required env vars |
+| `typescript/src/types/index.ts` | `InitiatorName`/`Initiator`/`SecurityCredential` made optional across all request types (was already done in previous session)
 
 ---
 
