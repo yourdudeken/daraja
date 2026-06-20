@@ -63,6 +63,27 @@ The current `run.sh` runs all 24+ tests sequentially per SDK (Python → TS → 
 - [ ] Create a production integration test config (`.env.production`) that team members can use with their own production creds
 - [ ] Document the `MPESA_ENVIRONMENT=production` setup process
 
+## Priority 8: Fix Go sandbox compatibility issues ✅
+
+**Why**: The Go SDK couldn't communicate with the sandbox due to response format differences.
+
+- [x] OAuth `expires_in` returned as string, Go expected int — fixed with custom `ExpiresIn` type and `UnmarshalJSON`
+- [x] Manual `Accept-Encoding: gzip` header prevented auto-decompress — removed explicit header, letting Go transport handle it
+
+**Files changed**:
+- `go/types/types.go` — Added `ExpiresIn` custom type, updated `AccessTokenResponse`
+- `go/client/client.go` — Removed manual `Accept-Encoding: gzip` header
+
+## Priority 9: Document remaining sandbox API failures
+
+See `errors.md` for current status. 12 tests fail consistently across all 3 SDKs — these are likely sandbox test data configuration issues, not SDK bugs.
+
+### Passing tests (cross-SDK)
+- OAuth, STK Push, STK Query, C2B Simulate, Transaction Status, Account Balance, Reversal (Go/TS/Python), Ratiba, Tax Remittance, Webhook, Swap (TS/Go), Dynamic QR (TS/Go)
+
+### Failing tests (cross-SDK, sandbox issues)
+- B2C, Business Buy Goods, Business Pay Bill, B2Pochi, Lipa na Bonga, Pull Transactions, Query Org Info, IMSI, IoT, Bill Manager, B2B Express, C2B Register URL
+
 ## Priority 7: CI integration
 
 **Why**: These tests should run in CI without manual intervention.

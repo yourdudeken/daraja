@@ -2,7 +2,9 @@ package types
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
+	"strconv"
 	"time"
 )
 
@@ -83,10 +85,29 @@ type MpesaConfig struct {
 	RedisDB              int
 }
 
+// ExpiresIn handles both string and int from the sandbox
+type ExpiresIn int
+
+func (e *ExpiresIn) UnmarshalJSON(data []byte) error {
+	if err := json.Unmarshal(data, (*int)(e)); err == nil {
+		return nil
+	}
+	var s string
+	if err := json.Unmarshal(data, &s); err != nil {
+		return err
+	}
+	n, err := strconv.Atoi(s)
+	if err != nil {
+		return fmt.Errorf("invalid expires_in value: %q", s)
+	}
+	*e = ExpiresIn(n)
+	return nil
+}
+
 // ---- Auth ----
 type AccessTokenResponse struct {
-	AccessToken string `json:"access_token"`
-	ExpiresIn   int    `json:"expires_in"`
+	AccessToken string    `json:"access_token"`
+	ExpiresIn   ExpiresIn `json:"expires_in"`
 }
 
 type TokenCache struct {

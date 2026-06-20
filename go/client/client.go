@@ -348,7 +348,6 @@ func (c *Client) doRequest(ctx context.Context, method, url string, body interfa
 		}
 		req.Header.Set("Content-Type", "application/json")
 		req.Header.Set("Accept", "application/json")
-		req.Header.Set("Accept-Encoding", "gzip")
 		req.Header.Set("Authorization", "Bearer "+token)
 
 		req.Header.Set("X-Request-ID", requestID)
