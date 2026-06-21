@@ -331,6 +331,7 @@ def test_12_business_pay_bill():
                 "Amount": 100,
                 "PartyA": SHORTCODE,
                 "PartyB": PARTY_B,
+                "AccountReference": "PAYBILL-TEST",
                 "Remarks": "Pay bill test",
                 "QueueTimeOutURL": f"{CALLBACK_BASE}/paybill/queue",
                 "ResultURL": f"{CALLBACK_BASE}/paybill/result",
@@ -355,7 +356,7 @@ def test_13_b2pochi():
         resp = client.b2pochi(
             {
                 "OriginatorConversationID": _originator_id(),
-                "CommandID": "BusinessPayment",
+                "CommandID": "BusinessPayToPochi",
                 "Amount": 10,
                 "SenderIdentifier": 4,
                 "ReceiverIdentifier": 4,
@@ -455,8 +456,8 @@ def test_19_swap():
     client = Mpesa(CONFIG)
     try:
         resp = client.swap_service.query({"customerNumber": str(PHONE)})
-        print(f"   responseCode: {resp.ResponseCode}")
-        print(f"   responseDesc: {resp.ResponseDesc}")
+        print(f"   responseCode: {resp.responseCode}")
+        print(f"   responseDesc: {resp.responseDesc}")
     except Exception as e:
         log_error("Swap", e)
     finally:

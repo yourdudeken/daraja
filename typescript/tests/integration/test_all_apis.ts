@@ -255,6 +255,8 @@ async function test11BusinessBuyGoods() {
   try {
     const resp = await mpesa.businessGoods.buyGoods({
       CommandID: "BusinessBuyGoods",
+      SenderIdentifierType: 4,
+      RecieverIdentifierType: 4,
       Amount: 100,
       PartyA: SHORTCODE,
       PartyB: PARTY_B,
@@ -280,9 +282,12 @@ async function test12BusinessPayBill() {
   try {
     const resp = await mpesa.businessGoods.payBill({
       CommandID: "BusinessPayBill",
+      SenderIdentifierType: 4,
+      RecieverIdentifierType: 4,
       Amount: 100,
       PartyA: SHORTCODE,
       PartyB: PARTY_B,
+      AccountReference: "PAYBILL-TEST",
       Remarks: "Pay bill test",
       QueueTimeOutURL: `${CALLBACK_BASE}/paybill/queue`,
       ResultURL: `${CALLBACK_BASE}/paybill/result`,
@@ -305,7 +310,7 @@ async function test13B2Pochi() {
   try {
     const resp = await mpesa.b2Pochi.send({
       OriginatorConversationID: originatorId(),
-      CommandID: "BusinessPayment",
+      CommandID: "BusinessPayToPochi",
       Amount: 10,
       SenderIdentifier: 4,
       ReceiverIdentifier: 4,

@@ -286,6 +286,7 @@ func main() {
 			Amount:                 100,
 			PartyA:                 shortcode,
 			PartyB:                 600000,
+			AccountReference:       "PAYBILL-TEST",
 			Remarks:                "Pay bill test",
 			QueueTimeOutURL:        callbackBase + "/paybill/queue",
 			ResultURL:              callbackBase + "/paybill/result",
@@ -310,7 +311,7 @@ func main() {
 	} else {
 		pochResp, err := mpesa.B2Pochi(ctx, types.B2PochiRequest{
 			OriginatorConversationID: fmt.Sprintf("INT_%d_%x", time.Now().Unix(), time.Now().UnixNano()),
-			CommandID:                "BusinessPayment",
+			CommandID:                "BusinessPayToPochi",
 			Amount:                   10,
 			SenderIdentifier:         4,
 			ReceiverIdentifier:       4,
