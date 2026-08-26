@@ -1,6 +1,6 @@
-# Daraja SDK for Python
+# Daraja SDK - Python
 
-Multi-language SDK for Safaricom M-Pesa Daraja API. This is the Python implementation.
+Production-grade Python SDK for Safaricom M-Pesa Daraja API.
 
 ## Installation
 
@@ -8,93 +8,61 @@ Multi-language SDK for Safaricom M-Pesa Daraja API. This is the Python implement
 pip install daraja-sdk-py
 ```
 
-### Optional extras
+With optional extras:
 
 ```bash
 pip install daraja-sdk-py[fastapi]   # FastAPI middleware
 pip install daraja-sdk-py[flask]     # Flask middleware
 pip install daraja-sdk-py[django]    # Django middleware
-pip install daraja-sdk-py[redis]     # Redis-backed token cache & retry queues
-pip install daraja-sdk-py[all]       # Everything
+pip install daraja-sdk-py[redis]     # Redis token cache
+pip install daraja-sdk-py[all]       # All extras
 ```
 
-## Quick start
+## Quick Start
 
 ```python
-from mpesa import Mpesa, MpesaConfig
+from mpesa import AsyncMpesa, MpesaConfig
 
 config = MpesaConfig(
     consumer_key="your-consumer-key",
     consumer_secret="your-consumer-secret",
+    environment="sandbox",
     passkey="your-passkey",
-    short_code="174379",
-    initiator_name="testapi",
-    security_credential="your-security-credential",
 )
 
-client = Mpesa(config)
-
-# STK Push
-from mpesa import STKPushRequest
-
-response = client.stk_push.initiate(STKPushRequest(
-    BusinessShortCode=174379,
-    TransactionType="CustomerPayBillOnline",
-    Amount=1,
-    PartyA=254708374149,
-    PartyB=174379,
-    PhoneNumber=254708374149,
-    CallBackURL="https://example.com/callback",
-    AccountReference="test",
-    TransactionDesc="test",
-))
-print(response.CheckoutRequestID)
+async with AsyncMpesa(config) as mpesa:
+    result = await mpesa.stk_push({
+        "BusinessShortCode": 174379,
+        "TransactionType": "CustomerPayBillOnline",
+        "Amount": 1,
+        "PartyA": 254712345678,
+        "PartyB": 174379,
+        "PhoneNumber": 254712345678,
+        "CallBackURL": "https://example.com/callback",
+        "AccountReference": "test",
+        "TransactionDesc": "test",
+    })
+    print(result["CheckoutRequestID"])
 ```
 
 ## Configuration
 
-`MpesaConfig` accepts the following fields:
+| Field | Description | Default |
+|-------|-------------|---------|
+| `consumer_key` | OAuth consumer key | Required |
+| `consumer_secret` | OAuth consumer secret | Required |
+| `environment` | `sandbox` or `production` | `sandbox` |
+| `passkey` | STK Push password generation | Optional |
+| `initiator_name` | API user on M-Pesa portal | Optional |
+| `initiator_password` | Auto-encrypts to SecurityCredential | Optional |
+| `security_credential` | Pre-encrypted credential | Optional |
 
-| Field | Description |
-|-------|-------------|
-| `consumer_key` | Safaricom consumer key |
-| `consumer_secret` | Safaricom consumer secret |
-| `passkey` | M-Pesa passkey for STK push |
-| `short_code` | Business short code |
-| `initiator_name` | API initiator name |
-| `security_credential` | Encrypted security credential |
+## Testing
 
-## Webhooks
-
-```python
-from mpesa import WebhookManager
-
-manager = WebhookManager()
-
-@manager.on("stk:callback")
-def handle_stk(event, payload):
-    print(f"STK callback: {payload}")
-
-# Use with FastAPI
-from mpesa.middleware import create_fastapi_router
-
-router = create_fastapi_router(manager, secret="your-webhook-secret")
-
-# Use with Flask
-from mpesa.middleware import create_flask_blueprint
-
-bp = create_flask_blueprint(manager, secret="your-webhook-secret")
+```bash
+hatch run test
 ```
 
-## Async support
+## License
 
-```python
-from mpesa import AsyncMpesa
-
-client = AsyncMpesa(config)
-```
-
-## Links
-
-- [Go SDK](../../go/)
-- [TypeScript SDK](../../typescript/)
+MIT

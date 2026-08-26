@@ -96,33 +96,16 @@ cd typescript && npm run format        # prettier
 
 Each SDK should be independent and feature-complete. Known gaps:
 
-### P0 - Bugs
-- **Python middleware never calls `verify_signature()`** — `flask.py:36`, `django.py:24`, `__init__.py:45` only check header exists, never verify HMAC. Go and TS do it correctly.
-- **TypeScript webhook retry queue never attempts delivery** — `retry.ts:41-80` increments attempts but never calls the actual webhook handler.
-
 ### P1 - Missing Features
 - **No CLI in Go or Python** — only TypeScript has `mpesa` CLI (src/cli/index.ts)
-- **Health endpoint doesn't return HTTP 503 when degraded** — Python and TS miss this; Go does it correctly (`health/health.go:54`)
-- **`reversal:result` and `c2b:confirmation` events not distinguishable** in Go/Python webhook routing — only TypeScript can differentiate them
 
 ### P2 - Validation Gaps
-- **Go:** validation module exists (`validation/validation.go`) but is never called from service layer
-- **TypeScript:** validation applied only to STK Push, not other services
 - **Python:** no input validation in service layer (relies on Pydantic model construction)
 
 ### P2 - Testing Gaps
-- **Go:** only `errors_test.go` for unit tests — no tests for services, middleware, webhooks, client
 - **Python:** no mock server tests; TypeScript has `mock-server.test.ts`
 - **TypeScript:** no STK Push-specific unit test (Go also missing this)
-
-### P3 - Minor Gaps
-- Python `__init__.py` has duplicate IoT type imports (copy-paste error)
-- TypeScript idempotency uses weak 32-bit hash (djb2) vs SHA-256 in Go/Python
-- Python/TS health response missing `uptime` and language version fields
-- Go `IsMpesaError` doesn't use idiomatic `errors.As()`
-- Python missing `isMpesaError` helper
-- Go missing `toJSON()` error serialization
-- No README in any SDK
+- **Go:** no tests for services, middleware, or client (webhooks, validation, errors covered)
 
 ---
 

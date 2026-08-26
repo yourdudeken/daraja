@@ -59,10 +59,10 @@ func TestManagerNoHandlers(t *testing.T) {
 
 func TestManagerHandleSTKCallback(t *testing.T) {
 	m := NewManager(noopLogger{})
-	var result client.STKCallbackResult
+	var result types.STKCallbackResult
 
 	m.On(EventSTKCallback, func(eventType EventType, payload interface{}) {
-		if r, ok := payload.(client.STKCallbackResult); ok {
+		if r, ok := payload.(types.STKCallbackResult); ok {
 			result = r
 		}
 	})
@@ -95,18 +95,18 @@ func TestManagerHandleResultCallback(t *testing.T) {
 		expected EventType
 	}{
 		{
-			name: "account balance",
-			body: `{"Result":{"ResultParameters":{"ResultParameter":[{"Key":"AccountBalance","Value":"100"}]}}}`,
+			name:     "account balance",
+			body:     `{"Result":{"ResultParameters":{"ResultParameter":[{"Key":"AccountBalance","Value":"100"}]}}}`,
 			expected: EventAccountBalance,
 		},
 		{
-			name: "transaction status",
-			body: `{"Result":{"ResultParameters":{"ResultParameter":[{"Key":"TransactionStatus","Value":"Completed"}]}}}`,
+			name:     "transaction status",
+			body:     `{"Result":{"ResultParameters":{"ResultParameter":[{"Key":"TransactionStatus","Value":"Completed"}]}}}`,
 			expected: EventTransactionStatus,
 		},
 		{
-			name: "b2c result",
-			body: `{"Result":{"ResultParameters":{"ResultParameter":[{"Key":"ReceiverPartyPublicName","Value":"Test"}]}}}`,
+			name:     "b2c result",
+			body:     `{"Result":{"ResultParameters":{"ResultParameter":[{"Key":"ReceiverPartyPublicName","Value":"Test"}]}}}`,
 			expected: EventB2CResult,
 		},
 	}

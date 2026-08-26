@@ -208,6 +208,19 @@ func IsMpesaError(err error) bool {
 	if err == nil {
 		return false
 	}
-	var mpesaErr *MpesaError
-	return errors.As(err, &mpesaErr)
+	for {
+		switch err.(type) {
+		case *MpesaError, *AuthenticationError, *ValidationError, *TimeoutError,
+			*APIConnectionError, *RateLimitError, *MpesaAPIError, *WebhookVerificationError:
+			return true
+		}
+		if u, ok := err.(interface{ Unwrap() error }); ok {
+			err = u.Unwrap()
+			if err == nil {
+				return false
+			}
+		} else {
+			return false
+		}
+	}
 }
