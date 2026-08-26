@@ -1,4 +1,5 @@
 import { MpesaApiClient } from "../client/client.js";
+import { Validation } from "../utils/index.js";
 import type {
   TransactionStatusRequest,
   TransactionStatusResponse,
@@ -9,6 +10,7 @@ export class TransactionStatusService {
   constructor(private readonly client: MpesaApiClient) {}
 
   async query(request: TransactionStatusRequest): Promise<TransactionStatusResponse> {
+    Validation.requiredString(request.TransactionID, "TransactionID");
     const config = this.client.getConfig();
     const payload: TransactionStatusRequest = {
       ...request,

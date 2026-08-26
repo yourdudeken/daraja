@@ -29,10 +29,13 @@ export function createFastifyPlugin(
           tokenOk = false;
         }
         const status = tokenOk ? "healthy" : "degraded";
-        return reply.send({
+        const statusCode = tokenOk ? 200 : 503;
+        return reply.status(statusCode).send({
           status,
           version: VERSION,
           timestamp: new Date().toISOString(),
+          uptime: `${Math.floor(process.uptime())}s`,
+          nodeVersion: process.version,
           tokenOk,
         });
       });

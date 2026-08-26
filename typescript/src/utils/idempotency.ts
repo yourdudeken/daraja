@@ -1,3 +1,5 @@
+import { createHash } from "crypto";
+
 export interface IdempotencyStore {
   get(key: string): Promise<unknown | null>;
   set(key: string, value: unknown, ttlMs: number): Promise<void>;
@@ -51,11 +53,5 @@ export function generateIdempotencyKey(method: string, url: string, body?: unkno
 }
 
 function simpleHash(str: string): string {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    const chr = str.charCodeAt(i);
-    hash = ((hash << 5) - hash) + chr;
-    hash |= 0;
-  }
-  return Math.abs(hash).toString(36).padStart(8, "0");
+  return createHash("sha256").update(str).digest("hex").slice(0, 16);
 }

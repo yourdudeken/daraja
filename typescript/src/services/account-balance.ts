@@ -1,4 +1,5 @@
 import { MpesaApiClient } from "../client/client.js";
+import { Validation } from "../utils/index.js";
 import type {
   AccountBalanceRequest,
   AccountBalanceResponse,
@@ -25,6 +26,7 @@ export class AccountBalanceService {
   constructor(private readonly client: MpesaApiClient) {}
 
   async query(request: AccountBalanceRequest): Promise<AccountBalanceResponse> {
+    Validation.requiredNumber(request.PartyA, "PartyA");
     const config = this.client.getConfig();
     const payload: AccountBalanceRequest = {
       ...request,

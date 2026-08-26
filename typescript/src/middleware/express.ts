@@ -27,10 +27,13 @@ export function createExpressMiddleware(
         tokenOk = false;
       }
       const status = tokenOk ? "healthy" : "degraded";
-      res.json({
+      const statusCode = tokenOk ? 200 : 503;
+      res.status(statusCode).json({
         status,
         version: VERSION,
         timestamp: new Date().toISOString(),
+        uptime: `${Math.floor(process.uptime())}s`,
+        nodeVersion: process.version,
         tokenOk,
       });
       return;

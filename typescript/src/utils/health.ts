@@ -6,6 +6,8 @@ export interface HealthResponse {
   version: string;
   timestamp: string;
   tokenOk: boolean;
+  uptime?: string;
+  nodeVersion?: string;
 }
 
 export async function createHealthCheck(client: MpesaApiClient): Promise<HealthResponse> {
@@ -23,6 +25,8 @@ export async function createHealthCheck(client: MpesaApiClient): Promise<HealthR
     status,
     version: VERSION,
     timestamp: new Date().toISOString(),
+    uptime: `${Math.floor(process.uptime())}s`,
+    nodeVersion: process.version,
     tokenOk,
   };
 }

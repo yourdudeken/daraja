@@ -1,4 +1,5 @@
 import { MpesaApiClient } from "../client/client.js";
+import { Validation } from "../utils/index.js";
 import type {
   C2BRegisterURLRequest,
   C2BSimulateRequest,
@@ -18,6 +19,8 @@ export class C2BService {
   }
 
   async simulate(request: C2BSimulateRequest): Promise<C2BResponse> {
+    Validation.requiredString(request.ShortCode, "ShortCode");
+    Validation.amount(request.Amount, "Amount");
     return this.client.post<C2BResponse>(
       this.client.getEndpoint("C2B_SIMULATE"),
       request,

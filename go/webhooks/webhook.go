@@ -19,6 +19,7 @@ const (
 	EventTransactionStatus EventType = "transaction:status"
 	EventAccountBalance    EventType = "account:balance"
 	EventC2BValidation     EventType = "c2b:validation"
+	EventC2BConfirmation   EventType = "c2b:confirmation"
 )
 
 type WebhookHandler func(eventType EventType, payload interface{})

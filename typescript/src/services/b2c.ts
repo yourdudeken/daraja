@@ -1,10 +1,13 @@
 import { MpesaApiClient } from "../client/client.js";
+import { Validation } from "../utils/index.js";
 import type { B2CRequest, B2CResponse, B2CCallbackPayload } from "../types/index.js";
 
 export class B2CService {
   constructor(private readonly client: MpesaApiClient) {}
 
   async send(request: B2CRequest): Promise<B2CResponse> {
+    Validation.phoneNumber(request.PartyB, "PartyB");
+    Validation.amount(request.Amount, "Amount");
     const config = this.client.getConfig();
     const payload: B2CRequest = {
       ...request,

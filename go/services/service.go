@@ -7,6 +7,7 @@ import (
 	"github.com/yourdudeken/daraja-sdk/go/client"
 	svctypes "github.com/yourdudeken/daraja-sdk/go/services/types"
 	"github.com/yourdudeken/daraja-sdk/go/types"
+	"github.com/yourdudeken/daraja-sdk/go/validation"
 )
 
 type Service struct {
@@ -18,6 +19,15 @@ func NewService(c *client.Client) *Service {
 }
 
 func (s *Service) STKPush(ctx context.Context, input svctypes.STKPushInput) (*svctypes.STKPushResult, error) {
+	if err := validation.PhoneNumber(input.PhoneNumber, "PhoneNumber"); err != nil {
+		return nil, err
+	}
+	if err := validation.Amount(int(input.Amount), "Amount", 1, 70000); err != nil {
+		return nil, err
+	}
+	if err := validation.ValidURL(input.CallBackURL, "CallBackURL"); err != nil {
+		return nil, err
+	}
 	req := types.STKPushRequest{
 		BusinessShortCode: input.BusinessShortCode,
 		TransactionType:   input.TransactionType,
@@ -80,6 +90,12 @@ func (s *Service) C2BRegisterURL(ctx context.Context, input svctypes.C2BRegister
 }
 
 func (s *Service) C2BSimulate(ctx context.Context, input svctypes.C2BSimulateInput) (*svctypes.C2BResult, error) {
+	if err := validation.RequiredInt(input.ShortCode, "ShortCode"); err != nil {
+		return nil, err
+	}
+	if err := validation.Amount(int(input.Amount), "Amount", 1, 70000); err != nil {
+		return nil, err
+	}
 	req := types.C2BSimulateRequest{
 		ShortCode:     input.ShortCode,
 		CommandID:     input.CommandID,
@@ -99,6 +115,12 @@ func (s *Service) C2BSimulate(ctx context.Context, input svctypes.C2BSimulateInp
 }
 
 func (s *Service) B2C(ctx context.Context, input svctypes.B2CInput) (*svctypes.B2CResult, error) {
+	if err := validation.PhoneNumber(input.PartyB, "PartyB"); err != nil {
+		return nil, err
+	}
+	if err := validation.Amount(int(input.Amount), "Amount", 1, 70000); err != nil {
+		return nil, err
+	}
 	cfg := s.client.GetConfig()
 	if input.SecurityCredential == "" && cfg.SecurityCredential != "" {
 		input.SecurityCredential = cfg.SecurityCredential
@@ -131,6 +153,9 @@ func (s *Service) B2C(ctx context.Context, input svctypes.B2CInput) (*svctypes.B
 }
 
 func (s *Service) Reversal(ctx context.Context, input svctypes.ReversalInput) (*svctypes.ReversalResult, error) {
+	if err := validation.RequiredString(input.TransactionID, "TransactionID"); err != nil {
+		return nil, err
+	}
 	cfg := s.client.GetConfig()
 	if input.SecurityCredential == "" && cfg.SecurityCredential != "" {
 		input.SecurityCredential = cfg.SecurityCredential
@@ -162,6 +187,9 @@ func (s *Service) Reversal(ctx context.Context, input svctypes.ReversalInput) (*
 }
 
 func (s *Service) TransactionStatus(ctx context.Context, input svctypes.TransactionStatusInput) (*svctypes.TransactionStatusResult, error) {
+	if err := validation.RequiredString(input.TransactionID, "TransactionID"); err != nil {
+		return nil, err
+	}
 	cfg := s.client.GetConfig()
 	if input.SecurityCredential == "" && cfg.SecurityCredential != "" {
 		input.SecurityCredential = cfg.SecurityCredential
@@ -194,6 +222,9 @@ func (s *Service) TransactionStatus(ctx context.Context, input svctypes.Transact
 }
 
 func (s *Service) AccountBalance(ctx context.Context, input svctypes.AccountBalanceInput) (*svctypes.AccountBalanceResult, error) {
+	if err := validation.RequiredInt(input.PartyA, "PartyA"); err != nil {
+		return nil, err
+	}
 	cfg := s.client.GetConfig()
 	if input.SecurityCredential == "" && cfg.SecurityCredential != "" {
 		input.SecurityCredential = cfg.SecurityCredential
@@ -224,6 +255,9 @@ func (s *Service) AccountBalance(ctx context.Context, input svctypes.AccountBala
 }
 
 func (s *Service) BusinessBuyGoods(ctx context.Context, input svctypes.BusinessBuyGoodsInput) (*svctypes.BusinessGoodsResult, error) {
+	if err := validation.Amount(int(input.Amount), "Amount", 1, 70000); err != nil {
+		return nil, err
+	}
 	cfg := s.client.GetConfig()
 	if input.SecurityCredential == "" && cfg.SecurityCredential != "" {
 		input.SecurityCredential = cfg.SecurityCredential
@@ -260,6 +294,9 @@ func (s *Service) BusinessBuyGoods(ctx context.Context, input svctypes.BusinessB
 }
 
 func (s *Service) BusinessPayBill(ctx context.Context, input svctypes.BusinessPayBillInput) (*svctypes.BusinessGoodsResult, error) {
+	if err := validation.Amount(int(input.Amount), "Amount", 1, 70000); err != nil {
+		return nil, err
+	}
 	cfg := s.client.GetConfig()
 	if input.SecurityCredential == "" && cfg.SecurityCredential != "" {
 		input.SecurityCredential = cfg.SecurityCredential

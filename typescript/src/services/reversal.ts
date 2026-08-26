@@ -1,10 +1,12 @@
 import { MpesaApiClient } from "../client/client.js";
+import { Validation } from "../utils/index.js";
 import type { ReversalRequest, ReversalResponse, MpesaResult } from "../types/index.js";
 
 export class ReversalService {
   constructor(private readonly client: MpesaApiClient) {}
 
   async reverse(request: ReversalRequest): Promise<ReversalResponse> {
+    Validation.requiredString(request.TransactionID, "TransactionID");
     const config = this.client.getConfig();
     const payload: ReversalRequest = {
       ...request,
