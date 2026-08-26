@@ -1,6 +1,8 @@
 // Package errors provides structured error types for M-Pesa API errors.
 package errors
 
+import "errors"
+
 type MpesaError struct {
 	Message     string
 	StatusCode  int
@@ -15,6 +17,55 @@ func (e *MpesaError) Error() string {
 
 func (e *MpesaError) Unwrap() error {
 	return e.Err
+}
+
+func (e *MpesaError) ToJSON() map[string]interface{} {
+	m := map[string]interface{}{
+		"name":    errorName(e),
+		"message": e.Message,
+	}
+	if e.StatusCode != 0 {
+		m["statusCode"] = e.StatusCode
+	}
+	if e.RequestID != "" {
+		m["requestId"] = e.RequestID
+	}
+	if e.RawResponse != nil {
+		m["rawResponse"] = e.RawResponse
+	}
+	return m
+}
+
+func errorName(err error) string {
+	var target *AuthenticationError
+	if errors.As(err, &target) {
+		return "AuthenticationError"
+	}
+	var target2 *ValidationError
+	if errors.As(err, &target2) {
+		return "ValidationError"
+	}
+	var target3 *TimeoutError
+	if errors.As(err, &target3) {
+		return "TimeoutError"
+	}
+	var target4 *APIConnectionError
+	if errors.As(err, &target4) {
+		return "APIConnectionError"
+	}
+	var target5 *RateLimitError
+	if errors.As(err, &target5) {
+		return "RateLimitError"
+	}
+	var target6 *MpesaAPIError
+	if errors.As(err, &target6) {
+		return "MpesaAPIError"
+	}
+	var target7 *WebhookVerificationError
+	if errors.As(err, &target7) {
+		return "WebhookVerificationError"
+	}
+	return "MpesaError"
 }
 
 type AuthenticationError struct {
@@ -157,26 +208,6 @@ func IsMpesaError(err error) bool {
 	if err == nil {
 		return false
 	}
-	switch err.(type) {
-	case *MpesaError, *AuthenticationError, *ValidationError, *TimeoutError,
-		*APIConnectionError, *RateLimitError, *MpesaAPIError, *WebhookVerificationError:
-		return true
-	default:
-		// Check if it wraps MpesaError
-		for {
-			if _, ok := err.(*MpesaError); ok {
-				return true
-			}
-			unwrapped := err
-			if u, ok := err.(interface{ Unwrap() error }); ok {
-				unwrapped = u.Unwrap()
-				if unwrapped == nil {
-					return false
-				}
-				err = unwrapped
-				continue
-			}
-			return false
-		}
-	}
+	var mpesaErr *MpesaError
+	return errors.As(err, &mpesaErr)
 }
