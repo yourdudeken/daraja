@@ -66,6 +66,15 @@ def format_phone_number(phone: int | str) -> str:
     return s
 
 
+def validate_shortcode(shortcode: int | str) -> bool:
+    s = str(shortcode)
+    return s.isdigit() and (5 <= len(s) <= 7)
+
+
+def validate_amount(amount: int | float) -> bool:
+    return isinstance(amount, (int, float)) and amount > 0
+
+
 def calculate_backoff(attempt: int, base_delay_ms: int = 1000, max_delay_ms: int = 30000) -> float:
     exponential = base_delay_ms * (2**attempt)
     jitter = random.uniform(0, 100)
@@ -106,6 +115,8 @@ __all__ = [
     "mask_sensitive_data",
     "is_phone_number_valid",
     "format_phone_number",
+    "validate_shortcode",
+    "validate_amount",
     "calculate_backoff",
     "execute_batch",
     "execute_batch_async",

@@ -70,9 +70,35 @@ from mpesa.models import (
     TransactionStatusRequest,
     TransactionStatusResponse,
 )
-from mpesa.utils import generate_password, generate_timestamp
+from mpesa.utils import (
+    generate_password,
+    generate_timestamp,
+    is_phone_number_valid,
+    validate_amount,
+    validate_shortcode,
+)
+from mpesa.exceptions import ValidationError
 
 PostFn = Callable[[str, dict], dict]
+
+
+def _validate_phone(phone: int | str, field_name: str = "PhoneNumber") -> None:
+    if not is_phone_number_valid(phone):
+        raise ValidationError(
+            f"Invalid {field_name}: must be in 254XXXXXXXXX format, got {phone}"
+        )
+
+
+def _validate_amount(amount: int | float, field_name: str = "Amount") -> None:
+    if not validate_amount(amount):
+        raise ValidationError(f"Invalid {field_name}: must be > 0, got {amount}")
+
+
+def _validate_shortcode(shortcode: int | str, field_name: str = "ShortCode") -> None:
+    if not validate_shortcode(shortcode):
+        raise ValidationError(
+            f"Invalid {field_name}: must be 5-7 digits, got {shortcode}"
+        )
 
 
 class STKPushService:
@@ -83,6 +109,9 @@ class STKPushService:
     def initiate(self, request: STKPushRequest | dict) -> STKPushResponse:
         if isinstance(request, dict):
             request = STKPushRequest(**request)
+        _validate_shortcode(request.BusinessShortCode)
+        _validate_amount(request.Amount)
+        _validate_phone(request.PhoneNumber)
         if not request.Password and self._config.passkey:
             timestamp = request.Timestamp or generate_timestamp()
             request.Password = generate_password(
@@ -118,6 +147,9 @@ class C2BService:
     def simulate(self, request: C2BSimulateRequest | dict) -> C2BResponse:
         if isinstance(request, dict):
             request = C2BSimulateRequest(**request)
+        _validate_shortcode(request.ShortCode)
+        _validate_amount(request.Amount)
+        _validate_phone(request.Msisdn)
         result = self._post("C2B_SIMULATE", request.model_dump())
         return C2BResponse(**result)
 
@@ -139,6 +171,8 @@ class B2CService:
                     request.SecurityCredential = self._config.security_credential
                 if not request.InitiatorName and self._config.initiator_name:
                     request.InitiatorName = self._config.initiator_name
+        _validate_amount(request.Amount)
+        _validate_phone(request.PartyB, "PartyB")
         result = self._post("B2C", request.model_dump())
         return B2CResponse(**result)
 
@@ -181,6 +215,7 @@ class ReversalService:
                     request.SecurityCredential = self._config.security_credential
                 if not request.Initiator and self._config.initiator_name:
                     request.Initiator = self._config.initiator_name
+        _validate_amount(request.Amount)
         result = self._post("REVERSAL", request.model_dump())
         return ReversalResponse(**result)
 
@@ -391,6 +426,8 @@ class B2PochiService:
                     request.SecurityCredential = self._config.security_credential
                 if not request.InitiatorName and self._config.initiator_name:
                     request.InitiatorName = self._config.initiator_name
+        _validate_amount(request.Amount)
+        _validate_shortcode(request.ReceiverIdentifier, "ReceiverIdentifier")
         result = self._post("B2POCHI", request.model_dump())
         return B2PochiResponse(**result)
 

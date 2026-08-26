@@ -97,6 +97,19 @@ class WebhookVerificationError(MpesaError):
         super().__init__(message, **kwargs)
 
 
+def is_mpesa_error(err: Any) -> bool:
+    if err is None:
+        return False
+    if isinstance(err, MpesaError):
+        return True
+    cause = getattr(err, "__cause__", None)
+    while cause is not None:
+        if isinstance(cause, MpesaError):
+            return True
+        cause = getattr(cause, "__cause__", None)
+    return False
+
+
 __all__ = [
     "MpesaError",
     "AuthenticationError",
@@ -106,4 +119,5 @@ __all__ = [
     "RateLimitError",
     "MpesaAPIError",
     "WebhookVerificationError",
+    "is_mpesa_error",
 ]
