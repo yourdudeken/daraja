@@ -48,6 +48,9 @@ all = [
 Homepage = "https://github.com/yourdudeken/mpesa-sdk"
 Repository = "https://github.com/yourdudeken/mpesa-sdk"
 
+[project.scripts]
+mpesa = "mpesa.cli:main"
+
 [tool.hatch.envs.default]
 dependencies = [
   "httpx>=0.27.0",

@@ -774,6 +774,10 @@ class Mpesa:
         self._token_manager.invalidate()
         self._logger.info("Credentials rotated")
 
+    def get_access_token(self) -> str:
+        """Fetch (and cache) an OAuth access token from the API."""
+        return self._token_manager.get_token()
+
     def close(self) -> None:
         self._client.close()
 
