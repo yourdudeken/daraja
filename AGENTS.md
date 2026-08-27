@@ -94,18 +94,14 @@ cd typescript && npm run format        # prettier
 
 ## SDK Parity Issues
 
-Each SDK should be independent and feature-complete. Known gaps:
+Each SDK is independent and feature-complete. Historical gaps were resolved:
 
-### P1 - Missing Features
-- **No CLI in Go or Python** — only TypeScript has `mpesa` CLI (src/cli/index.ts)
-
-### P2 - Validation Gaps
-- **Python:** no input validation in service layer (relies on Pydantic model construction)
-
-### P2 - Testing Gaps
-- **Python:** no mock server tests; TypeScript has `mock-server.test.ts`
-- **TypeScript:** no STK Push-specific unit test (Go also missing this)
-- **Go:** no tests for services, middleware, or client (webhooks, validation, errors covered)
+- **CLI:** All 3 languages now ship a `mpesa` CLI:
+  - TypeScript: `src/cli/index.ts` (commander)
+  - Go: `go/cli/main.go` (stdlib flag; commands: token, health, stk-push, stk-query, transaction-status, account-balance)
+  - Python: `mpesa/cli.py` (argparse; `[project.scripts] mpesa`; same commands)
+- **Validation:** Go (`validation/`) and Python (`mpesa/services/__init__.py`) validate phone/amount/shortcode/URL inputs in the service layer.
+- **Tests:** Go (`client`, `services`, `middleware`, `webhooks`, `validation`, `errors`), Python (`tests/unit/` incl. mock server + models + property), TypeScript (`tests/unit/` incl. STK push + mock-server) are all covered.
 
 ---
 
