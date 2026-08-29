@@ -1,3 +1,7 @@
+# Scraped output
+# Keep generated documentation local; regenerate as needed.
+daraja_docs_v3/
+
 # Python
 __pycache__/
 *.py[cod]

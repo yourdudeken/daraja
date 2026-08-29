@@ -1,0 +1,28 @@
+{
+  "version": "daraja-3.0",
+  "base_url": "https://developer.safaricom.co.ke/apis",
+  "endpoints": [
+    {"name": "Authorization", "slug": "Authorization", "url": "https://developer.safaricom.co.ke/apis/Authorization"},
+    {"name": "Dynamic QR Code", "slug": "DynamicQRCode", "url": "https://developer.safaricom.co.ke/apis/DynamicQRCode"},
+    {"name": "Customer to Business", "slug": "CustomerToBusiness", "url": "https://developer.safaricom.co.ke/apis/CustomerToBusiness"},
+    {"name": "Customer to Business Register URL", "slug": "CustomerToBusinessRegisterURL", "url": "https://developer.safaricom.co.ke/apis/CustomerToBusinessRegisterURL"},
+    {"name": "M-Pesa Express Simulate", "slug": "MpesaExpressSimulate", "url": "https://developer.safaricom.co.ke/apis/MpesaExpressSimulate"},
+    {"name": "M-Pesa Express Query", "slug": "MpesaExpressQuery", "url": "https://developer.safaricom.co.ke/apis/MpesaExpressQuery"},
+    {"name": "Business to Customer", "slug": "BusinessToCustomer", "url": "https://developer.safaricom.co.ke/apis/BusinessToCustomer"},
+    {"name": "Transaction Status", "slug": "TransactionStatus", "url": "https://developer.safaricom.co.ke/apis/TransactionStatus"},
+    {"name": "Account Balance", "slug": "AccountBalance", "url": "https://developer.safaricom.co.ke/apis/AccountBalance"},
+    {"name": "Reversal", "slug": "Reversal", "url": "https://developer.safaricom.co.ke/apis/Reversal"},
+    {"name": "Tax Remittance", "slug": "TaxRemittance", "url": "https://developer.safaricom.co.ke/apis/TaxRemittance"},
+    {"name": "Business Pay Bill", "slug": "BusinessPayBill", "url": "https://developer.safaricom.co.ke/apis/BusinessPayBill"},
+    {"name": "Business Buy Goods", "slug": "BusinessBuyGoods", "url": "https://developer.safaricom.co.ke/apis/BusinessBuyGoods"},
+    {"name": "Bill Manager", "slug": "BillManager", "url": "https://developer.safaricom.co.ke/apis/BillManager"},
+    {"name": "B2B Express Checkout", "slug": "B2BExpressCheckout", "url": "https://developer.safaricom.co.ke/apis/B2BExpressCheckout"},
+    {"name": "Pull Transaction", "slug": "PullTransaction", "url": "https://developer.safaricom.co.ke/apis/PullTransaction"},
+    {"name": "Business to Pochi", "slug": "BusinessToPochi", "url": "https://developer.safaricom.co.ke/apis/BusinessToPochi"},
+    {"name": "Swap", "slug": "Swap", "url": "https://developer.safaricom.co.ke/apis/Swap"},
+    {"name": "IMSI", "slug": "IMSI", "url": "https://developer.safaricom.co.ke/apis/IMSI"},
+    {"name": "B2C Account Top Up", "slug": "B2CAccountTopUp", "url": "https://developer.safaricom.co.ke/apis/B2CAccountTopUp"},
+    {"name": "M-Pesa Ratiba", "slug": "MpesaRatiba", "url": "https://developer.safaricom.co.ke/apis/MpesaRatiba"},
+    {"name": "IoT SIM Management", "slug": "IotSimManagement", "url": "https://developer.safaricom.co.ke/apis/IotSimManagement"}
+  ]
+}
