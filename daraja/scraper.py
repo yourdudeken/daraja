@@ -1,242 +1,262 @@
 #!/usr/bin/env python3
-"""
-Daraja API Documentation Scraper
+"""Scrape Safaricom Daraja API docs into a local markdown archive.
 
-This script scrapes comprehensive documentation from Safaricom's Daraja API portal,
-including all API endpoints, images, and metadata.
-
-Features:
-- Automated authentication with session persistence
-- Complete documentation scraping for 22+ APIs
-- Image downloading with local referencing
-- Markdown conversion with clean formatting
-- Structured data index generation
-
-Usage:
-    python scraper.py
-
-Requirements:
-    - Python 3.8+
-    - Playwright browser automation
-    - BeautifulSoup for HTML parsing
-    - Markdownify for HTML to Markdown conversion
+The source of truth for the documentation URLs lives in api_links.json. The
+scraper reads the canonical list, downloads each page, converts the HTML into
+Markdown, and writes a JSON index for downstream tooling.
 """
 
+from __future__ import annotations
+
+import argparse
 import asyncio
-import os
-import re
-import json
 import base64
-from urllib.parse import urljoin, urlparse
-from playwright.async_api import async_playwright
-from markdownify import markdownify as md
+import json
+import re
+import sys
+from pathlib import Path
+from typing import Iterable
+from urllib.parse import urljoin
+
 from bs4 import BeautifulSoup
+from markdownify import markdownify as md
+from playwright.async_api import async_playwright
 
-# --- CONFIGURATION ---
 BASE_URL = "https://developer.safaricom.co.ke"
-OUTPUT_DIR = "daraja_docs_v3"
-DOCS_DIR = os.path.join(OUTPUT_DIR, "docs")
-IMG_DIR = os.path.join(OUTPUT_DIR, "images")
-AUTH_FILE = "auth.json"
+DEFAULT_OUTPUT_DIR = Path(__file__).resolve().parent / "daraja_docs_v3"
+DEFAULT_AUTH_FILE = Path(__file__).resolve().parent / "auth.json"
+DEFAULT_LINKS_FILE = Path(__file__).resolve().parent / "api_links.json"
 
-# exact links provided
-URLS = [
-    "https://developer.safaricom.co.ke/apis/Authorization",
-    "https://developer.safaricom.co.ke/apis/DynamicQRCode",
-    "https://developer.safaricom.co.ke/apis/CustomerToBusiness",
-    "https://developer.safaricom.co.ke/apis/CustomerToBusinessRegisterURL",
-    "https://developer.safaricom.co.ke/apis/MpesaExpressSimulate",
-    "https://developer.safaricom.co.ke/apis/MpesaExpressQuery",
-    "https://developer.safaricom.co.ke/apis/BusinessToCustomer",
-    "https://developer.safaricom.co.ke/apis/TransactionStatus",
-    "https://developer.safaricom.co.ke/apis/AccountBalance",
-    "https://developer.safaricom.co.ke/apis/Reversal",
-    "https://developer.safaricom.co.ke/apis/TaxRemittance",
-    "https://developer.safaricom.co.ke/apis/BusinessPayBill",
-    "https://developer.safaricom.co.ke/apis/BusinessBuyGoods",
-    "https://developer.safaricom.co.ke/apis/BillManager",
-    "https://developer.safaricom.co.ke/apis/B2BExpressCheckout",
-    "https://developer.safaricom.co.ke/apis/PullTransaction",
-    "https://developer.safaricom.co.ke/apis/BusinessToPochi",
-    "https://developer.safaricom.co.ke/apis/Swap",
-    "https://developer.safaricom.co.ke/apis/IMSI",
-    "https://developer.safaricom.co.ke/apis/B2CAccountTopUp",
-    "https://developer.safaricom.co.ke/apis/MpesaRatiba",
-    "https://developer.safaricom.co.ke/apis/IotSimManagement"
-]
 
-async def download_image(page, img_url, local_filename):
-    """
-    Downloads image using the browser context to share cookies and authentication.
-    
-    Args:
-        page: Playwright page object with authentication context
-        img_url: URL of the image to download
-        local_filename: Local path where image should be saved
-        
-    Returns:
-        bool: True if download successful, False otherwise
-    """
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Scrape Safaricom Daraja API documentation pages into markdown."
+    )
+    parser.add_argument(
+        "--output-dir",
+        type=Path,
+        default=DEFAULT_OUTPUT_DIR,
+        help="Directory where the markdown docs and index are written.",
+    )
+    parser.add_argument(
+        "--auth-file",
+        type=Path,
+        default=DEFAULT_AUTH_FILE,
+        help="Playwright storage state JSON file for persisting authentication.",
+    )
+    parser.add_argument(
+        "--links-file",
+        type=Path,
+        default=DEFAULT_LINKS_FILE,
+        help="JSON file containing the canonical Daraja API links.",
+    )
+    parser.add_argument(
+        "--headless",
+        action="store_true",
+        help="Launch Chromium in headless mode. Useful for scripted CI runs.",
+    )
+    parser.add_argument(
+        "--no-interactive",
+        action="store_true",
+        help="Skip interactive login prompts and fail fast when a session is not available.",
+    )
+    return parser.parse_args()
+
+
+def load_api_urls(links_file: Path) -> list[str]:
+    if not links_file.exists():
+        raise FileNotFoundError(f"Missing API links file: {links_file}")
+
+    with links_file.open("r", encoding="utf-8") as handle:
+        payload = json.load(handle)
+
+    entries = payload.get("endpoints", payload)
+    if not isinstance(entries, list):
+        raise ValueError(f"Expected a list of endpoints in {links_file}")
+
+    urls: list[str] = []
+    seen: set[str] = set()
+
+    for entry in entries:
+        if isinstance(entry, str):
+            candidate = entry.strip()
+        elif isinstance(entry, dict):
+            candidate = (
+                entry.get("url")
+                or entry.get("href")
+                or entry.get("slug", "")
+            )
+            if not candidate:
+                continue
+            candidate = str(candidate).strip()
+        else:
+            continue
+
+        if not candidate:
+            continue
+
+        normalized = candidate
+        if not candidate.startswith("http"):
+            normalized = urljoin(f"{BASE_URL}/apis/", candidate)
+
+        if normalized not in seen:
+            urls.append(normalized)
+            seen.add(normalized)
+
+    if not urls:
+        raise ValueError(f"No API URLs were found in {links_file}")
+
+    return urls
+
+
+async def download_image(page, img_url: str, local_filename: Path) -> bool:
     try:
-        # If it's a base64 string, save directly
         if img_url.startswith("data:image"):
-            header, encoded = img_url.split(",", 1)
-            data = base64.b64decode(encoded)
-            with open(local_filename, "wb") as f:
-                f.write(data)
+            _, encoded = img_url.split(",", 1)
+            with local_filename.open("wb") as handle:
+                handle.write(base64.b64decode(encoded))
             return True
 
-        # Use Playwright's API request context to fetch with current cookies
         response = await page.request.get(img_url)
         if response.status == 200:
-            data = await response.body()
-            with open(local_filename, "wb") as f:
-                f.write(data)
+            with local_filename.open("wb") as handle:
+                handle.write(await response.body())
             return True
-    except Exception as e:
-        print(f"    Warning: Failed to download image {img_url}: {e}")
+    except Exception as exc:  # pragma: no cover - network failure is expected in some cases
+        print(f"    Warning: Failed to download image {img_url}: {exc}")
     return False
 
-async def run():
-    """
-    Main scraper function that handles authentication, scraping, and data processing.
-    
-    This function:
-    1. Sets up output directories
-    2. Handles browser authentication with session persistence
-    3. Scrapes all configured Daraja API endpoints
-    4. Downloads and processes images with local referencing
-    5. Converts HTML to markdown format
-    6. Generates a structured index for MCP server consumption
-    """
-    # Setup directories
-    os.makedirs(DOCS_DIR, exist_ok=True)
-    os.makedirs(IMG_DIR, exist_ok=True)
 
-    async with async_playwright() as p:
-        # Browser Setup - Keep visible for login debugging
-        browser = await p.chromium.launch(headless=False)
-        
-        # Load existing authentication or create new context
-        if os.path.exists(AUTH_FILE) and os.path.getsize(AUTH_FILE) > 0:
-            try:
-                # Verify the auth file contains valid JSON
-                with open(AUTH_FILE, 'r') as f:
-                    json.load(f)
-                print("Loading saved authentication session...")
-                context = await browser.new_context(storage_state=AUTH_FILE)
-            except (json.JSONDecodeError, Exception) as e:
-                print(f"Saved session is corrupted ({e}). Starting fresh...")
-                context = await browser.new_context()
-        else:
-            print("No session found. Creating new context.")
-            context = await browser.new_context()
+async def ensure_authenticated(page, first_url: str, interactive: bool, headless: bool) -> None:
+    print("Checking login status...")
+    await page.goto(first_url, timeout=60000)
+    await page.wait_for_load_state("domcontentloaded")
+    await asyncio.sleep(3)
 
-        page = await context.new_page()
-        
-        # Check authentication status with first URL
-        print("Checking login status...")
-        await page.goto(URLS[0], timeout=60000)
-        await asyncio.sleep(3)  # Wait for UI to settle
+    if headless:
+        return
 
-        # Prompt for manual login if needed
+    if interactive and sys.stdin.isatty():
         print("\nACTION REQUIRED: Check the browser window.")
         print("If you are not logged in, please log in now.")
-        print("Press ENTER here once you can see the API documentation on screen.")
-        input() 
-        
-        # Save session for future runs
-        await context.storage_state(path=AUTH_FILE)
-        print("Session saved for future use.")
+        print("Press ENTER here once the API documentation is visible.")
+        input()
+        return
 
-        index_data = []
+    print("Interactive login was skipped. The scraper will continue without a saved session.")
 
-        print(f"Starting scrape of {len(URLS)} API endpoints...")
 
-        for url in URLS:
-            api_name = url.split("/")[-1]
-            print(f"\nProcessing: {api_name}...")
-            
+async def scrape_page(page, url: str, docs_dir: Path, img_dir: Path) -> dict:
+    api_name = url.rstrip("/").split("/")[-1]
+    print(f"\nProcessing: {api_name}...")
+
+    await page.goto(url, timeout=60000)
+    await page.wait_for_load_state("networkidle")
+    await page.wait_for_timeout(2000)
+
+    content_html = await page.evaluate(
+        """
+        () => {
+          const main = document.querySelector('main')
+            || document.querySelector('.api-details-container')
+            || document.body;
+          return main ? main.innerHTML : '';
+        }
+        """
+    )
+
+    soup = BeautifulSoup(content_html, "html.parser")
+    images = soup.find_all("img")
+    for index, img in enumerate(images):
+        src = img.get("src")
+        if not src:
+            continue
+
+        ext = "png"
+        if ".svg" in src:
+            ext = "svg"
+        elif ".jpg" in src or ".jpeg" in src:
+            ext = "jpg"
+
+        img_filename = f"{api_name}_img_{index}.{ext}"
+        local_path = img_dir / img_filename
+        full_img_url = urljoin(url, src)
+        success = await download_image(page, full_img_url, local_path)
+        img["src"] = f"../images/{img_filename}" if success else full_img_url
+
+    markdown_text = md(str(soup), heading_style="ATX", code_language="json")
+    markdown_text = re.sub(r"\n\s*\n", "\n\n", markdown_text).strip()
+
+    header = f"# {api_name}\n**Source:** {url}\n\n---\n\n"
+    output_file = docs_dir / f"{api_name}.md"
+    output_file.write_text(header + markdown_text + "\n", encoding="utf-8")
+    print(f"   Saved documentation: {output_file.name}")
+
+    return {
+        "name": api_name,
+        "url": url,
+        "local_path": f"docs/{api_name}.md",
+        "description": f"Documentation for {api_name}",
+    }
+
+
+async def run() -> None:
+    args = parse_args()
+    output_dir = args.output_dir.resolve()
+    auth_file = args.auth_file.resolve()
+    links_file = args.links_file.resolve()
+
+    docs_dir = output_dir / "docs"
+    img_dir = output_dir / "images"
+    docs_dir.mkdir(parents=True, exist_ok=True)
+    img_dir.mkdir(parents=True, exist_ok=True)
+
+    urls = load_api_urls(links_file)
+    print(f"Loaded {len(urls)} Daraja API links from {links_file.name}")
+
+    async with async_playwright() as play:
+        browser = await play.chromium.launch(headless=args.headless)
+
+        context = await browser.new_context()
+        if auth_file.exists() and auth_file.stat().st_size > 0:
             try:
-                await page.goto(url, timeout=60000)
-                await page.wait_for_load_state("networkidle")
-                await page.wait_for_timeout(2000)  # Grace period for rendering
+                with auth_file.open("r", encoding="utf-8") as handle:
+                    json.load(handle)
+                print(f"Loading stored authentication session from {auth_file.name}")
+                context = await browser.new_context(storage_state=str(auth_file))
+            except (json.JSONDecodeError, OSError, Exception) as exc:
+                print(f"Saved session is unusable ({exc}). Starting fresh.")
+                context = await browser.new_context()
 
-                # Extract HTML content from main container
-                content_html = await page.evaluate("""() => {
-                    const main = document.querySelector('main') || 
-                                document.querySelector('.api-details-container') || 
-                                document.body;
-                    return main.innerHTML;
-                }""")
+        page = await context.new_page()
+        await ensure_authenticated(page, urls[0], interactive=not args.no_interactive, headless=args.headless)
 
-                # Parse HTML with BeautifulSoup for image processing
-                soup = BeautifulSoup(content_html, "html.parser")
-                
-                # Process and download images
-                images = soup.find_all("img")
-                for i, img in enumerate(images):
-                    src = img.get("src")
-                    if not src: 
-                        continue
+        if not args.no_interactive and sys.stdin.isatty():
+            await context.storage_state(path=str(auth_file))
+            print("Session saved for future runs.")
 
-                    # Determine file extension
-                    ext = "png"  # Default fallback
-                    if ".svg" in src: 
-                        ext = "svg"
-                    elif ".jpg" in src or ".jpeg" in src: 
-                        ext = "jpg"
-                    
-                    img_filename = f"{api_name}_img_{i}.{ext}"
-                    local_path = os.path.join(IMG_DIR, img_filename)
-                    
-                    # Resolve full URL for downloading
-                    full_img_url = urljoin(url, src)
+        index_data: list[dict] = []
+        for url in urls:
+            try:
+                index_data.append(await scrape_page(page, url, docs_dir, img_dir))
+            except Exception as exc:  # pragma: no cover - real browser failures are surfaced here
+                api_name = url.rstrip("/").split("/")[-1]
+                print(f"   Error processing {api_name}: {exc}")
 
-                    # Download image and update reference
-                    success = await download_image(page, full_img_url, local_path)
-                    
-                    if success:
-                        # Update HTML to point to local relative path for Markdown
-                        img['src'] = f"../images/{img_filename}"
-                    else:
-                        img['src'] = full_img_url  # Fallback to remote URL
-
-                # Convert to Markdown format
-                markdown_text = md(str(soup), heading_style="ATX", code_language="json")
-                
-                # Clean up excessive newlines
-                markdown_text = re.sub(r'\n\s*\n', '\n\n', markdown_text)
-
-                # Save Markdown file with header
-                md_filename = os.path.join(DOCS_DIR, f"{api_name}.md")
-                header = f"# {api_name}\n**Source:** {url}\n\n---\n\n"
-                
-                with open(md_filename, "w", encoding="utf-8") as f:
-                    f.write(header + markdown_text)
-                
-                print(f"   Saved documentation: {api_name}.md")
-                
-                # Add to index for MCP server
-                index_data.append({
-                    "name": api_name,
-                    "url": url,
-                    "local_path": f"docs/{api_name}.md",
-                    "description": f"Documentation for {api_name}"
-                })
-
-            except Exception as e:
-                print(f"   Error processing {api_name}: {e}")
-
-        # Save index file for MCP server consumption
-        with open(os.path.join(OUTPUT_DIR, "data_index.json"), "w") as f:
-            json.dump(index_data, f, indent=2)
+        with (output_dir / "data_index.json").open("w", encoding="utf-8") as handle:
+            json.dump(index_data, handle, indent=2)
 
         print(f"\nScraping completed successfully.")
-        print(f"Documentation stored in: {OUTPUT_DIR}/")
+        print(f"Documentation stored in: {output_dir}/")
         print(f"Total APIs processed: {len(index_data)}")
 
+        await context.storage_state(path=str(auth_file))
         await browser.close()
 
+
 if __name__ == "__main__":
-    asyncio.run(run())
+    try:
+        asyncio.run(run())
+    except KeyboardInterrupt:
+        print("\nAborted by user.")
+        raise SystemExit(130)
