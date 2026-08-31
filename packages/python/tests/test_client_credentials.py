@@ -21,7 +21,7 @@ _BIZ_RESPONSE = {
 
 class TestClientInitCredentials:
     def test_initiator_password_auto_resolves_to_security_credential(self):
-        with patch("mpesa.client.generate_security_credential") as mock_gen:
+        with patch("daraja.client.generate_security_credential") as mock_gen:
             mock_gen.return_value = "encrypted_value"
             client = Mpesa(
                 {
@@ -37,7 +37,7 @@ class TestClientInitCredentials:
             client.close()
 
     def test_security_credential_passes_through_as_is(self):
-        with patch("mpesa.client.generate_security_credential") as mock_gen:
+        with patch("daraja.client.generate_security_credential") as mock_gen:
             client = Mpesa(
                 {
                     "consumer_key": "test_key",
@@ -51,7 +51,7 @@ class TestClientInitCredentials:
             client.close()
 
     def test_security_credential_takes_precedence_over_initiator_password(self):
-        with patch("mpesa.client.generate_security_credential") as mock_gen:
+        with patch("daraja.client.generate_security_credential") as mock_gen:
             client = Mpesa(
                 {
                     "consumer_key": "test_key",
@@ -66,7 +66,7 @@ class TestClientInitCredentials:
             client.close()
 
     def test_no_credential_set_remains_none(self):
-        with patch("mpesa.client.generate_security_credential") as mock_gen:
+        with patch("daraja.client.generate_security_credential") as mock_gen:
             client = Mpesa(
                 {
                     "consumer_key": "test_key",
@@ -79,7 +79,7 @@ class TestClientInitCredentials:
             client.close()
 
     def test_environment_affects_cert_selection(self):
-        with patch("mpesa.client.generate_security_credential") as mock_gen:
+        with patch("daraja.client.generate_security_credential") as mock_gen:
             mock_gen.return_value = "encrypted_value"
             client = Mpesa(
                 {

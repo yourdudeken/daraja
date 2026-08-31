@@ -72,7 +72,7 @@ dependencies = [
 ]
 
 [tool.hatch.build.targets.wheel]
-packages = ["daraja"]
+packages = ["src/daraja"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
