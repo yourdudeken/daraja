@@ -1,0 +1,31 @@
+{
+  "name": "@daraja-sdk/mcp",
+  "version": "0.1.0",
+  "description": "Model Context Protocol server for Daraja documentation",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "daraja-mcp": "./dist/index.js"
+  },
+  "files": [
+    "dist",
+    "src/data"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "lint": "tsc --noEmit",
+    "start": "node dist/index.js",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.9.1",
+    "typescript": "^5.5.0",
+    "vitest": "^4.1.8"
+  }
+}
