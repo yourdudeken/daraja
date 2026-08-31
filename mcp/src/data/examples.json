@@ -20,17 +20,17 @@
     {
       "language": "python",
       "title": "STK Push Query",
-      "code": "from daraja import Mpesa, MpesaConfig, STKQueryRequest\n\nmpesa = Mpesa(MpesaConfig(\n    consumer_key=os.environ[\"MPESA_CONSUMER_KEY\"],\n    consumer_secret=os.environ[\"MPESA_CONSUMER_SECRET\"],\n    environment=\"sandbox\",\n    passkey=os.environ[\"MPESA_PASSKEY\"],\n))\n\nresp = mpesa.stk_query(STKQueryRequest(\n    BusinessShortCode=174379,\n    CheckoutRequestID=\"ws_CO_123456789012345678901234567890\",\n))\n\nprint(resp.ResultCode, resp.ResultDesc)"
+      "code": "from daraja import Mpesa, MpesaConfig, STKQueryRequest\n\nmpesa = Mpesa(MpesaConfig(\n    consumer_key=os.environ[\"MPESA_CONSUMER_KEY\"],\n    consumer_secret=os.environ[\"MPESA_CONSUMER_SECRET\"],\n    environment=\"sandbox\",\n    passkey=os.environ[\"MPESA_PASSKEY\"],\n))\n\nresp = mpesa.stk_query(STKQueryRequest(\n    BusinessShortCode=\"174379\",\n    CheckoutRequestID=\"ws_CO_123456789012345678901234567890\",\n))\n\nprint(resp.ResultCode, resp.ResultDesc)"
     },
     {
       "language": "typescript",
       "title": "STK Push Query",
-      "code": "import { Mpesa } from \"@daraja-sdk/ts\";\n\nconst mpesa = new Mpesa({\n  consumerKey: process.env.MPESA_CONSUMER_KEY!,\n  consumerSecret: process.env.MPESA_CONSUMER_SECRET!,\n  environment: \"sandbox\",\n  passkey: process.env.MPESA_PASSKEY!,\n});\n\nconst resp = await mpesa.stkPush.query({\n  BusinessShortCode: 174379,\n  CheckoutRequestID: \"ws_CO_123456789012345678901234567890\",\n});\n\nconsole.log(resp.ResultCode, resp.ResultDesc);"
+      "code": "import { Mpesa } from \"@daraja-sdk/ts\";\n\nconst mpesa = new Mpesa({\n  consumerKey: process.env.MPESA_CONSUMER_KEY!,\n  consumerSecret: process.env.MPESA_CONSUMER_SECRET!,\n  environment: \"sandbox\",\n  passkey: process.env.MPESA_PASSKEY!,\n});\n\nconst resp = await mpesa.stkPush.query({\n  BusinessShortCode: \"174379\",\n  CheckoutRequestID: \"ws_CO_123456789012345678901234567890\",\n});\n\nconsole.log(resp.ResultCode, resp.ResultDesc);"
     },
     {
       "language": "go",
       "title": "STK Push Query",
-      "code": "package main\n\nimport (\n\t\"context\"\n\t\"fmt\"\n\t\"log\"\n\t\"os\"\n\n\t\"github.com/yourdudeken/daraja-sdk/packages/go/client\"\n\t\"github.com/yourdudeken/daraja-sdk/packages/go/types\"\n)\n\nfunc main() {\n\tmpesa := client.NewClient(types.MpesaConfig{\n\t\tConsumerKey:    os.Getenv(\"MPESA_CONSUMER_KEY\"),\n\t\tConsumerSecret: os.Getenv(\"MPESA_CONSUMER_SECRET\"),\n\t\tEnvironment:    types.Sandbox,\n\t\tPasskey:        os.Getenv(\"MPESA_PASSKEY\"),\n\t})\n\n\tctx := context.Background()\n\tresp, err := mpesa.STKQuery(ctx, types.STKQueryRequest{\n\t\tBusinessShortCode:  174379,\n\t\tCheckoutRequestID:  \"ws_CO_123456789012345678901234567890\",\n\t})\n\tif err != nil {\n\t\tlog.Fatalf(\"STK Query failed: %v\", err)\n\t}\n\tfmt.Printf(\"Result: %s\\n\", resp.ResultDesc)\n}"
+      "code": "package main\n\nimport (\n\t\"context\"\n\t\"fmt\"\n\t\"log\"\n\t\"os\"\n\n\t\"github.com/yourdudeken/daraja-sdk/packages/go/client\"\n\t\"github.com/yourdudeken/daraja-sdk/packages/go/types\"\n)\n\nfunc main() {\n\tmpesa := client.NewClient(types.MpesaConfig{\n\t\tConsumerKey:    os.Getenv(\"MPESA_CONSUMER_KEY\"),\n\t\tConsumerSecret: os.Getenv(\"MPESA_CONSUMER_SECRET\"),\n\t\tEnvironment:    types.Sandbox,\n\t\tPasskey:        os.Getenv(\"MPESA_PASSKEY\"),\n\t})\n\n\tctx := context.Background()\n\tresp, err := mpesa.STKQuery(ctx, types.STKQueryRequest{\n\t\tBusinessShortCode: \"174379\",\n\t\tCheckoutRequestID: \"ws_CO_123456789012345678901234567890\",\n\t})\n\tif err != nil {\n\t\tlog.Fatalf(\"STK Query failed: %v\", err)\n\t}\n\tfmt.Printf(\"Result: %s\\n\", resp.ResultDesc)\n}"
     }
   ],
   "c2b": [
@@ -42,12 +42,12 @@
     {
       "language": "typescript",
       "title": "C2B Simulate",
-      "code": "import { Mpesa } from \"@daraja-sdk/ts\";\n\nconst mpesa = new Mpesa({\n  consumerKey: process.env.MPESA_CONSUMER_KEY!,\n  consumerSecret: process.env.MPESA_CONSUMER_SECRET!,\n  environment: \"sandbox\",\n});\n\nconst resp = await mpesa.c2b.simulate({\n  ShortCode: \"174379\",\n  CommandID: \"CustomerPayBillOnline\",\n  Amount: 1,\n  Msisdn: \"254722000000\",\n  BillRefNumber: \"INV-001\",\n});\n\nconsole.log(resp.ResponseCode, resp.ResponseDescription);"
+      "code": "import { Mpesa } from \"@daraja-sdk/ts\";\n\nconst mpesa = new Mpesa({\n  consumerKey: process.env.MPESA_CONSUMER_KEY!,\n  consumerSecret: process.env.MPESA_CONSUMER_SECRET!,\n  environment: \"sandbox\",\n});\n\nconst resp = await mpesa.c2b.simulate({\n  ShortCode: 174379,\n  CommandID: \"CustomerPayBillOnline\",\n  Amount: 1,\n  Msisdn: 254722000000,\n  BillRefNumber: \"INV-001\",\n});\n\nconsole.log(resp.ResponseCode, resp.ResponseDescription);"
     },
     {
       "language": "go",
       "title": "C2B Simulate",
-      "code": "package main\n\nimport (\n\t\"context\"\n\t\"fmt\"\n\t\"log\"\n\t\"os\"\n\n\t\"github.com/yourdudeken/daraja-sdk/packages/go/client\"\n\t\"github.com/yourdudeken/daraja-sdk/packages/go/types\"\n)\n\nfunc main() {\n\tmpesa := client.NewClient(types.MpesaConfig{\n\t\tConsumerKey:    os.Getenv(\"MPESA_CONSUMER_KEY\"),\n\t\tConsumerSecret: os.Getenv(\"MPESA_CONSUMER_SECRET\"),\n\t\tEnvironment:    types.Sandbox,\n\t})\n\n\tctx := context.Background()\n\tresp, err := mpesa.C2BSimulate(ctx, types.C2BSimulateRequest{\n\t\tShortCode:      \"174379\",\n\t\tCommandID:      types.CustomerPayBillOnline,\n\t\tAmount:         1,\n\t\tMsisdn:         \"254722000000\",\n\t\tBillRefNumber:  \"INV-001\",\n\t})\n\tif err != nil {\n\t\tlog.Fatalf(\"C2B simulate failed: %v\", err)\n\t}\n\tfmt.Printf(\"Response: %s\\n\", resp.ResponseDescription)\n}"
+      "code": "package main\n\nimport (\n\t\"context\"\n\t\"fmt\"\n\t\"log\"\n\t\"os\"\n\n\t\"github.com/yourdudeken/daraja-sdk/packages/go/client\"\n\t\"github.com/yourdudeken/daraja-sdk/packages/go/types\"\n)\n\nfunc main() {\n\tmpesa := client.NewClient(types.MpesaConfig{\n\t\tConsumerKey:    os.Getenv(\"MPESA_CONSUMER_KEY\"),\n\t\tConsumerSecret: os.Getenv(\"MPESA_CONSUMER_SECRET\"),\n\t\tEnvironment:    types.Sandbox,\n\t})\n\n\tctx := context.Background()\n\tresp, err := mpesa.C2BSimulate(ctx, types.C2BSimulateRequest{\n\t\tShortCode:     174379,\n\t\tCommandID:     types.C2BPayBill,\n\t\tAmount:        1,\n\t\tMsisdn:        254722000000,\n\t\tBillRefNumber: \"INV-001\",\n\t})\n\tif err != nil {\n\t\tlog.Fatalf(\"C2B simulate failed: %v\", err)\n\t}\n\tfmt.Printf(\"Response: %s\\n\", resp.ResponseDescription)\n}"
     }
   ]
 }
