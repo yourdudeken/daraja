@@ -11,6 +11,8 @@ venv/
 *.exe
 *.test
 *.out
+.env
+.env.local
 coverage/
 .nyc_output/
 .vscode/
