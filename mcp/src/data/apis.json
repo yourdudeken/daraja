@@ -1,0 +1,65 @@
+[
+  {
+    "id": "stk-push",
+    "name": "STK Push (Lipa Na M-Pesa Online)",
+    "endpoint": "/mpesa/stkpush/v1/processrequest",
+    "method": "POST",
+    "description": "Initiates an STK Push prompt on the customer's phone to authorize a payment."
+  },
+  {
+    "id": "stk-query",
+    "name": "STK Push Query",
+    "endpoint": "/mpesa/stkpushquery/v1/query",
+    "method": "POST",
+    "description": "Queries the status of a previously initiated STK Push transaction."
+  },
+  {
+    "id": "c2b",
+    "name": "C2B (Customer to Business)",
+    "endpoint": "/mpesa/c2b/v1/simulate",
+    "method": "POST",
+    "description": "Registers a paybill URL and simulates a customer-to-business payment."
+  },
+  {
+    "id": "b2c",
+    "name": "B2C (Business to Customer)",
+    "endpoint": "/mpesa/b2c/v1/paymentrequest",
+    "method": "POST",
+    "description": "Disburses funds from a business account to a customer's M-Pesa wallet."
+  },
+  {
+    "id": "b2b",
+    "name": "B2B (Business to Business)",
+    "endpoint": "/mpesa/b2b/v1/paymentrequest",
+    "method": "POST",
+    "description": "Moves funds between two business accounts (Buy Goods or Pay Bill)."
+  },
+  {
+    "id": "account-balance",
+    "name": "Account Balance",
+    "endpoint": "/mpesa/accountbalance/v1/query",
+    "method": "POST",
+    "description": "Queries the balance of a paybill or till account."
+  },
+  {
+    "id": "transaction-status",
+    "name": "Transaction Status",
+    "endpoint": "/mpesa/transactionstatus/v1/query",
+    "method": "POST",
+    "description": "Queries the status of a transaction using its original transaction ID."
+  },
+  {
+    "id": "reversal",
+    "name": "Reversal",
+    "endpoint": "/mpesa/reversal/v1/request",
+    "method": "POST",
+    "description": "Reverses a completed M-Pesa transaction."
+  },
+  {
+    "id": "oauth",
+    "name": "OAuth Token Generation",
+    "endpoint": "/oauth/v1/generate?grant_type=client_credentials",
+    "method": "GET",
+    "description": "Generates an OAuth2 access token from the consumer key and consumer secret."
+  }
+]
