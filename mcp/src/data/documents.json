@@ -1,121 +1,142 @@
 [
   {
-    "id": "readme",
-    "title": "Daraja Documentation",
-    "category": "getting-started",
-    "path": "docs/README.md",
-    "text": "Shared documentation for all Daraja SDKs and the MCP server. This corpus is ingested by the MCP server for AI-assisted search."
-  },
-  {
-    "id": "introduction",
-    "title": "Introduction",
-    "category": "getting-started",
-    "path": "docs/getting-started/introduction.md",
-    "text": "Daraja is the Safaricom M-Pesa developer API. This monorepo provides SDKs in three languages (Python, TypeScript, and Go) plus a Model Context Protocol (MCP) server that exposes these docs to AI coding assistants."
-  },
-  {
-    "id": "installation",
-    "title": "Installation",
-    "category": "getting-started",
-    "path": "docs/getting-started/installation.md",
-    "text": "How to install the Daraja SDKs. Python uses pip install daraja-sdk-py, TypeScript uses npm install @daraja-sdk/ts axios, and Go uses go get github.com/yourdudeken/daraja-sdk/packages/go."
-  },
-  {
-    "id": "configuration",
-    "title": "Configuration",
-    "category": "getting-started",
-    "path": "docs/getting-started/configuration.md",
-    "text": "All SDKs accept the same core options: consumerKey, consumerSecret, environment (sandbox or production), and maxRetries. Each SDK exposes an MpesaConfig-style object."
-  },
-  {
-    "id": "authentication",
-    "title": "Authentication",
-    "category": "getting-started",
-    "path": "docs/getting-started/authentication.md",
-    "text": "All Daraja requests are authenticated with an OAuth2 Bearer token obtained from the OAuth endpoint using your consumer key and consumer secret. The SDKs automate this flow and refresh tokens automatically."
-  },
-  {
-    "id": "stk-push",
-    "title": "STK Push (Lipa Na M-Pesa Online)",
+    "id": "account-balance",
+    "title": "Account Balance",
     "category": "api",
-    "path": "docs/apis/stk-push.md",
-    "text": "Initiates a USSD prompt on the customer's phone to authorize a payment. Request fields include BusinessShortCode, Password, Timestamp, TransactionType, Amount, PartyA, PartyB, PhoneNumber, CallBackURL, AccountReference, and TransactionDesc."
-  },
-  {
-    "id": "stk-query",
-    "title": "STK Push Query",
-    "category": "api",
-    "path": "docs/apis/stk-query.md",
-    "text": "Checks the status of a previously initiated STK push using the CheckoutRequestID returned from the STK push initiation."
-  },
-  {
-    "id": "c2b",
-    "title": "C2B (Customer to Business)",
-    "category": "api",
-    "path": "docs/apis/c2b.md",
-    "text": "Registers a paybill URL and simulates a customer payment. Includes register URL and simulate endpoints."
-  },
-  {
-    "id": "b2c",
-    "title": "B2C (Business to Customer)",
-    "category": "api",
-    "path": "docs/apis/b2c.md",
-    "text": "Disburses funds from a business to a customer. Request fields include InitiatorName, SecurityCredential, CommandID, Amount, PartyA, PartyB, Remarks, QueueTimeOutURL, ResultURL, and Occasion."
+    "path": "docs/apis/account-balance.md",
+    "text": "Queries the balance of a paybill/till account."
   },
   {
     "id": "b2b",
     "title": "B2B (Business to Business)",
     "category": "api",
     "path": "docs/apis/b2b.md",
-    "text": "Moves funds between two business accounts (Buy Goods or Pay Bill). Request fields include Initiator, SecurityCredential, CommandID, Amount, PartyA, PartyB, AccountReference, and Remarks."
+    "text": "Moves funds between two business accounts (Buy Goods or Pay Bill)."
   },
   {
-    "id": "account-balance",
-    "title": "Account Balance",
+    "id": "b2c",
+    "title": "B2C (Business to Customer)",
     "category": "api",
-    "path": "docs/apis/account-balance.md",
-    "text": "Queries the balance of a paybill/till account. Request fields include Initiator, SecurityCredential, CommandID, PartyA, IdentifierType, Remarks, ResultURL, and QueueTimeOutURL."
+    "path": "docs/apis/b2c.md",
+    "text": "Disburses funds from a business to a customer."
   },
   {
-    "id": "transaction-status",
-    "title": "Transaction Status",
+    "id": "c2b",
+    "title": "C2B (Customer to Business)",
     "category": "api",
-    "path": "docs/apis/transaction-status.md",
-    "text": "Queries the status of a transaction using its original ID. Request fields include Initiator, SecurityCredential, CommandID, TransactionID, PartyA, IdentifierType, ResultURL, and QueueTimeOutURL."
+    "path": "docs/apis/c2b.md",
+    "text": "Registers a paybill URL and simulates a customer payment."
   },
   {
     "id": "reversal",
     "title": "Reversal",
     "category": "api",
     "path": "docs/apis/reversal.md",
-    "text": "Reverses a completed M-Pesa transaction. Request fields include Initiator, SecurityCredential, CommandID, TransactionID, Amount, ReceiverParty, RecieverIdentifierType, ResultURL, and QueueTimeOutURL."
+    "text": "Reverses a completed M-Pesa transaction."
   },
   {
-    "id": "stk-callback",
-    "title": "STK Callback",
-    "category": "callbacks",
-    "path": "docs/callbacks/stk-callback.md",
-    "text": "Safaricom POSTs result JSON to the CallBackURL after an STK push completes. The SDKs parse this into typed callback objects and verify HMAC signatures on the raw body."
+    "id": "stk-push",
+    "title": "STK Push (Lipa Na M-Pesa Online)",
+    "category": "api",
+    "path": "docs/apis/stk-push.md",
+    "text": "Initiates a USSD prompt on the customer's phone to authorize a payment."
+  },
+  {
+    "id": "stk-query",
+    "title": "STK Push Query",
+    "category": "api",
+    "path": "docs/apis/stk-query.md",
+    "text": "Checks the status of a previously initiated STK push."
+  },
+  {
+    "id": "transaction-status",
+    "title": "Transaction Status",
+    "category": "api",
+    "path": "docs/apis/transaction-status.md",
+    "text": "Queries the status of a transaction using its original ID."
   },
   {
     "id": "c2b-callback",
     "title": "C2B Callback",
     "category": "callbacks",
     "path": "docs/callbacks/c2b-callback.md",
-    "text": "Safaricom POSTs confirmation/validation data to the registered URLs. The confirmation payload includes TransactionType, TransID, TransTime, TransAmount, BusinessShortCode, MSISDN, and FirstName."
+    "text": "Safaricom POSTs confirmation/validation data to the registered URLs."
   },
   {
     "id": "result-callback",
     "title": "Result Callback (B2C/B2B/Balance)",
     "category": "callbacks",
     "path": "docs/callbacks/result-callback.md",
-    "text": "API requests deliver outcomes via a ResultURL callback. The payload includes ResultType, ResultCode, ResultDesc, OriginatorConversationID, ConversationID, and TransactionID."
+    "text": "API requests deliver outcomes via a ResultURL callback."
+  },
+  {
+    "id": "stk-callback",
+    "title": "STK Callback",
+    "category": "callbacks",
+    "path": "docs/callbacks/stk-callback.md",
+    "text": "Safaricom POSTs result JSON to the CallBackURL after an STK push completes."
   },
   {
     "id": "error-handling",
     "title": "Error Handling",
     "category": "errors",
     "path": "docs/errors/error-handling.md",
-    "text": "Daraja returns ResponseCode/ResultCode values in responses and callbacks. A 0 means success. The SDKs map non-zero codes to typed exceptions such as AuthenticationError, RateLimitError, MpesaAPIError, TimeoutError and APIConnectionError."
+    "text": "Daraja returns ResponseCode/ResultCode values in responses and callbacks. A 0 means success. The SDKs map non-zero codes to typed exceptions:"
+  },
+  {
+    "id": "authentication",
+    "title": "Authentication",
+    "category": "getting-started",
+    "path": "docs/getting-started/authentication.md",
+    "text": "All Daraja requests are authenticated with an OAuth2 Bearer token obtained from the OAuth endpoint using your consumer key and consumer secret."
+  },
+  {
+    "id": "configuration",
+    "title": "Configuration",
+    "category": "getting-started",
+    "path": "docs/getting-started/configuration.md",
+    "text": "All SDKs accept the same core options: | Option | Description | Default |"
+  },
+  {
+    "id": "installation",
+    "title": "Installation",
+    "category": "getting-started",
+    "path": "docs/getting-started/installation.md",
+    "text": "pip install daraja-sdk-py"
+  },
+  {
+    "id": "introduction",
+    "title": "Introduction",
+    "category": "getting-started",
+    "path": "docs/getting-started/introduction.md",
+    "text": "Daraja is the Safaricom M-Pesa developer API. This monorepo provides SDKs in three languages (Python, TypeScript, and Go) plus a Model Context Protocol (MCP)"
+  },
+  {
+    "id": "go-readme",
+    "title": "Go Examples",
+    "category": "go",
+    "path": "docs/go/examples/README.md",
+    "text": "See the examples/go/ directory for runnable Go SDK examples."
+  },
+  {
+    "id": "python-readme",
+    "title": "Python Examples",
+    "category": "python",
+    "path": "docs/python/examples/README.md",
+    "text": "See the examples/python/ directory for runnable Python SDK examples."
+  },
+  {
+    "id": "readme",
+    "title": "Daraja Documentation",
+    "category": "getting-started",
+    "path": "docs/README.md",
+    "text": "Shared documentation for all Daraja SDKs and the MCP server. - Getting Started"
+  },
+  {
+    "id": "typescript-readme",
+    "title": "TypeScript Examples",
+    "category": "typescript",
+    "path": "docs/typescript/examples/README.md",
+    "text": "See the examples/typescript/ directory for runnable TypeScript SDK examples."
   }
 ]
