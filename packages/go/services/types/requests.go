@@ -1,7 +1,7 @@
 package types
 
 import (
-	"github.com/yourdudeken/daraja-sdk/go/types"
+	"github.com/yourdudeken/daraja-sdk/packages/go/types"
 )
 
 type B2CAccountTopUpInput struct {

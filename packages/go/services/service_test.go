@@ -4,9 +4,9 @@ import (
 	"context"
 	"testing"
 
-	"github.com/yourdudeken/daraja-sdk/go/client"
-	svctypes "github.com/yourdudeken/daraja-sdk/go/services/types"
-	"github.com/yourdudeken/daraja-sdk/go/types"
+	"github.com/yourdudeken/daraja-sdk/packages/go/client"
+	svctypes "github.com/yourdudeken/daraja-sdk/packages/go/services/types"
+	"github.com/yourdudeken/daraja-sdk/packages/go/types"
 )
 
 func newTestService() *Service {

@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/yourdudeken/daraja-sdk/go/client"
-	svctypes "github.com/yourdudeken/daraja-sdk/go/services/types"
-	"github.com/yourdudeken/daraja-sdk/go/types"
-	"github.com/yourdudeken/daraja-sdk/go/validation"
+	"github.com/yourdudeken/daraja-sdk/packages/go/client"
+	svctypes "github.com/yourdudeken/daraja-sdk/packages/go/services/types"
+	"github.com/yourdudeken/daraja-sdk/packages/go/types"
+	"github.com/yourdudeken/daraja-sdk/packages/go/validation"
 )
 
 type Service struct {

@@ -7,8 +7,8 @@ import (
 	"log"
 	"os"
 
-	"github.com/yourdudeken/daraja-sdk/go/client"
-	"github.com/yourdudeken/daraja-sdk/go/types"
+	"github.com/yourdudeken/daraja-sdk/packages/go/client"
+	"github.com/yourdudeken/daraja-sdk/packages/go/types"
 )
 
 func main() {

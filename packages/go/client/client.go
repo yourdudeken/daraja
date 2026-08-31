@@ -14,9 +14,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/yourdudeken/daraja-sdk/go/errors"
-	"github.com/yourdudeken/daraja-sdk/go/types"
-	"github.com/yourdudeken/daraja-sdk/go/validation"
+	"github.com/yourdudeken/daraja-sdk/packages/go/errors"
+	"github.com/yourdudeken/daraja-sdk/packages/go/types"
+	"github.com/yourdudeken/daraja-sdk/packages/go/validation"
 )
 
 func (c *Client) RotateCredentials(consumerKey, consumerSecret string) {
