@@ -1,4 +1,4 @@
-from mpesa import Mpesa
+from daraja import Mpesa
 
 
 class TestClientInitialization:

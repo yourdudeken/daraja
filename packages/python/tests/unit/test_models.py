@@ -1,4 +1,4 @@
-from mpesa.models import STKCallbackPayload
+from daraja.models import STKCallbackPayload
 
 
 class TestSTKCallbackPayload:

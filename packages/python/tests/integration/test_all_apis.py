@@ -7,8 +7,8 @@ import json
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
-from mpesa import Mpesa, WebhookManager
-from mpesa.exceptions import MpesaError, MpesaAPIError
+from daraja import Mpesa, WebhookManager
+from daraja.exceptions import MpesaError, MpesaAPIError
 
 ERRORS = []
 

@@ -1,7 +1,7 @@
 from unittest.mock import patch
 
-from mpesa import Mpesa
-from mpesa.utils import get_cert_path
+from daraja import Mpesa
+from daraja.utils import get_cert_path
 
 _STK_POST_RESPONSE = {
     "MerchantRequestID": "mri-1",

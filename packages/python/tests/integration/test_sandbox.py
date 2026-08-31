@@ -1,9 +1,9 @@
 import os
 
 import pytest
-from mpesa import Mpesa
-from mpesa.environment import ENDPOINTS, get_full_url
-from mpesa.exceptions import MpesaAPIError, AuthenticationError
+from daraja import Mpesa
+from daraja.environment import ENDPOINTS, get_full_url
+from daraja.exceptions import MpesaAPIError, AuthenticationError
 
 CONSUMER_KEY = os.environ.get("MPESA_CONSUMER_KEY", "")
 CONSUMER_SECRET = os.environ.get("MPESA_CONSUMER_SECRET", "")
@@ -63,7 +63,7 @@ class TestTokenAcquisition:
 class TestSTKPush:
     def test_stk_push_request(self, client: Mpesa) -> None:
         try:
-            from mpesa.utils import generate_password, generate_timestamp
+            from daraja.utils import generate_password, generate_timestamp
 
             ts = generate_timestamp()
             pwd = generate_password(SHORTCODE, PASSKEY, ts)
@@ -90,7 +90,7 @@ class TestSTKPush:
 
     def test_stk_query(self, client: Mpesa) -> None:
         try:
-            from mpesa.utils import generate_password, generate_timestamp
+            from daraja.utils import generate_password, generate_timestamp
 
             ts = generate_timestamp()
             pwd = generate_password(SHORTCODE, PASSKEY, ts)

@@ -4,8 +4,8 @@
 import os, sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
-from mpesa import Mpesa
-from mpesa.exceptions import MpesaError
+from daraja import Mpesa
+from daraja.exceptions import MpesaError
 
 CONFIG = {
     "consumer_key": os.environ["MPESA_CONSUMER_KEY"],

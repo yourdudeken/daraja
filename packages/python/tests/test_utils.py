@@ -2,7 +2,7 @@ import base64
 import os
 
 import pytest
-from mpesa.utils import (
+from daraja.utils import (
     generate_timestamp,
     generate_password,
     generate_security_credential,

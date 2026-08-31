@@ -2,7 +2,7 @@ import httpx
 import pytest
 import respx
 from httpx import Response
-from mpesa import Mpesa
+from daraja import Mpesa
 
 BASE_URL = "https://sandbox.safaricom.co.ke"
 
@@ -194,7 +194,7 @@ class TestRetryMock:
         client._config.retry_config.base_delay_ms = 10
         client._config.retry_config.max_delay_ms = 100
 
-        from mpesa.exceptions import MpesaAPIError
+        from daraja.exceptions import MpesaAPIError
         with pytest.raises(MpesaAPIError):
             client._request("POST", f"{BASE_URL}/mpesa/stkpush/v1/processrequest", {
                 "Amount": 100,
@@ -280,6 +280,6 @@ class TestErrorMock:
             "errorMessage": "Not Found",
         })
 
-        from mpesa.exceptions import MpesaAPIError
+        from daraja.exceptions import MpesaAPIError
         with pytest.raises(MpesaAPIError):
             client._request("POST", f"{BASE_URL}/nonexistent", {})

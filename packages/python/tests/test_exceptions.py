@@ -1,5 +1,5 @@
 import pytest
-from mpesa.exceptions import (
+from daraja.exceptions import (
     MpesaError,
     AuthenticationError,
     ValidationError,

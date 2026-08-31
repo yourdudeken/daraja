@@ -1,10 +1,10 @@
 from hypothesis import given, strategies as st
-from mpesa.utils import (
+from daraja.utils import (
     is_phone_number_valid,
     format_phone_number,
     mask_sensitive_data,
 )
-from mpesa.utils.idempotency import generate_idempotency_key
+from daraja.utils.idempotency import generate_idempotency_key
 
 
 class TestPhoneNumberProperties:

@@ -1,5 +1,5 @@
 import pytest
-from mpesa.models import (
+from daraja.models import (
     STKPushRequest,
     STKPushResponse,
     STKCallbackPayload,
