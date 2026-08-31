@@ -1,6 +1,6 @@
 from typing import Any, Callable, Optional
 
-from mpesa.models import (
+from daraja.models import (
     AccountBalanceRequest,
     AccountBalanceResponse,
     B2BExpressRequest,
@@ -70,14 +70,14 @@ from mpesa.models import (
     TransactionStatusRequest,
     TransactionStatusResponse,
 )
-from mpesa.utils import (
+from daraja.utils import (
     generate_password,
     generate_timestamp,
     is_phone_number_valid,
     validate_amount,
     validate_shortcode,
 )
-from mpesa.exceptions import ValidationError
+from daraja.exceptions import ValidationError
 
 PostFn = Callable[[str, dict], dict]
 

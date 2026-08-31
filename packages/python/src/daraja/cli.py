@@ -11,8 +11,8 @@ import sys
 import time
 from typing import Any
 
-from mpesa import Mpesa
-from mpesa.models import (
+from daraja import Mpesa
+from daraja.models import (
     AccountBalanceRequest,
     MpesaConfig,
     STKPushRequest,

@@ -3,7 +3,7 @@ import hmac
 import logging
 from typing import Any, Callable, Optional
 
-from mpesa.models import STKCallbackPayload, Logger, _get_logger
+from daraja.models import STKCallbackPayload, Logger, _get_logger
 
 
 WebhookHandler = Callable[[str, Any], None]
@@ -71,8 +71,8 @@ class WebhookManager:
         return hmac.compare_digest(expected, signature)
 
 
-from mpesa.webhooks.retry import WebhookRetryQueue, DeliveryRecord
-from mpesa.webhooks.persistent_queue import PersistentWebhookRetryQueue, PersistentDeliveryRecord
+from daraja.webhooks.retry import WebhookRetryQueue, DeliveryRecord
+from daraja.webhooks.persistent_queue import PersistentWebhookRetryQueue, PersistentDeliveryRecord
 
 __all__ = [
     "WebhookManager",

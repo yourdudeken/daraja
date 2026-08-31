@@ -1,5 +1,5 @@
-from mpesa.webhooks import WebhookManager
-from mpesa import __version__
+from daraja.webhooks import WebhookManager
+from daraja import __version__
 
 
 def create_django_view(webhook_manager: WebhookManager, secret: str = ""):

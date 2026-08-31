@@ -1,5 +1,5 @@
-from mpesa.client import Mpesa, AsyncMpesa
-from mpesa.models import (
+from daraja.client import Mpesa, AsyncMpesa
+from daraja.models import (
     MpesaConfig,
     AccessTokenResponse,
     STKPushRequest,
@@ -92,7 +92,7 @@ from mpesa.models import (
     IoTDeleteMessageRequest,
     IoTDeleteMessageResponse,
 )
-from mpesa.exceptions import (
+from daraja.exceptions import (
     MpesaError,
     AuthenticationError,
     ValidationError,
@@ -103,8 +103,8 @@ from mpesa.exceptions import (
     WebhookVerificationError,
     is_mpesa_error,
 )
-from mpesa.webhooks import WebhookManager
-from mpesa.services import (
+from daraja.webhooks import WebhookManager
+from daraja.services import (
     STKPushService,
     C2BService,
     B2CService,

@@ -49,7 +49,7 @@ Homepage = "https://github.com/yourdudeken/mpesa-sdk"
 Repository = "https://github.com/yourdudeken/mpesa-sdk"
 
 [project.scripts]
-mpesa = "mpesa.cli:main"
+daraja = "daraja.cli:main"
 
 [tool.hatch.envs.default]
 dependencies = [
@@ -64,7 +64,7 @@ dependencies = [
 
 [tool.hatch.envs.default.scripts]
 test = "pytest {args:tests}"
-generate = "datamodel-codegen --input ../../openapi/mpesa.yaml --output mpesa/generated/models.py --target-python-version 3.11 --field-constraints"
+generate = "datamodel-codegen --input ../../openapi/mpesa.yaml --output daraja/generated/models.py --target-python-version 3.11 --field-constraints"
 
 [tool.hatch.envs.codegen]
 dependencies = [
@@ -72,7 +72,7 @@ dependencies = [
 ]
 
 [tool.hatch.build.targets.wheel]
-packages = ["mpesa"]
+packages = ["daraja"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

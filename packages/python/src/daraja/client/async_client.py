@@ -5,15 +5,15 @@ from typing import Any, Optional
 
 import httpx
 
-from mpesa.environment import ENDPOINTS, get_full_url
-from mpesa.exceptions import (
+from daraja.environment import ENDPOINTS, get_full_url
+from daraja.exceptions import (
     AuthenticationError,
     APIConnectionError,
     MpesaAPIError,
     RateLimitError,
     TimeoutError,
 )
-from mpesa.models import (
+from daraja.models import (
     AccountBalanceRequest,
     AccountBalanceResponse,
     AccessTokenResponse,
@@ -65,24 +65,24 @@ from mpesa.models import (
     TransactionStatusResponse,
     _get_logger,
 )
-from mpesa.utils import generate_password, generate_timestamp, create_tracer, with_span
-from mpesa.utils.idempotency import (
+from daraja.utils import generate_password, generate_timestamp, create_tracer, with_span
+from daraja.utils.idempotency import (
     IdempotencyStore,
     InMemoryIdempotencyStore,
     generate_idempotency_key,
 )
-from mpesa.utils.circuit_breaker import (
+from daraja.utils.circuit_breaker import (
     CircuitBreaker,
     CircuitBreakerOpenError,
     CircuitBreakerConfig,
 )
-from mpesa.utils.rate_limiter import (
+from daraja.utils.rate_limiter import (
     TokenBucketRateLimiter,
     NoopRateLimiter,
     RateLimiterConfig,
     EndpointRateLimiterRouter,
 )
-from mpesa.utils.token_cache import SharedTokenCache, RedisTokenCache, build_token_cache_key
+from daraja.utils.token_cache import SharedTokenCache, RedisTokenCache, build_token_cache_key
 
 RETRYABLE_STATUS_CODES = {408, 429, 500, 502, 503, 504}
 

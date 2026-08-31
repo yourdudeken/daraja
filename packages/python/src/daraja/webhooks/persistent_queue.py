@@ -6,7 +6,7 @@ import time
 from datetime import datetime, timezone
 from typing import Any, Optional
 
-from mpesa.models import Logger, _get_logger
+from daraja.models import Logger, _get_logger
 
 
 class PersistentDeliveryRecord:

@@ -81,21 +81,21 @@ def calculate_backoff(attempt: int, base_delay_ms: int = 1000, max_delay_ms: int
     return min(exponential + jitter, max_delay_ms) / 1000.0
 
 
-from mpesa.utils.certificates import get_cert_path
-from mpesa.utils.batch import execute_batch, execute_batch_async
-from mpesa.utils.idempotency import (
+from daraja.utils.certificates import get_cert_path
+from daraja.utils.batch import execute_batch, execute_batch_async
+from daraja.utils.idempotency import (
     IdempotencyStore,
     InMemoryIdempotencyStore,
     generate_idempotency_key,
 )
-from mpesa.utils.metrics import MetricsCollector, NoopMetricsCollector, PrometheusMetricsCollector
-from mpesa.utils.token_cache import (
+from daraja.utils.metrics import MetricsCollector, NoopMetricsCollector, PrometheusMetricsCollector
+from daraja.utils.token_cache import (
     SharedTokenCache,
     InMemorySharedTokenCache,
     RedisTokenCache,
     build_token_cache_key,
 )
-from mpesa.utils.tracing import (
+from daraja.utils.tracing import (
     Tracer,
     NoopTracer,
     Span,
@@ -104,7 +104,7 @@ from mpesa.utils.tracing import (
     create_tracer,
     with_span,
 )
-from mpesa.utils.structured_logger import StructuredLogger
+from daraja.utils.structured_logger import StructuredLogger
 
 
 __all__ = [

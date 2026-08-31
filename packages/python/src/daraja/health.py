@@ -1,4 +1,4 @@
-from mpesa import Mpesa, __version__
+from daraja import Mpesa, __version__
 
 _start_time: float | None = None
 

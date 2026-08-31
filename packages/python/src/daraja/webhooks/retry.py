@@ -2,7 +2,7 @@ import time
 import threading
 from typing import Any, Optional
 
-from mpesa.models import Logger, _get_logger
+from daraja.models import Logger, _get_logger
 
 
 class DeliveryRecord:

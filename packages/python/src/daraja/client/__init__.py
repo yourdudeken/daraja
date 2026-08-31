@@ -5,15 +5,15 @@ from typing import Any, Optional
 
 import httpx
 
-from mpesa.environment import ENDPOINTS, get_full_url
-from mpesa.exceptions import (
+from daraja.environment import ENDPOINTS, get_full_url
+from daraja.exceptions import (
     AuthenticationError,
     APIConnectionError,
     MpesaAPIError,
     RateLimitError,
     TimeoutError,
 )
-from mpesa.models import (
+from daraja.models import (
     AccountBalanceRequest,
     AccountBalanceResponse,
     AccessTokenResponse,
@@ -65,7 +65,7 @@ from mpesa.models import (
     TransactionStatusResponse,
     _get_logger,
 )
-from mpesa.utils import (
+from daraja.utils import (
     generate_password,
     generate_security_credential,
     generate_timestamp,
@@ -73,31 +73,31 @@ from mpesa.utils import (
     create_tracer,
     with_span,
 )
-from mpesa.utils.circuit_breaker import (
+from daraja.utils.circuit_breaker import (
     CircuitBreaker,
     CircuitBreakerOpenError,
     CircuitBreakerConfig,
 )
-from mpesa.utils.idempotency import (
+from daraja.utils.idempotency import (
     IdempotencyStore,
     InMemoryIdempotencyStore,
     generate_idempotency_key,
 )
-from mpesa.utils.rate_limiter import (
+from daraja.utils.rate_limiter import (
     TokenBucketRateLimiter,
     NoopRateLimiter,
     RateLimiterConfig,
     EndpointRateLimiterRouter,
 )
-from mpesa.utils.token_cache import (
+from daraja.utils.token_cache import (
     SharedTokenCache,
     InMemorySharedTokenCache,
     RedisTokenCache,
     build_token_cache_key,
 )
-from mpesa.utils.tracing import Tracer as TracerType
+from daraja.utils.tracing import Tracer as TracerType
 
-from mpesa.client.async_client import AsyncMpesa
+from daraja.client.async_client import AsyncMpesa
 
 RETRYABLE_STATUS_CODES = {408, 429, 500, 502, 503, 504}
 
@@ -503,49 +503,49 @@ class Mpesa:
 
     @property
     def stk_push_service(self):
-        from mpesa.services import STKPushService
+        from daraja.services import STKPushService
 
         return STKPushService(self._post, self._config)
 
     @property
     def c2b_service(self):
-        from mpesa.services import C2BService
+        from daraja.services import C2BService
 
         return C2BService(self._post)
 
     @property
     def b2c_service(self):
-        from mpesa.services import B2CService
+        from daraja.services import B2CService
 
         return B2CService(self._post, self._config)
 
     @property
     def b2b_service(self):
-        from mpesa.services import B2BService
+        from daraja.services import B2BService
 
         return B2BService(self._post, self._config)
 
     @property
     def reversal_service(self):
-        from mpesa.services import ReversalService
+        from daraja.services import ReversalService
 
         return ReversalService(self._post, self._config)
 
     @property
     def transaction_status_service(self):
-        from mpesa.services import TransactionStatusService
+        from daraja.services import TransactionStatusService
 
         return TransactionStatusService(self._post, self._config)
 
     @property
     def account_balance_service(self):
-        from mpesa.services import AccountBalanceService
+        from daraja.services import AccountBalanceService
 
         return AccountBalanceService(self._post, self._config)
 
     @property
     def dynamic_qr_service(self):
-        from mpesa.services import DynamicQRService
+        from daraja.services import DynamicQRService
 
         return DynamicQRService(self._post)
 
@@ -599,25 +599,25 @@ class Mpesa:
 
     @property
     def business_goods_service(self):
-        from mpesa.services import BusinessGoodsService
+        from daraja.services import BusinessGoodsService
 
         return BusinessGoodsService(self._post, self._config)
 
     @property
     def query_org_info_service(self):
-        from mpesa.services import QueryOrgInfoService
+        from daraja.services import QueryOrgInfoService
 
         return QueryOrgInfoService(self._post)
 
     @property
     def imsi_service(self):
-        from mpesa.services import IMSIService
+        from daraja.services import IMSIService
 
         return IMSIService(self._post)
 
     @property
     def iot_service(self):
-        from mpesa.services import IoTSIMService
+        from daraja.services import IoTSIMService
 
         return IoTSIMService(self._post)
 
@@ -716,55 +716,55 @@ class Mpesa:
 
     @property
     def b2pochi_service(self):
-        from mpesa.services import B2PochiService
+        from daraja.services import B2PochiService
 
         return B2PochiService(self._post, self._config)
 
     @property
     def lipa_na_bonga_service(self):
-        from mpesa.services import LipaNaBongaService
+        from daraja.services import LipaNaBongaService
 
         return LipaNaBongaService(self._post)
 
     @property
     def pull_transactions_service(self):
-        from mpesa.services import PullTransactionsService
+        from daraja.services import PullTransactionsService
 
         return PullTransactionsService(self._post)
 
     @property
     def swap_service(self):
-        from mpesa.services import SwapService
+        from daraja.services import SwapService
 
         return SwapService(self._post)
 
     @property
     def bill_manager_service(self):
-        from mpesa.services import BillManagerService
+        from daraja.services import BillManagerService
 
         return BillManagerService(self._post)
 
     @property
     def b2b_express_service(self):
-        from mpesa.services import B2BExpressService
+        from daraja.services import B2BExpressService
 
         return B2BExpressService(self._post)
 
     @property
     def ratiba_service(self):
-        from mpesa.services import RatibaService
+        from daraja.services import RatibaService
 
         return RatibaService(self._post)
 
     @property
     def tax_remittance_service(self):
-        from mpesa.services import TaxRemittanceService
+        from daraja.services import TaxRemittanceService
 
         return TaxRemittanceService(self._post, self._config)
 
     @property
     def b2c_account_top_up_service(self):
-        from mpesa.services import B2BService
+        from daraja.services import B2BService
 
         return B2BService(self._post, self._config)
 

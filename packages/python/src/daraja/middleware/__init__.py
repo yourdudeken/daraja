@@ -1,6 +1,6 @@
-from mpesa.middleware.flask import create_flask_blueprint
-from mpesa.middleware.django import create_django_view, create_django_health_view
-from mpesa.webhooks import WebhookManager
+from daraja.middleware.flask import create_flask_blueprint
+from daraja.middleware.django import create_django_view, create_django_health_view
+from daraja.webhooks import WebhookManager
 
 
 __all__ = [
@@ -18,7 +18,7 @@ def create_fastapi_router(webhook_manager: WebhookManager, secret: str = "", mpe
     except ImportError:
         raise ImportError("fastapi is required. Install with: pip install daraja-sdk-py[fastapi]")
 
-    from mpesa import __version__
+    from daraja import __version__
 
     router = APIRouter()
 
