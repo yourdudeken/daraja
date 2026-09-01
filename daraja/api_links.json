@@ -6,7 +6,6 @@
     {"name": "Authorization", "slug": "Authorization", "url": "https://developer.safaricom.co.ke/apis/Authorization"},
     {"name": "Dynamic QR Code", "slug": "DynamicQRCode", "url": "https://developer.safaricom.co.ke/apis/DynamicQRCode"},
     {"name": "Customer to Business", "slug": "CustomerToBusiness", "url": "https://developer.safaricom.co.ke/apis/CustomerToBusiness"},
-    {"name": "Customer to Business Register URL", "slug": "CustomerToBusinessRegisterURL", "url": "https://developer.safaricom.co.ke/apis/CustomerToBusinessRegisterURL"},
     {"name": "M-Pesa Express Simulate", "slug": "MpesaExpressSimulate", "url": "https://developer.safaricom.co.ke/apis/MpesaExpressSimulate"},
     {"name": "M-Pesa Express Query", "slug": "MpesaExpressQuery", "url": "https://developer.safaricom.co.ke/apis/MpesaExpressQuery"},
     {"name": "Business to Customer", "slug": "BusinessToCustomer", "url": "https://developer.safaricom.co.ke/apis/BusinessToCustomer"},
