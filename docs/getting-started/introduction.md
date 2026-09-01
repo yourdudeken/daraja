@@ -8,5 +8,5 @@ server that exposes these docs to AI coding assistants.
 
 - `packages/python` — Python SDK (package `daraja`)
 - `packages/typescript` — TypeScript SDK (package `@daraja-sdk/ts`)
-- `packages/go` — Go SDK (module `.../packages/go`)
+- `packages/go` — Go SDK (module `.../go`)
 - `mcp` — MCP server for searching these docs
