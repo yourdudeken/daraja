@@ -154,18 +154,114 @@ async def scrape_page(page, url: str, docs_dir: Path, img_dir: Path) -> dict:
     await page.wait_for_load_state("networkidle")
     await page.wait_for_timeout(2000)
 
-    content_html = await page.evaluate(
+    # Collect content from every tab on the page (e.g. "API Documentation", "Error").
+    # We click each tab in sequence, wait for the panel to render, and capture its HTML.
+    # This ensures hidden tab content (like the Error tab) is always included.
+    tab_sections: list[str] = []
+
+    tab_labels = await page.evaluate(
         """
         () => {
-          const main = document.querySelector('main')
-            || document.querySelector('.api-details-container')
-            || document.body;
-          return main ? main.innerHTML : '';
+          // Typical Daraja tab selectors; extend as needed.
+          const selectors = [
+            '[role="tab"]',
+            '.mat-tab-label',
+            '.tab-label',
+            'li[data-tab]',
+            'a[data-toggle="tab"]',
+          ];
+          for (const sel of selectors) {
+            const tabs = Array.from(document.querySelectorAll(sel));
+            if (tabs.length > 1) {
+              return tabs.map((t, i) => ({ index: i, text: t.innerText.trim() }));
+            }
+          }
+          return [];
         }
         """
     )
 
-    soup = BeautifulSoup(content_html, "html.parser")
+    if tab_labels:
+        print(f"   Found {len(tab_labels)} tab(s): {[t['text'] for t in tab_labels]}")
+
+        for tab_info in tab_labels:
+            tab_text = tab_info["text"]
+            tab_index = tab_info["index"]
+
+            # Click the tab and wait for the panel content to settle.
+            clicked = await page.evaluate(
+                """
+                ([selectors, index]) => {
+                  for (const sel of selectors) {
+                    const tabs = Array.from(document.querySelectorAll(sel));
+                    if (tabs.length > 1 && tabs[index]) {
+                      tabs[index].click();
+                      return true;
+                    }
+                  }
+                  return false;
+                }
+                """,
+                [
+                    [
+                        '[role="tab"]',
+                        '.mat-tab-label',
+                        '.tab-label',
+                        'li[data-tab]',
+                        'a[data-toggle="tab"]',
+                    ],
+                    tab_index,
+                ],
+            )
+
+            if not clicked:
+                print(f"   Warning: could not click tab '{tab_text}', skipping.")
+                continue
+
+            # Let Angular / React re-render the active panel.
+            await page.wait_for_timeout(1500)
+
+            panel_html = await page.evaluate(
+                """
+                () => {
+                  // Active panel selectors for common frameworks.
+                  const panelSelectors = [
+                    '[role="tabpanel"]:not([hidden])',
+                    '.mat-tab-body-active',
+                    '.tab-pane.active',
+                    '.tab-content .active',
+                  ];
+                  for (const sel of panelSelectors) {
+                    const el = document.querySelector(sel);
+                    if (el) return el.innerHTML;
+                  }
+                  // Fallback: grab the whole main area again.
+                  const main = document.querySelector('main')
+                    || document.querySelector('.api-details-container')
+                    || document.body;
+                  return main ? main.innerHTML : '';
+                }
+                """
+            )
+
+            tab_sections.append(f'<h2 class="tab-heading">{tab_text}</h2>\n{panel_html}')
+            print(f"   Captured tab: {tab_text}")
+
+        combined_html = "\n\n".join(tab_sections)
+    else:
+        # No tab UI detected — grab the full page content as before.
+        combined_html = await page.evaluate(
+            """
+            () => {
+              const main = document.querySelector('main')
+                || document.querySelector('.api-details-container')
+                || document.body;
+              return main ? main.innerHTML : '';
+            }
+            """
+        )
+
+    soup = BeautifulSoup(combined_html, "html.parser")
     images = soup.find_all("img")
     for index, img in enumerate(images):
         src = img.get("src")
