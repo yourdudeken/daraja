@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/yourdudeken/daraja-sdk/packages/go/types"
+	"github.com/yourdudeken/daraja-sdk/go/types"
 )
 
 type DeliveryRecord struct {

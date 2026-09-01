@@ -10,9 +10,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/yourdudeken/daraja-sdk/packages/go/client"
-	"github.com/yourdudeken/daraja-sdk/packages/go/types"
-	"github.com/yourdudeken/daraja-sdk/packages/go/webhooks"
+	"github.com/yourdudeken/daraja-sdk/go/client"
+	"github.com/yourdudeken/daraja-sdk/go/types"
+	"github.com/yourdudeken/daraja-sdk/go/webhooks"
 )
 
 const version = "0.2.0"

@@ -9,8 +9,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/yourdudeken/daraja-sdk/packages/go/types"
-	"github.com/yourdudeken/daraja-sdk/packages/go/webhooks"
+	"github.com/yourdudeken/daraja-sdk/go/types"
+	"github.com/yourdudeken/daraja-sdk/go/webhooks"
 )
 
 func TestGinWebhookHandlerReversalRouting(t *testing.T) {

@@ -10,8 +10,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/yourdudeken/daraja-sdk/packages/go/client"
-	"github.com/yourdudeken/daraja-sdk/packages/go/types"
+	"github.com/yourdudeken/daraja-sdk/go/client"
+	"github.com/yourdudeken/daraja-sdk/go/types"
 )
 
 const version = "0.2.0"

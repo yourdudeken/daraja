@@ -1,4 +1,4 @@
-module github.com/yourdudeken/daraja-sdk/packages/go
+module github.com/yourdudeken/daraja-sdk/go
 
 go 1.25.0
 

@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/yourdudeken/daraja-sdk/packages/go/client"
-	"github.com/yourdudeken/daraja-sdk/packages/go/types"
+	"github.com/yourdudeken/daraja-sdk/go/client"
+	"github.com/yourdudeken/daraja-sdk/go/types"
 )
 
 var ERRORS []string

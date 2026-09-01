@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/yourdudeken/daraja-sdk/packages/go/types"
+	"github.com/yourdudeken/daraja-sdk/go/types"
 )
 
 type noopLogger struct{}

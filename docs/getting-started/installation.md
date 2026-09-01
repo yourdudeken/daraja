@@ -15,5 +15,5 @@ npm install @daraja-sdk/ts axios
 ## Go
 
 ```bash
-go get github.com/yourdudeken/daraja-sdk/packages/go
+go get github.com/yourdudeken/daraja-sdk/go
 ```

@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/yourdudeken/daraja-sdk/packages/go/types"
+	"github.com/yourdudeken/daraja-sdk/go/types"
 )
 
 func skipIfNoCredentials(t *testing.T) {

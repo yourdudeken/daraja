@@ -6,7 +6,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/yourdudeken/daraja-sdk/packages/go/errors"
+	"github.com/yourdudeken/daraja-sdk/go/errors"
 )
 
 var phoneRegex = regexp.MustCompile(`^2547\d{8}$`)
