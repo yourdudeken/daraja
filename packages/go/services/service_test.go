@@ -54,6 +54,27 @@ func TestSTKPushInvalidURL(t *testing.T) {
 	}
 }
 
+func TestReversalRequestDefaultsRecieverIdentifierTypeTo11(t *testing.T) {
+	req := newReversalRequest(svctypes.ReversalInput{
+		TransactionID: "PDU91HIVIT",
+		Amount:        200,
+		ReceiverParty: 603021,
+	})
+	if req.RecieverIdentifierType != 11 {
+		t.Errorf("expected RecieverIdentifierType to default to 11, got %d", req.RecieverIdentifierType)
+	}
+}
+
+func TestReversalRequestPreservesExplicitRecieverIdentifierType(t *testing.T) {
+	req := newReversalRequest(svctypes.ReversalInput{
+		RecieverIdentifierType: 4,
+		TransactionID:          "PDU91HIVIT",
+	})
+	if req.RecieverIdentifierType != 4 {
+		t.Errorf("expected RecieverIdentifierType 4, got %d", req.RecieverIdentifierType)
+	}
+}
+
 func TestC2BSimulateInvalidShortCode(t *testing.T) {
 	svc := newTestService()
 	_, err := svc.C2BSimulate(context.Background(), svctypes.C2BSimulateInput{

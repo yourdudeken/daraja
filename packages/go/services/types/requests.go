@@ -66,14 +66,15 @@ type B2CInput struct {
 }
 
 type ReversalInput struct {
-	Initiator          string
-	SecurityCredential string
-	TransactionID      string
-	Amount             int
-	ReceiverParty      int
-	QueueTimeOutURL    string
-	ResultURL          string
-	Remarks            string
+	Initiator              string
+	SecurityCredential     string
+	TransactionID          string
+	RecieverIdentifierType int
+	Amount                 int
+	ReceiverParty          int
+	QueueTimeOutURL        string
+	ResultURL              string
+	Remarks                string
 }
 
 type TransactionStatusInput struct {

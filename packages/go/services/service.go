@@ -152,6 +152,24 @@ func (s *Service) B2C(ctx context.Context, input svctypes.B2CInput) (*svctypes.B
 	}, nil
 }
 
+func newReversalRequest(input svctypes.ReversalInput) types.ReversalRequest {
+	if input.RecieverIdentifierType == 0 {
+		input.RecieverIdentifierType = 11
+	}
+	return types.ReversalRequest{
+		Initiator:              input.Initiator,
+		SecurityCredential:     input.SecurityCredential,
+		CommandID:              "TransactionReversal",
+		RecieverIdentifierType: input.RecieverIdentifierType,
+		TransactionID:          input.TransactionID,
+		Amount:                 input.Amount,
+		ReceiverParty:          input.ReceiverParty,
+		QueueTimeOutURL:        input.QueueTimeOutURL,
+		ResultURL:              input.ResultURL,
+		Remarks:                input.Remarks,
+	}
+}
+
 func (s *Service) Reversal(ctx context.Context, input svctypes.ReversalInput) (*svctypes.ReversalResult, error) {
 	if err := validation.RequiredString(input.TransactionID, "TransactionID"); err != nil {
 		return nil, err
@@ -163,17 +181,7 @@ func (s *Service) Reversal(ctx context.Context, input svctypes.ReversalInput) (*
 	if input.Initiator == "" && cfg.InitiatorName != "" {
 		input.Initiator = cfg.InitiatorName
 	}
-	req := types.ReversalRequest{
-		Initiator:          input.Initiator,
-		SecurityCredential: input.SecurityCredential,
-		CommandID:          "TransactionReversal",
-		TransactionID:      input.TransactionID,
-		Amount:             input.Amount,
-		ReceiverParty:      input.ReceiverParty,
-		QueueTimeOutURL:    input.QueueTimeOutURL,
-		ResultURL:          input.ResultURL,
-		Remarks:            input.Remarks,
-	}
+	req := newReversalRequest(input)
 	resp, err := s.client.Reversal(ctx, req)
 	if err != nil {
 		return nil, err
