@@ -24,4 +24,3 @@ packages/go/*.mod.orig
 .tmp/
 
 superpowers/
-opencode.json
