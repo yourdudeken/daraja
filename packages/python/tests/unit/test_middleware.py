@@ -28,7 +28,10 @@ def b2b_result_body():
             "ResultParameters": {
                 "ResultParameter": [
                     {"Key": "DebitAccountBalance", "Value": "100"},
-                    {"Key": "DebitPartyAffectedAccountBalance", "Value": "Working Account|KES|346568.83"},
+                    {
+                        "Key": "DebitPartyAffectedAccountBalance",
+                        "Value": "Working Account|KES|346568.83",
+                    },
                     {"Key": "TransCompletedTime", "Value": "20221110110717"},
                     {"Key": "ReceiverPartyPublicName", "Value": "000000- Biller Company"},
                     {"Key": "Currency", "Value": "KES"},
@@ -49,7 +52,10 @@ def b2c_result_body():
                 "ResultParameter": [
                     {"Key": "TransactionAmount", "Value": 10},
                     {"Key": "TransactionReceipt", "Value": "SG632NMUAB"},
-                    {"Key": "ReceiverPartyPublicName", "Value": "254705912645 - NICHOLAS JOHN SONGOK"},
+                    {
+                        "Key": "ReceiverPartyPublicName",
+                        "Value": "254705912645 - NICHOLAS JOHN SONGOK",
+                    },
                     {"Key": "TransactionCompletedDateTime", "Value": "06.07.2024 22:48:52"},
                     {"Key": "B2CUtilityAccountAvailableFunds", "Value": 8959269.6},
                     {"Key": "B2CWorkingAccountAvailableFunds", "Value": 1199371.0},

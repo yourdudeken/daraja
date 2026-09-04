@@ -475,7 +475,14 @@ class AsyncMpesa:
         self, request: BusinessBuyGoodsRequest | dict
     ) -> BusinessGoodsResponse:
         if isinstance(request, dict):
+            request.setdefault("SecurityCredential", self._config.security_credential)
+            request.setdefault("Initiator", self._config.initiator_name)
             request = BusinessBuyGoodsRequest(**request)
+        else:
+            if not request.SecurityCredential and self._config.security_credential:
+                request.SecurityCredential = self._config.security_credential
+            if not request.Initiator and self._config.initiator_name:
+                request.Initiator = self._config.initiator_name
         result = await self._post("B2B", request.model_dump())
         return BusinessGoodsResponse(**result)
 
@@ -483,7 +490,14 @@ class AsyncMpesa:
         self, request: BusinessPayBillRequest | dict
     ) -> BusinessGoodsResponse:
         if isinstance(request, dict):
+            request.setdefault("SecurityCredential", self._config.security_credential)
+            request.setdefault("Initiator", self._config.initiator_name)
             request = BusinessPayBillRequest(**request)
+        else:
+            if not request.SecurityCredential and self._config.security_credential:
+                request.SecurityCredential = self._config.security_credential
+            if not request.Initiator and self._config.initiator_name:
+                request.Initiator = self._config.initiator_name
         result = await self._post("B2B", request.model_dump())
         return BusinessGoodsResponse(**result)
 
