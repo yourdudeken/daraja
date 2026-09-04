@@ -1,5 +1,5 @@
 import { MpesaApiClient } from "../client/client.js";
-import { Validation } from "../utils/index.js";
+import { ValidationError } from "../errors/index.js";
 import type {
   TransactionStatusRequest,
   TransactionStatusResponse,
@@ -10,7 +10,11 @@ export class TransactionStatusService {
   constructor(private readonly client: MpesaApiClient) {}
 
   async query(request: TransactionStatusRequest): Promise<TransactionStatusResponse> {
-    Validation.requiredString(request.TransactionID, "TransactionID");
+    if (!request.TransactionID && !request.OriginalConversationID) {
+      throw new ValidationError(
+        "Either TransactionID or OriginalConversationID is required",
+      );
+    }
     const config = this.client.getConfig();
     const payload: TransactionStatusRequest = {
       ...request,
