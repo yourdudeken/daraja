@@ -73,7 +73,11 @@ export function createFastifyPlugin(
           event = { type: "account:balance", payload: body };
         } else if (hasTransactionStatus) {
           event = { type: "transaction:status", payload: body };
-        } else if (keys.has("B2BRecipientPartyPublicName") || keys.has("B2BSenderPartyPublicName")) {
+        } else if (
+          keys.has("B2BRecipientPartyPublicName") ||
+          keys.has("B2BSenderPartyPublicName") ||
+          keys.has("DebitPartyAffectedAccountBalance")
+        ) {
           event = { type: "b2b:result", payload: body };
         } else if (keys.has("OriginalTransactionID")) {
           event = { type: "reversal:result", payload: body };
