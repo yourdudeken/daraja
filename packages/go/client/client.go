@@ -687,6 +687,13 @@ func (c *Client) BusinessPayBill(ctx context.Context, req types.BusinessPayBillR
 	if req.Initiator == "" && c.config.InitiatorName != "" {
 		req.Initiator = c.config.InitiatorName
 	}
+	req.CommandID = "BusinessPayBill"
+	if req.SenderIdentifierType == 0 {
+		req.SenderIdentifierType = 4
+	}
+	if req.RecieverIdentifierType == 0 {
+		req.RecieverIdentifierType = 4
+	}
 	respBody, err := c.doRequest(ctx, "POST", c.endpoints.B2B, req)
 	if err != nil {
 		return nil, err
