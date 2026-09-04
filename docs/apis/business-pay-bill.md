@@ -1,6 +1,6 @@
-# B2B (Business to Business)
+# Business Pay Bill
 
-Moves funds between two business accounts using the Buy Goods or Pay Bill command. Both operations share the same endpoint but differ by `CommandID`.
+Sends a payment from a business account to a paybill merchant. This is a convenience wrapper around the B2B endpoint with `CommandID` set to `BusinessPayBill`.
 
 ## Endpoint
 
@@ -12,14 +12,14 @@ Moves funds between two business accounts using the Buy Goods or Pay Bill comman
 | --- | --- | --- | --- |
 | `Initiator` | string | auto | Username of the initiator. Auto-filled from SDK config if omitted. |
 | `SecurityCredential` | string | auto | Encrypted security credential. Auto-generated from `initiatorPassword` if omitted. |
-| `CommandID` | `"BusinessBuyGoods"` \| `"BusinessPayBill"` | yes | Transaction type (defaults set by SDK method) |
+| `CommandID` | `"BusinessPayBill"` | yes | Fixed value (set by SDK method) |
 | `SenderIdentifierType` | int | no | Sender identifier type. Default: `4` |
 | `RecieverIdentifierType` | int | no | Receiver identifier type. Default: `4` |
 | `Amount` | int | yes | Transaction amount |
-| `PartyA` | int | yes | Business short code sending funds |
-| `PartyB` | int | yes | Business short code receiving funds |
+| `PartyA` | int | yes | Business short code sending the payment |
+| `PartyB` | int | yes | Paybill short code receiving the payment |
 | `Requester` | int? | no | Phone number of the requester |
-| `AccountReference` | string? | no | Account reference |
+| `AccountReference` | string? | no | Account reference (e.g. invoice number) |
 | `Remarks` | string | yes | Transaction remarks |
 | `QueueTimeOutURL` | string | yes | HTTPS URL for timeout notifications |
 | `ResultURL` | string | yes | HTTPS URL for result callback |
@@ -37,7 +37,7 @@ Moves funds between two business accounts using the Buy Goods or Pay Bill comman
 ## Usage
 
 ```python
-from daraja import Mpesa, BusinessBuyGoodsRequest, BusinessPayBillRequest
+from daraja import Mpesa, BusinessPayBillRequest
 
 mpesa = Mpesa({
     "consumer_key": "...",
@@ -45,21 +45,6 @@ mpesa = Mpesa({
     "initiator_name": "testapi",
     "initiator_password": "...",
 })
-
-# Buy Goods
-response = mpesa.business_buy_goods(BusinessBuyGoodsRequest(
-    Initiator="testapi",
-    SecurityCredential="",
-    CommandID="BusinessBuyGoods",
-    Amount=5000,
-    PartyA=174379,
-    PartyB=174379,
-    Remarks="Buy goods payment",
-    QueueTimeOutURL="https://example.com/timeout",
-    ResultURL="https://example.com/result",
-))
-
-# Pay Bill
 response = mpesa.business_pay_bill(BusinessPayBillRequest(
     Initiator="testapi",
     SecurityCredential="",
@@ -83,20 +68,7 @@ const mpesa = new Mpesa({
   initiatorName: "testapi",
   initiatorPassword: "...",
 });
-
-// Buy Goods
-await mpesa.businessGoods.buyGoods({
-  CommandID: "BusinessBuyGoods",
-  Amount: 5000,
-  PartyA: 174379,
-  PartyB: 174379,
-  Remarks: "Buy goods payment",
-  QueueTimeOutURL: "https://example.com/timeout",
-  ResultURL: "https://example.com/result",
-});
-
-// Pay Bill
-await mpesa.businessGoods.payBill({
+const response = await mpesa.businessGoods.payBill({
   CommandID: "BusinessPayBill",
   Amount: 5000,
   PartyA: 174379,
@@ -125,20 +97,7 @@ func main() {
         InitiatorPassword: "...",
         Environment:      types.Sandbox,
     })
-
-    // Buy Goods
-    c.BusinessBuyGoods(context.Background(), types.BusinessBuyGoodsRequest{
-        CommandID:  "BusinessBuyGoods",
-        Amount:     5000,
-        PartyA:     174379,
-        PartyB:     174379,
-        Remarks:    "Buy goods payment",
-        QueueTimeOutURL: "https://example.com/timeout",
-        ResultURL:       "https://example.com/result",
-    })
-
-    // Pay Bill
-    c.BusinessPayBill(context.Background(), types.BusinessPayBillRequest{
+    resp, err := c.BusinessPayBill(context.Background(), types.BusinessPayBillRequest{
         CommandID:       "BusinessPayBill",
         Amount:          5000,
         PartyA:          174379,
@@ -153,8 +112,9 @@ func main() {
 
 ## Notes
 
-- Both Buy Goods and Pay Bill use the same endpoint (`/mpesa/b2b/v1/paymentrequest`) — the `CommandID` field determines the transaction type.
+- This uses the same B2B endpoint (`/mpesa/b2b/v1/paymentrequest`) with `CommandID` set to `BusinessPayBill`.
+- See [B2B](./b2b.md) for the general B2B documentation covering both Buy Goods and Pay Bill.
 - `Initiator` and `SecurityCredential` are auto-filled from the SDK configuration when omitted.
 - `SenderIdentifierType` and `RecieverIdentifierType` default to `4` (organization short code).
 - The result is delivered asynchronously via the `ResultURL` callback.
-- Note the typo `RecieverIdentifierType` is in the M-Pesa API itself.
+- `AccountReference` is typically used to pass an invoice or account number for reconciliation.
