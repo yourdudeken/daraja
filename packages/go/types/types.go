@@ -386,37 +386,18 @@ type BusinessGoodsResponse struct {
 
 // ---- Query Org Info ----
 type QueryOrgInfoRequest struct {
-	AccessToken string `json:"AccessToken"`
-}
-
-type OrgAccount struct {
-	AccountNumber string `json:"AccountNumber"`
-	AccountType   string `json:"AccountType"`
-	Status        string `json:"Status"`
-	Currency      string `json:"Currency"`
-	CreatedDate   string `json:"CreatedDate"`
-}
-
-type APIAccess struct {
-	Permissions []string `json:"Permissions"`
-	Status      string   `json:"Status"`
-}
-
-type OrgInfo struct {
-	OrgName     string `json:"OrgName"`
-	ShortCode   string `json:"ShortCode"`
-	AccountType string `json:"AccountType"`
-	Status      string `json:"Status"`
-	Industry    string `json:"Industry"`
-	Region      string `json:"Region"`
+	IdentifierType int `json:"IdentifierType"`
+	Identifier     int `json:"Identifier"`
 }
 
 type QueryOrgInfoResponse struct {
-	ResponseCode        string       `json:"ResponseCode"`
-	ResponseDescription string       `json:"ResponseDescription"`
-	Organization        *OrgInfo     `json:"Organization,omitempty"`
-	Accounts            []OrgAccount `json:"Accounts,omitempty"`
-	APIAccess           *APIAccess   `json:"APIAccess,omitempty"`
+	ConversationID       string `json:"ConversationID"`
+	ResponseCode         string `json:"ResponseCode"`
+	ResponseMessage      string `json:"ResponseMessage"`
+	DetailedMessage      string `json:"DetailedMessage"`
+	OrganizationShortCode string `json:"OrganizationShortCode"`
+	OrganizationName     string `json:"OrganizationName"`
+	ChargeProfileID      string `json:"ChargeProfileID"`
 }
 
 // ---- IMSI ----
@@ -690,14 +671,12 @@ type B2PochiRequest struct {
 	SecurityCredential       string `json:"SecurityCredential"`
 	CommandID                string `json:"CommandID"`
 	Amount                   int    `json:"Amount"`
-	SenderIdentifier         int    `json:"SenderIdentifier"`
-	ReceiverIdentifier       int    `json:"ReceiverIdentifier"`
 	PartyA                   int    `json:"PartyA"`
 	PartyB                   int    `json:"PartyB"`
-	AccountReference         string `json:"AccountReference"`
 	Remarks                  string `json:"Remarks"`
 	QueueTimeOutURL          string `json:"QueueTimeOutURL"`
 	ResultURL                string `json:"ResultURL"`
+	Occassion                string `json:"Occassion,omitempty"`
 }
 
 type B2PochiResponse struct {
@@ -712,15 +691,23 @@ type LipaNaBongaCalculateRequest struct {
 	Points string `json:"points"`
 }
 
-type LipaNaBongaCalculateResponse struct {
+type LipaNaBongaHeader struct {
 	RequestRefID    string `json:"requestRefId"`
 	ResponseCode    int    `json:"responseCode"`
 	ResponseMessage string `json:"responseMessage"`
 	CustomerMessage string `json:"customerMessage"`
 	Timestamp       string `json:"timestamp"`
-	Amount          string `json:"amount"`
-	Points          string `json:"points"`
-	Rate            string `json:"rate"`
+}
+
+type LipaNaBongaCalculateBody struct {
+	Amount string `json:"amount"`
+	Points string `json:"points"`
+	Rate   string `json:"rate"`
+}
+
+type LipaNaBongaCalculateResponse struct {
+	Header LipaNaBongaHeader        `json:"header"`
+	Body   LipaNaBongaCalculateBody `json:"body"`
 }
 
 type LipaNaBongaRedeemRequest struct {
@@ -733,11 +720,8 @@ type LipaNaBongaRedeemRequest struct {
 }
 
 type LipaNaBongaRedeemResponse struct {
-	RequestRefID    string `json:"requestRefId"`
-	ResponseCode    int    `json:"responseCode"`
-	ResponseMessage string `json:"responseMessage"`
-	CustomerMessage string `json:"customerMessage"`
-	Timestamp       string `json:"timestamp"`
+	Header LipaNaBongaHeader `json:"header"`
+	Body   json.RawMessage   `json:"body"`
 }
 
 // ---- Pull Transactions ----
@@ -906,6 +890,7 @@ type RatibaRequest struct {
 	AccountReference            string `json:"AccountReference"`
 	TransactionDesc             string `json:"TransactionDesc"`
 	Frequency                   string `json:"Frequency"`
+	CustomStoId                 string `json:"CustomStoId"`
 }
 
 type RatibaResponseHeader struct {

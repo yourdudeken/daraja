@@ -332,18 +332,23 @@ func (s *Service) BusinessPayBill(ctx context.Context, input svctypes.BusinessPa
 	}, nil
 }
 
-func (s *Service) QueryOrgInfo(ctx context.Context, _ svctypes.QueryOrgInfoInput) (*svctypes.QueryOrgInfoResult, error) {
-	req := types.QueryOrgInfoRequest{}
+func (s *Service) QueryOrgInfo(ctx context.Context, input svctypes.QueryOrgInfoInput) (*svctypes.QueryOrgInfoResult, error) {
+	req := types.QueryOrgInfoRequest{
+		IdentifierType: input.IdentifierType,
+		Identifier:     input.Identifier,
+	}
 	resp, err := s.client.QueryOrgInfo(ctx, req)
 	if err != nil {
 		return nil, err
 	}
 	return &svctypes.QueryOrgInfoResult{
-		ResponseCode:        resp.ResponseCode,
-		ResponseDescription: resp.ResponseDescription,
-		Organization:        resp.Organization,
-		Accounts:            resp.Accounts,
-		APIAccess:           resp.APIAccess,
+		ConversationID:        resp.ConversationID,
+		ResponseCode:          resp.ResponseCode,
+		ResponseMessage:       resp.ResponseMessage,
+		DetailedMessage:       resp.DetailedMessage,
+		OrganizationShortCode: resp.OrganizationShortCode,
+		OrganizationName:      resp.OrganizationName,
+		ChargeProfileID:       resp.ChargeProfileID,
 	}, nil
 }
 
@@ -585,14 +590,12 @@ func (s *Service) B2Pochi(ctx context.Context, input svctypes.B2PochiInput) (*sv
 		SecurityCredential: input.SecurityCredential,
 		CommandID:          input.CommandID,
 		Amount:             input.Amount,
-		SenderIdentifier:   input.SenderIdentifier,
-		ReceiverIdentifier: input.ReceiverIdentifier,
 		PartyA:             input.PartyA,
 		PartyB:             input.PartyB,
-		AccountReference:   input.AccountReference,
 		Remarks:            input.Remarks,
 		QueueTimeOutURL:    input.QueueTimeOutURL,
 		ResultURL:          input.ResultURL,
+		Occassion:          input.Occassion,
 	}
 	resp, err := s.client.B2Pochi(ctx, req)
 	if err != nil {
@@ -615,14 +618,14 @@ func (s *Service) LipaNaBongaCalculate(ctx context.Context, input svctypes.LipaN
 		return nil, err
 	}
 	return &svctypes.LipaNaBongaCalculateResult{
-		RequestRefID:    resp.RequestRefID,
-		ResponseCode:    resp.ResponseCode,
-		ResponseMessage: resp.ResponseMessage,
-		CustomerMessage: resp.CustomerMessage,
-		Timestamp:       resp.Timestamp,
-		Amount:          resp.Amount,
-		Points:          resp.Points,
-		Rate:            resp.Rate,
+		RequestRefID:    resp.Header.RequestRefID,
+		ResponseCode:    resp.Header.ResponseCode,
+		ResponseMessage: resp.Header.ResponseMessage,
+		CustomerMessage: resp.Header.CustomerMessage,
+		Timestamp:       resp.Header.Timestamp,
+		Amount:          resp.Body.Amount,
+		Points:          resp.Body.Points,
+		Rate:            resp.Body.Rate,
 	}, nil
 }
 
@@ -640,11 +643,11 @@ func (s *Service) LipaNaBongaRedeem(ctx context.Context, input svctypes.LipaNaBo
 		return nil, err
 	}
 	return &svctypes.LipaNaBongaRedeemResult{
-		RequestRefID:    resp.RequestRefID,
-		ResponseCode:    resp.ResponseCode,
-		ResponseMessage: resp.ResponseMessage,
-		CustomerMessage: resp.CustomerMessage,
-		Timestamp:       resp.Timestamp,
+		RequestRefID:    resp.Header.RequestRefID,
+		ResponseCode:    resp.Header.ResponseCode,
+		ResponseMessage: resp.Header.ResponseMessage,
+		CustomerMessage: resp.Header.CustomerMessage,
+		Timestamp:       resp.Header.Timestamp,
 	}, nil
 }
 
@@ -927,6 +930,7 @@ func (s *Service) CreateStandingOrder(ctx context.Context, input svctypes.Ratiba
 		AccountReference:            input.AccountReference,
 		TransactionDesc:             input.TransactionDesc,
 		Frequency:                   input.Frequency,
+		CustomStoId:                 input.CustomStoId,
 	}
 	resp, err := s.client.CreateStandingOrder(ctx, req)
 	if err != nil {

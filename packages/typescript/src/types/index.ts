@@ -423,37 +423,18 @@ export interface BusinessGoodsResponse {
 // QUERY ORG INFO
 // ============================================================
 export interface QueryOrgInfoRequest {
-  AccessToken?: string;
-}
-
-export interface OrgAccount {
-  AccountNumber: string;
-  AccountType: string;
-  Status: string;
-  Currency: string;
-  CreatedDate: string;
-}
-
-export interface APIAccess {
-  Permissions: string[];
-  Status: string;
-}
-
-export interface OrgInfo {
-  OrgName: string;
-  ShortCode: string;
-  AccountType: string;
-  Status: string;
-  Industry: string;
-  Region: string;
+  IdentifierType: number;
+  Identifier: number;
 }
 
 export interface QueryOrgInfoResponse {
+  ConversationID: string;
   ResponseCode: string;
-  ResponseDescription: string;
-  Organization?: OrgInfo;
-  Accounts?: OrgAccount[];
-  APIAccess?: APIAccess;
+  ResponseMessage: string;
+  DetailedMessage: string;
+  OrganizationShortCode: string;
+  OrganizationName: string;
+  ChargeProfileID: string;
 }
 
 // ============================================================
@@ -727,14 +708,12 @@ export interface B2PochiRequest {
   SecurityCredential?: string;
   CommandID: string;
   Amount: number;
-  SenderIdentifier: number;
-  ReceiverIdentifier: number;
   PartyA: number;
   PartyB: number;
-  AccountReference: string;
   Remarks: string;
   QueueTimeOutURL: string;
   ResultURL: string;
+  Occassion?: string;
 }
 
 export interface B2PochiResponse {
@@ -751,15 +730,21 @@ export interface LipaNaBongaCalculateRequest {
   Points: string;
 }
 
-export interface LipaNaBongaCalculateResponse {
+export interface LipaNaBongaHeader {
   requestRefId: string;
   responseCode: number;
   responseMessage: string;
   customerMessage: string;
   timestamp: string;
-  amount: string;
-  points: string;
-  rate: string;
+}
+
+export interface LipaNaBongaCalculateResponse {
+  header: LipaNaBongaHeader;
+  body: {
+    amount: string;
+    points: string;
+    rate: string;
+  };
 }
 
 export interface LipaNaBongaRedeemRequest {
@@ -772,11 +757,8 @@ export interface LipaNaBongaRedeemRequest {
 }
 
 export interface LipaNaBongaRedeemResponse {
-  requestRefId: string;
-  responseCode: number;
-  responseMessage: string;
-  customerMessage: string;
-  timestamp: string;
+  header: LipaNaBongaHeader;
+  body: null;
 }
 
 // ============================================================
@@ -959,6 +941,7 @@ export interface RatibaRequest {
   AccountReference: string;
   TransactionDesc: string;
   Frequency: string;
+  CustomStoId?: string;
 }
 
 export interface RatibaResponseHeader {

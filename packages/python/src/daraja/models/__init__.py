@@ -339,37 +339,18 @@ class BusinessGoodsResponse(BaseModel):
 
 
 class QueryOrgInfoRequest(BaseModel):
-    AccessToken: str = ""
-
-
-class OrgAccount(BaseModel):
-    AccountNumber: str
-    AccountType: str
-    Status: str
-    Currency: str
-    CreatedDate: str
-
-
-class APIAccess(BaseModel):
-    Permissions: list[str]
-    Status: str
-
-
-class OrgInfo(BaseModel):
-    OrgName: str
-    ShortCode: str
-    AccountType: str
-    Status: str
-    Industry: str
-    Region: str
+    IdentifierType: int
+    Identifier: int
 
 
 class QueryOrgInfoResponse(BaseModel):
-    ResponseCode: str
-    ResponseDescription: str
-    Organization: Optional[OrgInfo] = None
-    Accounts: Optional[list[OrgAccount]] = None
-    APIAccess: Optional[APIAccess] = None
+    ConversationID: str = ""
+    ResponseCode: str = ""
+    ResponseMessage: str = ""
+    DetailedMessage: str = ""
+    OrganizationShortCode: str = ""
+    OrganizationName: str = ""
+    ChargeProfileID: str = ""
 
 
 class IMSIRequest(BaseModel):
@@ -583,16 +564,14 @@ class B2PochiRequest(BaseModel):
     OriginatorConversationID: Optional[str] = None
     InitiatorName: str
     SecurityCredential: str
-    CommandID: str
+    CommandID: str = "BusinessPayToPochi"
     Amount: int
-    SenderIdentifier: int
-    ReceiverIdentifier: int
     PartyA: int
     PartyB: int
-    AccountReference: str
     Remarks: str
     QueueTimeOutURL: str
     ResultURL: str
+    Occassion: Optional[str] = None
 
 
 class B2PochiResponse(BaseModel):
@@ -606,15 +585,17 @@ class LipaNaBongaCalculateRequest(BaseModel):
     Points: str
 
 
+class LipaNaBongaHeader(BaseModel):
+    requestRefId: str = ""
+    responseCode: int = 0
+    responseMessage: str = ""
+    customerMessage: str = ""
+    timestamp: str = ""
+
+
 class LipaNaBongaCalculateResponse(BaseModel):
-    requestRefId: str
-    responseCode: int
-    responseMessage: str
-    customerMessage: str
-    timestamp: str
-    amount: str
-    points: str
-    rate: str
+    header: Optional[LipaNaBongaHeader] = None
+    body: Optional[Dict[str, Any]] = None
 
 
 class LipaNaBongaRedeemRequest(BaseModel):
@@ -627,11 +608,8 @@ class LipaNaBongaRedeemRequest(BaseModel):
 
 
 class LipaNaBongaRedeemResponse(BaseModel):
-    requestRefId: str
-    responseCode: int
-    responseMessage: str
-    customerMessage: str
-    timestamp: str
+    header: Optional[LipaNaBongaHeader] = None
+    body: Optional[Any] = None
 
 
 class PullTransactionsRegisterRequest(BaseModel):
@@ -798,7 +776,7 @@ class RatibaRequest(BaseModel):
     StartDate: str = ""
     EndDate: str = ""
     BusinessShortCode: str = ""
-    TransactionType: str = "Standing Order Customer Pay Bill"
+    TransactionType: str = "Standing Order Pay Bill Ext-Third Party"
     ReceiverPartyIdentifierType: str = "4"
     Amount: str = ""
     PartyA: str = ""
@@ -806,6 +784,7 @@ class RatibaRequest(BaseModel):
     AccountReference: str = ""
     TransactionDesc: str = ""
     Frequency: str = ""
+    CustomStoId: str = ""
 
 
 class RatibaResponseHeader(BaseModel):
@@ -997,9 +976,6 @@ __all__ = [
     "BusinessPayBillRequest",
     "BusinessGoodsResponse",
     "QueryOrgInfoRequest",
-    "OrgAccount",
-    "APIAccess",
-    "OrgInfo",
     "QueryOrgInfoResponse",
     "IMSIRequest",
     "IMSIResponse",
@@ -1009,6 +985,7 @@ __all__ = [
     "B2PochiResponse",
     "LipaNaBongaCalculateRequest",
     "LipaNaBongaCalculateResponse",
+    "LipaNaBongaHeader",
     "LipaNaBongaRedeemRequest",
     "LipaNaBongaRedeemResponse",
     "PullTransactionsRegisterRequest",

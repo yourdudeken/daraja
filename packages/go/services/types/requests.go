@@ -128,7 +128,10 @@ type BusinessPayBillInput struct {
 	Occassion              string
 }
 
-type QueryOrgInfoInput struct{}
+type QueryOrgInfoInput struct {
+	IdentifierType int
+	Identifier     int
+}
 
 type IMSIInput struct {
 	CustomerNumber string
@@ -216,14 +219,12 @@ type B2PochiInput struct {
 	SecurityCredential string
 	CommandID          string
 	Amount             int
-	SenderIdentifier   int
-	ReceiverIdentifier int
 	PartyA             int
 	PartyB             int
-	AccountReference   string
 	Remarks            string
 	QueueTimeOutURL    string
 	ResultURL          string
+	Occassion          string
 }
 
 type LipaNaBongaCalculateInput struct {
@@ -336,6 +337,7 @@ type RatibaInput struct {
 	AccountReference            string
 	TransactionDesc             string
 	Frequency                   string
+	CustomStoId                 string
 }
 
 type TaxRemittanceInput struct {

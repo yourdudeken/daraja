@@ -63,11 +63,13 @@ type BusinessGoodsResult struct {
 }
 
 type QueryOrgInfoResult struct {
-	ResponseCode        string
-	ResponseDescription string
-	Organization        *types.OrgInfo
-	Accounts            []types.OrgAccount
-	APIAccess           *types.APIAccess
+	ConversationID        string
+	ResponseCode          string
+	ResponseMessage       string
+	DetailedMessage       string
+	OrganizationShortCode string
+	OrganizationName      string
+	ChargeProfileID       string
 }
 
 type IMSIResult struct {

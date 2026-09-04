@@ -4,9 +4,10 @@ import type { QueryOrgInfoRequest, QueryOrgInfoResponse } from "../types/index.j
 export class QueryOrgInfoService {
   constructor(private readonly client: MpesaApiClient) {}
 
-  async query(request?: QueryOrgInfoRequest): Promise<QueryOrgInfoResponse> {
+  async query(request: QueryOrgInfoRequest): Promise<QueryOrgInfoResponse> {
     const payload = {
-      AccessToken: request?.AccessToken ?? "",
+      IdentifierType: request.IdentifierType,
+      Identifier: request.Identifier,
     };
     return this.client.post<QueryOrgInfoResponse>(
       this.client.getEndpoint("QUERY_ORG_INFO"),

@@ -15,7 +15,7 @@ export const SANDBOX_ENDPOINTS = {
   TRANSACTION_STATUS: "/mpesa/transactionstatus/v1/query",
   ACCOUNT_BALANCE: "/mpesa/accountbalance/v1/query",
   DYNAMIC_QR: "/mpesa/qrcode/v1/generate",
-  QUERY_ORG_INFO: "/mpesa/queryorginfo/v1/query",
+  QUERY_ORG_INFO: "/sfcverify/v1/query/info",
   IMSI: "/imsi/v1/checkATI",
   IOT_ALL_SIMS: "/simportal/v1/allsims",
   IOT_QUERY_LIFECYCLE: "/simportal/v1/queryLifeCycleStatus",

@@ -313,11 +313,8 @@ func main() {
 			OriginatorConversationID: fmt.Sprintf("INT_%d_%x", time.Now().Unix(), time.Now().UnixNano()),
 			CommandID:                "BusinessPayToPochi",
 			Amount:                   10,
-			SenderIdentifier:         4,
-			ReceiverIdentifier:       4,
 			PartyA:                   shortcode,
 			PartyB:                   phone,
-			AccountReference:         "POCHI-TEST",
 			Remarks:                  "Pochi test",
 			QueueTimeOutURL:          callbackBase + "/b2pochi/queue",
 			ResultURL:                callbackBase + "/b2pochi/result",
@@ -341,7 +338,7 @@ func main() {
 	if err != nil {
 		logError("Lipa na Bonga", err)
 	} else {
-		fmt.Printf("   Amount: %s, Points: %s\n", lnbResp.Amount, lnbResp.Points)
+		fmt.Printf("   Amount: %s, Points: %s\n", lnbResp.Body.Amount, lnbResp.Body.Points)
 	}
 
 	sleep()
