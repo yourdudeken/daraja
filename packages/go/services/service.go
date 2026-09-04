@@ -83,7 +83,7 @@ func (s *Service) C2BRegisterURL(ctx context.Context, input svctypes.C2BRegister
 		return nil, err
 	}
 	return &svctypes.C2BResult{
-		OriginatorConversationID: resp.OriginatorCoversationID,
+		OriginatorConversationID: resp.OriginatorConversationID,
 		ResponseCode:             resp.ResponseCode,
 		ResponseDescription:      resp.ResponseDescription,
 	}, nil
@@ -108,7 +108,7 @@ func (s *Service) C2BSimulate(ctx context.Context, input svctypes.C2BSimulateInp
 		return nil, err
 	}
 	return &svctypes.C2BResult{
-		OriginatorConversationID: resp.OriginatorCoversationID,
+		OriginatorConversationID: resp.OriginatorConversationID,
 		ResponseCode:             resp.ResponseCode,
 		ResponseDescription:      resp.ResponseDescription,
 	}, nil

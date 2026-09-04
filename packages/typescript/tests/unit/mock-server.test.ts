@@ -72,7 +72,7 @@ describe("Mock Server Tests (nock)", () => {
     nock(BASE)
       .post("/mpesa/c2b/v2/registerurl")
       .reply(200, {
-        OriginatorCoversationID: "conv-1",
+        OriginatorConversationID: "conv-1",
         ResponseCode: "0",
         ResponseDescription: "Success",
       });

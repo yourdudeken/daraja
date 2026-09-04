@@ -648,7 +648,7 @@ export interface components {
             BillRefNumber?: string;
         };
         C2BResponse: {
-            OriginatorCoversationID?: string;
+            OriginatorConversationID?: string;
             ResponseCode?: string;
             ResponseDescription?: string;
         };

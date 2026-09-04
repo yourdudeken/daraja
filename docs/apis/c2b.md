@@ -34,7 +34,7 @@ Both operations return:
 
 | Field | Type | Description |
 | --- | --- | --- |
-| `OriginatorCoversationID` | string | Unique conversation identifier (note: typo is in the API) |
+| `OriginatorConversationID` | string | Unique conversation identifier (note: typo is in the API) |
 | `ResponseCode` | string | `0` indicates success |
 | `ResponseDescription` | string | Human-readable description |
 

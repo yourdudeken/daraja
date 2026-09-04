@@ -93,7 +93,7 @@ func TestC2BRegisterURLWithMockServer(t *testing.T) {
 	apiServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(types.C2BResponse{
-			OriginatorCoversationID: "conv-1",
+			OriginatorConversationID: "conv-1",
 			ResponseCode:            "0",
 			ResponseDescription:     "Success",
 		})

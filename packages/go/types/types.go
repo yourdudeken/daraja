@@ -221,7 +221,7 @@ type C2BSimulateRequest struct {
 }
 
 type C2BResponse struct {
-	OriginatorCoversationID string `json:"OriginatorCoversationID"`
+	OriginatorConversationID string `json:"OriginatorConversationID"`
 	ResponseCode            string `json:"ResponseCode"`
 	ResponseDescription     string `json:"ResponseDescription"`
 }

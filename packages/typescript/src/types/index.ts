@@ -211,7 +211,7 @@ export interface C2BSimulateRequest {
 }
 
 export interface C2BResponse {
-  OriginatorCoversationID: string;
+  OriginatorConversationID: string;
   ResponseCode: string;
   ResponseDescription: string;
 }

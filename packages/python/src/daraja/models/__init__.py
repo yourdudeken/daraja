@@ -142,7 +142,7 @@ class C2BSimulateRequest(BaseModel):
 
 
 class C2BResponse(BaseModel):
-    OriginatorCoversationID: str
+    OriginatorConversationID: str
     ResponseCode: str
     ResponseDescription: str
 

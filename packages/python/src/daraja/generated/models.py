@@ -163,7 +163,7 @@ class C2BSimulateRequest(BaseModel):
 
 
 class C2BResponse(BaseModel):
-    OriginatorCoversationID: str | None = None
+    OriginatorConversationID: str | None = None
     ResponseCode: str | None = None
     ResponseDescription: str | None = None
 

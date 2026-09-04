@@ -78,7 +78,7 @@ class TestC2BMock:
         _mock_auth(router)
         router.post(f"{BASE_URL}/mpesa/c2b/v2/registerurl").respond(
             200, json={
-                "OriginatorCoversationID": "conv-1",
+                "OriginatorConversationID": "conv-1",
                 "ResponseCode": "0",
                 "ResponseDescription": "Success",
             },
@@ -98,7 +98,7 @@ class TestC2BMock:
         router = respx
         _mock_auth(router)
         router.post(f"{BASE_URL}/mpesa/c2b/v2/simulate").respond(
-            200, json={"ResponseCode": "0", "OriginatorCoversationID": "conv-1"},
+            200, json={"ResponseCode": "0", "OriginatorConversationID": "conv-1"},
         )
 
         result = client._request("POST", f"{BASE_URL}/mpesa/c2b/v2/simulate", {

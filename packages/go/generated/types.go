@@ -260,7 +260,7 @@ type C2BRegisterURLRequestResponseType string
 
 // C2BResponse defines model for C2BResponse.
 type C2BResponse struct {
-	OriginatorCoversationID *string `json:"OriginatorCoversationID,omitempty"`
+	OriginatorConversationID *string `json:"OriginatorConversationID,omitempty"`
 	ResponseCode            *string `json:"ResponseCode,omitempty"`
 	ResponseDescription     *string `json:"ResponseDescription,omitempty"`
 }
