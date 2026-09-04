@@ -18,3 +18,6 @@ export { BillManagerService } from "./bill-manager.js";
 export { B2BExpressService } from "./b2b-express.js";
 export { RatibaService } from "./ratiba.js";
 export { TaxRemittanceService } from "./tax-remittance.js";
+export { MobileCenterService } from "./mobile-center.js";
+export { AgeOnNetworkService } from "./age-on-network.js";
+export { MobileNumberValidationService } from "./mobile-number-validation.js";

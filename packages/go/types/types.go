@@ -1024,3 +1024,114 @@ type AccountBalanceResult struct {
 	OrganizationSettlementAcc *AccountInfo
 	FloatAccount              *AccountInfo
 }
+
+// ---- MobileCenter (Mobile Data Bundles) ----
+type MobileCenterFetchOffersRequest struct {
+	Msisdn string
+}
+
+type MobileCenterOffersChild struct {
+	OfferName     string `json:"offerName"`
+	OfferValidity int    `json:"offerValidity"`
+	ResourceAccID int    `json:"resourceAccId"`
+	ResourceValue int    `json:"resourceValue"`
+	OfferPrice    int    `json:"offerPrice"`
+	OfferUssdName string `json:"offerUssdName"`
+	ParentOfferID int    `json:"parentOfferId"`
+}
+
+type MobileCenterOffersCharacteristic struct {
+	OfferName        string                    `json:"offerName"`
+	UniqueOfferingID string                    `json:"uniqueOfferingId"`
+	OfferValidity    int                       `json:"offerValidity"`
+	ResourceAccID    int                       `json:"resourceAccId"`
+	ResourceValue    int                       `json:"resourceValue"`
+	OfferPrice       int                       `json:"offerPrice"`
+	OfferUssdName    string                    `json:"offerUssdName"`
+	OfferingID       int                       `json:"offeringId"`
+	OfferSource      string                    `json:"offerSource"`
+	LocationID       int                       `json:"locationId"`
+	Subscribed       int                       `json:"subscribed"`
+	ChildOffers      []MobileCenterOffersChild `json:"childOffers"`
+}
+
+type MobileCenterFetchOffersResponse struct {
+	ID                  string                     `json:"id"`
+	Desc                string                     `json:"desc"`
+	Status              string                     `json:"status"`
+	RelatedSubscription []MobileCenterSubscription `json:"relatedSusbscription"`
+	LineItem            MobileCenterLineItem       `json:"lineItem"`
+}
+
+type MobileCenterSubscription struct {
+	Desc string `json:"desc"`
+	Name string `json:"name"`
+}
+
+type MobileCenterLineItem struct {
+	CharacteristicsValue []MobileCenterOffersCharacteristic `json:"characteristicsValue"`
+}
+
+type MobileCenterPurchaseRequest struct {
+	OfferingID     string `json:"offeringId"`
+	AccountID      string `json:"accountId"`
+	Price          string `json:"price"`
+	ResourceAmount string `json:"resourceAmount"`
+	Validity       string `json:"validity"`
+	Msisdn         string `json:"msisdn"`
+	TransactionID  string `json:"transactionId"`
+	PaymentMode    string `json:"paymentMode"`
+}
+
+type MobileCenterPurchaseResponse struct {
+	Header MobileCenterPurchaseHeader `json:"header"`
+}
+
+type MobileCenterPurchaseHeader struct {
+	RequestRefID    string `json:"requestRefId"`
+	ResponseCode    int    `json:"responseCode"`
+	ResponseMessage string `json:"responseMessage"`
+	CustomerMessage string `json:"customerMessage"`
+	Timestamp       string `json:"timestamp"`
+}
+
+type MobileCenterStatusRequest struct {
+	ID               string
+	ServiceAccountID string
+}
+
+type MobileCenterStatusResponse struct {
+	ResponseID      string `json:"responseId"`
+	ResponseDesc    string `json:"responseDesc"`
+	ResponseStatus  string `json:"responseStatus"`
+	ResponseCreated string `json:"responseCreated"`
+}
+
+// ---- Age On Network ----
+type AgeOnNetworkRequest struct {
+	CustomerNumber string `json:"customerNumber"`
+}
+
+type AgeOnNetworkResponse struct {
+	RequestRefID           string `json:"requestRefID"`
+	ResponseCode           string `json:"responseCode"`
+	ResponseDesc           string `json:"responseDesc"`
+	MsisdnRegistrationDate string `json:"msisdnRegistrationDate"`
+	CustomerNumber         string `json:"customerNumber"`
+}
+
+// ---- Mobile Number Validation ----
+type MobileNumberValidationRequest struct {
+	RequestRefID string `json:"requestRefID"`
+	ShortCode    string `json:"shortCode"`
+	Msisdn       string `json:"msisdn"`
+	IDType       string `json:"idType"`
+	IDNumber     string `json:"idNumber"`
+}
+
+type MobileNumberValidationResponse struct {
+	ResponseRefID   string `json:"responseRefID"`
+	ResponseCode    string `json:"responseCode"`
+	ResponseMessage string `json:"responseMessage"`
+	Status          string `json:"status"`
+}

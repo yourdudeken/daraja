@@ -1045,6 +1045,110 @@ export interface B2CAccountTopUpResponse {
 }
 
 // ============================================================
+// MOBILE CENTER (Mobile Data Bundles)
+// ============================================================
+export interface MobileCenterChildOffer {
+  offerName: string;
+  offerValidity: number;
+  resourceAccId: number;
+  resourceValue: number;
+  offerPrice: number;
+  offerUssdName: string;
+  parentOfferId: number;
+}
+
+export interface MobileCenterOfferCharacteristic {
+  offerName: string;
+  uniqueOfferingId: string;
+  offerValidity: number;
+  resourceAccId: number;
+  resourceValue: number;
+  offerPrice: number;
+  offerUssdName: string;
+  offeringId: number;
+  offerSource: string;
+  locationId: number;
+  subscribed: number;
+  childOffers: MobileCenterChildOffer[];
+}
+
+export interface MobileCenterRelatedSubscription {
+  desc: string;
+  name: string;
+}
+
+export interface MobileCenterFetchOffersResponse {
+  id: string;
+  desc: string;
+  status: string;
+  relatedSusbscription: MobileCenterRelatedSubscription[];
+  lineItem: {
+    characteristicsValue: MobileCenterOfferCharacteristic[];
+  };
+}
+
+export interface MobileCenterPurchaseRequest {
+  offeringId: string;
+  accountId: string;
+  price: string;
+  resourceAmount: string;
+  validity: string;
+  msisdn: string;
+  transactionId: string;
+  paymentMode: string;
+}
+
+export interface MobileCenterPurchaseResponse {
+  header: {
+    requestRefId: string;
+    responseCode: number;
+    responseMessage: string;
+    customerMessage: string;
+    timestamp: string;
+  };
+}
+
+export interface MobileCenterStatusResponse {
+  responseId: string;
+  responseDesc: string;
+  responseStatus: string;
+  responseCreated: string;
+}
+
+// ============================================================
+// AGE ON NETWORK
+// ============================================================
+export interface AgeOnNetworkRequest {
+  customerNumber: string;
+}
+
+export interface AgeOnNetworkResponse {
+  requestRefID: string;
+  responseCode: string;
+  responseDesc: string;
+  msisdnRegistrationDate: string;
+  customerNumber: string;
+}
+
+// ============================================================
+// MOBILE NUMBER VALIDATION
+// ============================================================
+export interface MobileNumberValidationRequest {
+  requestRefID: string;
+  shortCode: string;
+  msisdn: string;
+  idType: string;
+  idNumber: string;
+}
+
+export interface MobileNumberValidationResponse {
+  responseRefID: string;
+  responseCode: string;
+  responseMessage: string;
+  status: string;
+}
+
+// ============================================================
 // RESULT CALLBACK
 // ============================================================
 export interface ResultParameterItem {

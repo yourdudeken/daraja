@@ -47,6 +47,11 @@ export const SANDBOX_ENDPOINTS = {
   B2B_EXPRESS: "/v1/ussdpush/get-msisdn",
   RATIBA: "/standingorder/v1/createStandingOrderExternal",
   TAX_REMITTANCE: "/mpesa/b2b/v1/remittax",
+  MOBILE_CENTER_FETCH: "/v1/dynamic-offers/fetch",
+  MOBILE_CENTER_PURCHASE: "/v1/dynamic-offers/facebook-bundle/purchase",
+  MOBILE_CENTER_STATUS: "/v2/bundles/get/status",
+  AGE_ON_NETWORK: "/registration/lookup/v1/checkATI",
+  MOBILE_NUMBER_VALIDATION: "/v1/KYC-validation/validateID",
 } as const;
 
 export type MpesaEnvironment = "sandbox" | "production";

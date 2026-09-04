@@ -20,6 +20,9 @@ import {
   B2BExpressService,
   RatibaService,
   TaxRemittanceService,
+  MobileCenterService,
+  AgeOnNetworkService,
+  MobileNumberValidationService,
 } from "./services/index.js";
 import { WebhookManager } from "./webhooks/index.js";
 import type { MpesaConfig } from "./types/index.js";
@@ -45,6 +48,9 @@ export class Mpesa {
   public readonly b2bExpress: B2BExpressService;
   public readonly ratiba: RatibaService;
   public readonly taxRemittance: TaxRemittanceService;
+  public readonly mobileCenter: MobileCenterService;
+  public readonly ageOnNetwork: AgeOnNetworkService;
+  public readonly mobileNumberValidation: MobileNumberValidationService;
   public readonly webhooks: WebhookManager;
   public readonly client: MpesaApiClient;
 
@@ -70,6 +76,9 @@ export class Mpesa {
     this.b2bExpress = new B2BExpressService(this.client);
     this.ratiba = new RatibaService(this.client);
     this.taxRemittance = new TaxRemittanceService(this.client);
+    this.mobileCenter = new MobileCenterService(this.client);
+    this.ageOnNetwork = new AgeOnNetworkService(this.client);
+    this.mobileNumberValidation = new MobileNumberValidationService(this.client);
     this.webhooks = new WebhookManager({
       passkey: config.passkey,
     });

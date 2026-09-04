@@ -10,6 +10,7 @@ import (
 	"io"
 	"math"
 	"net/http"
+	"net/url"
 	"strings"
 	"sync"
 	"time"
@@ -1152,6 +1153,91 @@ func (c *Client) DynamicQR(ctx context.Context, req types.DynamicQRRequest) (*ty
 	}
 
 	var resp types.DynamicQRResponse
+	if err := json.Unmarshal(respBody, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+// ---- MobileCenter (Mobile Data Bundles) ----
+func (c *Client) MobileCenterFetchOffers(ctx context.Context, req types.MobileCenterFetchOffersRequest) (*types.MobileCenterFetchOffersResponse, error) {
+	u, err := url.Parse(c.endpoints.MobileCenterFetchOffers)
+	if err != nil {
+		return nil, err
+	}
+	q := u.Query()
+	q.Set("msisdn", req.Msisdn)
+	u.RawQuery = q.Encode()
+
+	respBody, err := c.doRequest(ctx, "GET", u.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	var resp types.MobileCenterFetchOffersResponse
+	if err := json.Unmarshal(respBody, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func (c *Client) MobileCenterPurchase(ctx context.Context, req types.MobileCenterPurchaseRequest) (*types.MobileCenterPurchaseResponse, error) {
+	respBody, err := c.doRequest(ctx, "POST", c.endpoints.MobileCenterPurchase, req)
+	if err != nil {
+		return nil, err
+	}
+
+	var resp types.MobileCenterPurchaseResponse
+	if err := json.Unmarshal(respBody, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func (c *Client) MobileCenterStatus(ctx context.Context, req types.MobileCenterStatusRequest) (*types.MobileCenterStatusResponse, error) {
+	u, err := url.Parse(c.endpoints.MobileCenterStatus)
+	if err != nil {
+		return nil, err
+	}
+	q := u.Query()
+	q.Set("id", req.ID)
+	q.Set("serviceAccountId", req.ServiceAccountID)
+	u.RawQuery = q.Encode()
+
+	respBody, err := c.doRequest(ctx, "GET", u.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	var resp types.MobileCenterStatusResponse
+	if err := json.Unmarshal(respBody, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+// ---- Age On Network ----
+func (c *Client) AgeOnNetwork(ctx context.Context, req types.AgeOnNetworkRequest) (*types.AgeOnNetworkResponse, error) {
+	respBody, err := c.doRequest(ctx, "POST", c.endpoints.AgeOnNetwork, req)
+	if err != nil {
+		return nil, err
+	}
+
+	var resp types.AgeOnNetworkResponse
+	if err := json.Unmarshal(respBody, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+// ---- Mobile Number Validation ----
+func (c *Client) MobileNumberValidation(ctx context.Context, req types.MobileNumberValidationRequest) (*types.MobileNumberValidationResponse, error) {
+	respBody, err := c.doRequest(ctx, "POST", c.endpoints.MobileNumberValidation, req)
+	if err != nil {
+		return nil, err
+	}
+
+	var resp types.MobileNumberValidationResponse
 	if err := json.Unmarshal(respBody, &resp); err != nil {
 		return nil, err
 	}

@@ -162,6 +162,11 @@ var endpoints = map[string]string{
 	"IOT_ALL_MESSAGES":            "/simportal/v1/getallmessages",
 	"IOT_SEND_SINGLE_MESSAGE":     "/simportal/v1/sendsinglemessage",
 	"IOT_DELETE_MESSAGE":          "/simportal/v1/deletemessage",
+	"MOBILE_CENTER_FETCH_OFFERS":  "/v1/dynamic-offers/fetch",
+	"MOBILE_CENTER_PURCHASE":      "/v1/dynamic-offers/facebook-bundle/purchase",
+	"MOBILE_CENTER_STATUS":        "/v2/bundles/get/status",
+	"AGE_ON_NETWORK":              "/registration/lookup/v1/checkATI",
+	"MOBILE_NUMBER_VALIDATION":    "/v1/KYC-validation/validateID",
 }
 
 type environmentEndpoints struct {
@@ -208,6 +213,11 @@ type environmentEndpoints struct {
 	IoTAllMessages            string
 	IoTSendSingleMessage      string
 	IoTDeleteMessage          string
+	MobileCenterFetchOffers   string
+	MobileCenterPurchase      string
+	MobileCenterStatus        string
+	AgeOnNetwork              string
+	MobileNumberValidation    string
 }
 
 func getEndpoints(env types.Environment) environmentEndpoints {
@@ -260,5 +270,10 @@ func getEndpoints(env types.Environment) environmentEndpoints {
 		IoTAllMessages:            base + endpoints["IOT_ALL_MESSAGES"],
 		IoTSendSingleMessage:      base + endpoints["IOT_SEND_SINGLE_MESSAGE"],
 		IoTDeleteMessage:          base + endpoints["IOT_DELETE_MESSAGE"],
+		MobileCenterFetchOffers:   base + endpoints["MOBILE_CENTER_FETCH_OFFERS"],
+		MobileCenterPurchase:      base + endpoints["MOBILE_CENTER_PURCHASE"],
+		MobileCenterStatus:        base + endpoints["MOBILE_CENTER_STATUS"],
+		AgeOnNetwork:              base + endpoints["AGE_ON_NETWORK"],
+		MobileNumberValidation:    base + endpoints["MOBILE_NUMBER_VALIDATION"],
 	}
 }
