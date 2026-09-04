@@ -105,7 +105,7 @@ Raised when Safaricom returns HTTP 429. Includes a `retryAfter` field (seconds) 
 from daraja.exceptions import RateLimitError
 
 try:
-    result = mpesa.b2c.send(request)
+    result = mpesa.b2c_service.send(request)
 except RateLimitError as e:
     wait = e.retry_after  # seconds
 ```
@@ -137,7 +137,7 @@ Raised when the Daraja API returns a non-zero response code. Includes the Daraja
 from daraja.exceptions import MpesaAPIError
 
 try:
-    result = mpesa.b2c.send(request)
+    result = mpesa.b2c_service.send(request)
 except MpesaAPIError as e:
     print(e.error_code, e.message)
 ```
@@ -252,7 +252,7 @@ mpesa = Mpesa({
 })
 
 try:
-    result = mpesa.stk_push.initiate({
+    result = mpesa.stk_push_service.initiate({
         "BusinessShortCode": 174379,
         "TransactionType": "CustomerPayBillOnline",
         "Amount": 100,

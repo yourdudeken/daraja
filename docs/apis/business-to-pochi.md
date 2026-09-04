@@ -8,19 +8,17 @@ Sends a payment from a business account to a Pochi La M-Pesa wallet (personal mi
 
 ## Request fields
 
-| Field | Type | Required | Description |
+| Field | Type | Default | Description |
 | --- | --- | --- | --- |
-| `OriginatorConversationID` | string | no | Unique ID for the conversation. Auto-generated if omitted. |
-| `InitiatorName` | string | auto | Username of the initiator. Auto-filled from SDK config if omitted. |
-| `SecurityCredential` | string | auto | Encrypted security credential. Auto-generated from `initiatorPassword` if omitted. |
-| `CommandID` | string | yes | Must be `BusinessPayToPochi` |
-| `Amount` | int | yes | Transaction amount |
-| `PartyA` | int | yes | Business short code sending the payment |
-| `PartyB` | int | yes | Receiving Pochi La M-Pesa phone number |
-| `Remarks` | string | yes | Transaction remarks |
-| `QueueTimeOutURL` | string | yes | HTTPS URL for timeout notifications |
-| `ResultURL` | string | yes | HTTPS URL for transaction result |
-| `Occassion` | string | no | Optional occasion description |
+| `InitiatorName` | string | — | Username of the initiator. Auto-filled from SDK config if omitted. |
+| `SecurityCredential` | string | — | Encrypted security credential. Auto-generated from `initiatorPassword` if omitted. |
+| `CommandID` | string | `"BusinessPayToPochi"` | Commands this is a Pochi payment |
+| `Amount` | int | — | Transaction amount |
+| `PartyA` | int | — | Business short code sending the payment |
+| `PartyB` | int | — | Receiving Pochi La M-Pesa phone number |
+| `Remarks` | string | — | Transaction remarks |
+| `QueueTimeOutURL` | string | — | HTTPS URL for timeout notifications |
+| `ResultURL` | string | — | HTTPS URL for transaction result |
 
 ## Response
 
