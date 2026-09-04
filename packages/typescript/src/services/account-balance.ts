@@ -32,6 +32,7 @@ export class AccountBalanceService {
       ...request,
       SecurityCredential: request.SecurityCredential || config.securityCredential,
       Initiator: request.Initiator || config.initiatorName,
+      IdentifierType: request.IdentifierType ?? 4,
     };
     return this.client.post<AccountBalanceResponse>(
       this.client.getEndpoint("ACCOUNT_BALANCE"),

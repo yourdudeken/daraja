@@ -3,6 +3,10 @@ from typing import Any, Callable, Optional
 from daraja.models import (
     AccountBalanceRequest,
     AccountBalanceResponse,
+    AccountInfo,
+    AccountBalanceResult,
+    MpesaResult,
+    ResultDetail,
     AgeOnNetworkRequest,
     AgeOnNetworkResponse,
     B2BExpressRequest,
@@ -270,6 +274,48 @@ class AccountBalanceService:
                     request.Initiator = self._config.initiator_name
         result = self._post("ACCOUNT_BALANCE", request.model_dump())
         return AccountBalanceResponse(**result)
+
+    @staticmethod
+    def parse_balance_string(balance_str: str) -> AccountBalanceResult:
+        result = AccountBalanceResult()
+        for account in balance_str.split("&"):
+            parts = account.split("|")
+            if len(parts) >= 6:
+                info = AccountInfo(
+                    accountName=parts[0],
+                    currency=parts[1],
+                    availableBalance=float(parts[2]),
+                    unclearedFunds=float(parts[3]),
+                    reservedFunds=float(parts[4]),
+                )
+                name = info.accountName.lower().replace(" ", "")
+                if "working" in name:
+                    result.workingAccount = info
+                elif "utility" in name:
+                    result.utilityAccount = info
+                elif "charge" in name:
+                    result.chargesPaidAccount = info
+                elif "settlement" in name:
+                    result.organizationSettlementAccount = info
+                elif "float" in name:
+                    result.floatAccount = info
+        return result
+
+    @staticmethod
+    def parse_callback(payload: dict | MpesaResult) -> dict:
+        result = payload.Result if isinstance(payload, MpesaResult) else ResultDetail(**payload["Result"])
+        details: dict[str, Any] = {}
+        if result.ResultParameters:
+            for param in result.ResultParameters.ResultParameter:
+                if param.Key and isinstance(param.Value, (str, int, float)):
+                    details[param.Key] = param.Value
+        balance_str = details.get("AccountBalance")
+        return {
+            "success": result.ResultCode == 0,
+            "resultCode": result.ResultCode,
+            "resultDescription": result.ResultDesc,
+            "balances": AccountBalanceService.parse_balance_string(balance_str) if balance_str else None,
+        }
 
 
 class DynamicQRService:

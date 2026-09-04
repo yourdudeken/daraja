@@ -248,6 +248,22 @@ class AccountBalanceResponse(BaseModel):
     ResponseDescription: str
 
 
+class AccountInfo(BaseModel):
+    accountName: str = ""
+    currency: str = ""
+    availableBalance: float = 0.0
+    unclearedFunds: float = 0.0
+    reservedFunds: float = 0.0
+
+
+class AccountBalanceResult(BaseModel):
+    workingAccount: Optional[AccountInfo] = None
+    utilityAccount: Optional[AccountInfo] = None
+    chargesPaidAccount: Optional[AccountInfo] = None
+    organizationSettlementAccount: Optional[AccountInfo] = None
+    floatAccount: Optional[AccountInfo] = None
+
+
 class DynamicQRRequest(BaseModel):
     MerchantName: str
     RefNo: str
@@ -964,6 +980,8 @@ __all__ = [
     "TransactionStatusResponse",
     "AccountBalanceRequest",
     "AccountBalanceResponse",
+    "AccountInfo",
+    "AccountBalanceResult",
     "DynamicQRRequest",
     "DynamicQRResponse",
     "MpesaResult",

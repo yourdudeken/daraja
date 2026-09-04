@@ -950,15 +950,20 @@ func (s *Service) CreateStandingOrder(ctx context.Context, input svctypes.Ratiba
 	}, nil
 }
 
-func (s *Service) TaxRemittance(ctx context.Context, input svctypes.TaxRemittanceInput) (*svctypes.TaxRemittanceResult, error) {
-	cfg := s.client.GetConfig()
-	if input.SecurityCredential == "" && cfg.SecurityCredential != "" {
-		input.SecurityCredential = cfg.SecurityCredential
+func newTaxRemittanceRequest(input svctypes.TaxRemittanceInput) types.TaxRemittanceRequest {
+	if input.CommandID == "" {
+		input.CommandID = "PayTaxToKRA"
 	}
-	if input.Initiator == "" && cfg.InitiatorName != "" {
-		input.Initiator = cfg.InitiatorName
+	if input.SenderIdentifierType == "" {
+		input.SenderIdentifierType = "4"
 	}
-	req := types.TaxRemittanceRequest{
+	if input.RecieverIdentifierType == "" {
+		input.RecieverIdentifierType = "4"
+	}
+	if input.PartyB == "" {
+		input.PartyB = "572572"
+	}
+	return types.TaxRemittanceRequest{
 		Initiator:              input.Initiator,
 		SecurityCredential:     input.SecurityCredential,
 		CommandID:              input.CommandID,
@@ -972,6 +977,17 @@ func (s *Service) TaxRemittance(ctx context.Context, input svctypes.TaxRemittanc
 		QueueTimeOutURL:        input.QueueTimeOutURL,
 		ResultURL:              input.ResultURL,
 	}
+}
+
+func (s *Service) TaxRemittance(ctx context.Context, input svctypes.TaxRemittanceInput) (*svctypes.TaxRemittanceResult, error) {
+	cfg := s.client.GetConfig()
+	if input.SecurityCredential == "" && cfg.SecurityCredential != "" {
+		input.SecurityCredential = cfg.SecurityCredential
+	}
+	if input.Initiator == "" && cfg.InitiatorName != "" {
+		input.Initiator = cfg.InitiatorName
+	}
+	req := newTaxRemittanceRequest(input)
 	resp, err := s.client.TaxRemittance(ctx, req)
 	if err != nil {
 		return nil, err
