@@ -17,6 +17,8 @@ from daraja.models import (
     AccountBalanceRequest,
     AccountBalanceResponse,
     AccessTokenResponse,
+    AgeOnNetworkRequest,
+    AgeOnNetworkResponse,
     B2BExpressRequest,
     B2BExpressResponse,
     B2CAccountTopUpRequest,
@@ -42,6 +44,14 @@ from daraja.models import (
     LipaNaBongaCalculateResponse,
     LipaNaBongaRedeemRequest,
     LipaNaBongaRedeemResponse,
+    MobileCenterFetchOffersRequest,
+    MobileCenterFetchOffersResponse,
+    MobileCenterPurchaseRequest,
+    MobileCenterPurchaseResponse,
+    MobileCenterStatusRequest,
+    MobileCenterStatusResponse,
+    MobileNumberValidationRequest,
+    MobileNumberValidationResponse,
     MpesaConfig,
     PullTransactionsRegisterRequest,
     PullTransactionsRegisterResponse,
@@ -405,6 +415,10 @@ class Mpesa:
         url = get_full_url(self._config.environment, ENDPOINTS[endpoint_key])
         return self._request("POST", url, data)
 
+    def _get(self, endpoint_key: str, params: dict) -> dict:
+        url = get_full_url(self._config.environment, ENDPOINTS[endpoint_key])
+        return self._request("GET", url, params)
+
     def stk_push(self, request: STKPushRequest | dict) -> STKPushResponse:
         if isinstance(request, dict):
             request = STKPushRequest(**request)
@@ -714,6 +728,47 @@ class Mpesa:
         result = self._post("TAX_REMITTANCE", request.model_dump())
         return TaxRemittanceResponse(**result)
 
+    def mobile_center_fetch_offers(
+        self, request: MobileCenterFetchOffersRequest | dict
+    ) -> MobileCenterFetchOffersResponse:
+        if isinstance(request, dict):
+            request = MobileCenterFetchOffersRequest(**request)
+        result = self._get("MOBILE_CENTER_FETCH_OFFERS", {"msisdn": request.msisdn})
+        return MobileCenterFetchOffersResponse(**result)
+
+    def mobile_center_purchase(
+        self, request: MobileCenterPurchaseRequest | dict
+    ) -> MobileCenterPurchaseResponse:
+        if isinstance(request, dict):
+            request = MobileCenterPurchaseRequest(**request)
+        result = self._post("MOBILE_CENTER_PURCHASE", request.model_dump())
+        return MobileCenterPurchaseResponse(**result)
+
+    def mobile_center_status(
+        self, request: MobileCenterStatusRequest | dict
+    ) -> MobileCenterStatusResponse:
+        if isinstance(request, dict):
+            request = MobileCenterStatusRequest(**request)
+        result = self._get(
+            "MOBILE_CENTER_STATUS",
+            {"id": request.id, "serviceAccountId": request.serviceAccountId},
+        )
+        return MobileCenterStatusResponse(**result)
+
+    def age_on_network(self, request: AgeOnNetworkRequest | dict) -> AgeOnNetworkResponse:
+        if isinstance(request, dict):
+            request = AgeOnNetworkRequest(**request)
+        result = self._post("AGE_ON_NETWORK", request.model_dump())
+        return AgeOnNetworkResponse(**result)
+
+    def mobile_number_validation(
+        self, request: MobileNumberValidationRequest | dict
+    ) -> MobileNumberValidationResponse:
+        if isinstance(request, dict):
+            request = MobileNumberValidationRequest(**request)
+        result = self._post("MOBILE_NUMBER_VALIDATION", request.model_dump())
+        return MobileNumberValidationResponse(**result)
+
     @property
     def b2pochi_service(self):
         from daraja.services import B2PochiService
@@ -761,6 +816,24 @@ class Mpesa:
         from daraja.services import TaxRemittanceService
 
         return TaxRemittanceService(self._post, self._config)
+
+    @property
+    def mobile_center_service(self):
+        from daraja.services import MobileCenterService
+
+        return MobileCenterService(self._post, self._get)
+
+    @property
+    def age_on_network_service(self):
+        from daraja.services import AgeOnNetworkService
+
+        return AgeOnNetworkService(self._post)
+
+    @property
+    def mobile_number_validation_service(self):
+        from daraja.services import MobileNumberValidationService
+
+        return MobileNumberValidationService(self._post)
 
     @property
     def b2c_account_top_up_service(self):

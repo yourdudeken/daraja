@@ -17,6 +17,8 @@ from daraja.models import (
     AccountBalanceRequest,
     AccountBalanceResponse,
     AccessTokenResponse,
+    AgeOnNetworkRequest,
+    AgeOnNetworkResponse,
     B2BExpressRequest,
     B2BExpressResponse,
     B2CAccountTopUpRequest,
@@ -42,6 +44,14 @@ from daraja.models import (
     LipaNaBongaCalculateResponse,
     LipaNaBongaRedeemRequest,
     LipaNaBongaRedeemResponse,
+    MobileCenterFetchOffersRequest,
+    MobileCenterFetchOffersResponse,
+    MobileCenterPurchaseRequest,
+    MobileCenterPurchaseResponse,
+    MobileCenterStatusRequest,
+    MobileCenterStatusResponse,
+    MobileNumberValidationRequest,
+    MobileNumberValidationResponse,
     MpesaConfig,
     PullTransactionsRegisterRequest,
     PullTransactionsRegisterResponse,
@@ -387,6 +397,10 @@ class AsyncMpesa:
         url = get_full_url(self._config.environment, ENDPOINTS[endpoint_key])
         return await self._request("POST", url, data)
 
+    async def _get(self, endpoint_key: str, params: dict) -> dict:
+        url = get_full_url(self._config.environment, ENDPOINTS[endpoint_key])
+        return await self._request("GET", url, params)
+
     async def stk_push(self, request: STKPushRequest | dict) -> STKPushResponse:
         if isinstance(request, dict):
             request = STKPushRequest(**request)
@@ -568,6 +582,47 @@ class AsyncMpesa:
             request = B2CAccountTopUpRequest(**request)
         result = await self._post("B2C_ACCOUNT_TOP_UP", request.model_dump())
         return B2CAccountTopUpResponse(**result)
+
+    async def mobile_center_fetch_offers(
+        self, request: MobileCenterFetchOffersRequest | dict
+    ) -> MobileCenterFetchOffersResponse:
+        if isinstance(request, dict):
+            request = MobileCenterFetchOffersRequest(**request)
+        result = await self._get("MOBILE_CENTER_FETCH_OFFERS", {"msisdn": request.msisdn})
+        return MobileCenterFetchOffersResponse(**result)
+
+    async def mobile_center_purchase(
+        self, request: MobileCenterPurchaseRequest | dict
+    ) -> MobileCenterPurchaseResponse:
+        if isinstance(request, dict):
+            request = MobileCenterPurchaseRequest(**request)
+        result = await self._post("MOBILE_CENTER_PURCHASE", request.model_dump())
+        return MobileCenterPurchaseResponse(**result)
+
+    async def mobile_center_status(
+        self, request: MobileCenterStatusRequest | dict
+    ) -> MobileCenterStatusResponse:
+        if isinstance(request, dict):
+            request = MobileCenterStatusRequest(**request)
+        result = await self._get(
+            "MOBILE_CENTER_STATUS",
+            {"id": request.id, "serviceAccountId": request.serviceAccountId},
+        )
+        return MobileCenterStatusResponse(**result)
+
+    async def age_on_network(self, request: AgeOnNetworkRequest | dict) -> AgeOnNetworkResponse:
+        if isinstance(request, dict):
+            request = AgeOnNetworkRequest(**request)
+        result = await self._post("AGE_ON_NETWORK", request.model_dump())
+        return AgeOnNetworkResponse(**result)
+
+    async def mobile_number_validation(
+        self, request: MobileNumberValidationRequest | dict
+    ) -> MobileNumberValidationResponse:
+        if isinstance(request, dict):
+            request = MobileNumberValidationRequest(**request)
+        result = await self._post("MOBILE_NUMBER_VALIDATION", request.model_dump())
+        return MobileNumberValidationResponse(**result)
 
     async def rotate_credentials(self, consumer_key: str, consumer_secret: str) -> None:
         self._config.consumer_key = consumer_key

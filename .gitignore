@@ -22,3 +22,6 @@ coverage/
 packages/go/integration
 packages/go/*.mod.orig
 .tmp/
+
+superpowers/
+opencode.json

@@ -852,6 +852,114 @@ class TaxRemittanceResponse(BaseModel):
     ResponseDescription: str = ""
 
 
+class MobileCenterChildOffer(BaseModel):
+    offerName: str = ""
+    offerValidity: int = 0
+    resourceAccId: int = 0
+    resourceValue: int = 0
+    offerPrice: int = 0
+    offerUssdName: str = ""
+    parentOfferId: int = 0
+
+
+class MobileCenterCharacteristicValue(BaseModel):
+    offerName: str = ""
+    uniqueOfferingId: str = ""
+    offerValidity: int = 0
+    resourceAccId: int = 0
+    resourceValue: int = 0
+    offerPrice: int = 0
+    offerUssdName: str = ""
+    offeringId: int = 0
+    offerSource: str = ""
+    locationId: int = 0
+    subscribed: int = 0
+    childOffers: List[MobileCenterChildOffer] = []
+
+
+class MobileCenterRelatedSubscription(BaseModel):
+    desc: str = ""
+    name: str = ""
+
+
+class MobileCenterLineItem(BaseModel):
+    characteristicsValue: List[MobileCenterCharacteristicValue] = []
+
+
+class MobileCenterFetchOffersRequest(BaseModel):
+    msisdn: str
+
+
+class MobileCenterFetchOffersResponse(BaseModel):
+    id: str = ""
+    desc: str = ""
+    status: str = ""
+    relatedSusbscription: List[MobileCenterRelatedSubscription] = []
+    lineItem: Optional[MobileCenterLineItem] = None
+
+
+class MobileCenterPurchaseHeader(BaseModel):
+    requestRefId: str = ""
+    responseCode: int = 0
+    responseMessage: str = ""
+    customerMessage: str = ""
+    timestamp: str = ""
+
+
+class MobileCenterPurchaseRequest(BaseModel):
+    offeringId: str
+    accountId: str
+    price: str
+    resourceAmount: str
+    validity: str
+    msisdn: str
+    transactionId: str
+    paymentMode: str = "airtime"
+
+
+class MobileCenterPurchaseResponse(BaseModel):
+    header: Optional[MobileCenterPurchaseHeader] = None
+
+
+class MobileCenterStatusRequest(BaseModel):
+    id: str
+    serviceAccountId: str
+
+
+class MobileCenterStatusResponse(BaseModel):
+    responseId: str = ""
+    responseDesc: str = ""
+    responseStatus: str = ""
+    responseCreated: str = ""
+
+
+class AgeOnNetworkRequest(BaseModel):
+    customerNumber: str
+
+
+class AgeOnNetworkResponse(BaseModel):
+    requestRefID: str = ""
+    responseCode: str = ""
+    responseDesc: str = ""
+    msisdnRegistrationDate: str = ""
+    customerNumber: str = ""
+
+
+class MobileNumberValidationRequest(BaseModel):
+    requestRefID: str = ""
+    shortCode: str
+    msisdn: str
+    idType: str
+    idNumber: str
+
+
+class MobileNumberValidationResponse(BaseModel):
+    responseRefID: str = ""
+    responseCode: str = ""
+    responseMessage: str = ""
+    status: str = ""
+
+
 __all__ = [
     "MpesaConfig",
     "AccessTokenResponse",
@@ -959,4 +1067,19 @@ __all__ = [
     "IoTSendSingleMessageResponse",
     "IoTDeleteMessageRequest",
     "IoTDeleteMessageResponse",
+    "MobileCenterChildOffer",
+    "MobileCenterCharacteristicValue",
+    "MobileCenterRelatedSubscription",
+    "MobileCenterLineItem",
+    "MobileCenterFetchOffersRequest",
+    "MobileCenterFetchOffersResponse",
+    "MobileCenterPurchaseHeader",
+    "MobileCenterPurchaseRequest",
+    "MobileCenterPurchaseResponse",
+    "MobileCenterStatusRequest",
+    "MobileCenterStatusResponse",
+    "AgeOnNetworkRequest",
+    "AgeOnNetworkResponse",
+    "MobileNumberValidationRequest",
+    "MobileNumberValidationResponse",
 ]

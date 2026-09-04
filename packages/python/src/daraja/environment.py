@@ -49,6 +49,11 @@ _ENDPOINT_KEYS = [
     "iot_all_messages",
     "iot_send_single_message",
     "iot_delete_message",
+    "mobile_center_fetch_offers",
+    "mobile_center_purchase",
+    "mobile_center_status",
+    "age_on_network",
+    "mobile_number_validation",
 ]
 
 ENDPOINTS: dict[str, str] = {
@@ -97,6 +102,11 @@ ENDPOINTS: dict[str, str] = {
     "IOT_ALL_MESSAGES": "/simportal/v1/getallmessages",
     "IOT_SEND_SINGLE_MESSAGE": "/simportal/v1/sendsinglemessage",
     "IOT_DELETE_MESSAGE": "/simportal/v1/deletemessage",
+    "MOBILE_CENTER_FETCH_OFFERS": "/v1/dynamic-offers/fetch",
+    "MOBILE_CENTER_PURCHASE": "/v1/dynamic-offers/facebook-bundle/purchase",
+    "MOBILE_CENTER_STATUS": "/v2/bundles/get/status",
+    "AGE_ON_NETWORK": "/registration/lookup/v1/checkATI",
+    "MOBILE_NUMBER_VALIDATION": "/v1/KYC-validation/validateID",
 }
 
 Environment = Literal["sandbox", "production"]

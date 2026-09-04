@@ -3,6 +3,8 @@ from typing import Any, Callable, Optional
 from daraja.models import (
     AccountBalanceRequest,
     AccountBalanceResponse,
+    AgeOnNetworkRequest,
+    AgeOnNetworkResponse,
     B2BExpressRequest,
     B2BExpressResponse,
     B2CAccountTopUpRequest,
@@ -48,6 +50,14 @@ from daraja.models import (
     LipaNaBongaCalculateResponse,
     LipaNaBongaRedeemRequest,
     LipaNaBongaRedeemResponse,
+    MobileCenterFetchOffersRequest,
+    MobileCenterFetchOffersResponse,
+    MobileCenterPurchaseRequest,
+    MobileCenterPurchaseResponse,
+    MobileCenterStatusRequest,
+    MobileCenterStatusResponse,
+    MobileNumberValidationRequest,
+    MobileNumberValidationResponse,
     MpesaConfig,
     PullTransactionsRegisterRequest,
     PullTransactionsRegisterResponse,
@@ -593,6 +603,68 @@ class TaxRemittanceService:
         return TaxRemittanceResponse(**result)
 
 
+GetFn = Callable[[str, dict], dict]
+
+
+class MobileCenterService:
+    def __init__(self, post: PostFn, get: GetFn) -> None:
+        self._post = post
+        self._get = get
+
+    def fetch_offers(
+        self, request: MobileCenterFetchOffersRequest | dict
+    ) -> MobileCenterFetchOffersResponse:
+        if isinstance(request, dict):
+            request = MobileCenterFetchOffersRequest(**request)
+        result = self._get(
+            "MOBILE_CENTER_FETCH_OFFERS", {"msisdn": request.msisdn}
+        )
+        return MobileCenterFetchOffersResponse(**result)
+
+    def purchase(
+        self, request: MobileCenterPurchaseRequest | dict
+    ) -> MobileCenterPurchaseResponse:
+        if isinstance(request, dict):
+            request = MobileCenterPurchaseRequest(**request)
+        result = self._post("MOBILE_CENTER_PURCHASE", request.model_dump())
+        return MobileCenterPurchaseResponse(**result)
+
+    def check_status(
+        self, request: MobileCenterStatusRequest | dict
+    ) -> MobileCenterStatusResponse:
+        if isinstance(request, dict):
+            request = MobileCenterStatusRequest(**request)
+        result = self._get(
+            "MOBILE_CENTER_STATUS",
+            {"id": request.id, "serviceAccountId": request.serviceAccountId},
+        )
+        return MobileCenterStatusResponse(**result)
+
+
+class AgeOnNetworkService:
+    def __init__(self, post: PostFn) -> None:
+        self._post = post
+
+    def query(self, request: AgeOnNetworkRequest | dict) -> AgeOnNetworkResponse:
+        if isinstance(request, dict):
+            request = AgeOnNetworkRequest(**request)
+        result = self._post("AGE_ON_NETWORK", request.model_dump())
+        return AgeOnNetworkResponse(**result)
+
+
+class MobileNumberValidationService:
+    def __init__(self, post: PostFn) -> None:
+        self._post = post
+
+    def validate(
+        self, request: MobileNumberValidationRequest | dict
+    ) -> MobileNumberValidationResponse:
+        if isinstance(request, dict):
+            request = MobileNumberValidationRequest(**request)
+        result = self._post("MOBILE_NUMBER_VALIDATION", request.model_dump())
+        return MobileNumberValidationResponse(**result)
+
+
 __all__ = [
     "STKPushService",
     "C2BService",
@@ -614,4 +686,7 @@ __all__ = [
     "B2BExpressService",
     "RatibaService",
     "TaxRemittanceService",
+    "MobileCenterService",
+    "AgeOnNetworkService",
+    "MobileNumberValidationService",
 ]
