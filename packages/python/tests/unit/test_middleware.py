@@ -118,6 +118,11 @@ def test_flask_keeps_routing_b2c_result():
 
 
 def test_django_routes_b2b_result():
+    from django.conf import settings as django_settings
+
+    if not django_settings.configured:
+        django_settings.configure()
+
     manager = RecordingManager()
     view = create_django_view(manager)
 
@@ -135,6 +140,11 @@ def test_django_routes_b2b_result():
 
 
 def test_django_keeps_routing_b2c_result():
+    from django.conf import settings as django_settings
+
+    if not django_settings.configured:
+        django_settings.configure()
+
     manager = RecordingManager()
     view = create_django_view(manager)
 

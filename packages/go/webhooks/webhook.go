@@ -113,17 +113,36 @@ func (m *Manager) HandleResultCallback(body json.RawMessage) {
 
 	switch {
 	case result.Result.ResultParameters != nil:
+		keys := make(map[string]bool)
+		hasAccountBalance := false
+		hasTransactionStatus := false
+		hasB2B := false
 		for _, p := range result.Result.ResultParameters.ResultParameter {
+			keys[p.Key] = true
 			if p.Key == "AccountBalance" {
-				m.Emit(EventAccountBalance, result)
-				return
+				hasAccountBalance = true
 			}
 			if p.Key == "TransactionStatus" {
-				m.Emit(EventTransactionStatus, result)
-				return
+				hasTransactionStatus = true
+			}
+			if p.Key == "B2BRecipientPartyPublicName" ||
+				p.Key == "B2BSenderPartyPublicName" ||
+				p.Key == "DebitPartyAffectedAccountBalance" {
+				hasB2B = true
 			}
 		}
-		m.Emit(EventB2CResult, result)
+		switch {
+		case hasAccountBalance:
+			m.Emit(EventAccountBalance, result)
+		case hasTransactionStatus:
+			m.Emit(EventTransactionStatus, result)
+		case hasB2B:
+			m.Emit(EventB2BResult, result)
+		case keys["OriginalTransactionID"]:
+			m.Emit(EventReversalResult, result)
+		default:
+			m.Emit(EventB2CResult, result)
+		}
 	default:
 		m.Emit(EventB2CResult, result)
 	}

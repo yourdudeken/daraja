@@ -41,7 +41,11 @@ def create_django_view(webhook_manager: WebhookManager, secret: str = ""):
                 webhook_manager.emit("account:balance", body)
             elif has_status:
                 webhook_manager.emit("transaction:status", body)
-            elif "B2BRecipientPartyPublicName" in keys or "B2BSenderPartyPublicName" in keys:
+            elif (
+                "B2BRecipientPartyPublicName" in keys
+                or "B2BSenderPartyPublicName" in keys
+                or "DebitPartyAffectedAccountBalance" in keys
+            ):
                 webhook_manager.emit("b2b:result", body)
             elif "OriginalTransactionID" in keys:
                 webhook_manager.emit("reversal:result", body)

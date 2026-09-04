@@ -105,6 +105,11 @@ func TestManagerHandleResultCallback(t *testing.T) {
 			expected: EventTransactionStatus,
 		},
 		{
+			name:     "b2b result",
+			body:     `{"Result":{"ResultParameters":{"ResultParameter":[{"Key":"DebitPartyAffectedAccountBalance","Value":"Working Account|KES|346568.83"}]}}}`,
+			expected: EventB2BResult,
+		},
+		{
 			name:     "b2c result",
 			body:     `{"Result":{"ResultParameters":{"ResultParameter":[{"Key":"ReceiverPartyPublicName","Value":"Test"}]}}}`,
 			expected: EventB2CResult,

@@ -110,8 +110,8 @@ func GinWebhookHandler(m *webhooks.Manager, secret string, mpesaClient *client.C
 					m.Emit(webhooks.EventAccountBalance, result)
 				case keys["TransactionStatus"]:
 					m.Emit(webhooks.EventTransactionStatus, result)
-				case keys["B2BRecipientPartyPublicName"] || keys["B2BSenderPartyPublicName"]:
-					m.Emit(webhooks.EventB2BResult, result)
+case keys["B2BRecipientPartyPublicName"] || keys["B2BSenderPartyPublicName"] || keys["DebitPartyAffectedAccountBalance"]:
+				m.Emit(webhooks.EventB2BResult, result)
 				case keys["OriginalTransactionID"]:
 					m.Emit(webhooks.EventReversalResult, result)
 				default:
