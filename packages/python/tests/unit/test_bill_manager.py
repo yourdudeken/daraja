@@ -40,7 +40,11 @@ class TestBillManagerBulkInvoiceWireFormat:
         def fake_post(endpoint_key, data):
             captured["endpoint_key"] = endpoint_key
             captured["data"] = data
-            return {"Status_Message": "Success", "resmsg": "BILLMGMTSingleInvoiceRequest", "rescode": "0"}
+            return {
+                "Status_Message": "Success",
+                "resmsg": "BILLMGMTSingleInvoiceRequest",
+                "rescode": "0",
+            }
 
         service = BillManagerService(fake_post)
         service.send_bulk_invoice(
