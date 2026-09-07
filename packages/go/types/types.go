@@ -876,6 +876,31 @@ type B2BExpressResponse struct {
 	Status string `json:"status"`
 }
 
+type B2BExpressCallbackPayload struct {
+	ResultCode       string `json:"resultCode"`
+	ResultDesc       string `json:"resultDesc"`
+	Amount           string `json:"amount"`
+	RequestID        string `json:"requestId"`
+	ResultType       string `json:"resultType,omitempty"`
+	ConversationID   string `json:"conversationID,omitempty"`
+	TransactionID    string `json:"transactionId,omitempty"`
+	Status           string `json:"status,omitempty"`
+	PaymentReference string `json:"paymentReference,omitempty"`
+}
+
+type B2BExpressCallbackResult struct {
+	Success           bool
+	ResultCode        string
+	ResultDescription string
+	RequestID         string
+	Amount            *string
+	ResultType        *string
+	ConversationID    *string
+	TransactionID     *string
+	Status            *string
+	PaymentReference  *string
+}
+
 // ---- M-Pesa Ratiba ----
 type RatibaRequest struct {
 	StandingOrderName           string `json:"StandingOrderName"`

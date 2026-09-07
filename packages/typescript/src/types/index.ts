@@ -919,10 +919,11 @@ export interface B2BExpressCallbackPayload {
   resultDesc: string;
   amount: string;
   requestId: string;
+  resultType?: string;
+  conversationID?: string;
   transactionId?: string;
   status?: string;
   paymentReference?: string;
-  conversationID?: string;
 }
 
 // ============================================================

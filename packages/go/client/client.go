@@ -1294,3 +1294,39 @@ func ParseSTKCallback(payload types.STKCallbackPayload) types.STKCallbackResult 
 
 	return result
 }
+
+func ParseB2BExpressCallback(payload types.B2BExpressCallbackPayload) types.B2BExpressCallbackResult {
+	result := types.B2BExpressCallbackResult{
+		Success:           payload.ResultCode == "0",
+		ResultCode:        payload.ResultCode,
+		ResultDescription: payload.ResultDesc,
+		RequestID:         payload.RequestID,
+	}
+
+	if payload.Amount != "" {
+		v := payload.Amount
+		result.Amount = &v
+	}
+	if payload.ResultType != "" {
+		v := payload.ResultType
+		result.ResultType = &v
+	}
+	if payload.ConversationID != "" {
+		v := payload.ConversationID
+		result.ConversationID = &v
+	}
+	if payload.TransactionID != "" {
+		v := payload.TransactionID
+		result.TransactionID = &v
+	}
+	if payload.Status != "" {
+		v := payload.Status
+		result.Status = &v
+	}
+	if payload.PaymentReference != "" {
+		v := payload.PaymentReference
+		result.PaymentReference = &v
+	}
+
+	return result
+}

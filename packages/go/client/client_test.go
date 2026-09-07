@@ -75,6 +75,72 @@ func TestParseSTKCallbackFailed(t *testing.T) {
 	}
 }
 
+func TestParseB2BExpressCallbackSuccess(t *testing.T) {
+	payload := types.B2BExpressCallbackPayload{
+		ResultCode:     "0",
+		ResultDesc:     "The service request is processed successfully.",
+		Amount:         "71.0",
+		RequestID:      "404e1aec-19e0-4ce3-973d-bd92e94c8021",
+		ResultType:     "0",
+		ConversationID: "AG_20230426_2010434680d9f5a73766",
+		TransactionID:  "RDQ01NFT1Q",
+		Status:         "SUCCESS",
+	}
+
+	result := ParseB2BExpressCallback(payload)
+	if !result.Success {
+		t.Error("expected success")
+	}
+	if result.ResultCode != "0" {
+		t.Errorf("unexpected result code: %s", result.ResultCode)
+	}
+	if result.ResultDescription != "The service request is processed successfully." {
+		t.Errorf("unexpected result description: %s", result.ResultDescription)
+	}
+	if result.RequestID != "404e1aec-19e0-4ce3-973d-bd92e94c8021" {
+		t.Errorf("unexpected request ID: %s", result.RequestID)
+	}
+	if result.Amount == nil || *result.Amount != "71.0" {
+		t.Errorf("expected amount 71.0, got %v", result.Amount)
+	}
+	if result.ResultType == nil || *result.ResultType != "0" {
+		t.Errorf("expected result type 0, got %v", result.ResultType)
+	}
+	if result.ConversationID == nil || *result.ConversationID != "AG_20230426_2010434680d9f5a73766" {
+		t.Errorf("unexpected conversation ID: %v", result.ConversationID)
+	}
+	if result.TransactionID == nil || *result.TransactionID != "RDQ01NFT1Q" {
+		t.Errorf("unexpected transaction ID: %v", result.TransactionID)
+	}
+	if result.Status == nil || *result.Status != "SUCCESS" {
+		t.Errorf("unexpected status: %v", result.Status)
+	}
+}
+
+func TestParseB2BExpressCallbackCancelled(t *testing.T) {
+	payload := types.B2BExpressCallbackPayload{
+		ResultCode:       "4001",
+		ResultDesc:       "User cancelled transaction",
+		RequestID:        "c2a9ba32-9e11-4b90-892c-7bc54944609a",
+		Amount:           "71.0",
+		PaymentReference: "MAndbubry3hi",
+	}
+
+	result := ParseB2BExpressCallback(payload)
+	if result.Success {
+		t.Error("expected failure")
+	}
+	if result.PaymentReference == nil || *result.PaymentReference != "MAndbubry3hi" {
+		t.Errorf("unexpected payment reference: %v", result.PaymentReference)
+	}
+	if result.Status != nil {
+		t.Error("expected nil status")
+	}
+	if result.TransactionID != nil {
+		t.Error("expected nil transaction ID")
+	}
+}
+
 func TestSTKPushRequestGeneration(t *testing.T) {
 	client := NewClient(types.MpesaConfig{
 		ConsumerKey:    "key",

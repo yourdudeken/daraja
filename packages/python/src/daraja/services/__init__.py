@@ -616,6 +616,9 @@ class B2BExpressService:
             "transactionId": payload.get("transactionId"),
             "amount": payload.get("amount"),
             "status": payload.get("status"),
+            "resultType": payload.get("resultType"),
+            "conversationID": payload.get("conversationID"),
+            "paymentReference": payload.get("paymentReference"),
         }
 
 

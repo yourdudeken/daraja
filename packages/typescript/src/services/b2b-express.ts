@@ -19,6 +19,9 @@ export class B2BExpressService {
     transactionId?: string;
     amount?: string;
     status?: string;
+    resultType?: string;
+    conversationID?: string;
+    paymentReference?: string;
   } {
     return {
       success: payload.resultCode === "0",
@@ -28,6 +31,9 @@ export class B2BExpressService {
       transactionId: payload.transactionId,
       amount: payload.amount,
       status: payload.status,
+      resultType: payload.resultType,
+      conversationID: payload.conversationID,
+      paymentReference: payload.paymentReference,
     };
   }
 }
