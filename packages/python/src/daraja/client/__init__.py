@@ -2,6 +2,7 @@ import logging
 import time
 import uuid
 from typing import Any, Optional
+from urllib.parse import urlencode
 
 import httpx
 
@@ -417,7 +418,9 @@ class Mpesa:
 
     def _get(self, endpoint_key: str, params: dict) -> dict:
         url = get_full_url(self._config.environment, ENDPOINTS[endpoint_key])
-        return self._request("GET", url, params)
+        if params:
+            url = f"{url}?{urlencode(params)}"
+        return self._request("GET", url)
 
     def stk_push(self, request: STKPushRequest | dict) -> STKPushResponse:
         if isinstance(request, dict):

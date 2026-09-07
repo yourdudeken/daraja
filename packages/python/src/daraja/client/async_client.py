@@ -2,6 +2,7 @@ import asyncio
 import logging
 import uuid
 from typing import Any, Optional
+from urllib.parse import urlencode
 
 import httpx
 
@@ -399,7 +400,9 @@ class AsyncMpesa:
 
     async def _get(self, endpoint_key: str, params: dict) -> dict:
         url = get_full_url(self._config.environment, ENDPOINTS[endpoint_key])
-        return await self._request("GET", url, params)
+        if params:
+            url = f"{url}?{urlencode(params)}"
+        return await self._request("GET", url)
 
     async def stk_push(self, request: STKPushRequest | dict) -> STKPushResponse:
         if isinstance(request, dict):
