@@ -332,8 +332,8 @@ async function test14LipaNaBonga() {
   console.log("\n14. Lipa na Bonga");
   const mpesa = new Mpesa(CONFIG);
   try {
-    const resp = await mpesa.lipaNaBonga.calculate({ Points: "40" });
-    console.log(`   Amount: ${resp.amount}, Points: ${resp.points}`);
+    const resp = await mpesa.lipaNaBonga.calculate({ points: "40" });
+    console.log(`   Amount: ${resp.body.amount}, Points: ${resp.body.points}`);
   } catch (e) {
     logError("Lipa na Bonga", e);
   }

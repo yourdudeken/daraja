@@ -64,7 +64,7 @@ from daraja import Mpesa
 mpesa = Mpesa({"consumer_key": "...", "consumer_secret": "..."})
 
 # Calculate redemption value
-calc = mpesa.lipa_na_bonga_service.calculate({"Points": "5000"})
+calc = mpesa.lipa_na_bonga_service.calculate({"points": "5000"})
 print(calc.body["amount"], calc.body["rate"])
 
 # Redeem points for a paybill
@@ -83,7 +83,7 @@ import { Mpesa } from "@daraja-sdk/ts";
 
 const mpesa = new Mpesa({ consumerKey: "...", consumerSecret: "..." });
 
-const calc = await mpesa.lipaNaBonga.calculate({ Points: "5000" });
+const calc = await mpesa.lipaNaBonga.calculate({ points: "5000" });
 console.log(calc.body.amount, calc.body.rate);
 
 await mpesa.lipaNaBonga.redeem({

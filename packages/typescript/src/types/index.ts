@@ -727,7 +727,7 @@ export interface B2PochiResponse {
 // LIPA NA BONGA
 // ============================================================
 export interface LipaNaBongaCalculateRequest {
-  Points: string;
+  points: string;
 }
 
 export interface LipaNaBongaHeader {

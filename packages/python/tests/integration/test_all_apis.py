@@ -381,8 +381,9 @@ def test_14_lipa_na_bonga():
     print("\n14. Lipa na Bonga")
     client = Mpesa(CONFIG)
     try:
-        resp = client.lipa_na_bonga_calculate({"Points": "40"})
-        print(f"   Amount: {resp.amount}, Points: {resp.points}")
+        resp = client.lipa_na_bonga_calculate({"points": "40"})
+        if resp.body is not None:
+            print(f"   Amount: {resp.body['amount']}, Points: {resp.body['points']}")
     except Exception as e:
         log_error("Lipa na Bonga", e)
     finally:

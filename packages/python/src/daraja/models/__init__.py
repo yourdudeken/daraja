@@ -598,7 +598,7 @@ class B2PochiResponse(BaseModel):
 
 
 class LipaNaBongaCalculateRequest(BaseModel):
-    Points: str
+    points: str
 
 
 class LipaNaBongaHeader(BaseModel):
