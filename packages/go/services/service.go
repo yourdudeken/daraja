@@ -593,18 +593,7 @@ func (s *Service) B2Pochi(ctx context.Context, input svctypes.B2PochiInput) (*sv
 	if input.InitiatorName == "" && cfg.InitiatorName != "" {
 		input.InitiatorName = cfg.InitiatorName
 	}
-	req := types.B2PochiRequest{
-		InitiatorName:      input.InitiatorName,
-		SecurityCredential: input.SecurityCredential,
-		CommandID:          input.CommandID,
-		Amount:             input.Amount,
-		PartyA:             input.PartyA,
-		PartyB:             input.PartyB,
-		Remarks:            input.Remarks,
-		QueueTimeOutURL:    input.QueueTimeOutURL,
-		ResultURL:          input.ResultURL,
-		Occassion:          input.Occassion,
-	}
+	req := newB2PochiRequest(input)
 	resp, err := s.client.B2Pochi(ctx, req)
 	if err != nil {
 		return nil, err
@@ -949,6 +938,22 @@ func (s *Service) CreateStandingOrder(ctx context.Context, input svctypes.Ratiba
 		ResponseHeader: resp.ResponseHeader,
 		ResponseBody:   resp.ResponseBody,
 	}, nil
+}
+
+func newB2PochiRequest(input svctypes.B2PochiInput) types.B2PochiRequest {
+	return types.B2PochiRequest{
+		OriginatorConversationID: input.OriginatorConversationID,
+		InitiatorName:            input.InitiatorName,
+		SecurityCredential:       input.SecurityCredential,
+		CommandID:                input.CommandID,
+		Amount:                   input.Amount,
+		PartyA:                   input.PartyA,
+		PartyB:                   input.PartyB,
+		Remarks:                  input.Remarks,
+		QueueTimeOutURL:          input.QueueTimeOutURL,
+		ResultURL:                input.ResultURL,
+		Occassion:                input.Occassion,
+	}
 }
 
 func newTaxRemittanceRequest(input svctypes.TaxRemittanceInput) types.TaxRemittanceRequest {

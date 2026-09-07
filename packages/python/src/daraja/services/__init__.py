@@ -484,7 +484,7 @@ class B2PochiService:
                 if not request.InitiatorName and self._config.initiator_name:
                     request.InitiatorName = self._config.initiator_name
         _validate_amount(request.Amount)
-        _validate_shortcode(request.ReceiverIdentifier, "ReceiverIdentifier")
+        _validate_phone(request.PartyB, "PartyB")
         result = self._post("B2POCHI", request.model_dump())
         return B2PochiResponse(**result)
 

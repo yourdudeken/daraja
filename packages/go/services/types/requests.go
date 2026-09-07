@@ -216,16 +216,17 @@ type IoTDeleteMessageInput struct {
 }
 
 type B2PochiInput struct {
-	InitiatorName      string
-	SecurityCredential string
-	CommandID          string
-	Amount             int
-	PartyA             int
-	PartyB             int
-	Remarks            string
-	QueueTimeOutURL    string
-	ResultURL          string
-	Occassion          string
+	OriginatorConversationID string
+	InitiatorName            string
+	SecurityCredential       string
+	CommandID                string
+	Amount                   int
+	PartyA                   int
+	PartyB                   int
+	Remarks                  string
+	QueueTimeOutURL          string
+	ResultURL                string
+	Occassion                string
 }
 
 type LipaNaBongaCalculateInput struct {

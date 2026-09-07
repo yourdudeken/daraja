@@ -149,3 +149,28 @@ func TestBillManagerCancelResultPreservesErrorsEmpty(t *testing.T) {
 		t.Errorf("expected no Errors, got %v", result.Errors)
 	}
 }
+
+func TestB2PochiRequestPreservesOriginatorConversationID(t *testing.T) {
+	req := newB2PochiRequest(svctypes.B2PochiInput{
+		OriginatorConversationID: "600997_Test_32et3241ed8yu",
+		InitiatorName:            "testapi",
+		SecurityCredential:       "sec",
+		CommandID:                "BusinessPayToPochi",
+		Amount:                   10,
+		PartyA:                   600992,
+		PartyB:                   254705912645,
+		Remarks:                  "remarked",
+		QueueTimeOutURL:          "https://mydomain.com/queue",
+		ResultURL:                "https://mydomain.com/result",
+		Occassion:                "ChristmasPay",
+	})
+	if req.OriginatorConversationID != "600997_Test_32et3241ed8yu" {
+		t.Errorf("expected OriginatorConversationID to be preserved, got %+v", req)
+	}
+	if req.CommandID != "BusinessPayToPochi" {
+		t.Errorf("expected CommandID BusinessPayToPochi, got %q", req.CommandID)
+	}
+	if req.PartyB != 254705912645 {
+		t.Errorf("expected PartyB 254705912645, got %d", req.PartyB)
+	}
+}
