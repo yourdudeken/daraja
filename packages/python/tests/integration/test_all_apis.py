@@ -412,7 +412,7 @@ def test_16_query_org_info():
     print("\n16. Query Org Info")
     client = Mpesa(CONFIG)
     try:
-        resp = client.query_org_info()
+        resp = client.query_org_info({"IdentifierType": 4, "Identifier": 666677})
         print(f"   ResponseCode: {resp.ResponseCode}")
     except Exception as e:
         log_error("Query Org Info", e)

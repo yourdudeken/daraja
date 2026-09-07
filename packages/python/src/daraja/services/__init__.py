@@ -370,10 +370,8 @@ class QueryOrgInfoService:
     def __init__(self, post: PostFn) -> None:
         self._post = post
 
-    def query(self, request: QueryOrgInfoRequest | dict | None = None) -> QueryOrgInfoResponse:
-        if request is None:
-            request = QueryOrgInfoRequest()
-        elif isinstance(request, dict):
+    def query(self, request: QueryOrgInfoRequest | dict) -> QueryOrgInfoResponse:
+        if isinstance(request, dict):
             request = QueryOrgInfoRequest(**request)
         result = self._post("QUERY_ORG_INFO", request.model_dump())
         return QueryOrgInfoResponse(**result)

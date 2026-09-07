@@ -593,11 +593,9 @@ class Mpesa:
         return BusinessGoodsResponse(**result)
 
     def query_org_info(
-        self, request: QueryOrgInfoRequest | dict | None = None
+        self, request: QueryOrgInfoRequest | dict
     ) -> QueryOrgInfoResponse:
-        if request is None:
-            request = QueryOrgInfoRequest()
-        elif isinstance(request, dict):
+        if isinstance(request, dict):
             request = QueryOrgInfoRequest(**request)
         result = self._post("QUERY_ORG_INFO", request.model_dump())
         return QueryOrgInfoResponse(**result)
