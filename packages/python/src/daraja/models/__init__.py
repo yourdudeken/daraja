@@ -1,7 +1,7 @@
 import logging
 from datetime import datetime
 from typing import Any, Optional, Literal, Protocol, runtime_checkable, List, Dict
-from pydantic import BaseModel, Field
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field
 
 
 @runtime_checkable
@@ -142,7 +142,11 @@ class C2BSimulateRequest(BaseModel):
 
 
 class C2BResponse(BaseModel):
-    OriginatorConversationID: str
+    model_config = ConfigDict(populate_by_name=True)
+
+    OriginatorConversationID: str = Field(
+        validation_alias=AliasChoices("OriginatorConversationID", "OriginatorCoversationID")
+    )
     ResponseCode: str
     ResponseDescription: str
 

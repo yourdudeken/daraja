@@ -127,6 +127,44 @@ func TestC2BRegisterURLWithMockServer(t *testing.T) {
 	}
 }
 
+func TestC2BRegisterURLParsesDocTypoOriginator(t *testing.T) {
+	token := "test-token-c2b-doc"
+
+	authServer := httptest.NewServer(mockAuthHandler(token))
+	defer authServer.Close()
+
+	apiServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Write([]byte(`{"OriginatorCoversationID":"doc-key-1","ResponseCode":"0","ResponseDescription":"Success"}`))
+	}))
+	defer apiServer.Close()
+
+	client := NewClient(types.MpesaConfig{
+		ConsumerKey:    "test-key",
+		ConsumerSecret: "test-secret",
+		Environment:    types.Sandbox,
+	})
+	client.endpoints.Auth = authServer.URL + "/oauth/v1/generate"
+	client.tokenManager.SetAuthEndpoint(client.endpoints.Auth)
+	client.endpoints.C2BRegisterURL = apiServer.URL + "/mpesa/c2b/v2/registerurl"
+
+	req := types.C2BRegisterURLRequest{
+		ShortCode:       "600984",
+		ResponseType:    types.ResponseCompleted,
+		ConfirmationURL: "https://example.com/confirm",
+		ValidationURL:   "https://example.com/validate",
+	}
+
+	resp, err := client.C2BRegisterURL(context.Background(), req)
+	if err != nil {
+		t.Fatalf("C2BRegisterURL failed: %v", err)
+	}
+
+	if resp.OriginatorConversationID != "doc-key-1" {
+		t.Errorf("expected OriginatorConversationID from documented wire key, got %q", resp.OriginatorConversationID)
+	}
+}
+
 func TestB2CWithMockServer(t *testing.T) {
 	token := "test-token-b2c"
 

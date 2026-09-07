@@ -8,23 +8,35 @@ import type {
   C2BValidationResponse,
 } from "../types/index.js";
 
+function normalizeResponse(raw: C2BResponse): C2BResponse {
+  const source = raw as unknown as Record<string, unknown>;
+  const originator =
+    source["OriginatorConversationID"] ?? source["OriginatorCoversationID"];
+  return {
+    ...raw,
+    OriginatorConversationID: typeof originator === "string" ? originator : "",
+  };
+}
+
 export class C2BService {
   constructor(private readonly client: MpesaApiClient) {}
 
   async registerURL(request: C2BRegisterURLRequest): Promise<C2BResponse> {
-    return this.client.post<C2BResponse>(
+    const raw = await this.client.post<C2BResponse>(
       this.client.getEndpoint("C2B_REGISTER_URL"),
       request,
     );
+    return normalizeResponse(raw);
   }
 
   async simulate(request: C2BSimulateRequest): Promise<C2BResponse> {
-    Validation.requiredString(request.ShortCode, "ShortCode");
+    Validation.requiredNumber(request.ShortCode, "ShortCode");
     Validation.amount(request.Amount, "Amount");
-    return this.client.post<C2BResponse>(
+    const raw = await this.client.post<C2BResponse>(
       this.client.getEndpoint("C2B_SIMULATE"),
       request,
     );
+    return normalizeResponse(raw);
   }
 
   static validateTransaction(

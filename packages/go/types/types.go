@@ -222,8 +222,27 @@ type C2BSimulateRequest struct {
 
 type C2BResponse struct {
 	OriginatorConversationID string `json:"OriginatorConversationID"`
-	ResponseCode            string `json:"ResponseCode"`
-	ResponseDescription     string `json:"ResponseDescription"`
+	ResponseCode             string `json:"ResponseCode"`
+	ResponseDescription      string `json:"ResponseDescription"`
+}
+
+func (c *C2BResponse) UnmarshalJSON(data []byte) error {
+	var raw struct {
+		OriginatorConversationID string `json:"OriginatorConversationID"`
+		OriginatorCoversationID  string `json:"OriginatorCoversationID"`
+		ResponseCode             string `json:"ResponseCode"`
+		ResponseDescription      string `json:"ResponseDescription"`
+	}
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return err
+	}
+	c.OriginatorConversationID = raw.OriginatorConversationID
+	if c.OriginatorConversationID == "" {
+		c.OriginatorConversationID = raw.OriginatorCoversationID
+	}
+	c.ResponseCode = raw.ResponseCode
+	c.ResponseDescription = raw.ResponseDescription
+	return nil
 }
 
 // ---- B2C ----
