@@ -123,3 +123,29 @@ func TestC2BSimulateInvalidShortCode(t *testing.T) {
 		t.Fatal("expected validation error for shortcode 0")
 	}
 }
+
+func TestBillManagerCancelResultPreservesErrors(t *testing.T) {
+	result := newBillManagerCancelResult(&types.BillManagerCancelResponse{
+		StatusMessage: "Cancelled",
+		ResMsg:        "BILLMGMTCancelSingleInvoiceRequest",
+		ResCode:       "0",
+		Errors:        []string{"invoice not found"},
+	})
+	if result.ResCode != "0" {
+		t.Errorf("expected rescode 0, got %s", result.ResCode)
+	}
+	if len(result.Errors) != 1 || result.Errors[0] != "invoice not found" {
+		t.Errorf("expected Errors to be preserved, got %v", result.Errors)
+	}
+}
+
+func TestBillManagerCancelResultPreservesErrorsEmpty(t *testing.T) {
+	result := newBillManagerCancelResult(&types.BillManagerCancelResponse{
+		StatusMessage: "Cancelled",
+		ResMsg:        "BILLMGMTCancelBulkInvoices",
+		ResCode:       "0",
+	})
+	if len(result.Errors) != 0 {
+		t.Errorf("expected no Errors, got %v", result.Errors)
+	}
+}

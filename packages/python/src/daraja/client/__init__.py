@@ -259,7 +259,7 @@ class Mpesa:
         self,
         method: str,
         url: str,
-        json_data: Optional[dict] = None,
+        json_data: Optional[dict | list] = None,
         operation_name: Optional[str] = None,
     ) -> dict:
         request_id = _generate_request_id()
@@ -411,7 +411,7 @@ class Mpesa:
                     span.set_attribute("mpesa.response_code", rc)
             return result
 
-    def _post(self, endpoint_key: str, data: dict) -> dict:
+    def _post(self, endpoint_key: str, data: dict | list) -> dict:
         url = get_full_url(self._config.environment, ENDPOINTS[endpoint_key])
         return self._request("POST", url, data)
 

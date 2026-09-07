@@ -880,11 +880,7 @@ func (s *Service) BillManagerCancelSingle(ctx context.Context, input svctypes.Bi
 	if err != nil {
 		return nil, err
 	}
-	return &svctypes.BillManagerCancelResult{
-		StatusMessage: resp.StatusMessage,
-		ResMsg:        resp.ResMsg,
-		ResCode:       resp.ResCode,
-	}, nil
+	return newBillManagerCancelResult(resp), nil
 }
 
 func (s *Service) BillManagerCancelBulk(ctx context.Context, input svctypes.BillManagerCancelBulkInput) (*svctypes.BillManagerCancelResult, error) {
@@ -898,11 +894,16 @@ func (s *Service) BillManagerCancelBulk(ctx context.Context, input svctypes.Bill
 	if err != nil {
 		return nil, err
 	}
+	return newBillManagerCancelResult(resp), nil
+}
+
+func newBillManagerCancelResult(resp *types.BillManagerCancelResponse) *svctypes.BillManagerCancelResult {
 	return &svctypes.BillManagerCancelResult{
 		StatusMessage: resp.StatusMessage,
 		ResMsg:        resp.ResMsg,
 		ResCode:       resp.ResCode,
-	}, nil
+		Errors:        resp.Errors,
+	}
 }
 
 func (s *Service) BillManagerChangeOptin(ctx context.Context, input svctypes.BillManagerChangeOptinInput) (*svctypes.BillManagerChangeOptinResult, error) {

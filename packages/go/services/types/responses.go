@@ -231,6 +231,7 @@ type BillManagerCancelResult struct {
 	StatusMessage string
 	ResMsg        string
 	ResCode       string
+	Errors        []string
 }
 
 type BillManagerChangeOptinResult struct {

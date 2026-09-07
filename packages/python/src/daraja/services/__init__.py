@@ -22,6 +22,7 @@ from daraja.models import (
     BillManagerCancelSingleRequest,
     BillManagerChangeOptInRequest,
     BillManagerOptInRequest,
+    BillManagerOptInResponse,
     BillManagerReconciliationRequest,
     BillManagerResponse,
     BillManagerSingleInvoiceRequest,
@@ -93,7 +94,7 @@ from daraja.utils import (
 )
 from daraja.exceptions import ValidationError
 
-PostFn = Callable[[str, dict], dict]
+PostFn = Callable[[str, dict | list], dict]
 
 
 def _validate_phone(phone: int | str, field_name: str = "PhoneNumber") -> None:
@@ -541,11 +542,11 @@ class BillManagerService:
     def __init__(self, post: PostFn) -> None:
         self._post = post
 
-    def opt_in(self, request: BillManagerOptInRequest | dict) -> BillManagerResponse:
+    def opt_in(self, request: BillManagerOptInRequest | dict) -> BillManagerOptInResponse:
         if isinstance(request, dict):
             request = BillManagerOptInRequest(**request)
         result = self._post("BILL_MANAGER_OPTIN", request.model_dump())
-        return BillManagerResponse(**result)
+        return BillManagerOptInResponse(**result)
 
     def send_single_invoice(
         self, request: BillManagerSingleInvoiceRequest | dict
@@ -560,7 +561,8 @@ class BillManagerService:
     ) -> BillManagerResponse:
         if isinstance(request, dict):
             request = BillManagerBulkInvoiceRequest(**request)
-        result = self._post("BILL_MANAGER_BULK_INVOICE", request.model_dump())
+        payload = [invoice.model_dump() for invoice in request.invoices]
+        result = self._post("BILL_MANAGER_BULK_INVOICE", payload)
         return BillManagerResponse(**result)
 
     def reconciliation(
@@ -584,7 +586,7 @@ class BillManagerService:
     ) -> BillManagerResponse:
         if isinstance(request, dict):
             request = BillManagerCancelBulkRequest(**request)
-        result = self._post("BILL_MANAGER_CANCEL_BULK", request.model_dump())
+        result = self._post("BILL_MANAGER_CANCEL_BULK", request.externalReferences)
         return BillManagerResponse(**result)
 
     def change_opt_in(self, request: BillManagerChangeOptInRequest | dict) -> BillManagerResponse:
