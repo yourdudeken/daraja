@@ -663,6 +663,8 @@ export interface IoTDeleteResponse {
 // Get All Messages
 export interface IoTAllMessagesRequest {
   vpnGroup: string;
+  pageNo: number;
+  pageSize: number;
 }
 
 export type IoTAllMessagesResponse = IoTSearchMessagesResponse;
