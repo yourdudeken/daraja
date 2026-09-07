@@ -667,6 +667,13 @@ func (c *Client) BusinessBuyGoods(ctx context.Context, req types.BusinessBuyGood
 	if req.Initiator == "" && c.config.InitiatorName != "" {
 		req.Initiator = c.config.InitiatorName
 	}
+	req.CommandID = "BusinessBuyGoods"
+	if req.SenderIdentifierType == 0 {
+		req.SenderIdentifierType = 4
+	}
+	if req.RecieverIdentifierType == 0 {
+		req.RecieverIdentifierType = 4
+	}
 	respBody, err := c.doRequest(ctx, "POST", c.endpoints.B2B, req)
 	if err != nil {
 		return nil, err

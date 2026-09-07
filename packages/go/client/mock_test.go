@@ -94,8 +94,8 @@ func TestC2BRegisterURLWithMockServer(t *testing.T) {
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(types.C2BResponse{
 			OriginatorConversationID: "conv-1",
-			ResponseCode:            "0",
-			ResponseDescription:     "Success",
+			ResponseCode:             "0",
+			ResponseDescription:      "Success",
 		})
 	}))
 	defer apiServer.Close()
@@ -349,6 +349,64 @@ func TestBusinessPayBillForcesCommandID(t *testing.T) {
 	}
 	if cmd, ok := captured["CommandID"].(string); !ok || cmd != "BusinessPayBill" {
 		t.Errorf("expected CommandID to be forced to BusinessPayBill, got %v", captured["CommandID"])
+	}
+}
+
+func TestBusinessBuyGoodsForcesCommandIDAndIdentifierTypes(t *testing.T) {
+	token := "test-token-buygoods"
+	var captured map[string]interface{}
+
+	authServer := httptest.NewServer(mockAuthHandler(token))
+	defer authServer.Close()
+
+	apiServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		json.NewDecoder(r.Body).Decode(&captured)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(types.BusinessGoodsResponse{
+			OriginatorConversationID: "orig-1",
+			ConversationID:           "conv-1",
+			ResponseCode:             "0",
+			ResponseDescription:      "Success",
+		})
+	}))
+	defer apiServer.Close()
+
+	client := NewClient(types.MpesaConfig{
+		ConsumerKey:        "test-key",
+		ConsumerSecret:     "test-secret",
+		Environment:        types.Sandbox,
+		InitiatorName:      "test-initiator",
+		SecurityCredential: "test-cred",
+	})
+
+	client.endpoints.Auth = authServer.URL + "/oauth/v1/generate"
+	client.tokenManager.SetAuthEndpoint(client.endpoints.Auth)
+	client.endpoints.B2B = apiServer.URL + "/mpesa/b2b/v1/paymentrequest"
+
+	req := types.BusinessBuyGoodsRequest{
+		Amount:          100,
+		PartyA:          600984,
+		PartyB:          174379,
+		Remarks:         "test",
+		ResultURL:       "https://example.com/result",
+		QueueTimeOutURL: "https://example.com/timeout",
+	}
+
+	resp, err := client.BusinessBuyGoods(context.Background(), req)
+	if err != nil {
+		t.Fatalf("BusinessBuyGoods failed: %v", err)
+	}
+	if resp.ResponseCode != "0" {
+		t.Errorf("expected 0, got %s", resp.ResponseCode)
+	}
+	if cmd, ok := captured["CommandID"].(string); !ok || cmd != "BusinessBuyGoods" {
+		t.Errorf("expected CommandID to be forced to BusinessBuyGoods, got %v", captured["CommandID"])
+	}
+	if sender, ok := captured["SenderIdentifierType"].(float64); !ok || sender != 4 {
+		t.Errorf("expected SenderIdentifierType to be 4, got %v", captured["SenderIdentifierType"])
+	}
+	if recv, ok := captured["RecieverIdentifierType"].(float64); !ok || recv != 4 {
+		t.Errorf("expected RecieverIdentifierType to be 4, got %v", captured["RecieverIdentifierType"])
 	}
 }
 
