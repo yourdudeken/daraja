@@ -16,12 +16,14 @@ def generate_password(shortcode: int | str, passkey: str, timestamp: str) -> str
 
 def generate_security_credential(password: str, cert_path: str) -> str:
     from cryptography import x509
-    from cryptography.hazmat.primitives.asymmetric import padding
+    from cryptography.hazmat.primitives.asymmetric import padding, rsa
 
     with open(cert_path, "rb") as f:
         cert = x509.load_pem_x509_certificate(f.read())
 
     pub_key = cert.public_key()
+    if not isinstance(pub_key, rsa.RSAPublicKey):
+        raise ValueError("Security credential requires an RSA certificate")
 
     b64_password = base64.b64encode(password.encode())
     encrypted = pub_key.encrypt(

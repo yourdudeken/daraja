@@ -95,7 +95,7 @@ from daraja.utils import (
     validate_shortcode,
 )
 
-PostFn = Callable[[str, dict | list], dict]
+PostFn = Callable[[str, dict[str, Any] | list[Any]], dict[str, Any]]
 
 
 def _validate_phone(phone: int | str, field_name: str = "PhoneNumber") -> None:
@@ -122,7 +122,7 @@ class STKPushService:
         self._post = post
         self._config = config
 
-    def initiate(self, request: STKPushRequest | dict) -> STKPushResponse:
+    def initiate(self, request: STKPushRequest | dict[str, Any]) -> STKPushResponse:
         if isinstance(request, dict):
             request = STKPushRequest(**request)
         _validate_shortcode(request.BusinessShortCode)
@@ -137,7 +137,7 @@ class STKPushService:
         result = self._post("STK_PUSH", request.model_dump())
         return STKPushResponse(**result)
 
-    def query(self, request: STKQueryRequest | dict) -> STKQueryResponse:
+    def query(self, request: STKQueryRequest | dict[str, Any]) -> STKQueryResponse:
         if isinstance(request, dict):
             request = STKQueryRequest(**request)
         if not request.Password and self._config.passkey:
@@ -154,13 +154,13 @@ class C2BService:
     def __init__(self, post: PostFn) -> None:
         self._post = post
 
-    def register_url(self, request: C2BRegisterURLRequest | dict) -> C2BResponse:
+    def register_url(self, request: C2BRegisterURLRequest | dict[str, Any]) -> C2BResponse:
         if isinstance(request, dict):
             request = C2BRegisterURLRequest(**request)
         result = self._post("C2B_REGISTER_URL", request.model_dump())
         return C2BResponse(**result)
 
-    def simulate(self, request: C2BSimulateRequest | dict) -> C2BResponse:
+    def simulate(self, request: C2BSimulateRequest | dict[str, Any]) -> C2BResponse:
         if isinstance(request, dict):
             request = C2BSimulateRequest(**request)
         _validate_shortcode(request.ShortCode)
@@ -175,7 +175,7 @@ class B2CService:
         self._post = post
         self._config = config
 
-    def send(self, request: B2CRequest | dict) -> B2CResponse:
+    def send(self, request: B2CRequest | dict[str, Any]) -> B2CResponse:
         if isinstance(request, dict):
             if self._config:
                 request.setdefault("SecurityCredential", self._config.security_credential)
@@ -198,7 +198,7 @@ class B2BService:
         self._post = post
         self._config = config
 
-    def top_up(self, request: B2CAccountTopUpRequest | dict) -> B2CAccountTopUpResponse:
+    def top_up(self, request: B2CAccountTopUpRequest | dict[str, Any]) -> B2CAccountTopUpResponse:
         if isinstance(request, dict):
             if self._config:
                 request.setdefault("SecurityCredential", self._config.security_credential)
@@ -219,7 +219,7 @@ class ReversalService:
         self._post = post
         self._config = config
 
-    def reverse(self, request: ReversalRequest | dict) -> ReversalResponse:
+    def reverse(self, request: ReversalRequest | dict[str, Any]) -> ReversalResponse:
         if isinstance(request, dict):
             if self._config:
                 request.setdefault("SecurityCredential", self._config.security_credential)
@@ -241,7 +241,11 @@ class TransactionStatusService:
         self._post = post
         self._config = config
 
-    def query(self, request: TransactionStatusRequest | dict) -> TransactionStatusResponse:
+    def query(
+        self,
+        request: TransactionStatusRequest | dict[str,
+        Any]
+    ) -> TransactionStatusResponse:
         if isinstance(request, dict):
             if self._config:
                 request.setdefault("SecurityCredential", self._config.security_credential)
@@ -262,7 +266,7 @@ class AccountBalanceService:
         self._post = post
         self._config = config
 
-    def query(self, request: AccountBalanceRequest | dict) -> AccountBalanceResponse:
+    def query(self, request: AccountBalanceRequest | dict[str, Any]) -> AccountBalanceResponse:
         if isinstance(request, dict):
             if self._config:
                 request.setdefault("SecurityCredential", self._config.security_credential)
@@ -304,7 +308,7 @@ class AccountBalanceService:
         return result
 
     @staticmethod
-    def parse_callback(payload: dict | MpesaResult) -> dict:
+    def parse_callback(payload: dict[str, Any] | MpesaResult) -> dict[str, Any]:
         if isinstance(payload, MpesaResult):
             result = payload.Result
         else:
@@ -329,7 +333,7 @@ class DynamicQRService:
     def __init__(self, post: PostFn) -> None:
         self._post = post
 
-    def generate(self, request: DynamicQRRequest | dict) -> DynamicQRResponse:
+    def generate(self, request: DynamicQRRequest | dict[str, Any]) -> DynamicQRResponse:
         if isinstance(request, dict):
             request = DynamicQRRequest(**request)
         result = self._post("DYNAMIC_QR", request.model_dump())
@@ -341,7 +345,7 @@ class BusinessGoodsService:
         self._post = post
         self._config = config
 
-    def buy_goods(self, request: BusinessBuyGoodsRequest | dict) -> BusinessGoodsResponse:
+    def buy_goods(self, request: BusinessBuyGoodsRequest | dict[str, Any]) -> BusinessGoodsResponse:
         if isinstance(request, dict):
             if self._config:
                 request.setdefault("SecurityCredential", self._config.security_credential)
@@ -356,7 +360,7 @@ class BusinessGoodsService:
         result = self._post("B2B", request.model_dump())
         return BusinessGoodsResponse(**result)
 
-    def pay_bill(self, request: BusinessPayBillRequest | dict) -> BusinessGoodsResponse:
+    def pay_bill(self, request: BusinessPayBillRequest | dict[str, Any]) -> BusinessGoodsResponse:
         if isinstance(request, dict):
             if self._config:
                 request.setdefault("SecurityCredential", self._config.security_credential)
@@ -376,7 +380,7 @@ class QueryOrgInfoService:
     def __init__(self, post: PostFn) -> None:
         self._post = post
 
-    def query(self, request: QueryOrgInfoRequest | dict) -> QueryOrgInfoResponse:
+    def query(self, request: QueryOrgInfoRequest | dict[str, Any]) -> QueryOrgInfoResponse:
         if isinstance(request, dict):
             request = QueryOrgInfoRequest(**request)
         result = self._post("QUERY_ORG_INFO", request.model_dump())
@@ -387,7 +391,7 @@ class IMSIService:
     def __init__(self, post: PostFn) -> None:
         self._post = post
 
-    def query(self, request: IMSIRequest | dict) -> IMSIResponse:
+    def query(self, request: IMSIRequest | dict[str, Any]) -> IMSIResponse:
         if isinstance(request, dict):
             request = IMSIRequest(**request)
         result = self._post("IMSI", request.model_dump())
@@ -398,73 +402,97 @@ class IoTSIMService:
     def __init__(self, post: PostFn) -> None:
         self._post = post
 
-    def manage(self, request: IoTSIMRequest | dict) -> IoTSIMResponse:
+    def manage(self, request: IoTSIMRequest | dict[str, Any]) -> IoTSIMResponse:
         if isinstance(request, dict):
             request = IoTSIMRequest(**request)
         result = self._post("IOT_MANAGE", request.model_dump())
         return IoTSIMResponse(**result)
 
-    def get_all_sims(self, request: IoTAllSIMsRequest | dict) -> dict:
+    def get_all_sims(self, request: IoTAllSIMsRequest | dict[str, Any]) -> dict[str, Any]:
         if isinstance(request, dict):
             request = IoTAllSIMsRequest(**request)
         return self._post("IOT_ALLSIMS", request.model_dump())
 
-    def query_life_cycle_status(self, request: IoTQueryLifeCycleRequest | dict) -> dict:
+    def query_life_cycle_status(
+        self,
+        request: IoTQueryLifeCycleRequest | dict[str,
+        Any]
+    ) -> dict[str, Any]:
         if isinstance(request, dict):
             request = IoTQueryLifeCycleRequest(**request)
         return self._post("IOT_QUERY_LIFECYCLE", request.model_dump())
 
-    def query_customer_info(self, request: IoTQueryCustomerInfoRequest | dict) -> dict:
+    def query_customer_info(
+        self,
+        request: IoTQueryCustomerInfoRequest | dict[str,
+        Any]
+    ) -> dict[str, Any]:
         if isinstance(request, dict):
             request = IoTQueryCustomerInfoRequest(**request)
         return self._post("IOT_QUERY_CUSTOMER_INFO", request.model_dump())
 
-    def activate_sim(self, request: IoTSIMActivationRequest | dict) -> dict:
+    def activate_sim(self, request: IoTSIMActivationRequest | dict[str, Any]) -> dict[str, Any]:
         if isinstance(request, dict):
             request = IoTSIMActivationRequest(**request)
         return self._post("IOT_SIM_ACTIVATION", request.model_dump())
 
-    def get_activation_trends(self, request: IoTActivationTrendsRequest | dict) -> dict:
+    def get_activation_trends(
+        self,
+        request: IoTActivationTrendsRequest | dict[str,
+        Any]
+    ) -> dict[str, Any]:
         if isinstance(request, dict):
             request = IoTActivationTrendsRequest(**request)
         return self._post("IOT_ACTIVATION_TRENDS", request.model_dump())
 
-    def rename_asset(self, request: IoTRenameAssetRequest | dict) -> dict:
+    def rename_asset(self, request: IoTRenameAssetRequest | dict[str, Any]) -> dict[str, Any]:
         if isinstance(request, dict):
             request = IoTRenameAssetRequest(**request)
         return self._post("IOT_RENAME_ASSET", request.model_dump())
 
-    def suspend_unsuspend(self, request: IoTSuspendUnsuspendRequest | dict) -> dict:
+    def suspend_unsuspend(
+        self,
+        request: IoTSuspendUnsuspendRequest | dict[str,
+        Any]
+    ) -> dict[str, Any]:
         if isinstance(request, dict):
             request = IoTSuspendUnsuspendRequest(**request)
         return self._post("IOT_SUSPEND_UNSUSPEND", request.model_dump())
 
-    def search_messages(self, request: IoTSearchMessagesRequest | dict) -> dict:
+    def search_messages(self, request: IoTSearchMessagesRequest | dict[str, Any]) -> dict[str, Any]:
         if isinstance(request, dict):
             request = IoTSearchMessagesRequest(**request)
         return self._post("IOT_SEARCH_MESSAGES", request.model_dump())
 
-    def filter_messages(self, request: IoTFilterMessagesRequest | dict) -> dict:
+    def filter_messages(self, request: IoTFilterMessagesRequest | dict[str, Any]) -> dict[str, Any]:
         if isinstance(request, dict):
             request = IoTFilterMessagesRequest(**request)
         return self._post("IOT_FILTER_MESSAGES", request.model_dump())
 
-    def delete_message_thread(self, request: IoTDeleteThreadRequest | dict) -> dict:
+    def delete_message_thread(
+        self,
+        request: IoTDeleteThreadRequest | dict[str,
+        Any]
+    ) -> dict[str, Any]:
         if isinstance(request, dict):
             request = IoTDeleteThreadRequest(**request)
         return self._post("IOT_DELETE_THREAD", request.model_dump())
 
-    def get_all_messages(self, request: IoTAllMessagesRequest | dict) -> dict:
+    def get_all_messages(self, request: IoTAllMessagesRequest | dict[str, Any]) -> dict[str, Any]:
         if isinstance(request, dict):
             request = IoTAllMessagesRequest(**request)
         return self._post("IOT_ALL_MESSAGES", request.model_dump())
 
-    def send_single_message(self, request: IoTSendSingleMessageRequest | dict) -> dict:
+    def send_single_message(
+        self,
+        request: IoTSendSingleMessageRequest | dict[str,
+        Any]
+    ) -> dict[str, Any]:
         if isinstance(request, dict):
             request = IoTSendSingleMessageRequest(**request)
         return self._post("IOT_SEND_SINGLE_MESSAGE", request.model_dump())
 
-    def delete_message(self, request: IoTDeleteMessageRequest | dict) -> dict:
+    def delete_message(self, request: IoTDeleteMessageRequest | dict[str, Any]) -> dict[str, Any]:
         if isinstance(request, dict):
             request = IoTDeleteMessageRequest(**request)
         return self._post("IOT_DELETE_MESSAGE", request.model_dump())
@@ -475,7 +503,7 @@ class B2PochiService:
         self._post = post
         self._config = config
 
-    def send(self, request: B2PochiRequest | dict) -> B2PochiResponse:
+    def send(self, request: B2PochiRequest | dict[str, Any]) -> B2PochiResponse:
         if isinstance(request, dict):
             if self._config:
                 request.setdefault("SecurityCredential", self._config.security_credential)
@@ -498,14 +526,18 @@ class LipaNaBongaService:
         self._post = post
 
     def calculate(
-        self, request: LipaNaBongaCalculateRequest | dict
+        self, request: LipaNaBongaCalculateRequest | dict[str, Any]
     ) -> LipaNaBongaCalculateResponse:
         if isinstance(request, dict):
             request = LipaNaBongaCalculateRequest(**request)
         result = self._post("LIPA_NA_BONGA_CALCULATE", request.model_dump())
         return LipaNaBongaCalculateResponse(**result)
 
-    def redeem(self, request: LipaNaBongaRedeemRequest | dict) -> LipaNaBongaRedeemResponse:
+    def redeem(
+        self,
+        request: LipaNaBongaRedeemRequest | dict[str,
+        Any]
+    ) -> LipaNaBongaRedeemResponse:
         if isinstance(request, dict):
             request = LipaNaBongaRedeemRequest(**request)
         result = self._post("LIPA_NA_BONGA_REDEEM", request.model_dump())
@@ -517,14 +549,18 @@ class PullTransactionsService:
         self._post = post
 
     def register(
-        self, request: PullTransactionsRegisterRequest | dict
+        self, request: PullTransactionsRegisterRequest | dict[str, Any]
     ) -> PullTransactionsRegisterResponse:
         if isinstance(request, dict):
             request = PullTransactionsRegisterRequest(**request)
         result = self._post("PULL_TRANSACTIONS_REGISTER", request.model_dump())
         return PullTransactionsRegisterResponse(**result)
 
-    def query(self, request: PullTransactionsQueryRequest | dict) -> PullTransactionsQueryResponse:
+    def query(
+        self,
+        request: PullTransactionsQueryRequest | dict[str,
+        Any]
+    ) -> PullTransactionsQueryResponse:
         if isinstance(request, dict):
             request = PullTransactionsQueryRequest(**request)
         result = self._post("PULL_TRANSACTIONS_QUERY", request.model_dump())
@@ -535,7 +571,7 @@ class SwapService:
     def __init__(self, post: PostFn) -> None:
         self._post = post
 
-    def query(self, request: SwapRequest | dict) -> SwapResponse:
+    def query(self, request: SwapRequest | dict[str, Any]) -> SwapResponse:
         if isinstance(request, dict):
             request = SwapRequest(**request)
         result = self._post("SWAP", request.model_dump())
@@ -546,14 +582,14 @@ class BillManagerService:
     def __init__(self, post: PostFn) -> None:
         self._post = post
 
-    def opt_in(self, request: BillManagerOptInRequest | dict) -> BillManagerOptInResponse:
+    def opt_in(self, request: BillManagerOptInRequest | dict[str, Any]) -> BillManagerOptInResponse:
         if isinstance(request, dict):
             request = BillManagerOptInRequest(**request)
         result = self._post("BILL_MANAGER_OPTIN", request.model_dump())
         return BillManagerOptInResponse(**result)
 
     def send_single_invoice(
-        self, request: BillManagerSingleInvoiceRequest | dict
+        self, request: BillManagerSingleInvoiceRequest | dict[str, Any]
     ) -> BillManagerResponse:
         if isinstance(request, dict):
             request = BillManagerSingleInvoiceRequest(**request)
@@ -561,7 +597,7 @@ class BillManagerService:
         return BillManagerResponse(**result)
 
     def send_bulk_invoice(
-        self, request: BillManagerBulkInvoiceRequest | dict
+        self, request: BillManagerBulkInvoiceRequest | dict[str, Any]
     ) -> BillManagerResponse:
         if isinstance(request, dict):
             request = BillManagerBulkInvoiceRequest(**request)
@@ -570,7 +606,7 @@ class BillManagerService:
         return BillManagerResponse(**result)
 
     def reconciliation(
-        self, request: BillManagerReconciliationRequest | dict
+        self, request: BillManagerReconciliationRequest | dict[str, Any]
     ) -> BillManagerResponse:
         if isinstance(request, dict):
             request = BillManagerReconciliationRequest(**request)
@@ -578,7 +614,7 @@ class BillManagerService:
         return BillManagerResponse(**result)
 
     def cancel_single_invoice(
-        self, request: BillManagerCancelSingleRequest | dict
+        self, request: BillManagerCancelSingleRequest | dict[str, Any]
     ) -> BillManagerResponse:
         if isinstance(request, dict):
             request = BillManagerCancelSingleRequest(**request)
@@ -586,14 +622,18 @@ class BillManagerService:
         return BillManagerResponse(**result)
 
     def cancel_bulk_invoices(
-        self, request: BillManagerCancelBulkRequest | dict
+        self, request: BillManagerCancelBulkRequest | dict[str, Any]
     ) -> BillManagerResponse:
         if isinstance(request, dict):
             request = BillManagerCancelBulkRequest(**request)
         result = self._post("BILL_MANAGER_CANCEL_BULK", request.externalReferences)
         return BillManagerResponse(**result)
 
-    def change_opt_in(self, request: BillManagerChangeOptInRequest | dict) -> BillManagerResponse:
+    def change_opt_in(
+        self,
+        request: BillManagerChangeOptInRequest | dict[str,
+        Any]
+    ) -> BillManagerResponse:
         if isinstance(request, dict):
             request = BillManagerChangeOptInRequest(**request)
         result = self._post("BILL_MANAGER_CHANGE_OPTIN", request.model_dump())
@@ -604,14 +644,14 @@ class B2BExpressService:
     def __init__(self, post: PostFn) -> None:
         self._post = post
 
-    def send(self, request: B2BExpressRequest | dict) -> B2BExpressResponse:
+    def send(self, request: B2BExpressRequest | dict[str, Any]) -> B2BExpressResponse:
         if isinstance(request, dict):
             request = B2BExpressRequest(**request)
         result = self._post("B2B_EXPRESS", request.model_dump())
         return B2BExpressResponse(**result)
 
     @staticmethod
-    def parse_callback(payload: dict) -> dict:
+    def parse_callback(payload: dict[str, Any]) -> dict[str, Any]:
         return {
             "success": payload.get("resultCode") == "0",
             "resultCode": payload.get("resultCode"),
@@ -630,7 +670,7 @@ class RatibaService:
     def __init__(self, post: PostFn) -> None:
         self._post = post
 
-    def create_standing_order(self, request: RatibaRequest | dict) -> RatibaResponse:
+    def create_standing_order(self, request: RatibaRequest | dict[str, Any]) -> RatibaResponse:
         if isinstance(request, dict):
             request = RatibaRequest(**request)
         result = self._post("RATIBA", request.model_dump())
@@ -642,7 +682,7 @@ class TaxRemittanceService:
         self._post = post
         self._config = config
 
-    def remit(self, request: TaxRemittanceRequest | dict) -> TaxRemittanceResponse:
+    def remit(self, request: TaxRemittanceRequest | dict[str, Any]) -> TaxRemittanceResponse:
         if isinstance(request, dict):
             if self._config:
                 request.setdefault("SecurityCredential", self._config.security_credential)
@@ -658,7 +698,7 @@ class TaxRemittanceService:
         return TaxRemittanceResponse(**result)
 
 
-GetFn = Callable[[str, dict], dict]
+GetFn = Callable[[str, dict[str, Any]], dict[str, Any]]
 
 
 class MobileCenterService:
@@ -667,7 +707,7 @@ class MobileCenterService:
         self._get = get
 
     def fetch_offers(
-        self, request: MobileCenterFetchOffersRequest | dict
+        self, request: MobileCenterFetchOffersRequest | dict[str, Any]
     ) -> MobileCenterFetchOffersResponse:
         if isinstance(request, dict):
             request = MobileCenterFetchOffersRequest(**request)
@@ -677,7 +717,7 @@ class MobileCenterService:
         return MobileCenterFetchOffersResponse(**result)
 
     def purchase(
-        self, request: MobileCenterPurchaseRequest | dict
+        self, request: MobileCenterPurchaseRequest | dict[str, Any]
     ) -> MobileCenterPurchaseResponse:
         if isinstance(request, dict):
             request = MobileCenterPurchaseRequest(**request)
@@ -685,7 +725,7 @@ class MobileCenterService:
         return MobileCenterPurchaseResponse(**result)
 
     def check_status(
-        self, request: MobileCenterStatusRequest | dict
+        self, request: MobileCenterStatusRequest | dict[str, Any]
     ) -> MobileCenterStatusResponse:
         if isinstance(request, dict):
             request = MobileCenterStatusRequest(**request)
@@ -700,7 +740,7 @@ class AgeOnNetworkService:
     def __init__(self, post: PostFn) -> None:
         self._post = post
 
-    def query(self, request: AgeOnNetworkRequest | dict) -> AgeOnNetworkResponse:
+    def query(self, request: AgeOnNetworkRequest | dict[str, Any]) -> AgeOnNetworkResponse:
         if isinstance(request, dict):
             request = AgeOnNetworkRequest(**request)
         result = self._post("AGE_ON_NETWORK", request.model_dump())
@@ -712,7 +752,7 @@ class MobileNumberValidationService:
         self._post = post
 
     def validate(
-        self, request: MobileNumberValidationRequest | dict
+        self, request: MobileNumberValidationRequest | dict[str, Any]
     ) -> MobileNumberValidationResponse:
         if isinstance(request, dict):
             request = MobileNumberValidationRequest(**request)
