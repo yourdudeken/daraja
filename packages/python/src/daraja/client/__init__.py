@@ -1,7 +1,7 @@
 import logging
 import time
 import uuid
-from typing import Any
+from typing import TYPE_CHECKING, Any, cast
 from urllib.parse import urlencode
 
 import httpx
@@ -115,6 +115,33 @@ from daraja.utils.token_cache import (
     build_token_cache_key,
 )
 from daraja.utils.tracing import Tracer as Tracer
+
+if TYPE_CHECKING:
+    from daraja.services import (
+        AccountBalanceService,
+        AgeOnNetworkService,
+        B2BExpressService,
+        B2BService,
+        B2CService,
+        B2PochiService,
+        BillManagerService,
+        BusinessGoodsService,
+        C2BService,
+        DynamicQRService,
+        IMSIService,
+        IoTSIMService,
+        LipaNaBongaService,
+        MobileCenterService,
+        MobileNumberValidationService,
+        PullTransactionsService,
+        QueryOrgInfoService,
+        RatibaService,
+        ReversalService,
+        STKPushService,
+        SwapService,
+        TaxRemittanceService,
+        TransactionStatusService,
+    )
 
 RETRYABLE_STATUS_CODES = {408, 429, 500, 502, 503, 504}
 
@@ -272,10 +299,11 @@ class Mpesa:
     ) -> dict[str, Any]:
         request_id = _generate_request_id()
 
+        idempotency_store = self._idempotency_store
         idempotency_key: str | None = None
-        if self._idempotency_store is not None and method.upper() == "POST":
+        if idempotency_store is not None and method.upper() == "POST":
             idempotency_key = generate_idempotency_key(method, url, json_data)
-            cached = self._idempotency_store.get(idempotency_key)
+            cached = idempotency_store.get(idempotency_key)
             if cached is not None:
                 self._logger.debug(
                     "Idempotency cache hit", extra={"key": idempotency_key, "url": url}
@@ -346,9 +374,9 @@ class Mpesa:
                         )
 
                     response.raise_for_status()
-                    json_result = response.json()
-                    if idempotency_key:
-                        self._idempotency_store.set(idempotency_key, json_result, 86400_000)
+                    json_result = cast(dict[str, Any], response.json())
+                    if idempotency_key and idempotency_store is not None:
+                        idempotency_store.set(idempotency_key, json_result, 86400_000)
                     self._logger.debug(
                         "Request successful",
                         extra={
@@ -419,17 +447,17 @@ class Mpesa:
                     span.set_attribute("mpesa.response_code", rc)
             return result
 
-    def _post(self, endpoint_key: str, data: dict | list) -> dict:
+    def _post(self, endpoint_key: str, data: dict[str, Any] | list[Any]) -> dict[str, Any]:
         url = get_full_url(self._config.environment, ENDPOINTS[endpoint_key])
         return self._request("POST", url, data)
 
-    def _get(self, endpoint_key: str, params: dict) -> dict:
+    def _get(self, endpoint_key: str, params: dict[str, Any]) -> dict[str, Any]:
         url = get_full_url(self._config.environment, ENDPOINTS[endpoint_key])
         if params:
             url = f"{url}?{urlencode(params)}"
         return self._request("GET", url)
 
-    def stk_push(self, request: STKPushRequest | dict) -> STKPushResponse:
+    def stk_push(self, request: STKPushRequest | dict[str, Any]) -> STKPushResponse:
         if isinstance(request, dict):
             request = STKPushRequest(**request)
         if not request.Password and self._config.passkey:
@@ -441,7 +469,7 @@ class Mpesa:
         result = self._post("STK_PUSH", request.model_dump())
         return STKPushResponse(**result)
 
-    def stk_query(self, request: STKQueryRequest | dict) -> STKQueryResponse:
+    def stk_query(self, request: STKQueryRequest | dict[str, Any]) -> STKQueryResponse:
         if isinstance(request, dict):
             request = STKQueryRequest(**request)
         if not request.Password and self._config.passkey:
@@ -453,19 +481,19 @@ class Mpesa:
         result = self._post("STK_QUERY", request.model_dump())
         return STKQueryResponse(**result)
 
-    def c2b_register_url(self, request: C2BRegisterURLRequest | dict) -> C2BResponse:
+    def c2b_register_url(self, request: C2BRegisterURLRequest | dict[str, Any]) -> C2BResponse:
         if isinstance(request, dict):
             request = C2BRegisterURLRequest(**request)
         result = self._post("C2B_REGISTER_URL", request.model_dump())
         return C2BResponse(**result)
 
-    def c2b_simulate(self, request: C2BSimulateRequest | dict) -> C2BResponse:
+    def c2b_simulate(self, request: C2BSimulateRequest | dict[str, Any]) -> C2BResponse:
         if isinstance(request, dict):
             request = C2BSimulateRequest(**request)
         result = self._post("C2B_SIMULATE", request.model_dump())
         return C2BResponse(**result)
 
-    def b2c(self, request: B2CRequest | dict) -> B2CResponse:
+    def b2c(self, request: B2CRequest | dict[str, Any]) -> B2CResponse:
         if isinstance(request, dict):
             request.setdefault("SecurityCredential", self._config.security_credential)
             request.setdefault("InitiatorName", self._config.initiator_name)
@@ -478,7 +506,7 @@ class Mpesa:
         result = self._post("B2C", request.model_dump())
         return B2CResponse(**result)
 
-    def reversal(self, request: ReversalRequest | dict) -> ReversalResponse:
+    def reversal(self, request: ReversalRequest | dict[str, Any]) -> ReversalResponse:
         if isinstance(request, dict):
             request.setdefault("SecurityCredential", self._config.security_credential)
             request.setdefault("Initiator", self._config.initiator_name)
@@ -492,7 +520,7 @@ class Mpesa:
         return ReversalResponse(**result)
 
     def transaction_status(
-        self, request: TransactionStatusRequest | dict
+        self, request: TransactionStatusRequest | dict[str, Any]
     ) -> TransactionStatusResponse:
         if isinstance(request, dict):
             request.setdefault("SecurityCredential", self._config.security_credential)
@@ -506,7 +534,9 @@ class Mpesa:
         result = self._post("TRANSACTION_STATUS", request.model_dump())
         return TransactionStatusResponse(**result)
 
-    def account_balance(self, request: AccountBalanceRequest | dict) -> AccountBalanceResponse:
+    def account_balance(
+        self, request: AccountBalanceRequest | dict[str, Any]
+    ) -> AccountBalanceResponse:
         if isinstance(request, dict):
             request.setdefault("SecurityCredential", self._config.security_credential)
             request.setdefault("Initiator", self._config.initiator_name)
@@ -519,61 +549,71 @@ class Mpesa:
         result = self._post("ACCOUNT_BALANCE", request.model_dump())
         return AccountBalanceResponse(**result)
 
-    def dynamic_qr(self, request: DynamicQRRequest | dict) -> DynamicQRResponse:
+    def dynamic_qr(self, request: DynamicQRRequest | dict[str, Any]) -> DynamicQRResponse:
         if isinstance(request, dict):
             request = DynamicQRRequest(**request)
         result = self._post("DYNAMIC_QR", request.model_dump())
         return DynamicQRResponse(**result)
 
     @property
-    def stk_push_service(self):
+    def stk_push_service(self) -> STKPushService:
+
         from daraja.services import STKPushService
 
         return STKPushService(self._post, self._config)
 
     @property
-    def c2b_service(self):
+    def c2b_service(self) -> C2BService:
+
         from daraja.services import C2BService
 
         return C2BService(self._post)
 
     @property
-    def b2c_service(self):
+    def b2c_service(self) -> B2CService:
+
         from daraja.services import B2CService
 
         return B2CService(self._post, self._config)
 
     @property
-    def b2b_service(self):
+    def b2b_service(self) -> B2BService:
+
         from daraja.services import B2BService
 
         return B2BService(self._post, self._config)
 
     @property
-    def reversal_service(self):
+    def reversal_service(self) -> ReversalService:
+
         from daraja.services import ReversalService
 
         return ReversalService(self._post, self._config)
 
     @property
-    def transaction_status_service(self):
+    def transaction_status_service(self) -> TransactionStatusService:
+
         from daraja.services import TransactionStatusService
 
         return TransactionStatusService(self._post, self._config)
 
     @property
-    def account_balance_service(self):
+    def account_balance_service(self) -> AccountBalanceService:
+
         from daraja.services import AccountBalanceService
 
         return AccountBalanceService(self._post, self._config)
 
     @property
-    def dynamic_qr_service(self):
+    def dynamic_qr_service(self) -> DynamicQRService:
+
         from daraja.services import DynamicQRService
 
         return DynamicQRService(self._post)
 
-    def business_buy_goods(self, request: BusinessBuyGoodsRequest | dict) -> BusinessGoodsResponse:
+    def business_buy_goods(
+        self, request: BusinessBuyGoodsRequest | dict[str, Any]
+    ) -> BusinessGoodsResponse:
         if isinstance(request, dict):
             request.setdefault("SecurityCredential", self._config.security_credential)
             request.setdefault("Initiator", self._config.initiator_name)
@@ -586,7 +626,9 @@ class Mpesa:
         result = self._post("B2B", request.model_dump())
         return BusinessGoodsResponse(**result)
 
-    def business_pay_bill(self, request: BusinessPayBillRequest | dict) -> BusinessGoodsResponse:
+    def business_pay_bill(
+        self, request: BusinessPayBillRequest | dict[str, Any]
+    ) -> BusinessGoodsResponse:
         if isinstance(request, dict):
             request.setdefault("SecurityCredential", self._config.security_credential)
             request.setdefault("Initiator", self._config.initiator_name)
@@ -600,50 +642,58 @@ class Mpesa:
         return BusinessGoodsResponse(**result)
 
     def query_org_info(
-        self, request: QueryOrgInfoRequest | dict
+        self, request: QueryOrgInfoRequest | dict[str, Any]
     ) -> QueryOrgInfoResponse:
         if isinstance(request, dict):
             request = QueryOrgInfoRequest(**request)
         result = self._post("QUERY_ORG_INFO", request.model_dump())
         return QueryOrgInfoResponse(**result)
 
-    def imsi_query(self, request: IMSIRequest | dict) -> IMSIResponse:
+    def imsi_query(
+        self, request: IMSIRequest | dict[str, Any]
+    ) -> IMSIResponse:
         if isinstance(request, dict):
             request = IMSIRequest(**request)
         result = self._post("IMSI", request.model_dump())
         return IMSIResponse(**result)
 
-    def iot_manage(self, request: IoTSIMRequest | dict) -> IoTSIMResponse:
+    def iot_manage(
+        self, request: IoTSIMRequest | dict[str, Any]
+    ) -> IoTSIMResponse:
         if isinstance(request, dict):
             request = IoTSIMRequest(**request)
         result = self._post("IOT_MANAGE", request.model_dump())
         return IoTSIMResponse(**result)
 
     @property
-    def business_goods_service(self):
+    def business_goods_service(self) -> BusinessGoodsService:
+
         from daraja.services import BusinessGoodsService
 
         return BusinessGoodsService(self._post, self._config)
 
     @property
-    def query_org_info_service(self):
+    def query_org_info_service(self) -> QueryOrgInfoService:
+
         from daraja.services import QueryOrgInfoService
 
         return QueryOrgInfoService(self._post)
 
     @property
-    def imsi_service(self):
+    def imsi_service(self) -> IMSIService:
+
         from daraja.services import IMSIService
 
         return IMSIService(self._post)
 
     @property
-    def iot_service(self):
+    def iot_service(self) -> IoTSIMService:
+
         from daraja.services import IoTSIMService
 
         return IoTSIMService(self._post)
 
-    def b2pochi(self, request: B2PochiRequest | dict) -> B2PochiResponse:
+    def b2pochi(self, request: B2PochiRequest | dict[str, Any]) -> B2PochiResponse:
         if isinstance(request, dict):
             request.setdefault("SecurityCredential", self._config.security_credential)
             request.setdefault("InitiatorName", self._config.initiator_name)
@@ -657,7 +707,7 @@ class Mpesa:
         return B2PochiResponse(**result)
 
     def lipa_na_bonga_calculate(
-        self, request: LipaNaBongaCalculateRequest | dict
+        self, request: LipaNaBongaCalculateRequest | dict[str, Any]
     ) -> LipaNaBongaCalculateResponse:
         if isinstance(request, dict):
             request = LipaNaBongaCalculateRequest(**request)
@@ -665,7 +715,7 @@ class Mpesa:
         return LipaNaBongaCalculateResponse(**result)
 
     def lipa_na_bonga_redeem(
-        self, request: LipaNaBongaRedeemRequest | dict
+        self, request: LipaNaBongaRedeemRequest | dict[str, Any]
     ) -> LipaNaBongaRedeemResponse:
         if isinstance(request, dict):
             request = LipaNaBongaRedeemRequest(**request)
@@ -673,7 +723,7 @@ class Mpesa:
         return LipaNaBongaRedeemResponse(**result)
 
     def pull_transactions_register(
-        self, request: PullTransactionsRegisterRequest | dict
+        self, request: PullTransactionsRegisterRequest | dict[str, Any]
     ) -> PullTransactionsRegisterResponse:
         if isinstance(request, dict):
             request = PullTransactionsRegisterRequest(**request)
@@ -681,30 +731,32 @@ class Mpesa:
         return PullTransactionsRegisterResponse(**result)
 
     def pull_transactions_query(
-        self, request: PullTransactionsQueryRequest | dict
+        self, request: PullTransactionsQueryRequest | dict[str, Any]
     ) -> PullTransactionsQueryResponse:
         if isinstance(request, dict):
             request = PullTransactionsQueryRequest(**request)
         result = self._post("PULL_TRANSACTIONS_QUERY", request.model_dump())
         return PullTransactionsQueryResponse(**result)
 
-    def swap(self, request: SwapRequest | dict) -> SwapResponse:
+    def swap(self, request: SwapRequest | dict[str, Any]) -> SwapResponse:
         if isinstance(request, dict):
             request = SwapRequest(**request)
         result = self._post("SWAP", request.model_dump())
         return SwapResponse(**result)
 
-    def bill_manager(self, request: dict) -> BillManagerResponse:
+    def bill_manager(self, request: dict[str, Any]) -> BillManagerResponse:
         result = self._post("BILL_MANAGER", request)
         return BillManagerResponse(**result)
 
-    def b2b_express(self, request: B2BExpressRequest | dict) -> B2BExpressResponse:
+    def b2b_express(self, request: B2BExpressRequest | dict[str, Any]) -> B2BExpressResponse:
         if isinstance(request, dict):
             request = B2BExpressRequest(**request)
         result = self._post("B2B_EXPRESS", request.model_dump())
         return B2BExpressResponse(**result)
 
-    def b2c_account_top_up(self, request: B2CAccountTopUpRequest | dict) -> B2CAccountTopUpResponse:
+    def b2c_account_top_up(
+        self, request: B2CAccountTopUpRequest | dict[str, Any]
+    ) -> B2CAccountTopUpResponse:
         if isinstance(request, dict):
             request.setdefault("SecurityCredential", self._config.security_credential)
             request.setdefault("Initiator", self._config.initiator_name)
@@ -717,13 +769,15 @@ class Mpesa:
         result = self._post("B2C_ACCOUNT_TOP_UP", request.model_dump())
         return B2CAccountTopUpResponse(**result)
 
-    def ratiba(self, request: RatibaRequest | dict) -> RatibaResponse:
+    def ratiba(self, request: RatibaRequest | dict[str, Any]) -> RatibaResponse:
         if isinstance(request, dict):
             request = RatibaRequest(**request)
         result = self._post("RATIBA", request.model_dump())
         return RatibaResponse(**result)
 
-    def tax_remittance(self, request: TaxRemittanceRequest | dict) -> TaxRemittanceResponse:
+    def tax_remittance(
+        self, request: TaxRemittanceRequest | dict[str, Any]
+    ) -> TaxRemittanceResponse:
         if isinstance(request, dict):
             request.setdefault("SecurityCredential", self._config.security_credential)
             request.setdefault("Initiator", self._config.initiator_name)
@@ -737,7 +791,7 @@ class Mpesa:
         return TaxRemittanceResponse(**result)
 
     def mobile_center_fetch_offers(
-        self, request: MobileCenterFetchOffersRequest | dict
+        self, request: MobileCenterFetchOffersRequest | dict[str, Any]
     ) -> MobileCenterFetchOffersResponse:
         if isinstance(request, dict):
             request = MobileCenterFetchOffersRequest(**request)
@@ -745,7 +799,7 @@ class Mpesa:
         return MobileCenterFetchOffersResponse(**result)
 
     def mobile_center_purchase(
-        self, request: MobileCenterPurchaseRequest | dict
+        self, request: MobileCenterPurchaseRequest | dict[str, Any]
     ) -> MobileCenterPurchaseResponse:
         if isinstance(request, dict):
             request = MobileCenterPurchaseRequest(**request)
@@ -753,7 +807,7 @@ class Mpesa:
         return MobileCenterPurchaseResponse(**result)
 
     def mobile_center_status(
-        self, request: MobileCenterStatusRequest | dict
+        self, request: MobileCenterStatusRequest | dict[str, Any]
     ) -> MobileCenterStatusResponse:
         if isinstance(request, dict):
             request = MobileCenterStatusRequest(**request)
@@ -763,14 +817,14 @@ class Mpesa:
         )
         return MobileCenterStatusResponse(**result)
 
-    def age_on_network(self, request: AgeOnNetworkRequest | dict) -> AgeOnNetworkResponse:
+    def age_on_network(self, request: AgeOnNetworkRequest | dict[str, Any]) -> AgeOnNetworkResponse:
         if isinstance(request, dict):
             request = AgeOnNetworkRequest(**request)
         result = self._post("AGE_ON_NETWORK", request.model_dump())
         return AgeOnNetworkResponse(**result)
 
     def mobile_number_validation(
-        self, request: MobileNumberValidationRequest | dict
+        self, request: MobileNumberValidationRequest | dict[str, Any]
     ) -> MobileNumberValidationResponse:
         if isinstance(request, dict):
             request = MobileNumberValidationRequest(**request)
@@ -778,73 +832,74 @@ class Mpesa:
         return MobileNumberValidationResponse(**result)
 
     @property
-    def b2pochi_service(self):
+    def b2pochi_service(self) -> B2PochiService:
+
         from daraja.services import B2PochiService
 
         return B2PochiService(self._post, self._config)
 
     @property
-    def lipa_na_bonga_service(self):
+    def lipa_na_bonga_service(self) -> LipaNaBongaService:
         from daraja.services import LipaNaBongaService
 
         return LipaNaBongaService(self._post)
 
     @property
-    def pull_transactions_service(self):
+    def pull_transactions_service(self) -> PullTransactionsService:
         from daraja.services import PullTransactionsService
 
         return PullTransactionsService(self._post)
 
     @property
-    def swap_service(self):
+    def swap_service(self) -> SwapService:
         from daraja.services import SwapService
 
         return SwapService(self._post)
 
     @property
-    def bill_manager_service(self):
+    def bill_manager_service(self) -> BillManagerService:
         from daraja.services import BillManagerService
 
         return BillManagerService(self._post)
 
     @property
-    def b2b_express_service(self):
+    def b2b_express_service(self) -> B2BExpressService:
         from daraja.services import B2BExpressService
 
         return B2BExpressService(self._post)
 
     @property
-    def ratiba_service(self):
+    def ratiba_service(self) -> RatibaService:
         from daraja.services import RatibaService
 
         return RatibaService(self._post)
 
     @property
-    def tax_remittance_service(self):
+    def tax_remittance_service(self) -> TaxRemittanceService:
         from daraja.services import TaxRemittanceService
 
         return TaxRemittanceService(self._post, self._config)
 
     @property
-    def mobile_center_service(self):
+    def mobile_center_service(self) -> MobileCenterService:
         from daraja.services import MobileCenterService
 
         return MobileCenterService(self._post, self._get)
 
     @property
-    def age_on_network_service(self):
+    def age_on_network_service(self) -> AgeOnNetworkService:
         from daraja.services import AgeOnNetworkService
 
         return AgeOnNetworkService(self._post)
 
     @property
-    def mobile_number_validation_service(self):
+    def mobile_number_validation_service(self) -> MobileNumberValidationService:
         from daraja.services import MobileNumberValidationService
 
         return MobileNumberValidationService(self._post)
 
     @property
-    def b2c_account_top_up_service(self):
+    def b2c_account_top_up_service(self) -> B2BService:
         from daraja.services import B2BService
 
         return B2BService(self._post, self._config)

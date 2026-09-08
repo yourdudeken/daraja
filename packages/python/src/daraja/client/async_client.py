@@ -87,6 +87,7 @@ from daraja.utils.idempotency import (
 from daraja.utils.rate_limiter import (
     EndpointRateLimiterRouter,
     NoopRateLimiter,
+    RateLimiter,
     RateLimiterConfig,
     TokenBucketRateLimiter,
 )
@@ -179,6 +180,7 @@ class AsyncMpesa:
         )
 
         rl_cfg = config.rate_limiter_config
+        self._rate_limiter: RateLimiter
         if rl_cfg:
             if rl_cfg.get("endpoint_overrides"):
                 rl_config_obj = RateLimiterConfig(
@@ -239,15 +241,16 @@ class AsyncMpesa:
         self,
         method: str,
         url: str,
-        json_data: dict | list | None = None,
+        json_data: dict[str, Any] | list[Any] | None = None,
         operation_name: str | None = None,
-    ) -> dict:
+    ) -> dict[str, Any]:
         request_id = _generate_request_id()
 
+        idempotency_store = self._idempotency_store
         idempotency_key: str | None = None
-        if self._idempotency_store is not None and method.upper() == "POST":
+        if idempotency_store is not None and method.upper() == "POST":
             idempotency_key = generate_idempotency_key(method, url, json_data)
-            cached = self._idempotency_store.get(idempotency_key)
+            cached = idempotency_store.get(idempotency_key)
             if cached is not None:
                 self._logger.debug(
                     "Idempotency cache hit", extra={"key": idempotency_key, "url": url}
@@ -257,7 +260,7 @@ class AsyncMpesa:
         while not self._rate_limiter.try_acquire(url):
             await asyncio.sleep(0.01)
 
-        async def do_request() -> dict:
+        async def do_request() -> dict[str, Any]:
             last_error: Exception | None = None
             for attempt in range(self._config.retry_config.max_retries + 1):
                 try:
@@ -318,9 +321,9 @@ class AsyncMpesa:
                         )
 
                     response.raise_for_status()
-                    json_result = response.json()
-                    if idempotency_key:
-                        self._idempotency_store.set(idempotency_key, json_result, 86400_000)
+                    json_result = cast(dict[str, Any], response.json())
+                    if idempotency_key and idempotency_store is not None:
+                        idempotency_store.set(idempotency_key, json_result, 86400_000)
                     self._logger.debug(
                         "Request successful",
                         extra={

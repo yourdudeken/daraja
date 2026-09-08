@@ -6,21 +6,21 @@ from typing import Any
 
 
 class IdempotencyStore:
-    def get(self, key: str) -> Any | None:
+    def get(self, key: str) -> dict[str, Any] | None:
         raise NotImplementedError
 
-    def set(self, key: str, value: Any, ttl_ms: int) -> None:
+    def set(self, key: str, value: dict[str, Any], ttl_ms: int) -> None:
         raise NotImplementedError
 
 
 class InMemoryIdempotencyStore(IdempotencyStore):
     def __init__(self, cleanup_interval_ms: int = 60_000) -> None:
-        self._cache: dict[str, tuple[Any, float]] = {}
+        self._cache: dict[str, tuple[dict[str, Any], float]] = {}
         self._lock = threading.Lock()
         self._cleanup_interval = cleanup_interval_ms / 1000.0
         self._last_cleanup = time.monotonic()
 
-    def get(self, key: str) -> Any | None:
+    def get(self, key: str) -> dict[str, Any] | None:
         self._maybe_cleanup()
         with self._lock:
             entry = self._cache.get(key)
@@ -32,7 +32,7 @@ class InMemoryIdempotencyStore(IdempotencyStore):
                 return None
             return data
 
-    def set(self, key: str, value: Any, ttl_ms: int) -> None:
+    def set(self, key: str, value: dict[str, Any], ttl_ms: int) -> None:
         expires_at = time.monotonic() + (ttl_ms / 1000.0)
         with self._lock:
             self._cache[key] = (value, expires_at)

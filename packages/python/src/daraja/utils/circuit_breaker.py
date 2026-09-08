@@ -1,5 +1,9 @@
 import time as _time
+from collections.abc import Awaitable, Callable
 from enum import Enum
+from typing import TypeVar
+
+T = TypeVar("T")
 
 
 class CircuitState(Enum):
@@ -33,7 +37,7 @@ class CircuitBreaker:
             self._success_count = 0
         return self._state
 
-    def call(self, fn):
+    def call(self, fn: Callable[[], T]) -> T:
         if self.state == CircuitState.OPEN:
             raise CircuitBreakerOpenError("Circuit breaker is open")
 
@@ -45,7 +49,7 @@ class CircuitBreaker:
             self._on_failure()
             raise
 
-    async def acall(self, fn):
+    async def acall(self, fn: Callable[[], Awaitable[T]]) -> T:
         if self.state == CircuitState.OPEN:
             raise CircuitBreakerOpenError("Circuit breaker is open")
 
