@@ -1,7 +1,5 @@
-from typing import Any, Callable, Optional
-
-import httpx
-
+from collections.abc import Callable
+from typing import Any
 
 BatchPostFn = Callable[[str, dict], dict]
 

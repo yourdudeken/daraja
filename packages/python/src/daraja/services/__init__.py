@@ -1,12 +1,12 @@
-from typing import Any, Callable, Optional
+from collections.abc import Callable
+from typing import Any
 
+from daraja.exceptions import ValidationError
 from daraja.models import (
     AccountBalanceRequest,
     AccountBalanceResponse,
-    AccountInfo,
     AccountBalanceResult,
-    MpesaResult,
-    ResultDetail,
+    AccountInfo,
     AgeOnNetworkRequest,
     AgeOnNetworkResponse,
     B2BExpressRequest,
@@ -27,8 +27,8 @@ from daraja.models import (
     BillManagerResponse,
     BillManagerSingleInvoiceRequest,
     BusinessBuyGoodsRequest,
-    BusinessPayBillRequest,
     BusinessGoodsResponse,
+    BusinessPayBillRequest,
     C2BRegisterURLRequest,
     C2BResponse,
     C2BSimulateRequest,
@@ -37,6 +37,7 @@ from daraja.models import (
     IMSIRequest,
     IMSIResponse,
     IoTActivationTrendsRequest,
+    IoTAllMessagesRequest,
     IoTAllSIMsRequest,
     IoTDeleteMessageRequest,
     IoTDeleteThreadRequest,
@@ -50,7 +51,6 @@ from daraja.models import (
     IoTSIMRequest,
     IoTSIMResponse,
     IoTSuspendUnsuspendRequest,
-    IoTAllMessagesRequest,
     LipaNaBongaCalculateRequest,
     LipaNaBongaCalculateResponse,
     LipaNaBongaRedeemRequest,
@@ -64,14 +64,16 @@ from daraja.models import (
     MobileNumberValidationRequest,
     MobileNumberValidationResponse,
     MpesaConfig,
-    PullTransactionsRegisterRequest,
-    PullTransactionsRegisterResponse,
+    MpesaResult,
     PullTransactionsQueryRequest,
     PullTransactionsQueryResponse,
+    PullTransactionsRegisterRequest,
+    PullTransactionsRegisterResponse,
     QueryOrgInfoRequest,
     QueryOrgInfoResponse,
     RatibaRequest,
     RatibaResponse,
+    ResultDetail,
     ReversalRequest,
     ReversalResponse,
     STKPushRequest,
@@ -92,7 +94,6 @@ from daraja.utils import (
     validate_amount,
     validate_shortcode,
 )
-from daraja.exceptions import ValidationError
 
 PostFn = Callable[[str, dict | list], dict]
 
@@ -170,7 +171,7 @@ class C2BService:
 
 
 class B2CService:
-    def __init__(self, post: PostFn, config: Optional[MpesaConfig] = None) -> None:
+    def __init__(self, post: PostFn, config: MpesaConfig | None = None) -> None:
         self._post = post
         self._config = config
 
@@ -193,7 +194,7 @@ class B2CService:
 
 
 class B2BService:
-    def __init__(self, post: PostFn, config: Optional[MpesaConfig] = None) -> None:
+    def __init__(self, post: PostFn, config: MpesaConfig | None = None) -> None:
         self._post = post
         self._config = config
 
@@ -214,7 +215,7 @@ class B2BService:
 
 
 class ReversalService:
-    def __init__(self, post: PostFn, config: Optional[MpesaConfig] = None) -> None:
+    def __init__(self, post: PostFn, config: MpesaConfig | None = None) -> None:
         self._post = post
         self._config = config
 
@@ -236,7 +237,7 @@ class ReversalService:
 
 
 class TransactionStatusService:
-    def __init__(self, post: PostFn, config: Optional[MpesaConfig] = None) -> None:
+    def __init__(self, post: PostFn, config: MpesaConfig | None = None) -> None:
         self._post = post
         self._config = config
 
@@ -257,7 +258,7 @@ class TransactionStatusService:
 
 
 class AccountBalanceService:
-    def __init__(self, post: PostFn, config: Optional[MpesaConfig] = None) -> None:
+    def __init__(self, post: PostFn, config: MpesaConfig | None = None) -> None:
         self._post = post
         self._config = config
 
@@ -304,7 +305,10 @@ class AccountBalanceService:
 
     @staticmethod
     def parse_callback(payload: dict | MpesaResult) -> dict:
-        result = payload.Result if isinstance(payload, MpesaResult) else ResultDetail(**payload["Result"])
+        if isinstance(payload, MpesaResult):
+            result = payload.Result
+        else:
+            result = ResultDetail(**payload["Result"])
         details: dict[str, Any] = {}
         if result.ResultParameters:
             for param in result.ResultParameters.ResultParameter:
@@ -315,7 +319,9 @@ class AccountBalanceService:
             "success": result.ResultCode == 0,
             "resultCode": result.ResultCode,
             "resultDescription": result.ResultDesc,
-            "balances": AccountBalanceService.parse_balance_string(balance_str) if balance_str else None,
+            "balances": (
+            AccountBalanceService.parse_balance_string(balance_str) if balance_str else None
+        ),
         }
 
 
@@ -331,7 +337,7 @@ class DynamicQRService:
 
 
 class BusinessGoodsService:
-    def __init__(self, post: PostFn, config: Optional[MpesaConfig] = None) -> None:
+    def __init__(self, post: PostFn, config: MpesaConfig | None = None) -> None:
         self._post = post
         self._config = config
 
@@ -465,7 +471,7 @@ class IoTSIMService:
 
 
 class B2PochiService:
-    def __init__(self, post: PostFn, config: Optional[MpesaConfig] = None) -> None:
+    def __init__(self, post: PostFn, config: MpesaConfig | None = None) -> None:
         self._post = post
         self._config = config
 
@@ -632,7 +638,7 @@ class RatibaService:
 
 
 class TaxRemittanceService:
-    def __init__(self, post: PostFn, config: Optional[MpesaConfig] = None) -> None:
+    def __init__(self, post: PostFn, config: MpesaConfig | None = None) -> None:
         self._post = post
         self._config = config
 

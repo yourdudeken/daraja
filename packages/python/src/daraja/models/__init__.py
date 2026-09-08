@@ -1,6 +1,6 @@
 import logging
-from datetime import datetime
-from typing import Any, Optional, Literal, Protocol, runtime_checkable, List, Dict
+from typing import Any, Literal, Protocol, runtime_checkable
+
 from pydantic import AliasChoices, BaseModel, ConfigDict, Field
 
 
@@ -12,7 +12,7 @@ class Logger(Protocol):
     def error(self, msg: str, *args: Any, **kwargs: Any) -> None: ...
 
 
-def _get_logger(logger: Optional[Logger] = None) -> Logger:
+def _get_logger(logger: Logger | None = None) -> Logger:
     if logger is not None:
         return logger
     return logging.getLogger("mpesa")
@@ -36,22 +36,22 @@ class MpesaConfig(BaseModel):
     consumer_key: str
     consumer_secret: str
     environment: Literal["sandbox", "production"] = "sandbox"
-    passkey: Optional[str] = None
-    initiator_name: Optional[str] = None
-    initiator_password: Optional[str] = None
-    security_credential: Optional[str] = None
+    passkey: str | None = None
+    initiator_name: str | None = None
+    initiator_password: str | None = None
+    security_credential: str | None = None
     timeout: int = 30
-    max_retries: Optional[int] = None
+    max_retries: int | None = None
     retry_config: RetryConfig = RetryConfig()
-    circuit_breaker_config: Optional[dict] = None
-    rate_limiter_config: Optional[dict] = None
+    circuit_breaker_config: dict | None = None
+    rate_limiter_config: dict | None = None
     enable_idempotency: bool = True
-    logger: Optional[Logger] = None
-    tracer: Optional[Any] = None
-    idempotency_store: Optional[Any] = None
+    logger: Logger | None = None
+    tracer: Any | None = None
+    idempotency_store: Any | None = None
     connection_pool_config: ConnectionPoolConfig = ConnectionPoolConfig()
-    shared_token_cache: Optional[Any] = None
-    redis_url: Optional[str] = None
+    shared_token_cache: Any | None = None
+    redis_url: str | None = None
 
     def model_post_init(self, __context: Any) -> None:
         if self.max_retries is not None:
@@ -103,7 +103,7 @@ class STKQueryResponse(BaseModel):
 
 class CallbackItem(BaseModel):
     Name: str
-    Value: Optional[Any] = None
+    Value: Any | None = None
 
 
 class STKCallbackMetadata(BaseModel):
@@ -115,7 +115,7 @@ class STKCallbackDetail(BaseModel):
     CheckoutRequestID: str
     ResultCode: int
     ResultDesc: str
-    CallbackMetadata: Optional[STKCallbackMetadata] = None
+    CallbackMetadata: STKCallbackMetadata | None = None
 
 
 class STKCallbackBody(BaseModel):
@@ -138,7 +138,7 @@ class C2BSimulateRequest(BaseModel):
     CommandID: Literal["CustomerPayBillOnline", "CustomerBuyGoodsOnline"]
     Amount: int
     Msisdn: int
-    BillRefNumber: Optional[str] = None
+    BillRefNumber: str | None = None
 
 
 class C2BResponse(BaseModel):
@@ -173,7 +173,7 @@ class C2BValidationResponse(BaseModel):
 
 
 class B2CRequest(BaseModel):
-    OriginatorConversationID: Optional[str] = None
+    OriginatorConversationID: str | None = None
     InitiatorName: str
     SecurityCredential: str
     CommandID: Literal["SalaryPayment", "BusinessPayment", "PromotionPayment"]
@@ -183,7 +183,7 @@ class B2CRequest(BaseModel):
     Remarks: str = Field(min_length=2, max_length=100)
     QueueTimeOutURL: str
     ResultURL: str
-    Occassion: Optional[str] = Field(default=None, max_length=100)
+    Occassion: str | None = Field(default=None, max_length=100)
 
 
 class B2CResponse(BaseModel):
@@ -217,14 +217,14 @@ class TransactionStatusRequest(BaseModel):
     Initiator: str
     SecurityCredential: str
     CommandID: Literal["TransactionStatusQuery"]
-    TransactionID: Optional[str] = None
-    OriginalConversationID: Optional[str] = None
+    TransactionID: str | None = None
+    OriginalConversationID: str | None = None
     PartyA: int
     IdentifierType: int = 4
     ResultURL: str
     QueueTimeOutURL: str
     Remarks: str = Field(max_length=100)
-    Occasion: Optional[str] = Field(default=None, max_length=100)
+    Occasion: str | None = Field(default=None, max_length=100)
 
 
 class TransactionStatusResponse(BaseModel):
@@ -261,11 +261,11 @@ class AccountInfo(BaseModel):
 
 
 class AccountBalanceResult(BaseModel):
-    workingAccount: Optional[AccountInfo] = None
-    utilityAccount: Optional[AccountInfo] = None
-    chargesPaidAccount: Optional[AccountInfo] = None
-    organizationSettlementAccount: Optional[AccountInfo] = None
-    floatAccount: Optional[AccountInfo] = None
+    workingAccount: AccountInfo | None = None
+    utilityAccount: AccountInfo | None = None
+    chargesPaidAccount: AccountInfo | None = None
+    organizationSettlementAccount: AccountInfo | None = None
+    floatAccount: AccountInfo | None = None
 
 
 class DynamicQRRequest(BaseModel):
@@ -295,11 +295,11 @@ class CallbackResultParams(BaseModel):
 
 class CallbackReferenceItem(BaseModel):
     Key: str
-    Value: Optional[str] = None
+    Value: str | None = None
 
 
 class CallbackReferenceData(BaseModel):
-    ReferenceItem: Optional[CallbackReferenceItem] = None
+    ReferenceItem: CallbackReferenceItem | None = None
 
 
 class ResultDetail(BaseModel):
@@ -309,8 +309,8 @@ class ResultDetail(BaseModel):
     OriginatorConversationID: str
     ConversationID: str
     TransactionID: str
-    ResultParameters: Optional[CallbackResultParams] = None
-    ReferenceData: Optional[CallbackReferenceData] = None
+    ResultParameters: CallbackResultParams | None = None
+    ReferenceData: CallbackReferenceData | None = None
 
 
 class MpesaResult(BaseModel):
@@ -326,12 +326,12 @@ class BusinessBuyGoodsRequest(BaseModel):
     Amount: int
     PartyA: int
     PartyB: int
-    Requester: Optional[int] = None
-    AccountReference: Optional[str] = None
+    Requester: int | None = None
+    AccountReference: str | None = None
     Remarks: str
     QueueTimeOutURL: str
     ResultURL: str
-    Occassion: Optional[str] = None
+    Occassion: str | None = None
 
 
 class BusinessPayBillRequest(BaseModel):
@@ -343,12 +343,12 @@ class BusinessPayBillRequest(BaseModel):
     Amount: int
     PartyA: int
     PartyB: int
-    Requester: Optional[int] = None
-    AccountReference: Optional[str] = None
+    Requester: int | None = None
+    AccountReference: str | None = None
     Remarks: str
     QueueTimeOutURL: str
     ResultURL: str
-    Occassion: Optional[str] = None
+    Occassion: str | None = None
 
 
 class BusinessGoodsResponse(BaseModel):
@@ -399,11 +399,11 @@ class IoTSIMRequest(BaseModel):
         "SuspendSIM",
     ]
     ICCID: str
-    IMEI: Optional[str] = None
-    DeviceName: Optional[str] = None
-    DeviceLocation: Optional[str] = None
-    DataPlan: Optional[str] = None
-    BillingCycle: Optional[str] = None
+    IMEI: str | None = None
+    DeviceName: str | None = None
+    DeviceLocation: str | None = None
+    DataPlan: str | None = None
+    BillingCycle: str | None = None
 
 
 class IoTSIMResponse(BaseModel):
@@ -411,9 +411,9 @@ class IoTSIMResponse(BaseModel):
     ResponseDescription: str
     ICCID: str
     Status: str
-    ActivationDate: Optional[str] = None
-    DataPlan: Optional[str] = None
-    ExpiryDate: Optional[str] = None
+    ActivationDate: str | None = None
+    DataPlan: str | None = None
+    ExpiryDate: str | None = None
 
 
 class IoTHeader(BaseModel):
@@ -425,7 +425,7 @@ class IoTHeader(BaseModel):
 
 
 class IoTAllSIMsRequest(BaseModel):
-    vpnGroup: List[str]
+    vpnGroup: list[str]
     startAtInde: str = "0"
     pageSize: str = ""
     username: str = ""
@@ -446,8 +446,8 @@ class IoTSIMDesc(BaseModel):
 
 
 class IoTAllSIMsResponse(BaseModel):
-    header: Optional[IoTHeader] = None
-    body: Optional[Dict[str, Any]] = None
+    header: IoTHeader | None = None
+    body: dict[str, Any] | None = None
 
 
 class IoTQueryLifeCycleRequest(BaseModel):
@@ -457,8 +457,8 @@ class IoTQueryLifeCycleRequest(BaseModel):
 
 
 class IoTQueryLifeCycleResponse(BaseModel):
-    header: Optional[IoTHeader] = None
-    body: Optional[Dict[str, Any]] = None
+    header: IoTHeader | None = None
+    body: dict[str, Any] | None = None
 
 
 class IoTQueryCustomerInfoRequest(BaseModel):
@@ -468,8 +468,8 @@ class IoTQueryCustomerInfoRequest(BaseModel):
 
 
 class IoTQueryCustomerInfoResponse(BaseModel):
-    header: Optional[IoTHeader] = None
-    body: Optional[Dict[str, Any]] = None
+    header: IoTHeader | None = None
+    body: dict[str, Any] | None = None
 
 
 class IoTSIMActivationRequest(BaseModel):
@@ -479,8 +479,8 @@ class IoTSIMActivationRequest(BaseModel):
 
 
 class IoTSIMActivationResponse(BaseModel):
-    header: Optional[IoTHeader] = None
-    body: Optional[Dict[str, Any]] = None
+    header: IoTHeader | None = None
+    body: dict[str, Any] | None = None
 
 
 class IoTActivationTrendsRequest(BaseModel):
@@ -491,8 +491,8 @@ class IoTActivationTrendsRequest(BaseModel):
 
 
 class IoTActivationTrendsResponse(BaseModel):
-    header: Optional[IoTHeader] = None
-    body: Optional[Dict[str, Any]] = None
+    header: IoTHeader | None = None
+    body: dict[str, Any] | None = None
 
 
 class IoTRenameAssetRequest(BaseModel):
@@ -503,8 +503,8 @@ class IoTRenameAssetRequest(BaseModel):
 
 
 class IoTRenameAssetResponse(BaseModel):
-    header: Optional[IoTHeader] = None
-    body: Optional[Dict[str, Any]] = None
+    header: IoTHeader | None = None
+    body: dict[str, Any] | None = None
 
 
 class IoTSuspendUnsuspendRequest(BaseModel):
@@ -516,8 +516,8 @@ class IoTSuspendUnsuspendRequest(BaseModel):
 
 
 class IoTSuspendUnsuspendResponse(BaseModel):
-    header: Optional[IoTHeader] = None
-    body: Optional[Dict[str, Any]] = None
+    header: IoTHeader | None = None
+    body: dict[str, Any] | None = None
 
 
 class IoTSearchMessagesRequest(BaseModel):
@@ -525,8 +525,8 @@ class IoTSearchMessagesRequest(BaseModel):
 
 
 class IoTSearchMessagesResponse(BaseModel):
-    header: Optional[IoTHeader] = None
-    body: Optional[Dict[str, Any]] = None
+    header: IoTHeader | None = None
+    body: dict[str, Any] | None = None
 
 
 class IoTFilterMessagesRequest(BaseModel):
@@ -536,8 +536,8 @@ class IoTFilterMessagesRequest(BaseModel):
 
 
 class IoTFilterMessagesResponse(BaseModel):
-    header: Optional[IoTHeader] = None
-    body: Optional[Dict[str, Any]] = None
+    header: IoTHeader | None = None
+    body: dict[str, Any] | None = None
 
 
 class IoTDeleteThreadRequest(BaseModel):
@@ -545,8 +545,8 @@ class IoTDeleteThreadRequest(BaseModel):
 
 
 class IoTDeleteThreadResponse(BaseModel):
-    header: Optional[IoTHeader] = None
-    body: Optional[Dict[str, Any]] = None
+    header: IoTHeader | None = None
+    body: dict[str, Any] | None = None
 
 
 class IoTAllMessagesRequest(BaseModel):
@@ -556,8 +556,8 @@ class IoTAllMessagesRequest(BaseModel):
 
 
 class IoTAllMessagesResponse(BaseModel):
-    header: Optional[IoTHeader] = None
-    body: Optional[Dict[str, Any]] = None
+    header: IoTHeader | None = None
+    body: dict[str, Any] | None = None
 
 
 class IoTSendSingleMessageRequest(BaseModel):
@@ -567,8 +567,8 @@ class IoTSendSingleMessageRequest(BaseModel):
 
 
 class IoTSendSingleMessageResponse(BaseModel):
-    header: Optional[IoTHeader] = None
-    body: Optional[Dict[str, Any]] = None
+    header: IoTHeader | None = None
+    body: dict[str, Any] | None = None
 
 
 class IoTDeleteMessageRequest(BaseModel):
@@ -576,12 +576,12 @@ class IoTDeleteMessageRequest(BaseModel):
 
 
 class IoTDeleteMessageResponse(BaseModel):
-    header: Optional[IoTHeader] = None
-    body: Optional[Dict[str, Any]] = None
+    header: IoTHeader | None = None
+    body: dict[str, Any] | None = None
 
 
 class B2PochiRequest(BaseModel):
-    OriginatorConversationID: Optional[str] = None
+    OriginatorConversationID: str | None = None
     InitiatorName: str
     SecurityCredential: str
     CommandID: str = "BusinessPayToPochi"
@@ -591,7 +591,7 @@ class B2PochiRequest(BaseModel):
     Remarks: str
     QueueTimeOutURL: str
     ResultURL: str
-    Occassion: Optional[str] = None
+    Occassion: str | None = None
 
 
 class B2PochiResponse(BaseModel):
@@ -614,8 +614,8 @@ class LipaNaBongaHeader(BaseModel):
 
 
 class LipaNaBongaCalculateResponse(BaseModel):
-    header: Optional[LipaNaBongaHeader] = None
-    body: Optional[Dict[str, Any]] = None
+    header: LipaNaBongaHeader | None = None
+    body: dict[str, Any] | None = None
 
 
 class LipaNaBongaRedeemRequest(BaseModel):
@@ -628,8 +628,8 @@ class LipaNaBongaRedeemRequest(BaseModel):
 
 
 class LipaNaBongaRedeemResponse(BaseModel):
-    header: Optional[LipaNaBongaHeader] = None
-    body: Optional[Any] = None
+    header: LipaNaBongaHeader | None = None
+    body: Any | None = None
 
 
 class PullTransactionsRegisterRequest(BaseModel):
@@ -687,12 +687,12 @@ class BillManagerOptInRequest(BaseModel):
     email: str = ""
     officialContact: str = ""
     sendReminders: str = ""
-    logo: Optional[str] = None
+    logo: str | None = None
     callbackurl: str = ""
 
 
 class BillManagerOptInResponse(BaseModel):
-    app_key: Optional[str] = None
+    app_key: str | None = None
     resmsg: str = ""
     rescode: str = ""
 
@@ -711,11 +711,11 @@ class BillManagerSingleInvoiceRequest(BaseModel):
     dueDate: str = ""
     accountReference: str = ""
     amount: str = ""
-    invoiceItems: Optional[List[BillManagerInvoiceItem]] = None
+    invoiceItems: list[BillManagerInvoiceItem] | None = None
 
 
 class BillManagerBulkInvoiceRequest(BaseModel):
-    invoices: List[BillManagerSingleInvoiceRequest]
+    invoices: list[BillManagerSingleInvoiceRequest]
 
 
 class BillManagerReconciliationRequest(BaseModel):
@@ -726,7 +726,7 @@ class BillManagerReconciliationRequest(BaseModel):
     phoneNumber: str = ""
     fullName: str = ""
     invoiceName: str = ""
-    externalReference: Optional[str] = None
+    externalReference: str | None = None
 
 
 class BillManagerCancelSingleRequest(BaseModel):
@@ -734,7 +734,7 @@ class BillManagerCancelSingleRequest(BaseModel):
 
 
 class BillManagerCancelBulkRequest(BaseModel):
-    externalReferences: List[Dict[str, str]]
+    externalReferences: list[dict[str, str]]
 
 
 class BillManagerChangeOptInRequest(BaseModel):
@@ -742,15 +742,15 @@ class BillManagerChangeOptInRequest(BaseModel):
     email: str = ""
     officialContact: str = ""
     sendReminders: str = ""
-    logo: Optional[str] = None
+    logo: str | None = None
     callbackurl: str = ""
 
 
 class BillManagerResponse(BaseModel):
-    Status_Message: Optional[str] = None
+    Status_Message: str | None = None
     resmsg: str = ""
     rescode: str = ""
-    errors: Optional[List[str]] = None
+    errors: list[str] | None = None
 
 
 class B2CAccountTopUpRequest(BaseModel):
@@ -763,7 +763,7 @@ class B2CAccountTopUpRequest(BaseModel):
     PartyA: str = ""
     PartyB: str = ""
     AccountReference: str = ""
-    Requester: Optional[str] = None
+    Requester: str | None = None
     Remarks: str = ""
     QueueTimeOutURL: str = ""
     ResultURL: str = ""
@@ -820,13 +820,13 @@ class RatibaResponseBody(BaseModel):
 
 
 class RatibaResponse(BaseModel):
-    ResponseHeader: Optional[RatibaResponseHeader] = None
-    ResponseBody: Optional[RatibaResponseBody] = None
+    ResponseHeader: RatibaResponseHeader | None = None
+    ResponseBody: RatibaResponseBody | None = None
 
 
 class RatibaCallbackResponse(BaseModel):
-    responseHeader: Optional[dict] = None
-    responseBody: Optional[dict] = None
+    responseHeader: dict | None = None
+    responseBody: dict | None = None
 
 
 class TaxRemittanceRequest(BaseModel):
@@ -873,7 +873,7 @@ class MobileCenterCharacteristicValue(BaseModel):
     offerSource: str = ""
     locationId: int = 0
     subscribed: int = 0
-    childOffers: List[MobileCenterChildOffer] = []
+    childOffers: list[MobileCenterChildOffer] = []
 
 
 class MobileCenterRelatedSubscription(BaseModel):
@@ -882,7 +882,7 @@ class MobileCenterRelatedSubscription(BaseModel):
 
 
 class MobileCenterLineItem(BaseModel):
-    characteristicsValue: List[MobileCenterCharacteristicValue] = []
+    characteristicsValue: list[MobileCenterCharacteristicValue] = []
 
 
 class MobileCenterFetchOffersRequest(BaseModel):
@@ -893,8 +893,8 @@ class MobileCenterFetchOffersResponse(BaseModel):
     id: str = ""
     desc: str = ""
     status: str = ""
-    relatedSusbscription: List[MobileCenterRelatedSubscription] = []
-    lineItem: Optional[MobileCenterLineItem] = None
+    relatedSusbscription: list[MobileCenterRelatedSubscription] = []
+    lineItem: MobileCenterLineItem | None = None
 
 
 class MobileCenterPurchaseHeader(BaseModel):
@@ -917,7 +917,7 @@ class MobileCenterPurchaseRequest(BaseModel):
 
 
 class MobileCenterPurchaseResponse(BaseModel):
-    header: Optional[MobileCenterPurchaseHeader] = None
+    header: MobileCenterPurchaseHeader | None = None
 
 
 class MobileCenterStatusRequest(BaseModel):

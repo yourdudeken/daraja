@@ -45,7 +45,7 @@ manager.on("stk:callback", on_stk)
 
 ## Full Examples
 
-Cross-language examples live under the `examples/` directory at the repo root. A runnable Go example (`examples/go/stk_push.go`) is provided; Python and TypeScript example directories are placeholders.
+Runnable examples live under the `examples/` directory at the repo root. Each SDK has an STK Push example (`examples/python/stk_push.py`, `examples/typescript/stk_push.ts`, `examples/go/stk_push.go`). They read credentials from `MPESA_CONSUMER_KEY`, `MPESA_CONSUMER_SECRET`, and `MPESA_PASSKEY` environment variables.
 
 ## CLI
 

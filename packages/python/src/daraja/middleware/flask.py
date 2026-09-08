@@ -1,5 +1,5 @@
-from daraja.webhooks import WebhookManager
 from daraja import __version__
+from daraja.webhooks import WebhookManager
 
 
 def create_flask_blueprint(webhook_manager: WebhookManager, secret: str = "", mpesa_client=None):
@@ -13,7 +13,6 @@ def create_flask_blueprint(webhook_manager: WebhookManager, secret: str = "", mp
     if mpesa_client:
         @bp.route("/health", methods=["GET"])
         def health():
-            import sys
             import time
             try:
                 mpesa_client._token_manager.get_token()

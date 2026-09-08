@@ -5,6 +5,10 @@ on:
     branches: [main]
   pull_request:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   python:
     name: Python SDK
@@ -17,10 +21,17 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+          cache: pip
       - name: Install
-        run: pip install -e ".[all]" pytest hypothesis respx
+        run: pip install -e ".[all]" pytest hypothesis respx ruff mypy
+      - name: Lint (ruff)
+        run: ruff check .
+      - name: Type check (mypy)
+        run: mypy src/daraja
       - name: Test
         run: pytest tests/unit -v
+      - name: Build
+        run: pip install build && python -m build
 
   typescript:
     name: TypeScript SDK
@@ -38,6 +49,7 @@ jobs:
       - run: npm install
       - run: npm run lint
       - run: npm test
+      - run: npm run build
 
   go:
     name: Go SDK
@@ -50,11 +62,29 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version: "1.25"
+      - run: go mod tidy && git diff --exit-code go.mod go.sum
+      - run: go vet ./...
       - run: go build ./...
       - run: go test ./...
 
+  mcp:
+    name: MCP Server
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mcp
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
+
   docs:
-    name: Docs validation
+    name: Docs pipeline
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -62,4 +92,6 @@ jobs:
         with:
           node-version: 22
       - run: npm install
-      - run: npm run validate:docs
+      - run: npm run ingest:docs && npm run build:index && npm run validate:docs
+      - name: Ensure data files are up to date
+        run: git diff --exit-code -- mcp/src/data

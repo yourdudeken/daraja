@@ -1,20 +1,21 @@
-from typing import Any, Callable, Optional
+from typing import Any
 
 from opentelemetry import trace
-from opentelemetry.trace import Span as OTelSpan, StatusCode
+from opentelemetry.trace import Span as OTelSpan
+from opentelemetry.trace import StatusCode
 
 
 class Span:
     def set_attribute(self, key: str, value: Any) -> None:
         pass
 
-    def add_event(self, name: str, attributes: Optional[dict[str, Any]] = None) -> None:
+    def add_event(self, name: str, attributes: dict[str, Any] | None = None) -> None:
         pass
 
     def record_exception(self, error: Exception) -> None:
         pass
 
-    def set_status(self, code: str, message: Optional[str] = None) -> None:
+    def set_status(self, code: str, message: str | None = None) -> None:
         pass
 
     def end(self) -> None:
@@ -22,15 +23,15 @@ class Span:
 
 
 class Tracer:
-    def start_span(self, name: str, attributes: Optional[dict[str, Any]] = None) -> Span:
+    def start_span(self, name: str, attributes: dict[str, Any] | None = None) -> Span:
         return Span()
 
-    def with_span(self, name: str, attributes: Optional[dict[str, Any]] = None) -> "SpanContext":
+    def with_span(self, name: str, attributes: dict[str, Any] | None = None) -> "SpanContext":
         return SpanContext(self, name, attributes)
 
 
 class SpanContext:
-    def __init__(self, tracer: Tracer, name: str, attributes: Optional[dict[str, Any]] = None) -> None:
+    def __init__(self, tracer: Tracer, name: str, attributes: dict[str, Any] | None = None) -> None:
         self._tracer = tracer
         self._name = name
         self._attributes = attributes
@@ -57,13 +58,13 @@ class OTelSpanWrapper(Span):
     def set_attribute(self, key: str, value: Any) -> None:
         self._span.set_attribute(key, value)
 
-    def add_event(self, name: str, attributes: Optional[dict[str, Any]] = None) -> None:
+    def add_event(self, name: str, attributes: dict[str, Any] | None = None) -> None:
         self._span.add_event(name, attributes)
 
     def record_exception(self, error: Exception) -> None:
         self._span.record_exception(error)
 
-    def set_status(self, code: str, message: Optional[str] = None) -> None:
+    def set_status(self, code: str, message: str | None = None) -> None:
         if code == "error":
             self._span.set_status(StatusCode.ERROR, message)
         else:
@@ -77,7 +78,7 @@ class OpenTelemetryTracer(Tracer):
     def __init__(self, name: str = "mpesa-sdk", version: str = "0.2.0") -> None:
         self._tracer = trace.get_tracer(name, version)
 
-    def start_span(self, name: str, attributes: Optional[dict[str, Any]] = None) -> Span:
+    def start_span(self, name: str, attributes: dict[str, Any] | None = None) -> Span:
         span = self._tracer.start_span(name, attributes=attributes)
         return OTelSpanWrapper(span)
 
@@ -86,5 +87,5 @@ def create_tracer(logger: Any = None) -> Tracer:
     return OpenTelemetryTracer()
 
 
-def with_span(tracer: Tracer, name: str, attributes: Optional[dict[str, Any]] = None) -> SpanContext:
+def with_span(tracer: Tracer, name: str, attributes: dict[str, Any] | None = None) -> SpanContext:
     return tracer.with_span(name, attributes)

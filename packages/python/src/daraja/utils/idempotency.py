@@ -2,11 +2,11 @@ import hashlib
 import json
 import threading
 import time
-from typing import Any, Optional
+from typing import Any
 
 
 class IdempotencyStore:
-    def get(self, key: str) -> Optional[Any]:
+    def get(self, key: str) -> Any | None:
         raise NotImplementedError
 
     def set(self, key: str, value: Any, ttl_ms: int) -> None:
@@ -20,7 +20,7 @@ class InMemoryIdempotencyStore(IdempotencyStore):
         self._cleanup_interval = cleanup_interval_ms / 1000.0
         self._last_cleanup = time.monotonic()
 
-    def get(self, key: str) -> Optional[Any]:
+    def get(self, key: str) -> Any | None:
         self._maybe_cleanup()
         with self._lock:
             entry = self._cache.get(key)
@@ -52,7 +52,7 @@ class InMemoryIdempotencyStore(IdempotencyStore):
             self._cache.clear()
 
 
-def generate_idempotency_key(method: str, url: str, body: Optional[Any] = None) -> str:
+def generate_idempotency_key(method: str, url: str, body: Any | None = None) -> str:
     body_str = json.dumps(body, sort_keys=True) if body is not None else ""
     raw = f"{method}:{url}:{body_str}"
     h = hashlib.sha256(raw.encode()).hexdigest()[:16]

@@ -66,9 +66,9 @@ npm run ingest:docs && npm run build:index && npm run validate:docs
 
 ## CI (GitHub Actions)
 
-- **ci.yml**: Runs on push to main + PRs. Tests Python, TypeScript, Go, and validates docs.
-- **mcp.yml**: Runs on changes to `mcp/**` or `scripts/**`. Tests MCP server.
-- **release.yml**: Triggered by tags (`v*`). Publishes Python to PyPI, TypeScript to npm.
+- **ci.yml**: Runs on push to main + PRs. Tests Python (ruff + mypy + pytest + build), TypeScript (lint + test + build), Go (vet + build + test), and the MCP server (lint + test + build). Also runs the docs pipeline (`ingest:docs` → `build:index` → `validate:docs`) and fails if regenerated data files are stale.
+- **release.yml**: Triggered by `v*` tags (or workflow dispatch with a `version` input). Resolves the version from the tag/input, then publishes the Python SDK to PyPI, the TypeScript SDK and MCP server to npm, and uses GoReleaser to build Go CLI binaries and create the GitHub Release.
+- **dependabot.yml**: Weekly grouped updates for npm, pip, gomod, and GitHub Actions.
 
 ## Code Style
 

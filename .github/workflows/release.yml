@@ -2,12 +2,46 @@ name: Release
 
 on:
   workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to release (e.g. 1.2.3). Leave empty to use package.json versions."
+        required: false
+        type: string
   push:
     tags: ["v*"]
 
+permissions:
+  contents: write
+  id-token: write
+
 jobs:
+  version:
+    name: Resolve version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.resolve.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: resolve
+        run: |
+          if [ -n "${{ github.event.inputs.version }}" ]; then
+            echo "version=${{ github.event.inputs.version }}"
+          elif [ -n "${{ github.ref_type }}" ] && [ "${{ github.ref_type }}" = "tag" ]; then
+            TAG="${GITHUB_REF_NAME#v}"
+            echo "version=${TAG}"
+          else
+            echo "version="
+          fi
+      - name: Ensure version present
+        run: |
+          if [ -z "${{ steps.resolve.outputs.version }}" ]; then
+            echo "::error::No version provided. Use a v* tag or workflow_dispatch.version input."
+            exit 1
+          fi
+
   publish-python:
-    name: Publish Python SDK
+    name: Publish Python SDK to PyPI
+    needs: version
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -17,6 +51,18 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - name: Set distribution version
+        run: |
+          python - "${{ needs.version.outputs.version }}" <<'EOF'
+          import re, sys, pathlib
+          v = sys.argv[1]
+          p = pathlib.Path("pyproject.toml")
+          t = p.read_text()
+          t = re.sub(r'version\s*=\s*"[^"]+"', f'version = "{v}"', t, count=1)
+          p.write_text(t)
+          EOF
+      - name: Test
+        run: pip install -e ".[all]" pytest hypothesis respx && pytest tests/unit -v
       - name: Build
         run: pip install build && python -m build
       - name: Publish to PyPI
@@ -25,7 +71,8 @@ jobs:
           packages-dir: dist
 
   publish-typescript:
-    name: Publish TypeScript SDK
+    name: Publish TypeScript SDK to npm
+    needs: version
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -36,8 +83,62 @@ jobs:
         with:
           node-version: 22
           registry-url: "https://registry.npmjs.org"
+      - name: Set package version
+        run: npm pkg set version="${{ needs.version.outputs.version }}"
       - run: npm install
+      - run: npm run lint
+      - run: npm test
       - run: npm run build
-      - run: npm publish
+      - name: Publish to npm
+        run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  publish-mcp:
+    name: Publish MCP Server to npm
+    needs: version
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mcp
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: "https://registry.npmjs.org"
+      - name: Regenerate data files
+        run: npm --prefix .. run ingest:docs && npm --prefix .. run build:index
+      - name: Set package version
+        run: npm pkg set version="${{ needs.version.outputs.version }}"
+      - run: npm install
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
+      - name: Publish to npm
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  release:
+    name: Create GitHub Release
+    needs: [version, publish-python, publish-typescript, publish-mcp]
+    runs-on: ubuntu-latest
+    if: github.ref_type == 'tag'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.25"
+          cache-dependency-path: packages/go/go.sum
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@v6
+        with:
+          distribution: goreleaser
+          version: "~> v2"
+          args: release --clean --skip=validate
+          workdir: packages/go
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}`

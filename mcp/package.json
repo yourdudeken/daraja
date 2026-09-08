@@ -8,15 +8,21 @@
   "bin": {
     "daraja-mcp": "./dist/index.js"
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "files": [
     "dist",
-    "src/data"
+    "src/data",
+    "README.md",
+    "LICENSE"
   ],
   "scripts": {
     "build": "tsc",
     "clean": "rm -rf dist",
     "lint": "tsc --noEmit",
     "start": "node dist/index.js",
+    "prepublishOnly": "npm run lint && npm test && npm run build",
     "test": "vitest run"
   },
   "dependencies": {

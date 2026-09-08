@@ -1,9 +1,10 @@
 import os
 
 import pytest
+
 from daraja import Mpesa
 from daraja.environment import ENDPOINTS, get_full_url
-from daraja.exceptions import MpesaAPIError, AuthenticationError
+from daraja.exceptions import AuthenticationError, MpesaAPIError
 
 CONSUMER_KEY = os.environ.get("MPESA_CONSUMER_KEY", "")
 CONSUMER_SECRET = os.environ.get("MPESA_CONSUMER_SECRET", "")
@@ -54,7 +55,7 @@ class TestTokenAcquisition:
         assert token1 == token2
 
     def test_token_invalidation(self, client: Mpesa) -> None:
-        token1 = client._token_manager.get_token()
+        _ = client._token_manager.get_token()
         client._token_manager.invalidate()
         token2 = client._token_manager.get_token()
         assert token2 is not None

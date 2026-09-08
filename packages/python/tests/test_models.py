@@ -1,18 +1,17 @@
-import pytest
 from daraja.models import (
-    STKPushRequest,
-    STKPushResponse,
-    STKCallbackPayload,
-    C2BRegisterURLRequest,
-    B2CRequest,
-    ReversalRequest,
-    TransactionStatusRequest,
     AccountBalanceRequest,
+    B2CRequest,
+    C2BRegisterURLRequest,
+    CallbackResultParams,
     DynamicQRRequest,
     MpesaResult,
     ResultDetail,
-    CallbackResultParams,
     ResultParameterItem,
+    ReversalRequest,
+    STKCallbackPayload,
+    STKPushRequest,
+    STKPushResponse,
+    TransactionStatusRequest,
 )
 
 

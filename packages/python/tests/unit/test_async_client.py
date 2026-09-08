@@ -2,8 +2,6 @@ import pytest
 
 from daraja.client.async_client import AsyncMpesa
 from daraja.models import (
-    BusinessBuyGoodsRequest,
-    BusinessGoodsResponse,
     BusinessPayBillRequest,
     MpesaConfig,
 )

@@ -1,6 +1,5 @@
 import time as _time
 from enum import Enum
-from typing import Optional
 
 
 class CircuitState(Enum):
@@ -26,7 +25,10 @@ class CircuitBreaker:
 
     @property
     def state(self) -> CircuitState:
-        if self._state == CircuitState.OPEN and _time.monotonic() >= self._last_failure_time + self._timeout:
+        if (
+            self._state == CircuitState.OPEN
+            and _time.monotonic() >= self._last_failure_time + self._timeout
+        ):
             self._state = CircuitState.HALF_OPEN
             self._success_count = 0
         return self._state
@@ -39,7 +41,7 @@ class CircuitBreaker:
             result = fn()
             self._on_success()
             return result
-        except Exception as e:
+        except Exception:
             self._on_failure()
             raise
 
@@ -51,7 +53,7 @@ class CircuitBreaker:
             result = await fn()
             self._on_success()
             return result
-        except Exception as e:
+        except Exception:
             self._on_failure()
             raise
 

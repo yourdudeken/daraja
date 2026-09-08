@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any
 
 
 class MpesaError(Exception):
@@ -6,10 +6,10 @@ class MpesaError(Exception):
         self,
         message: str = "An M-Pesa API error occurred",
         *,
-        status_code: Optional[int] = None,
-        request_id: Optional[str] = None,
-        raw_response: Optional[Any] = None,
-        cause: Optional[Exception] = None,
+        status_code: int | None = None,
+        request_id: str | None = None,
+        raw_response: Any | None = None,
+        cause: Exception | None = None,
     ) -> None:
         super().__init__(message)
         self.message = message
@@ -69,7 +69,7 @@ class RateLimitError(MpesaError):
         self,
         message: str = "Rate limit exceeded.",
         *,
-        retry_after: Optional[int] = None,
+        retry_after: int | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(message, **kwargs)
@@ -81,7 +81,7 @@ class MpesaAPIError(MpesaError):
         self,
         message: str,
         *,
-        error_code: Optional[str] = None,
+        error_code: str | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(message, **kwargs)

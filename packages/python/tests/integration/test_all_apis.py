@@ -3,12 +3,10 @@
 
 import os
 import sys
-import json
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
 from daraja import Mpesa, WebhookManager
-from daraja.exceptions import MpesaError, MpesaAPIError
 
 ERRORS = []
 
@@ -32,7 +30,7 @@ def check_blocked(api: str, error: Exception) -> bool:
     err_str = str(error)
     if "403" in err_str and ("oauth" in err_str.lower() or "generate" in err_str.lower()):
         SANDBOX_BLOCKED = True
-        print(f"   [BLOCKED] Sandbox WAF blocked the IP. Skipping remaining tests.")
+        print("   [BLOCKED] Sandbox WAF blocked the IP. Skipping remaining tests.")
     return SANDBOX_BLOCKED
 
 

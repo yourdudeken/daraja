@@ -1,23 +1,24 @@
 import logging
 import time
 import uuid
-from typing import Any, Optional
+from typing import Any
 from urllib.parse import urlencode
 
 import httpx
 
+from daraja.client.async_client import AsyncMpesa as AsyncMpesa
 from daraja.environment import ENDPOINTS, get_full_url
 from daraja.exceptions import (
-    AuthenticationError,
     APIConnectionError,
+    AuthenticationError,
     MpesaAPIError,
     RateLimitError,
     TimeoutError,
 )
 from daraja.models import (
+    AccessTokenResponse,
     AccountBalanceRequest,
     AccountBalanceResponse,
-    AccessTokenResponse,
     AgeOnNetworkRequest,
     AgeOnNetworkResponse,
     B2BExpressRequest,
@@ -30,8 +31,8 @@ from daraja.models import (
     B2PochiResponse,
     BillManagerResponse,
     BusinessBuyGoodsRequest,
-    BusinessPayBillRequest,
     BusinessGoodsResponse,
+    BusinessPayBillRequest,
     C2BRegisterURLRequest,
     C2BResponse,
     C2BSimulateRequest,
@@ -54,10 +55,10 @@ from daraja.models import (
     MobileNumberValidationRequest,
     MobileNumberValidationResponse,
     MpesaConfig,
-    PullTransactionsRegisterRequest,
-    PullTransactionsRegisterResponse,
     PullTransactionsQueryRequest,
     PullTransactionsQueryResponse,
+    PullTransactionsRegisterRequest,
+    PullTransactionsRegisterResponse,
     QueryOrgInfoRequest,
     QueryOrgInfoResponse,
     RatibaRequest,
@@ -77,17 +78,21 @@ from daraja.models import (
     _get_logger,
 )
 from daraja.utils import (
+    create_tracer,
     generate_password,
     generate_security_credential,
     generate_timestamp,
     get_cert_path,
-    create_tracer,
     with_span,
 )
 from daraja.utils.circuit_breaker import (
     CircuitBreaker,
-    CircuitBreakerOpenError,
-    CircuitBreakerConfig,
+)
+from daraja.utils.circuit_breaker import (
+    CircuitBreakerConfig as CircuitBreakerConfig,
+)
+from daraja.utils.circuit_breaker import (
+    CircuitBreakerOpenError as CircuitBreakerOpenError,
 )
 from daraja.utils.idempotency import (
     IdempotencyStore,
@@ -95,20 +100,21 @@ from daraja.utils.idempotency import (
     generate_idempotency_key,
 )
 from daraja.utils.rate_limiter import (
-    TokenBucketRateLimiter,
-    NoopRateLimiter,
-    RateLimiterConfig,
     EndpointRateLimiterRouter,
+    NoopRateLimiter,
+    RateLimiter,
+    RateLimiterConfig,
+    TokenBucketRateLimiter,
 )
 from daraja.utils.token_cache import (
-    SharedTokenCache,
-    InMemorySharedTokenCache,
+    InMemorySharedTokenCache as InMemorySharedTokenCache,
+)
+from daraja.utils.token_cache import (
     RedisTokenCache,
+    SharedTokenCache,
     build_token_cache_key,
 )
-from daraja.utils.tracing import Tracer as TracerType
-
-from daraja.client.async_client import AsyncMpesa
+from daraja.utils.tracing import Tracer as Tracer
 
 RETRYABLE_STATUS_CODES = {408, 429, 500, 502, 503, 504}
 
@@ -123,10 +129,10 @@ class _TokenManager:
     def __init__(self, client: httpx.Client, config: MpesaConfig) -> None:
         self._client = client
         self._config = config
-        self._token: Optional[str] = None
+        self._token: str | None = None
         self._expires_at: float = 0.0
         self._logger = _get_logger(config.logger)
-        self._shared_cache: Optional[SharedTokenCache] = None
+        self._shared_cache: SharedTokenCache | None = None
         if config.shared_token_cache is not None:
             self._shared_cache = config.shared_token_cache
         elif config.redis_url:
@@ -184,7 +190,7 @@ class Mpesa:
         self._config = config
         self._logger = _get_logger(config.logger)
         self._tracer = config.tracer if config.tracer is not None else create_tracer(self._logger)
-        self._idempotency_store: Optional[IdempotencyStore] = (
+        self._idempotency_store: IdempotencyStore | None = (
             config.idempotency_store
             if hasattr(config, "idempotency_store") and config.idempotency_store is not None
             else InMemoryIdempotencyStore()
@@ -200,6 +206,7 @@ class Mpesa:
         )
 
         rl_cfg = config.rate_limiter_config
+        self._rate_limiter: RateLimiter
         if rl_cfg:
             if rl_cfg.get("endpoint_overrides"):
                 rl_config_obj = RateLimiterConfig(
@@ -260,12 +267,12 @@ class Mpesa:
         self,
         method: str,
         url: str,
-        json_data: Optional[dict | list] = None,
-        operation_name: Optional[str] = None,
+        json_data: dict | list | None = None,
+        operation_name: str | None = None,
     ) -> dict:
         request_id = _generate_request_id()
 
-        idempotency_key: Optional[str] = None
+        idempotency_key: str | None = None
         if self._idempotency_store is not None and method.upper() == "POST":
             idempotency_key = generate_idempotency_key(method, url, json_data)
             cached = self._idempotency_store.get(idempotency_key)
@@ -279,7 +286,7 @@ class Mpesa:
 
         def do_request() -> dict:
 
-            last_error: Optional[Exception] = None
+            last_error: Exception | None = None
             for attempt in range(self._config.retry_config.max_retries + 1):
                 try:
                     if attempt > 0:

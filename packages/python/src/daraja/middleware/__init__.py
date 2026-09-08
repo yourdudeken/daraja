@@ -1,7 +1,11 @@
+from typing import TYPE_CHECKING
+
+from daraja.middleware.django import create_django_health_view, create_django_view
 from daraja.middleware.flask import create_flask_blueprint
-from daraja.middleware.django import create_django_view, create_django_health_view
 from daraja.webhooks import WebhookManager
 
+if TYPE_CHECKING:
+    from fastapi import APIRouter
 
 __all__ = [
     "create_fastapi_router",
@@ -11,7 +15,9 @@ __all__ = [
 ]
 
 
-def create_fastapi_router(webhook_manager: WebhookManager, secret: str = "", mpesa_client=None) -> "APIRouter":
+def create_fastapi_router(
+    webhook_manager: WebhookManager, secret: str = "", mpesa_client=None
+) -> "APIRouter":
     try:
         from fastapi import APIRouter, HTTPException, Request
         from fastapi.responses import JSONResponse
@@ -25,7 +31,6 @@ def create_fastapi_router(webhook_manager: WebhookManager, secret: str = "", mpe
     if mpesa_client:
         @router.get("/mpesa/health")
         async def health():
-            import sys
             import time
             try:
                 mpesa_client._token_manager.get_token()

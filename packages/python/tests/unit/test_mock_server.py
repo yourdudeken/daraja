@@ -2,6 +2,7 @@ import httpx
 import pytest
 import respx
 from httpx import Response
+
 from daraja import Mpesa
 
 BASE_URL = "https://sandbox.safaricom.co.ke"
@@ -18,8 +19,12 @@ def client() -> Mpesa:
 
 
 def _mock_auth(router: respx.Router, token: str = "test-token-12345") -> None:
-    router.get(f"{BASE_URL}/oauth/v1/generate", params={"grant_type": "client_credentials"}).respond(
-        200, json={"access_token": token, "expires_in": 3599},
+    router.get(
+        f"{BASE_URL}/oauth/v1/generate",
+        params={"grant_type": "client_credentials"},
+    ).respond(
+        200,
+        json={"access_token": token, "expires_in": 3599},
     )
 
 
@@ -259,9 +264,15 @@ class TestErrorMock:
     @respx.mock
     def test_401_invalid_credentials(self) -> None:
         router = respx
-        router.get(f"{BASE_URL}/oauth/v1/generate", params={"grant_type": "client_credentials"}).respond(401, json={
-            "errorMessage": "Bad credentials",
-        })
+        router.get(
+            f"{BASE_URL}/oauth/v1/generate",
+            params={"grant_type": "client_credentials"},
+        ).respond(
+            401,
+            json={
+                "errorMessage": "Bad credentials",
+            },
+        )
 
         bad_client = Mpesa({
             "consumer_key": "invalid",

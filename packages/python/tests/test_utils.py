@@ -1,16 +1,15 @@
 import base64
 import os
 
-import pytest
 from daraja.utils import (
-    generate_timestamp,
+    calculate_backoff,
+    format_phone_number,
     generate_password,
     generate_security_credential,
+    generate_timestamp,
     get_cert_path,
-    mask_sensitive_data,
     is_phone_number_valid,
-    format_phone_number,
-    calculate_backoff,
+    mask_sensitive_data,
 )
 
 

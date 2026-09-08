@@ -1,7 +1,9 @@
-from hypothesis import given, strategies as st
+from hypothesis import given
+from hypothesis import strategies as st
+
 from daraja.utils import (
-    is_phone_number_valid,
     format_phone_number,
+    is_phone_number_valid,
     mask_sensitive_data,
 )
 from daraja.utils.idempotency import generate_idempotency_key
@@ -58,7 +60,9 @@ class TestIdempotencyKeyProperties:
         m2=st.text(min_size=1, max_size=5),
         u2=st.text(min_size=1, max_size=10),
     )
-    def test_different_inputs_produce_different_keys(self, m1: str, u1: str, m2: str, u2: str) -> None:
+    def test_different_inputs_produce_different_keys(
+        self, m1: str, u1: str, m2: str, u2: str
+    ) -> None:
         if m1 == m2 and u1 == u2:
             return
         key1 = generate_idempotency_key(m1, u1, {})

@@ -1,10 +1,8 @@
 import json
 
-import pytest
-
 from daraja.middleware import create_fastapi_router
-from daraja.middleware.flask import create_flask_blueprint
 from daraja.middleware.django import create_django_view
+from daraja.middleware.flask import create_flask_blueprint
 from daraja.webhooks import WebhookManager
 
 

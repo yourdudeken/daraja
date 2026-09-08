@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """Suite A: OAuth, STK Push, STK Query"""
 
-import os, sys, time
+import os
+import sys
+import time
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 from daraja import Mpesa
-from daraja.exceptions import MpesaError
 
 CONFIG = {
     "consumer_key": os.environ["MPESA_CONSUMER_KEY"],
@@ -95,9 +96,9 @@ if results.get("CheckoutRequestID"):
     finally:
         c3.close()
 
-print(
-    f"\nSuite A results: {sum(1 for v in results.values() if v is True)}/{sum(1 for v in results.values() if isinstance(v, bool))} passed"
-)
+passed = sum(1 for v in results.values() if v is True)
+total = sum(1 for v in results.values() if isinstance(v, bool))
+print(f"\nSuite A results: {passed}/{total} passed")
 if ERRORS:
     for e in ERRORS:
         print(f"  FAILED: {e}")

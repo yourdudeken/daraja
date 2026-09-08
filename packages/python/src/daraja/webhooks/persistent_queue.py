@@ -3,8 +3,8 @@ import os
 import sqlite3
 import threading
 import time
-from datetime import datetime, timezone
-from typing import Any, Optional
+from datetime import datetime
+from typing import Any
 
 from daraja.models import Logger, _get_logger
 
@@ -15,7 +15,7 @@ class PersistentDeliveryRecord:
         self.event: str = row["event"]
         self.payload: Any = json.loads(row["payload"])
         self.attempts: int = row["attempts"]
-        self.last_error: Optional[str] = row.get("last_error")
+        self.last_error: str | None = row.get("last_error")
         self.created_at: str = row["created_at"]
         self.next_retry_at: str = row["next_retry_at"]
 
@@ -24,8 +24,8 @@ class PersistentWebhookRetryQueue:
     def __init__(
         self,
         webhook_manager: Any,
-        db_path: Optional[str] = None,
-        logger: Optional[Logger] = None,
+        db_path: str | None = None,
+        logger: Logger | None = None,
         max_retries: int = 3,
     ) -> None:
         self._webhook_manager = webhook_manager
@@ -34,7 +34,7 @@ class PersistentWebhookRetryQueue:
         self._db_path = db_path or os.path.join(os.getcwd(), "mpesa-webhook-queue.db")
         self._lock = threading.Lock()
         self._processing = False
-        self._db: Optional[sqlite3.Connection] = None
+        self._db: sqlite3.Connection | None = None
 
     def _get_db(self) -> sqlite3.Connection:
         if self._db is None:
@@ -111,19 +111,44 @@ class PersistentWebhookRetryQueue:
                 error_msg = str(e)
                 if new_attempts < self._max_retries:
                     backoff_ms = min(1000 * (2 ** (new_attempts - 1)), 30000)
-                    next_retry = datetime.fromtimestamp(time.time() + backoff_ms / 1000.0).strftime("%Y-%m-%d %H:%M:%S")
+                    next_retry = datetime.fromtimestamp(
+                        time.time() + backoff_ms / 1000.0
+                    ).strftime("%Y-%m-%d %H:%M:%S")
                     db.execute(
-                        "INSERT INTO webhook_queue (event, payload, attempts, last_error, max_retries, next_retry_at) VALUES (?, ?, ?, ?, ?, ?)",
-                        [record.event, json.dumps(record.payload), new_attempts, error_msg, self._max_retries, next_retry],
+                        "INSERT INTO webhook_queue "
+                        "(event, payload, attempts, last_error, max_retries, next_retry_at) "
+                        "VALUES (?, ?, ?, ?, ?, ?)",
+                        [
+                            record.event,
+                            json.dumps(record.payload),
+                            new_attempts,
+                            error_msg,
+                            self._max_retries,
+                            next_retry,
+                        ],
                     )
                     db.commit()
-                    self._logger.warning("Webhook retry failed, re-enqueued",
-                                         extra={"event": record.event, "attempt": new_attempts, "backoff_ms": backoff_ms})
+                    self._logger.warning(
+                        "Webhook retry failed, re-enqueued",
+                        extra={
+                            "event": record.event,
+                            "attempt": new_attempts,
+                            "backoff_ms": backoff_ms,
+                        },
+                    )
                     time.sleep(backoff_ms / 1000.0)
                 else:
                     db.execute(
-                        "INSERT INTO webhook_dlq (event, payload, attempts, last_error, created_at) VALUES (?, ?, ?, ?, ?)",
-                        [record.event, json.dumps(record.payload), new_attempts, error_msg, record.created_at],
+                        "INSERT INTO webhook_dlq "
+                        "(event, payload, attempts, last_error, created_at) "
+                        "VALUES (?, ?, ?, ?, ?)",
+                        [
+                            record.event,
+                            json.dumps(record.payload),
+                            new_attempts,
+                            error_msg,
+                            record.created_at,
+                        ],
                     )
                     db.commit()
                     self._logger.error("Webhook delivery failed, moved to DLQ",

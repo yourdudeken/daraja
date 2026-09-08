@@ -1,6 +1,5 @@
+# ruff: noqa: E402
 import base64
-import hashlib
-import hmac
 import random
 from datetime import datetime
 from typing import Any
@@ -81,31 +80,30 @@ def calculate_backoff(attempt: int, base_delay_ms: int = 1000, max_delay_ms: int
     return min(exponential + jitter, max_delay_ms) / 1000.0
 
 
-from daraja.utils.certificates import get_cert_path
 from daraja.utils.batch import execute_batch, execute_batch_async
+from daraja.utils.certificates import get_cert_path
 from daraja.utils.idempotency import (
     IdempotencyStore,
     InMemoryIdempotencyStore,
     generate_idempotency_key,
 )
 from daraja.utils.metrics import MetricsCollector, NoopMetricsCollector, PrometheusMetricsCollector
+from daraja.utils.structured_logger import StructuredLogger
 from daraja.utils.token_cache import (
-    SharedTokenCache,
     InMemorySharedTokenCache,
     RedisTokenCache,
+    SharedTokenCache,
     build_token_cache_key,
 )
 from daraja.utils.tracing import (
-    Tracer,
     NoopTracer,
+    OpenTelemetryTracer,
     Span,
     SpanContext,
-    OpenTelemetryTracer,
+    Tracer,
     create_tracer,
     with_span,
 )
-from daraja.utils.structured_logger import StructuredLogger
-
 
 __all__ = [
     "generate_timestamp",

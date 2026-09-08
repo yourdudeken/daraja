@@ -1,24 +1,106 @@
+# === Dependencies ===
 node_modules/
+
+# === Build output ===
 dist/
 build/
+out/
+*.tsbuildinfo
+
+# === Environment ===
+.env
+.env.*
+!.env.example
+
+# === Python ===
 __pycache__/
-.ruff_cache
-.pytest_cache
-*.pyc
+*/__pycache__/
+*.py[cod]
+*$py.class
 *.egg-info/
+*.egg
+.eggs/
 .venv/
 venv/
+env/
+.venv-win/
+.pyre/
+.pylint.d/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.hypothesis/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+.tox/
+.nox/
+.hatch/
+build/
+dist/
+
+# === Go ===
 *.exe
+*.exe~
+*.dll
+*.so
+*.dylib
 *.test
 *.out
-.env
-.env.local
-coverage/
+*.mod.orig
+/build/
+/bin/
+coverage.out
+vendor/
+
+# === Testing & tooling ===
 .nyc_output/
+.coverage
+coverage/
+test-results/
+playwright-report/
+eslintcache
+.eslintcache
+.stylelintcache
+*.tsbuildinfo
+junit*.xml
+
+# === Logs ===
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# === OS ===
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# === Editor / IDE ===
 .vscode/
 .idea/
-*.log
-.DS_Store
-packages/go/integration
-packages/go/*.mod.orig
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+
+# === Artifacts & misc ===
 .tmp/
+*.tgz
+*.tar.gz
+*.whl
+npm-packages-offline-cache/
+yarn.lock.cache
+.pnp.*
+*.orig
+*.rej

@@ -1,16 +1,16 @@
+# ruff: noqa: E402
 import hashlib
 import hmac
-import logging
-from typing import Any, Callable, Optional
+from collections.abc import Callable
+from typing import Any
 
-from daraja.models import STKCallbackPayload, Logger, _get_logger
-
+from daraja.models import Logger, STKCallbackPayload, _get_logger
 
 WebhookHandler = Callable[[str, Any], None]
 
 
 class WebhookManager:
-    def __init__(self, logger: Optional[Logger] = None) -> None:
+    def __init__(self, logger: Logger | None = None) -> None:
         self._handlers: dict[str, list[WebhookHandler]] = {}
         self._logger = _get_logger(logger)
 
@@ -33,7 +33,10 @@ class WebhookManager:
             try:
                 handler(event_type, payload)
             except Exception as e:
-                self._logger.error("Webhook handler error", extra={"event": event_type, "error": str(e)})
+                self._logger.error(
+                    "Webhook handler error",
+                    extra={"event": event_type, "error": str(e)},
+                )
 
     def parse_stk_callback(self, body: dict) -> dict:
         payload = STKCallbackPayload(**body)
@@ -71,8 +74,8 @@ class WebhookManager:
         return hmac.compare_digest(expected, signature)
 
 
-from daraja.webhooks.retry import WebhookRetryQueue, DeliveryRecord
-from daraja.webhooks.persistent_queue import PersistentWebhookRetryQueue, PersistentDeliveryRecord
+from daraja.webhooks.persistent_queue import PersistentDeliveryRecord, PersistentWebhookRetryQueue
+from daraja.webhooks.retry import DeliveryRecord, WebhookRetryQueue
 
 __all__ = [
     "WebhookManager",

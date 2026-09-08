@@ -85,7 +85,13 @@ ACCOUNT_BALANCE_RESULT = {
             "ResultParameter": [
                 {
                     "Key": "AccountBalance",
-                    "Value": "Working Account|KES|700000.00|700000.00|0.00|0.00&Float Account|KES|0.00|0.00|0.00|0.00&Utility Account|KES|228037.00|228037.00|0.00|0.00&Charges Paid Account|KES|-1540.00|-1540.00|0.00|0.00&Organization Settlement Account|KES|0.00|0.00|0.00|0.00",
+                    "Value": (
+                        "Working Account|KES|700000.00|700000.00|0.00|0.00"
+                        "&Float Account|KES|0.00|0.00|0.00|0.00"
+                        "&Utility Account|KES|228037.00|228037.00|0.00|0.00"
+                        "&Charges Paid Account|KES|-1540.00|-1540.00|0.00|0.00"
+                        "&Organization Settlement Account|KES|0.00|0.00|0.00|0.00"
+                    ),
                 },
                 {"Key": "BOCompletedTime", "Value": "20200109125710"},
             ]

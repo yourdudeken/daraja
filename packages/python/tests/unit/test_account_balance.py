@@ -52,7 +52,9 @@ class TestAccountBalanceParseCallback:
                 "OriginatorConversationID": "oid",
                 "ConversationID": "cid",
                 "TransactionID": "tid",
-                "ResultParameters": {"ResultParameter": [{"Key": "BOCompletedTime", "Value": "20200109125710"}]},
+                "ResultParameters": {
+                    "ResultParameter": [{"Key": "BOCompletedTime", "Value": "20200109125710"}]
+                },
             }
         }
 

@@ -1,10 +1,9 @@
 import json
 import os
-from datetime import datetime, timezone
-from typing import Optional
+from datetime import datetime
 
-from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
 
 class EncryptedTokenStore:
@@ -31,7 +30,7 @@ class EncryptedTokenStore:
             json.dump(data, f)
         os.chmod(self._file_path, 0o600)
 
-    def load(self) -> Optional[tuple[str, datetime]]:
+    def load(self) -> tuple[str, datetime] | None:
         if not os.path.exists(self._file_path):
             return None
 

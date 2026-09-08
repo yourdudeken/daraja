@@ -76,7 +76,14 @@ def cmd_health(args: argparse.Namespace) -> None:
 
 
 def cmd_stk_push(args: argparse.Namespace) -> None:
-    _require(args.consumer_key, args.consumer_secret, args.shortcode, args.passkey, args.phone, args.amount)
+    _require(
+        args.consumer_key,
+        args.consumer_secret,
+        args.shortcode,
+        args.passkey,
+        args.phone,
+        args.amount,
+    )
     request = STKPushRequest(
         BusinessShortCode=args.shortcode,
         TransactionType="CustomerPayBillOnline",
@@ -94,7 +101,13 @@ def cmd_stk_push(args: argparse.Namespace) -> None:
 
 
 def cmd_stk_query(args: argparse.Namespace) -> None:
-    _require(args.consumer_key, args.consumer_secret, args.shortcode, args.passkey, args.checkout_id)
+    _require(
+        args.consumer_key,
+        args.consumer_secret,
+        args.shortcode,
+        args.passkey,
+        args.checkout_id,
+    )
     request = STKQueryRequest(
         BusinessShortCode=str(args.shortcode),
         CheckoutRequestID=args.checkout_id,
@@ -130,7 +143,13 @@ def cmd_transaction_status(args: argparse.Namespace) -> None:
 
 
 def cmd_account_balance(args: argparse.Namespace) -> None:
-    _require(args.consumer_key, args.consumer_secret, args.shortcode, args.initiator, args.credential)
+    _require(
+        args.consumer_key,
+        args.consumer_secret,
+        args.shortcode,
+        args.initiator,
+        args.credential,
+    )
     request = AccountBalanceRequest(
         Initiator=args.initiator,
         SecurityCredential=args.credential,

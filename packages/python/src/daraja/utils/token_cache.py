@@ -1,10 +1,15 @@
-import time
+from __future__ import annotations
+
 import threading
-from typing import Optional, Protocol
+import time
+from typing import TYPE_CHECKING, Protocol
+
+if TYPE_CHECKING:
+    import redis
 
 
 class SharedTokenCache(Protocol):
-    def get(self, key: str) -> Optional[str]: ...
+    def get(self, key: str) -> str | None: ...
     def set(self, key: str, token: str, ttl_sec: int) -> None: ...
 
 
@@ -12,10 +17,10 @@ class InMemorySharedTokenCache:
     def __init__(self) -> None:
         self._cache: dict[str, tuple[str, float]] = {}
         self._lock = threading.Lock()
-        self._timer: Optional[threading.Timer] = None
+        self._timer: threading.Timer | None = None
         self._start_cleanup()
 
-    def get(self, key: str) -> Optional[str]:
+    def get(self, key: str) -> str | None:
         with self._lock:
             entry = self._cache.get(key)
             if entry is None:
@@ -53,7 +58,7 @@ class InMemorySharedTokenCache:
 class RedisTokenCache:
     def __init__(self, url: str) -> None:
         self._url = url
-        self._client: Optional["redis.Redis"] = None  # type: ignore
+        self._client: redis.Redis | None = None  # type: ignore
         self._connect()
 
     def _connect(self) -> None:
@@ -68,7 +73,7 @@ class RedisTokenCache:
         except Exception:
             self._client = None
 
-    def get(self, key: str) -> Optional[str]:
+    def get(self, key: str) -> str | None:
         if self._client is None:
             return None
         try:

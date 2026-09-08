@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """Suite B: C2B Register URL, C2B Simulate"""
 
-import os, sys
+import os
+import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 from daraja import Mpesa
-from daraja.exceptions import MpesaError
 
 CONFIG = {
     "consumer_key": os.environ["MPESA_CONSUMER_KEY"],

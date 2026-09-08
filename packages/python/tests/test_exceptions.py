@@ -1,12 +1,8 @@
-import pytest
 from daraja.exceptions import (
-    MpesaError,
     AuthenticationError,
-    ValidationError,
-    TimeoutError,
-    APIConnectionError,
-    RateLimitError,
     MpesaAPIError,
+    RateLimitError,
+    ValidationError,
     WebhookVerificationError,
 )
 

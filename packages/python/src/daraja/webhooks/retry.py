@@ -1,6 +1,6 @@
-import time
 import threading
-from typing import Any, Optional
+import time
+from typing import Any
 
 from daraja.models import Logger, _get_logger
 
@@ -10,11 +10,11 @@ class DeliveryRecord:
         self.event = event
         self.payload = payload
         self.attempts = 0
-        self.last_error: Optional[str] = None
+        self.last_error: str | None = None
 
 
 class WebhookRetryQueue:
-    def __init__(self, logger: Optional[Logger] = None, max_retries: int = 3) -> None:
+    def __init__(self, logger: Logger | None = None, max_retries: int = 3) -> None:
         self._queue: list[DeliveryRecord] = []
         self._dead_letter_queue: list[DeliveryRecord] = []
         self._processing = False
@@ -46,8 +46,14 @@ class WebhookRetryQueue:
                 record.last_error = str(e)
                 if record.attempts < self._max_retries:
                     backoff = min(1000 * (2 ** (record.attempts - 1)), 30000) / 1000.0
-                    self._logger.warning("Webhook retry failed, re-enqueuing",
-                                         extra={"event": record.event, "attempt": record.attempts, "backoff_ms": backoff})
+                    self._logger.warning(
+                        "Webhook retry failed, re-enqueuing",
+                        extra={
+                            "event": record.event,
+                            "attempt": record.attempts,
+                            "backoff_ms": backoff,
+                        },
+                    )
                     time.sleep(backoff)
                     with self._lock:
                         self._queue.append(record)
