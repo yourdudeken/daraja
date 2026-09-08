@@ -267,9 +267,9 @@ class Mpesa:
         self,
         method: str,
         url: str,
-        json_data: dict | list | None = None,
+        json_data: dict[str, Any] | list[Any] | None = None,
         operation_name: str | None = None,
-    ) -> dict:
+    ) -> dict[str, Any]:
         request_id = _generate_request_id()
 
         idempotency_key: str | None = None
@@ -284,7 +284,7 @@ class Mpesa:
 
         self._rate_limiter.acquire(url)
 
-        def do_request() -> dict:
+        def do_request() -> dict[str, Any]:
 
             last_error: Exception | None = None
             for attempt in range(self._config.retry_config.max_retries + 1):
