@@ -7,8 +7,8 @@ documentation and a Model Context Protocol (MCP) server.
 Daraja SDKs
  ├── Python SDK      packages/python   (pip: daraja-sdk-py)
  ├── TypeScript SDK  packages/typescript (npm: @daraja-sdk/ts)
- ├── Go SDK          packages/go        (module .../go)
- └── MCP Server      mcp                (AI docs assistant)
+ ├── Go SDK          packages/go        (module: github.com/yourdudeken/daraja-sdk/go)
+ └── MCP Server      mcp               (npm: @daraja-sdk/mcp)
 ```
 
 ## Quick links
@@ -29,7 +29,7 @@ Daraja SDKs
 | `scripts/` | Docs ingestion + validation tools |
 | `examples/` | Cross-language examples |
 | `assets/` | Diagrams and images |
-| `daraja/` | Daraja developer portal documenatioin |
+| `daraja/` | Daraja developer portal documentation scraper |
 
 ## Contributing
 
