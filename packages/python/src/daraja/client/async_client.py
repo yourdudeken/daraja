@@ -1,6 +1,6 @@
 import asyncio
 import uuid
-from typing import Any
+from typing import Any, cast
 from urllib.parse import urlencode
 
 import httpx
@@ -394,17 +394,19 @@ class AsyncMpesa:
                     span.set_attribute("mpesa.response_code", rc)
             return result
 
-    async def _post(self, endpoint_key: str, data: dict | list) -> dict:
+    async def _post(
+        self, endpoint_key: str, data: dict[str, Any] | list[Any]
+    ) -> dict[str, Any]:
         url = get_full_url(self._config.environment, ENDPOINTS[endpoint_key])
         return await self._request("POST", url, data)
 
-    async def _get(self, endpoint_key: str, params: dict) -> dict:
+    async def _get(self, endpoint_key: str, params: dict[str, Any]) -> dict[str, Any]:
         url = get_full_url(self._config.environment, ENDPOINTS[endpoint_key])
         if params:
             url = f"{url}?{urlencode(params)}"
         return await self._request("GET", url)
 
-    async def stk_push(self, request: STKPushRequest | dict) -> STKPushResponse:
+    async def stk_push(self, request: STKPushRequest | dict[str, Any]) -> STKPushResponse:
         if isinstance(request, dict):
             request = STKPushRequest(**request)
         if not request.Password and self._config.passkey:
@@ -416,7 +418,7 @@ class AsyncMpesa:
         result = await self._post("STK_PUSH", request.model_dump())
         return STKPushResponse(**result)
 
-    async def stk_query(self, request: STKQueryRequest | dict) -> STKQueryResponse:
+    async def stk_query(self, request: STKQueryRequest | dict[str, Any]) -> STKQueryResponse:
         if isinstance(request, dict):
             request = STKQueryRequest(**request)
         if not request.Password and self._config.passkey:
@@ -428,32 +430,34 @@ class AsyncMpesa:
         result = await self._post("STK_QUERY", request.model_dump())
         return STKQueryResponse(**result)
 
-    async def c2b_register_url(self, request: C2BRegisterURLRequest | dict) -> C2BResponse:
+    async def c2b_register_url(
+        self, request: C2BRegisterURLRequest | dict[str, Any]
+    ) -> C2BResponse:
         if isinstance(request, dict):
             request = C2BRegisterURLRequest(**request)
         result = await self._post("C2B_REGISTER_URL", request.model_dump())
         return C2BResponse(**result)
 
-    async def c2b_simulate(self, request: C2BSimulateRequest | dict) -> C2BResponse:
+    async def c2b_simulate(self, request: C2BSimulateRequest | dict[str, Any]) -> C2BResponse:
         if isinstance(request, dict):
             request = C2BSimulateRequest(**request)
         result = await self._post("C2B_SIMULATE", request.model_dump())
         return C2BResponse(**result)
 
-    async def b2c(self, request: B2CRequest | dict) -> B2CResponse:
+    async def b2c(self, request: B2CRequest | dict[str, Any]) -> B2CResponse:
         if isinstance(request, dict):
             request = B2CRequest(**request)
         result = await self._post("B2C", request.model_dump())
         return B2CResponse(**result)
 
-    async def reversal(self, request: ReversalRequest | dict) -> ReversalResponse:
+    async def reversal(self, request: ReversalRequest | dict[str, Any]) -> ReversalResponse:
         if isinstance(request, dict):
             request = ReversalRequest(**request)
         result = await self._post("REVERSAL", request.model_dump())
         return ReversalResponse(**result)
 
     async def transaction_status(
-        self, request: TransactionStatusRequest | dict
+        self, request: TransactionStatusRequest | dict[str, Any]
     ) -> TransactionStatusResponse:
         if isinstance(request, dict):
             request = TransactionStatusRequest(**request)
@@ -461,21 +465,21 @@ class AsyncMpesa:
         return TransactionStatusResponse(**result)
 
     async def account_balance(
-        self, request: AccountBalanceRequest | dict
+        self, request: AccountBalanceRequest | dict[str, Any]
     ) -> AccountBalanceResponse:
         if isinstance(request, dict):
             request = AccountBalanceRequest(**request)
         result = await self._post("ACCOUNT_BALANCE", request.model_dump())
         return AccountBalanceResponse(**result)
 
-    async def dynamic_qr(self, request: DynamicQRRequest | dict) -> DynamicQRResponse:
+    async def dynamic_qr(self, request: DynamicQRRequest | dict[str, Any]) -> DynamicQRResponse:
         if isinstance(request, dict):
             request = DynamicQRRequest(**request)
         result = await self._post("DYNAMIC_QR", request.model_dump())
         return DynamicQRResponse(**result)
 
     async def business_buy_goods(
-        self, request: BusinessBuyGoodsRequest | dict
+        self, request: BusinessBuyGoodsRequest | dict[str, Any]
     ) -> BusinessGoodsResponse:
         if isinstance(request, dict):
             request.setdefault("SecurityCredential", self._config.security_credential)
@@ -490,7 +494,7 @@ class AsyncMpesa:
         return BusinessGoodsResponse(**result)
 
     async def business_pay_bill(
-        self, request: BusinessPayBillRequest | dict
+        self, request: BusinessPayBillRequest | dict[str, Any]
     ) -> BusinessGoodsResponse:
         if isinstance(request, dict):
             request.setdefault("SecurityCredential", self._config.security_credential)
@@ -505,33 +509,33 @@ class AsyncMpesa:
         return BusinessGoodsResponse(**result)
 
     async def query_org_info(
-        self, request: QueryOrgInfoRequest | dict
+        self, request: QueryOrgInfoRequest | dict[str, Any]
     ) -> QueryOrgInfoResponse:
         if isinstance(request, dict):
             request = QueryOrgInfoRequest(**request)
         result = await self._post("QUERY_ORG_INFO", request.model_dump())
         return QueryOrgInfoResponse(**result)
 
-    async def imsi_query(self, request: IMSIRequest | dict) -> IMSIResponse:
+    async def imsi_query(self, request: IMSIRequest | dict[str, Any]) -> IMSIResponse:
         if isinstance(request, dict):
             request = IMSIRequest(**request)
         result = await self._post("IMSI", request.model_dump())
         return IMSIResponse(**result)
 
-    async def iot_manage(self, request: IoTSIMRequest | dict) -> IoTSIMResponse:
+    async def iot_manage(self, request: IoTSIMRequest | dict[str, Any]) -> IoTSIMResponse:
         if isinstance(request, dict):
             request = IoTSIMRequest(**request)
         result = await self._post("IOT_MANAGE", request.model_dump())
         return IoTSIMResponse(**result)
 
-    async def b2pochi(self, request: B2PochiRequest | dict) -> B2PochiResponse:
+    async def b2pochi(self, request: B2PochiRequest | dict[str, Any]) -> B2PochiResponse:
         if isinstance(request, dict):
             request = B2PochiRequest(**request)
         result = await self._post("B2POCHI", request.model_dump())
         return B2PochiResponse(**result)
 
     async def lipa_na_bonga_calculate(
-        self, request: LipaNaBongaCalculateRequest | dict
+        self, request: LipaNaBongaCalculateRequest | dict[str, Any]
     ) -> LipaNaBongaCalculateResponse:
         if isinstance(request, dict):
             request = LipaNaBongaCalculateRequest(**request)
@@ -539,7 +543,7 @@ class AsyncMpesa:
         return LipaNaBongaCalculateResponse(**result)
 
     async def lipa_na_bonga_redeem(
-        self, request: LipaNaBongaRedeemRequest | dict
+        self, request: LipaNaBongaRedeemRequest | dict[str, Any]
     ) -> LipaNaBongaRedeemResponse:
         if isinstance(request, dict):
             request = LipaNaBongaRedeemRequest(**request)
@@ -547,7 +551,7 @@ class AsyncMpesa:
         return LipaNaBongaRedeemResponse(**result)
 
     async def pull_transactions_register(
-        self, request: PullTransactionsRegisterRequest | dict
+        self, request: PullTransactionsRegisterRequest | dict[str, Any]
     ) -> PullTransactionsRegisterResponse:
         if isinstance(request, dict):
             request = PullTransactionsRegisterRequest(**request)
@@ -555,43 +559,45 @@ class AsyncMpesa:
         return PullTransactionsRegisterResponse(**result)
 
     async def pull_transactions_query(
-        self, request: PullTransactionsQueryRequest | dict
+        self, request: PullTransactionsQueryRequest | dict[str, Any]
     ) -> PullTransactionsQueryResponse:
         if isinstance(request, dict):
             request = PullTransactionsQueryRequest(**request)
         result = await self._post("PULL_TRANSACTIONS_QUERY", request.model_dump())
         return PullTransactionsQueryResponse(**result)
 
-    async def swap(self, request: SwapRequest | dict) -> SwapResponse:
+    async def swap(self, request: SwapRequest | dict[str, Any]) -> SwapResponse:
         if isinstance(request, dict):
             request = SwapRequest(**request)
         result = await self._post("SWAP", request.model_dump())
         return SwapResponse(**result)
 
-    async def bill_manager(self, request: dict) -> BillManagerResponse:
+    async def bill_manager(self, request: dict[str, Any]) -> BillManagerResponse:
         result = await self._post("BILL_MANAGER", request)
         return BillManagerResponse(**result)
 
-    async def b2b_express(self, request: B2BExpressRequest | dict) -> B2BExpressResponse:
+    async def b2b_express(self, request: B2BExpressRequest | dict[str, Any]) -> B2BExpressResponse:
         if isinstance(request, dict):
             request = B2BExpressRequest(**request)
         result = await self._post("B2B_EXPRESS", request.model_dump())
         return B2BExpressResponse(**result)
 
-    async def ratiba(self, request: RatibaRequest | dict) -> RatibaResponse:
+    async def ratiba(self, request: RatibaRequest | dict[str, Any]) -> RatibaResponse:
         if isinstance(request, dict):
             request = RatibaRequest(**request)
         result = await self._post("RATIBA", request.model_dump())
         return RatibaResponse(**result)
 
-    async def tax_remittance(self, request: TaxRemittanceRequest | dict) -> TaxRemittanceResponse:
+    async def tax_remittance(
+        self, request: TaxRemittanceRequest | dict[str, Any]
+    ) -> TaxRemittanceResponse:
         if isinstance(request, dict):
             request = TaxRemittanceRequest(**request)
         result = await self._post("TAX_REMITTANCE", request.model_dump())
         return TaxRemittanceResponse(**result)
 
     async def b2c_account_top_up(
-        self, request: B2CAccountTopUpRequest | dict
+        self, request: B2CAccountTopUpRequest | dict[str, Any]
     ) -> B2CAccountTopUpResponse:
         if isinstance(request, dict):
             request = B2CAccountTopUpRequest(**request)
@@ -599,7 +605,7 @@ class AsyncMpesa:
         return B2CAccountTopUpResponse(**result)
 
     async def mobile_center_fetch_offers(
-        self, request: MobileCenterFetchOffersRequest | dict
+        self, request: MobileCenterFetchOffersRequest | dict[str, Any]
     ) -> MobileCenterFetchOffersResponse:
         if isinstance(request, dict):
             request = MobileCenterFetchOffersRequest(**request)
@@ -607,7 +613,7 @@ class AsyncMpesa:
         return MobileCenterFetchOffersResponse(**result)
 
     async def mobile_center_purchase(
-        self, request: MobileCenterPurchaseRequest | dict
+        self, request: MobileCenterPurchaseRequest | dict[str, Any]
     ) -> MobileCenterPurchaseResponse:
         if isinstance(request, dict):
             request = MobileCenterPurchaseRequest(**request)
@@ -615,7 +621,7 @@ class AsyncMpesa:
         return MobileCenterPurchaseResponse(**result)
 
     async def mobile_center_status(
-        self, request: MobileCenterStatusRequest | dict
+        self, request: MobileCenterStatusRequest | dict[str, Any]
     ) -> MobileCenterStatusResponse:
         if isinstance(request, dict):
             request = MobileCenterStatusRequest(**request)
@@ -625,14 +631,16 @@ class AsyncMpesa:
         )
         return MobileCenterStatusResponse(**result)
 
-    async def age_on_network(self, request: AgeOnNetworkRequest | dict) -> AgeOnNetworkResponse:
+    async def age_on_network(
+        self, request: AgeOnNetworkRequest | dict[str, Any]
+    ) -> AgeOnNetworkResponse:
         if isinstance(request, dict):
             request = AgeOnNetworkRequest(**request)
         result = await self._post("AGE_ON_NETWORK", request.model_dump())
         return AgeOnNetworkResponse(**result)
 
     async def mobile_number_validation(
-        self, request: MobileNumberValidationRequest | dict
+        self, request: MobileNumberValidationRequest | dict[str, Any]
     ) -> MobileNumberValidationResponse:
         if isinstance(request, dict):
             request = MobileNumberValidationRequest(**request)
