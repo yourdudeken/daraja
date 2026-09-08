@@ -12,6 +12,22 @@ Requires Python 3.11+.
 pip install daraja-sdk-py
 ```
 
+Optional extras (install with `[all]` to get everything):
+
+| Extra | Provides |
+| ----- | -------- |
+| `fastapi` | FastAPI middleware helpers |
+| `flask` | Flask middleware helpers |
+| `django` | Django middleware helpers |
+| `redis` | Redis-backed shared token cache |
+| `all` | All of the above |
+
+```bash
+pip install "daraja-sdk-py[all]"
+```
+
+The package also ships a `daraja` CLI.
+
 ## TypeScript
 
 Package `@daraja-sdk/ts` (ESM + CJS dual output).

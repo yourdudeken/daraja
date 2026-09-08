@@ -28,7 +28,8 @@ Validates a mobile phone number against a government-issued ID to verify the sub
 ## Usage
 
 ```python
-from daraja import Mpesa, MobileNumberValidationRequest
+from daraja import Mpesa
+from daraja.models import MobileNumberValidationRequest
 
 mpesa = Mpesa({"consumer_key": "...", "consumer_secret": "..."})
 response = mpesa.mobile_number_validation(MobileNumberValidationRequest(

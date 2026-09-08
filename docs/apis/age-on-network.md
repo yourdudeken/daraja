@@ -25,7 +25,8 @@ Retrieves the registration date and duration a customer has been on the Safarico
 ## Usage
 
 ```python
-from daraja import Mpesa, AgeOnNetworkRequest
+from daraja import Mpesa
+from daraja.models import AgeOnNetworkRequest
 
 mpesa = Mpesa({"consumer_key": "...", "consumer_secret": "..."})
 response = mpesa.age_on_network(AgeOnNetworkRequest(customerNumber="254712345678"))

@@ -7,10 +7,13 @@ and rotation automatically — you generally never deal with tokens directly.
 ## How it works
 
 1. The SDK requests an access token from the auth endpoint:
-   `POST /oauth/v1/generate?grant_type=client_credentials`.
-2. The token is cached until it nears expiry and transparently refreshed.
-3. The access token is attached to every API request.
-4. Optionally, the token cache can be shared across processes (e.g. via Redis)
+   - sandbox: `https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials`
+   - production: `https://api.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials`
+2. The request authenticates with HTTP `Basic` auth using the consumer key as
+   username and consumer secret as password.
+3. The token is cached until it nears expiry and transparently refreshed.
+4. The access token is attached to every API request.
+5. Optionally, the token cache can be shared across processes (e.g. via Redis)
    so applications running on many instances don't hammer the auth endpoint.
 
 ## Credentials
@@ -33,6 +36,10 @@ Useful for diagnostics or for calling non-SDK endpoints:
 token = mpesa.get_access_token()
 ```
 
+```ts
+const token = await mpesa.client.getAccessToken();
+```
+
 ```go
 token, err := mpesa.GetAccessToken(ctx)
 ```
@@ -44,6 +51,10 @@ the client:
 
 ```python
 mpesa.rotate_credentials("new_key", "new_secret")
+```
+
+```ts
+mpesa.client.rotateCredentials("new_key", "new_secret");
 ```
 
 ```go
@@ -62,8 +73,18 @@ mpesa = Mpesa({
 })
 ```
 
-When `sharedTokenCache`/`redis` is configured, the access token is stored in
-Redis and shared across client instances and processes.
+```ts
+const mpesa = new Mpesa({
+  consumerKey: "...",
+  consumerSecret: "...",
+  redisUrl: "redis://localhost:6379/0",
+});
+```
+
+When `redisUrl`/`redis_url` (Python, TypeScript) or `RedisAddr` (Go) is
+configured, the access token is stored in Redis and shared across client
+instances and processes. All SDKs also accept a custom `sharedTokenCache` /
+`shared_token_cache` / `SharedTokenCache` implementation.
 
 ## Security best practice
 

@@ -56,7 +56,7 @@ resp = mpesa.b2b_express(B2BExpressRequest(
 ```ts
 import { Mpesa } from "@daraja-sdk/ts";
 
-const resp = mpesa.b2bExpress.send({
+const resp = await mpesa.b2bExpress.send({
   primaryShortCode: "174379",
   receiverShortCode: "600000",
   amount: "1000",
@@ -71,7 +71,12 @@ const resp = mpesa.b2bExpress.send({
 import "github.com/yourdudeken/daraja-sdk/go/client"
 import "github.com/yourdudeken/daraja-sdk/go/types"
 
-resp, err := mpesa.B2BExpress(ctx, types.B2BExpressRequest{
+c := client.NewClient(types.MpesaConfig{
+    ConsumerKey:    "...",
+    ConsumerSecret: "...",
+    Environment:    types.Sandbox,
+})
+resp, err := c.B2BExpress(context.Background(), types.B2BExpressRequest{
     PrimaryShortCode:  "174379",
     ReceiverShortCode: "600000",
     Amount:            "1000",
@@ -86,5 +91,5 @@ resp, err := mpesa.B2BExpress(ctx, types.B2BExpressRequest{
 
 - The final result arrives via the `callbackUrl` you provide; the synchronous
   `{ code, status }` response only confirms the push was accepted.
-- Parse the inbound callback with the SDK's `b2bExpress.parseCallback`
-  (Python/TS) or the webhook manager.
+- Parse the inbound callback with the SDK's `B2BExpressService.parse_callback`
+  (Python) / `parseCallback` (TS) static helpers, or the webhook manager.

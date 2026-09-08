@@ -15,7 +15,8 @@ Core options:
 | `initiatorPassword` / `initiator_password` | string | — | Initiator password (used to derive security credential) |
 | `securityCredential` / `security_credential` | string | — | Pre-generated security credential (overrides initiator password) |
 | `timeout` | number/duration | 30s | Request timeout |
-| `maxRetries` / `max_retries` | number | 3 | Retry count with backoff |
+| `logger` | `Logger` | — | Structured logger instance |
+| `tracer` | `Tracer` | — | OpenTelemetry-compatible tracer |
 
 ## Reliability options
 
@@ -25,12 +26,14 @@ connection-pool subsystems:
 | Option | Default | Purpose |
 | ------ | ------- | ------- |
 | `retryConfig` / `retry_config` | 3 retries, base 1000ms, max 30000ms | Exponential backoff + jitter |
-| `circuitBreakerConfig` | — | Fail fast when upstream is unhealthy |
-| `rateLimiterConfig` | — | Per-endpoint rate limiting |
-| `enableIdempotency` | `true` | Replay-safe idempotent requests |
-| `connectionPoolConfig` | 50 max connections | Connection pool tuning |
-| `sharedTokenCache` | — | Share the OAuth token across instances |
-| `redisUrl` / `redis` | — | Redis connection for shared token cache |
+| `circuitBreakerConfig` / `circuit_breaker_config` | — | Fail fast when upstream is unhealthy |
+| `rateLimiterConfig` / `rate_limiter_config` | — | Per-endpoint rate limiting |
+| `enableIdempotency` / `enable_idempotency` | `true` | Replay-safe idempotent requests |
+| `idempotencyStore` / `idempotency_store` | in-memory | Persistent idempotency store backend |
+| `connectionPoolConfig` / `connection_pool_config` | 50 max connections | Connection pool tuning |
+| `sharedTokenCache` / `shared_token_cache` | — | Share the OAuth token across instances |
+| `redisUrl` / `redis_url` (Python, TypeScript) | — | Redis connection URL for shared token cache |
+| `RedisAddr` / `RedisPassword` / `RedisDB` (Go) | — | Redis connection fields for shared token cache |
 
 ## Language specifics
 
@@ -87,9 +90,10 @@ mpesa := client.NewClient(types.MpesaConfig{
 
 - Switch `environment` to `"production"` to target
   `https://api.safaricom.co.ke`.
-- In production, provide `securityCredential` (or an `initiatorPassword` /
-  `initiator_name`) for initiator-based APIs (B2C, B2B, Reversal, Transaction
-  Status, Account Balance, Business Buy Goods / Pay Bill, B2Pochi, Tax
-  Remittance, B2C Account Top-Up).
+- In production, provide `securityCredential` / `security_credential` (or an
+  `initiatorPassword` / `initiator_password`) for initiator-based APIs (B2C,
+  B2B, Reversal, Transaction Status, Account Balance, Business Buy Goods / Pay
+  Bill, B2Pochi, Tax Remittance, B2C Account Top-Up).
 - All environments can share credentials across processes via
-  `sharedTokenCache` / `redis`.
+  `sharedTokenCache` / `shared_token_cache` (or `redisUrl` / `redis_url` in
+  Python and TypeScript, `RedisAddr` in Go).

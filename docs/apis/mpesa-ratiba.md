@@ -69,7 +69,7 @@ resp = mpesa.ratiba(RatibaRequest(
 ```ts
 import { Mpesa } from "@daraja-sdk/ts";
 
-const resp = mpesa.ratiba.createStandingOrder({
+const resp = await mpesa.ratiba.createStandingOrder({
   StandingOrderName: "Rent Payment",
   StartDate: "2026-01-01",
   EndDate: "2026-12-31",
@@ -86,7 +86,12 @@ const resp = mpesa.ratiba.createStandingOrder({
 import "github.com/yourdudeken/daraja-sdk/go/client"
 import "github.com/yourdudeken/daraja-sdk/go/types"
 
-resp, err := mpesa.CreateStandingOrder(ctx, types.RatibaRequest{
+c := client.NewClient(types.MpesaConfig{
+    ConsumerKey:    "...",
+    ConsumerSecret: "...",
+    Environment:    types.Sandbox,
+})
+resp, err := c.CreateStandingOrder(context.Background(), types.RatibaRequest{
     StandingOrderName:    "Rent Payment",
     StartDate:            "2026-01-01",
     EndDate:              "2026-12-31",

@@ -126,5 +126,5 @@ func main() {
 - Register URL sets up callback URLs that M-Pesa calls when customers send money to your paybill/till.
 - Simulate is for testing in the sandbox — it mimics a customer payment without real money.
 - The validation callback receives a `C2BValidationRequest` and must return `{ ResultCode: "0", ResultDesc: "Accepted" }`.
-- The confirmation callback receives a `C2BValidationRequest` with transaction details.
+- The confirmation callback receives a confirmation payload with transaction details.
 - `CommandID` for simulate determines whether it is treated as PayBill or BuyGoods.
