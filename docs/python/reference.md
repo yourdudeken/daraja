@@ -20,7 +20,7 @@ Synchronous M-Pesa client. Accepts a `MpesaConfig` instance or a plain dict.
 
 ### `AsyncMpesa(config: MpesaConfig | dict)`
 
-Async mirror of `Mpesa`. All methods are `async def`.
+Async mirror of `Mpesa`. All request methods are `async def`. Note: `get_access_token()` is only available on the sync `Mpesa` client — use the internal token manager or run the sync method in a thread pool with the async client.
 
 ---
 
@@ -48,6 +48,8 @@ Every method accepts either a typed Pydantic request model or a plain dict.
 | `b2c_account_top_up(req)` | `B2CAccountTopUpRequest` | `B2CAccountTopUpResponse` | CommandID=BusinessPayToBulk |
 | `ratiba(req)` | `RatibaRequest` | `RatibaResponse` | Standing order |
 | `tax_remittance(req)` | `TaxRemittanceRequest` | `TaxRemittanceResponse` | Auto-fills SecurityCredential, Initiator |
+
+Note: Auto-fill of `SecurityCredential`/`Initiator` from config applies to the sync `Mpesa` client. In `AsyncMpesa` it is only applied to `business_buy_goods` and `business_pay_bill` — for the other methods pass the fields explicitly in the request.
 
 ### Lookups & Validation
 
@@ -135,15 +137,46 @@ mpesa.b2c_account_top_up_service # (returns B2BService)
 
 ## Service Classes
 
-Importable from `daraja.services`:
+Importable from `daraja.services`. All of the following are also exported from the `daraja` top-level, except `MobileCenterService`, `AgeOnNetworkService`, and `MobileNumberValidationService`, which are importable from `daraja.services` only:
 
 ```
 STKPushService, C2BService, B2CService, B2BService, ReversalService,
 TransactionStatusService, AccountBalanceService, DynamicQRService,
 BusinessGoodsService, QueryOrgInfoService, IMSIService, IoTSIMService,
 B2PochiService, LipaNaBongaService, PullTransactionsService, SwapService,
-BillManagerService, B2BExpressService, RatibaService, TaxRemittanceService
+BillManagerService, B2BExpressService, RatibaService, TaxRemittanceService,
+MobileCenterService, AgeOnNetworkService, MobileNumberValidationService
 ```
+
+### Service methods
+
+Each service class wraps a group of operations. Instances are created internally; consumers usually access them via the `Mpesa` service properties named above.
+
+| Service | Methods |
+|---------|---------|
+| `STKPushService` | `initiate(req)`, `query(req)` |
+| `C2BService` | `register_url(req)`, `simulate(req)` |
+| `B2CService` | `send(req)` |
+| `B2BService` | `top_up(req)` |
+| `ReversalService` | `reverse(req)` |
+| `TransactionStatusService` | `query(req)` |
+| `AccountBalanceService` | `query(req)`, `parse_balance_string()` (static), `parse_callback()` (static) |
+| `DynamicQRService` | `generate(req)` |
+| `BusinessGoodsService` | `buy_goods(req)`, `pay_bill(req)` |
+| `QueryOrgInfoService` | `query(req)` |
+| `IMSIService` | `query(req)` |
+| `IoTSIMService` | `manage(req)`, `get_all_sims()`, `query_life_cycle_status()`, `query_customer_info()`, `activate_sim()`, `get_activation_trends()`, `rename_asset()`, `suspend_unsuspend()`, `search_messages()`, `filter_messages()`, `delete_message_thread()`, `get_all_messages()`, `send_single_message()`, `delete_message()` |
+| `B2PochiService` | `send(req)` |
+| `LipaNaBongaService` | `calculate(req)`, `redeem(req)` |
+| `PullTransactionsService` | `register(req)`, `query(req)` |
+| `SwapService` | `query(req)` |
+| `BillManagerService` | `opt_in(req)`, `send_single_invoice(req)`, `send_bulk_invoice(req)`, `reconciliation(req)`, `cancel_single_invoice(req)`, `cancel_bulk_invoices(req)`, `change_opt_in(req)` |
+| `B2BExpressService` | `send(req)`, `parse_callback()` (static) |
+| `RatibaService` | `create_standing_order(req)` |
+| `TaxRemittanceService` | `remit(req)` |
+| `MobileCenterService` | `fetch_offers(req)`, `purchase(req)`, `check_status(req)` |
+| `AgeOnNetworkService` | `query(req)` |
+| `MobileNumberValidationService` | `validate(req)` |
 
 ---
 
@@ -161,17 +194,31 @@ Pydantic model. All fields:
 | `initiator_password` | `str \| None` | `None` | Used to derive security_credential |
 | `security_credential` | `str \| None` | `None` | Auto-generated from initiator_password if not set |
 | `timeout` | `int` | `30` | Seconds |
-| `max_retries` | `int` | -- | |
-| `retry_config` | -- | -- | |
+| `max_retries` | `int \| None` | `None` | Overrides `retry_config.max_retries` when set |
+| `retry_config` | `RetryConfig` | `RetryConfig()` | `max_retries=3`, `base_delay_ms=1000`, `max_delay_ms=30000` |
 | `circuit_breaker_config` | `dict \| None` | `None` | |
 | `rate_limiter_config` | `dict \| None` | `None` | |
 | `enable_idempotency` | `bool` | `True` | |
 | `logger` | `Logger \| None` | `None` | |
 | `tracer` | `Tracer \| None` | `None` | |
 | `idempotency_store` | `IdempotencyStore \| None` | `None` | |
-| `connection_pool_config` | -- | -- | |
+| `connection_pool_config` | `ConnectionPoolConfig` | `ConnectionPoolConfig()` | `max_connections=50`, `max_keepalive_connections=10`, `keepalive_expiry=30.0` |
 | `shared_token_cache` | `SharedTokenCache \| None` | `None` | |
 | `redis_url` | `str \| None` | `None` | Alternative to shared_token_cache |
+
+Supporting config models, importable from `daraja.models`:
+
+```python
+class RetryConfig(BaseModel):
+    max_retries: int = 3
+    base_delay_ms: int = 1000
+    max_delay_ms: int = 30000
+
+class ConnectionPoolConfig(BaseModel):
+    max_connections: int = 50
+    max_keepalive_connections: int = 10
+    keepalive_expiry: float = 30.0
+```
 
 ---
 
@@ -210,7 +257,47 @@ manager.parse_c2b_validation_response(accept=True)  # -> dict
 manager.verify_signature(payload, signature, secret) # -> bool
 ```
 
-Also exports: `WebhookRetryQueue`, `DeliveryRecord`, `PersistentWebhookRetryQueue`, `PersistentDeliveryRecord`.
+Also exports: `WebhookHandler` (type alias), `WebhookRetryQueue`, `DeliveryRecord`, `PersistentWebhookRetryQueue`, `PersistentDeliveryRecord`.
+
+---
+
+## Middleware
+
+From `daraja.middleware` (also `daraja.health`):
+
+```python
+from daraja.middleware import create_fastapi_router, create_flask_blueprint, create_django_view, create_django_health_view
+from daraja.health import create_health_endpoint
+```
+
+| Function | Notes |
+|----------|-------|
+| `create_fastapi_router(webhook_manager, secret="", mpesa_client=None)` | FastAPI `APIRouter`. Exposes `POST /mpesa/webhook` (validates `x-mpesa-signature` when `secret` is set, routes to the manager) and `GET /mpesa/health` when `mpesa_client` is provided. Requires `fastapi` extra. |
+| `create_flask_blueprint(...)` | Flask blueprint with webhook + health routes |
+| `create_django_view(...)` | Django webhook view callable |
+| `create_django_health_view(...)` | Django health view callable |
+| `create_health_endpoint(mpesa_client)` | Returns a health endpoint callable |
+
+---
+
+## CLI
+
+The package installs a `daraja` console script (`daraja.cli:main`):
+
+```bash
+daraja <command> [options]
+```
+
+| Command | Description |
+|---------|-------------|
+| `token` | Generate OAuth access token |
+| `health` | Check API connectivity (acquires a test token) |
+| `stk-push` | Send STK Push payment |
+| `stk-query` | Query STK Push status |
+| `transaction-status` | Query transaction status |
+| `account-balance` | Query account balance |
+
+Common flags: `--env sandbox|production`, `--consumer-key`, `--consumer-secret`, plus command-specific options (`--shortcode`, `--passkey`, `--phone`, `--amount`, `--checkout-id`, `--callback`, `--reference`, `--description`, `--transaction-id`, `--initiator`, `--credential`, `--identifier-type`, `--timeout`, `--result`).
 
 ---
 
@@ -241,6 +328,12 @@ Also exports: `StructuredLogger`, `Tracer`, `NoopTracer`, `Span`, `SpanContext`,
 
 ## Request/Response Models
 
-All exported from `daraja` top-level:
+Request/response models are Pydantic models. Most are exported from the `daraja` top-level:
 
-`STKPushRequest`, `STKPushResponse`, `STKQueryRequest`, `STKQueryResponse`, `STKCallbackPayload`, `C2BRegisterURLRequest`, `C2BSimulateRequest`, `C2BResponse`, `B2CRequest`, `B2CResponse`, `ReversalRequest`, `ReversalResponse`, `TransactionStatusRequest`, `TransactionStatusResponse`, `AccountBalanceRequest`, `AccountBalanceResponse`, `DynamicQRRequest`, `DynamicQRResponse`, `MpesaResult`, `BusinessBuyGoodsRequest`, `BusinessPayBillRequest`, `BusinessGoodsResponse`, `QueryOrgInfoRequest`, `QueryOrgInfoResponse`, `IMSIRequest`, `IMSIResponse`, `IoTSIMRequest`, `IoTSIMResponse`, `B2PochiRequest`, `B2PochiResponse`, `LipaNaBongaCalculateRequest`, `LipaNaBongaCalculateResponse`, `LipaNaBongaRedeemRequest`, `LipaNaBongaRedeemResponse`, `PullTransactionsRegisterRequest`, `PullTransactionsRegisterResponse`, `PullTransactionsQueryRequest`, `PullTransactionsQueryResponse`, `SwapRequest`, `SwapResponse`, `B2BExpressRequest`, `B2BExpressResponse`, `B2CAccountTopUpRequest`, `B2CAccountTopUpResponse`, `BillManagerResponse`, `BillManagerOptInRequest`, `BillManagerOptInResponse`, `BillManagerInvoiceItem`, `BillManagerSingleInvoiceRequest`, `BillManagerBulkInvoiceRequest`, `BillManagerReconciliationRequest`, `BillManagerCancelSingleRequest`, `BillManagerCancelBulkRequest`, `BillManagerChangeOptInRequest`, `RatibaRequest`, `RatibaResponse`, `RatibaCallbackResponse`, `TaxRemittanceRequest`, `TaxRemittanceResponse`, `AccessTokenResponse`, `IoTHeader`, `IoTAllSIMsRequest`, `IoTSIMDesc`, `IoTAllSIMsResponse`, `IoTQueryLifeCycleRequest`, `IoTQueryLifeCycleResponse`, `IoTQueryCustomerInfoRequest`, `IoTQueryCustomerInfoResponse`, `IoTSIMActivationRequest`, `IoTSIMActivationResponse`, `IoTActivationTrendsRequest`, `IoTActivationTrendsResponse`, `IoTRenameAssetRequest`, `IoTRenameAssetResponse`, `IoTSuspendUnsuspendRequest`, `IoTSuspendUnsuspendResponse`, `IoTSearchMessagesRequest`, `IoTSearchMessagesResponse`, `IoTFilterMessagesRequest`, `IoTFilterMessagesResponse`, `IoTDeleteThreadRequest`, `IoTDeleteThreadResponse`, `IoTAllMessagesRequest`, `IoTAllMessagesResponse`, `IoTSendSingleMessageRequest`, `IoTSendSingleMessageResponse`, `IoTDeleteMessageRequest`, `IoTDeleteMessageResponse`, `MobileCenterFetchOffersRequest`, `MobileCenterFetchOffersResponse`, `MobileCenterPurchaseRequest`, `MobileCenterPurchaseResponse`, `MobileCenterStatusRequest`, `MobileCenterStatusResponse`, `AgeOnNetworkRequest`, `AgeOnNetworkResponse`, `MobileNumberValidationRequest`, `MobileNumberValidationResponse`.
+`STKPushRequest`, `STKPushResponse`, `STKQueryRequest`, `STKQueryResponse`, `STKCallbackPayload`, `C2BRegisterURLRequest`, `C2BSimulateRequest`, `C2BResponse`, `B2CRequest`, `B2CResponse`, `ReversalRequest`, `ReversalResponse`, `TransactionStatusRequest`, `TransactionStatusResponse`, `AccountBalanceRequest`, `AccountBalanceResponse`, `AccountInfo`, `AccountBalanceResult`, `DynamicQRRequest`, `DynamicQRResponse`, `MpesaResult`, `BusinessBuyGoodsRequest`, `BusinessPayBillRequest`, `BusinessGoodsResponse`, `QueryOrgInfoRequest`, `QueryOrgInfoResponse`, `IMSIRequest`, `IMSIResponse`, `IoTSIMRequest`, `IoTSIMResponse`, `B2PochiRequest`, `B2PochiResponse`, `LipaNaBongaCalculateRequest`, `LipaNaBongaCalculateResponse`, `LipaNaBongaRedeemRequest`, `LipaNaBongaRedeemResponse`, `PullTransactionsRegisterRequest`, `PullTransactionsRegisterResponse`, `PullTransactionsQueryRequest`, `PullTransactionsQueryResponse`, `SwapRequest`, `SwapResponse`, `B2BExpressRequest`, `B2BExpressResponse`, `B2CAccountTopUpRequest`, `B2CAccountTopUpResponse`, `BillManagerResponse`, `BillManagerOptInRequest`, `BillManagerOptInResponse`, `BillManagerInvoiceItem`, `BillManagerSingleInvoiceRequest`, `BillManagerBulkInvoiceRequest`, `BillManagerReconciliationRequest`, `BillManagerCancelSingleRequest`, `BillManagerCancelBulkRequest`, `BillManagerChangeOptInRequest`, `RatibaRequest`, `RatibaResponse`, `RatibaResponseHeader`, `RatibaResponseBody`, `RatibaCallbackResponse`, `TaxRemittanceRequest`, `TaxRemittanceResponse`, `AccessTokenResponse`, `IoTHeader`, `IoTAllSIMsRequest`, `IoTSIMDesc`, `IoTAllSIMsResponse`, `IoTQueryLifeCycleRequest`, `IoTQueryLifeCycleResponse`, `IoTQueryCustomerInfoRequest`, `IoTQueryCustomerInfoResponse`, `IoTSIMActivationRequest`, `IoTSIMActivationResponse`, `IoTActivationTrendsRequest`, `IoTActivationTrendsResponse`, `IoTRenameAssetRequest`, `IoTRenameAssetResponse`, `IoTSuspendUnsuspendRequest`, `IoTSuspendUnsuspendResponse`, `IoTSearchMessagesRequest`, `IoTSearchMessagesResponse`, `IoTFilterMessagesRequest`, `IoTFilterMessagesResponse`, `IoTDeleteThreadRequest`, `IoTDeleteThreadResponse`, `IoTAllMessagesRequest`, `IoTAllMessagesResponse`, `IoTSendSingleMessageRequest`, `IoTSendSingleMessageResponse`, `IoTDeleteMessageRequest`, `IoTDeleteMessageResponse`.
+
+Mobile Center, Age on Network, and Mobile Number Validation models are importable from `daraja.models` (used by the corresponding `Mpesa` methods but not re-exported top-level):
+
+`MobileCenterFetchOffersRequest`, `MobileCenterFetchOffersResponse`, `MobileCenterPurchaseRequest`, `MobileCenterPurchaseResponse`, `MobileCenterStatusRequest`, `MobileCenterStatusResponse`, `AgeOnNetworkRequest`, `AgeOnNetworkResponse`, `MobileNumberValidationRequest`, `MobileNumberValidationResponse`.
+
+Additional callback/result models importable from `daraja.models`: `STKCallbackDetail`, `STKCallbackBody`, `STKCallbackMetadata`, `CallbackItem`, `C2BValidationRequest`, `C2BValidationResponse`, `ResultDetail`, `ResultParameterItem`, `CallbackResultParams`, `CallbackReferenceItem`, `CallbackReferenceData`, `PullTransactionItem`, `LipaNaBongaHeader`, `MobileCenterChildOffer`, `MobileCenterCharacteristicValue`, `MobileCenterRelatedSubscription`, `MobileCenterLineItem`, `MobileCenterPurchaseHeader`.

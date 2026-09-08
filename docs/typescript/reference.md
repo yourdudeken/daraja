@@ -55,13 +55,15 @@ mpesa.client                     // MpesaApiClient
 ```typescript
 mpesa.stkPush.initiate(req)      // STK Push request
 mpesa.stkPush.query(req)         // Query STK status
+STKPushService.parseCallback(payload)  // static method -> STKCallbackResult
 ```
 
 ### C2BService
 
 ```typescript
-mpesa.c2b.registerUrl(req)       // Register validation/confirmation URLs
+mpesa.c2b.registerURL(req)       // Register validation/confirmation URLs
 mpesa.c2b.simulate(req)          // Simulate C2B payment
+C2BService.validateTransaction(request, accept)  // static; returns { ResultCode, ResultDesc }
 ```
 
 ### B2CService
@@ -73,8 +75,8 @@ mpesa.b2c.send(req)              // Business to Customer payment
 ### B2BService
 
 ```typescript
-mpesa.b2b.buyGoods(req)          // Business Buy Goods
-mpesa.b2b.payBill(req)           // Business Pay Bill
+mpesa.b2b.topUp(req)             // B2C Account Top-Up (CommandID=BusinessPayToBulk)
+B2BService.parseCallback(payload) // static method
 ```
 
 ### ReversalService
@@ -98,7 +100,9 @@ mpesa.accountBalance.query(req)
 ### DynamicQRService
 
 ```typescript
-mpesa.dynamicQR.generate(req)
+mpesa.dynamicQR.generate(req)          // Generate a dynamic QR
+mpesa.dynamicQR.getQRImageBase64(resp) // Extract base64 QRCode from a response
+mpesa.dynamicQR.getQRImageUrl(resp)    // Build a data:image/png;base64 URL from a response
 ```
 
 ### BusinessGoodsService
@@ -123,7 +127,19 @@ mpesa.imsi.query(req)
 ### IoTSIMService
 
 ```typescript
-mpesa.iot.manage(req)            // + many sub-methods for SIM lifecycle
+mpesa.iot.getAllSIMs(req)           // List all SIMs
+mpesa.iot.queryLifeCycleStatus(req) // Query SIM lifecycle status
+mpesa.iot.queryCustomerInfo(req)    // Query customer info for a SIM
+mpesa.iot.activateSIM(req)          // Activate a SIM
+mpesa.iot.getActivationTrends(req)  // Activation trends report
+mpesa.iot.renameAsset(req)          // Rename a SIM asset
+mpesa.iot.suspendUnsuspend(req)     // Suspend/unsuspend a SIM
+mpesa.iot.searchMessages(req)       // Search SIM messages
+mpesa.iot.filterMessages(req)       // Filter SIM messages
+mpesa.iot.deleteMessageThread(req)  // Delete a message thread
+mpesa.iot.getAllMessages(req)       // Get all SIM messages (paginated)
+mpesa.iot.sendSingleMessage(req)    // Send a single SIM message
+mpesa.iot.deleteMessage(req)        // Delete a single message
 ```
 
 ### B2PochiService
@@ -170,6 +186,7 @@ B2BExpressService.parseCallback(payload)  // static method
 
 ```typescript
 mpesa.ratiba.createStandingOrder(req)
+RatibaService.parseCallback(payload)  // static method
 ```
 
 ### TaxRemittanceService
@@ -181,15 +198,15 @@ mpesa.taxRemittance.remit(req)
 ### MobileCenterService
 
 ```typescript
-mpesa.mobileCenter.fetchOffers(req)
-mpesa.mobileCenter.purchase(req)
-mpesa.mobileCenter.checkStatus(req)
+mpesa.mobileCenter.fetchOffers(msisdn: string)  // Fetch dynamic offers for a MSISDN
+mpesa.mobileCenter.purchase(req)                // Purchase a bundle/offer
+mpesa.mobileCenter.getStatus(id, serviceAccountId)  // Check purchase status
 ```
 
 ### AgeOnNetworkService
 
 ```typescript
-mpesa.ageOnNetwork.query(req)
+mpesa.ageOnNetwork.check(req)
 ```
 
 ### MobileNumberValidationService
@@ -212,16 +229,15 @@ interface MpesaConfig {
   initiatorPassword?: string;
   securityCredential?: string;
   timeout?: number;                          // milliseconds, default 30000
-  maxRetries?: number;
-  retryConfig?: RetryConfig;
+  retryConfig?: RetryConfig;                 // { maxRetries, baseDelayMs, maxDelayMs }
   circuitBreakerConfig?: CircuitBreakerConfig;
   rateLimiterConfig?: RateLimiterConfig;
   enableIdempotency?: boolean;
   idempotencyStore?: IdempotencyStore;
   connectionPoolConfig?: ConnectionPoolConfig;
   logger?: Logger;
+  logging?: LoggingHook;                     // onRequest, onResponse, onError hooks
   tracer?: Tracer;
-  http?: HttpClient;
   sharedTokenCache?: SharedTokenCache;
   redisUrl?: string;
 }
@@ -274,9 +290,15 @@ webhooks.createC2BValidationResponse(accept);
 
 // Verify signature
 webhooks.verifySignature(payload, signature, secret);
+
+// Dispatch a pre-built event object
+webhooks.handleEvent(event);
 ```
 
-Also exports: `WebhookRetryQueue`, `PersistentWebhookRetryQueue`.
+Also exports:
+- `createWebhookManager(options?)` -- factory returning a `WebhookManager`
+- `WebhookEvent` / `WebhookHandler` -- named event and handler types
+- `WebhookRetryQueue`, `PersistentWebhookRetryQueue`
 
 ### Event Types
 
@@ -311,7 +333,77 @@ From `@daraja-sdk/ts`:
 | `noopLogger` | `Logger` | Silent logger |
 | `createConsoleLogger(name?)` | `(): Logger` | Console-based logger |
 
-Also exports: `Validation` class (static methods: `requiredString`, `requiredNumber`, `positiveNumber`, `optionalString`, `validUrl`, `phoneNumber`, `maxLength`, `oneOf`, `amount`), `StructuredLogger`, `StructuredLoggerConfig`, `LogLevel`, `getCertificate`, `MetricsCollector`, `NoopMetricsCollector`, `PrometheusMetricsCollector`, `createMpesaMetrics`, `NoopTracer`, `NoopSpan`, `OpenTelemetryTracer`, `createTracer`, `withSpan`, `withSpanSync`, `InMemoryIdempotencyStore`, `generateIdempotencyKey`, `InMemorySharedTokenCache`, `RedisTokenCache`, `buildTokenCacheKey`.
+Also exports: `Validation` class (static methods: `requiredString`, `requiredNumber`, `positiveNumber`, `optionalString`, `validUrl`, `phoneNumber`, `maxLength`, `oneOf`, `amount`), `StructuredLogger`, `StructuredLoggerConfig`, `LogLevel`, `getCertificate`, `MetricsCollector`, `MpesaMetrics`, `NoopMetricsCollector`, `PrometheusMetricsCollector`, `createMpesaMetrics`, `Tracer`, `TelemetrySpan`, `NoopTracer`, `NoopSpan`, `OpenTelemetryTracer`, `createTracer`, `withSpan`, `withSpanSync`, `IdempotencyStore`, `InMemoryIdempotencyStore`, `generateIdempotencyKey`, `SharedTokenCache`, `InMemorySharedTokenCache`, `RedisTokenCache`, `buildTokenCacheKey`.
+
+---
+
+## Middleware
+
+From `@daraja-sdk/ts` (Express and Fastify webhook middleware):
+
+```typescript
+import { createExpressMiddleware, createFastifyPlugin } from "@daraja-sdk/ts";
+
+// Express
+app.use(createExpressMiddleware({
+  webhookManager,
+  path: "/mpesa/webhook",       // optional
+  healthPath: "/mpesa/health",  // optional
+  verifySignature: true,        // optional
+  secret: "SHARED_SECRET",      // required when verifySignature is true
+  mpesaClient,                  // optional; enables GET /health
+}));
+
+// Fastify
+fastify.register(createFastifyPlugin({
+  webhookManager,
+  path: "/mpesa/webhook",
+  verifySignature: true,
+  secret: "SHARED_SECRET",
+  mpesaClient,
+}));
+```
+
+When `mpesaClient` is provided, a `GET <healthPath>` (default `/mpesa/health`) endpoint returns health JSON (checks token acquisition). Both middleware parse callbacks and route them to the `webhookManager` (`handleEvent`).
+
+---
+
+## `MpesaApiClient`
+
+`MpesaApiClient` is a top-level export (also available as `mpesa.client`). Key methods:
+
+```typescript
+const client = new MpesaApiClient(config);
+
+client.getConfig()              // ResolvedConfig
+client.getAccessToken()         // Promise<string>
+client.post<T>(url, body)       // Promise<T> — performs OAuth refresh automatically
+client.get<T>(url, params?)     // Promise<T>
+client.rotateCredentials(ck, cs) // void — invalidates cached token
+client.getEndpoint(key)         // string — resolves internal endpoint key to URL
+client.invalidateToken()        // void
+```
+
+---
+
+## CLI
+
+The package installs an `mpesa` binary (`./dist/cli/index.js`):
+
+```bash
+mpesa <command> [options]
+```
+
+| Command | Description |
+|---------|-------------|
+| `token` | Generate OAuth access token |
+| `health` | Check API connectivity |
+| `stk-push` | Send STK Push payment |
+| `stk-query` | Query STK Push status |
+| `transaction-status` | Query transaction status |
+| `account-balance` | Query account balance |
+
+Common flags: `--env sandbox|production`, `--consumer-key`, `--consumer-secret`, plus command-specific options (`--shortcode`, `--passkey`, `--phone`, `--amount`, `--checkout-id`, `--callback`, `--reference`, `--description`, `--transaction-id`, `--initiator`, `--credential`, `--identifier-type`, `--timeout`, `--result`).
 
 ---
 
@@ -320,6 +412,7 @@ Also exports: `Validation` class (static methods: `requiredString`, `requiredNum
 ```typescript
 type TransactionType = "CustomerPayBillOnline" | "CustomerBuyGoodsOnline";
 type ResponseType = "Completed" | "Cancelled";
+type C2BCommandID = "CustomerPayBillOnline" | "CustomerBuyGoodsOnline";
 type B2CCommandID = "SalaryPayment" | "BusinessPayment" | "PromotionPayment";
 type TrxCode = "BG" | "WA" | "PB" | "SM" | "SB";
 ```

@@ -45,4 +45,14 @@ manager.on("stk:callback", on_stk)
 
 ## Full Examples
 
-The `examples/python/` directory at the repo root contains runnable example scripts.
+Cross-language examples live under the `examples/` directory at the repo root. A runnable Go example (`examples/go/stk_push.go`) is provided; Python and TypeScript example directories are placeholders.
+
+## CLI
+
+The same operations are available from the command line (see the [Python Reference](reference.md#cli)):
+
+```bash
+daraja token --consumer-key YOUR_KEY --consumer-secret YOUR_SECRET
+daraja stk-push --consumer-key YOUR_KEY --consumer-secret YOUR_SECRET \
+  --shortcode 174379 --passkey YOUR_PASSKEY --phone 254722000000 --amount 1
+```

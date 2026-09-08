@@ -15,19 +15,21 @@ const mpesa = new Mpesa({
 });
 
 const resp = await mpesa.stkPush.initiate({
-  businessShortCode: 174379,
-  transactionType: "CustomerPayBillOnline",
-  amount: 1,
-  partyA: 254722000000,
-  partyB: 174379,
-  phoneNumber: 254722000000,
-  callBackURL: "https://example.com/callback",
-  accountReference: "INV-001",
-  transactionDesc: "Test payment",
+  BusinessShortCode: 174379,
+  TransactionType: "CustomerPayBillOnline",
+  Amount: 1,
+  PartyA: 254722000000,
+  PartyB: 174379,
+  PhoneNumber: 254722000000,
+  CallBackURL: "https://example.com/callback",
+  AccountReference: "INV-001",
+  TransactionDesc: "Test payment",
 });
 
-console.log(resp.checkoutRequestID);
+console.log(resp.CheckoutRequestID);
 ```
+
+Note: `Password` and `Timestamp` are auto-generated from the configured passkey; if you supply them explicitly they are respected.
 
 ## Webhook Handler
 
@@ -44,4 +46,14 @@ webhooks.on("stk:callback", (event) => {
 
 ## Full Examples
 
-The `examples/typescript/` directory at the repo root contains runnable example scripts.
+Cross-language examples live under the `examples/` directory at the repo root. A runnable Go example (`examples/go/stk_push.go`) is provided; Python and TypeScript example directories are placeholders.
+
+## CLI
+
+The same operations are available from the command line (see the [TypeScript Reference](reference.md#cli)):
+
+```bash
+mpesa token --consumer-key YOUR_KEY --consumer-secret YOUR_SECRET
+mpesa stk-push --consumer-key YOUR_KEY --consumer-secret YOUR_SECRET \
+  --shortcode 174379 --passkey YOUR_PASSKEY --phone 254722000000 --amount 1
+```

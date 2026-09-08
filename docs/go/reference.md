@@ -139,7 +139,7 @@ All methods take `context.Context` as the first argument.
 | Method | Signature | Notes |
 |--------|-----------|-------|
 | `c.GetAccessToken(ctx)` | `(ctx) (string, error)` | Fetch/cache OAuth token |
-| `c.RotateCredentials(ck, cs)` | `(string, string)` | Invalidate cached token |
+| `c.RotateCredentials(ck, cs)` | `(consumerKey, consumerSecret string)` | Invalidate cached token, no return value |
 | `c.GetConfig()` | `types.MpesaConfig` | Returns config copy |
 | `c.Logger()` | `types.Logger` | Returns logger |
 
@@ -155,8 +155,86 @@ results := c.ExecuteBatch(ctx, []client.BatchRequest{
 ### Callback Parsing
 
 ```go
-result := client.ParseSTKCallback(payload) // types.STKCallbackResult
+result := client.ParseSTKCallback(payload)          // types.STKCallbackResult
+express := client.ParseB2BExpressCallback(payload)  // types.B2BExpressCallbackResult
 ```
+
+### TokenManager
+
+The client uses an internal `client.TokenManager` for OAuth token acquisition and caching. It is also exported for advanced use:
+
+```go
+tm := client.NewTokenManager(endpoint, consumerKey, consumerSecret, httpClient, logger, sharedCache)
+tm.SetAuthEndpoint(endpoint string)
+token, err := tm.GetToken(ctx) // (string, error) — caches token
+tm.Invalidate()
+```
+
+---
+
+## Services Package
+
+`github.com/yourdudeken/daraja-sdk/go/services` wraps the raw `client.Client` with a validated, result-typed API. Request types are `services/types` inputs (e.g. `STKPushInput`); responses are typed results (e.g. `STKPushResult`).
+
+```go
+import (
+	"github.com/yourdudeken/daraja-sdk/go/client"
+	"github.com/yourdudeken/daraja-sdk/go/services"
+)
+
+svc := services.NewService(client.NewClient(cfg))
+res, err := svc.STKPush(ctx, svctypes.STKPushInput{ ... })
+```
+
+### Methods
+
+| Method | Input | Output |
+|--------|-------|--------|
+| `STKPush` | `STKPushInput` | `STKPushResult` |
+| `STKQuery` | `STKQueryInput` | `STKQueryResult` |
+| `C2BRegisterURL` | `C2BRegisterURLInput` | `C2BResult` |
+| `C2BSimulate` | `C2BSimulateInput` | `C2BResult` |
+| `B2C` | `B2CInput` | `B2CResult` |
+| `Reversal` | `ReversalInput` | `ReversalResult` |
+| `TransactionStatus` | `TransactionStatusInput` | `TransactionStatusResult` |
+| `AccountBalance` | `AccountBalanceInput` | `AccountBalanceResult` |
+| `BusinessBuyGoods` | `BusinessBuyGoodsInput` | `BusinessGoodsResult` |
+| `BusinessPayBill` | `BusinessPayBillInput` | `BusinessGoodsResult` |
+| `QueryOrgInfo` | `QueryOrgInfoInput` | `QueryOrgInfoResult` |
+| `IMSI` | `IMSIInput` | `IMSIResult` |
+| `IoTGetAllSIMs` | `IoTGetAllSIMsInput` | `IoTGetAllSIMsResult` |
+| `IoTQueryLifeCycle` | `IoTQueryLifeCycleInput` | `IoTQueryLifeCycleResult` |
+| `IoTQueryCustomerInfo` | `IoTQueryCustomerInfoInput` | `IoTQueryCustomerInfoResult` |
+| `IoTSimActivation` | `IoTSimActivationInput` | `IoTSimActivationResult` |
+| `IoTGetActivationTrends` | `IoTGetActivationTrendsInput` | `IoTGetActivationTrendsResult` |
+| `IoTRenameAsset` | `IoTRenameAssetInput` | `IoTRenameAssetResult` |
+| `IoTSuspendUnsuspend` | `IoTSuspendUnsuspendInput` | `IoTSuspendUnsuspendResult` |
+| `IoTSearchMessages` | `IoTSearchMessagesInput` | `IoTSearchMessagesResult` |
+| `IoTFilterMessages` | `IoTFilterMessagesInput` | `IoTFilterMessagesResult` |
+| `IoTDeleteMessageThread` | `IoTDeleteMessageThreadInput` | `IoTDeleteMessageThreadResult` |
+| `IoTGetAllMessages` | `IoTGetAllMessagesInput` | `IoTGetAllMessagesResult` |
+| `IoTSendSingleMessage` | `IoTSendSingleMessageInput` | `IoTSendSingleMessageResult` |
+| `IoTDeleteMessage` | `IoTDeleteMessageInput` | `IoTDeleteMessageResult` |
+| `B2Pochi` | `B2PochiInput` | `B2PochiResult` |
+| `LipaNaBongaCalculate` | `LipaNaBongaCalculateInput` | `LipaNaBongaCalculateResult` |
+| `LipaNaBongaRedeem` | `LipaNaBongaRedeemInput` | `LipaNaBongaRedeemResult` |
+| `PullTransactionsRegister` | `PullTransactionsRegisterInput` | `PullTransactionsRegisterResult` |
+| `PullTransactionsQuery` | `PullTransactionsQueryInput` | `PullTransactionsQueryResult` |
+| `Swap` | `SwapInput` | `SwapResult` |
+| `B2BExpress` | `B2BExpressInput` | `B2BExpressResult` |
+| `AccountTopUp` | `B2CAccountTopUpInput` | `B2CAccountTopUpResult` |
+| `BillManagerOptin` | `BillManagerOptinInput` | `BillManagerOptinResult` |
+| `BillManagerSingleInvoice` | `BillManagerSingleInvoiceInput` | `BillManagerSingleInvoiceResult` |
+| `BillManagerBulkInvoice` | `BillManagerBulkInvoiceInput` | `BillManagerBulkInvoiceResult` |
+| `BillManagerReconciliation` | `BillManagerReconciliationInput` | `BillManagerReconciliationResult` |
+| `BillManagerCancelSingle` | `BillManagerCancelSingleInput` | `BillManagerCancelResult` |
+| `BillManagerCancelBulk` | `BillManagerCancelBulkInput` | `BillManagerCancelResult` |
+| `BillManagerChangeOptin` | `BillManagerChangeOptinInput` | `BillManagerChangeOptinResult` |
+| `CreateStandingOrder` | `RatibaInput` | `RatibaResult` |
+| `TaxRemittance` | `TaxRemittanceInput` | `TaxRemittanceResult` |
+| `DynamicQR` | `DynamicQRInput` | `DynamicQRResult` |
+
+Input and result types live in `github.com/yourdudeken/daraja-sdk/go/services/types`.
 
 ---
 
@@ -171,8 +249,9 @@ result := client.ParseSTKCallback(payload) // types.STKCallbackResult
 | `IsPhoneNumberValid(phone)` | `bool` | Matches `2547XXXXXXXX` |
 | `FormatPhoneNumber(phone)` | `string` | Normalizes to 254... |
 | `CalculateBackoff(attempt, baseDelayMs, maxDelayMs)` | `float64` | Exponential + jitter, ms |
-| `VerifySignature(payload, signature, secret)` | `bool` | HMAC-SHA256 |
-| `GetCertificatePEM(env)` | `(string, error)` | Returns bundled cert PEM |
+| `VerifySignature(payload, signature, secret)` | `bool` | HMAC-SHA256 (takes `string` payload) |
+
+`GetCertificatePEM(env)` is defined in `client/certificates.go` and returns the bundled certificate PEM for the given environment.
 
 ---
 
@@ -221,14 +300,17 @@ EventType = "stk:callback" | "b2c:result" | "b2b:result" | "reversal:result" |
 ### Manager
 
 ```go
-mgr := webhooks.NewManager(logger)
+mgr := webhooks.NewManager(logger)  // logger is variadic; defaults to no-op logger
 mgr.On(eventType, handler)
 mgr.Off(eventType, handler)
 mgr.Emit(eventType, payload)
 mgr.HandleSTKCallback(json.RawMessage)
 mgr.HandleResultCallback(json.RawMessage)
-webhooks.VerifySignature(payload, signature, secret)
+mgr.Logger() // types.Logger — used by the middleware
+webhooks.VerifySignature(payload []byte, signature, secret string) bool // HMAC-SHA256
 ```
+
+Note: there are two `VerifySignature` variants. `client.VerifySignature(payload, signature, secret string) bool` takes string payloads (in `client/utils.go`), while `webhooks.VerifySignature(payload []byte, signature, secret string) bool` in the webhooks package takes `[]byte`.
 
 ### RetryQueue
 
@@ -262,9 +344,10 @@ q.Close()              // error
 `github.com/yourdudeken/daraja-sdk/go/middleware`
 
 ```go
-handler := middleware.GinWebhookHandler(mgr, secret, mpesaClient, startTime)
+handler := middleware.GinWebhookHandler(mgr, secret, mpesaClient)  // startTime is optional variadic
 // Returns gin.HandlerFunc
-// Handles: POST /webhooks (routes to Manager), GET /mpesa/health (returns health JSON)
+// Routes POST requests to the Manager, handling STK, Result, and C2B callbacks.
+// When mpesaClient is non-nil, GET /mpesa/health returns health JSON.
 ```
 
 ---
@@ -322,3 +405,29 @@ go run ./cli <command> [flags]
 | `version` | Print version |
 
 Common flags: `--env sandbox|production`, `--consumer-key`, `--consumer-secret`.
+
+---
+
+## Types / Logging Helpers (`types`)
+
+`types` provides the `Logger` interface plus standard and structured JSON logger implementations:
+
+```go
+import "github.com/yourdudeken/daraja-sdk/go/types"
+
+// Logger interface: Debug(msg, kv...), Info, Warn, Error
+logger := types.NewNoopLogger()                    // no-op implementation
+logger = types.NewStdLogger(log.New(os.Stderr, "", 0)) // stdlib adapter
+
+// Structured JSON logger
+sl := types.NewStructuredLogger(types.LevelDebug, "my-service") // writes JSON to stderr
+sl.SetOutput(w io.Writer)
+sl.SetMinLevel(types.LevelInfo)
+sl.Debug("msg", "key", value) // key/value pairs -> JSON "metadata"
+sl.Child("sub-service")       // returns *StructuredLogger with "parent.sub" service name
+
+// LogLevel constants
+types.LevelDebug, types.LevelInfo, types.LevelWarn, types.LevelError
+```
+
+Emits JSON entries with `timestamp`, `level`, `message`, `service`, and optional `metadata`. `StructuredLogger` also implements the client `types.Logger` interface.
