@@ -1,133 +1,58 @@
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import {
   CallToolRequestSchema,
-  ListResourcesRequestSchema,
   ListToolsRequestSchema,
-  ReadResourceRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
+import type { Mpesa } from "@daraja-sdk/ts";
+import { getAllTools, type Tool } from "./tools/index.js";
 
-import { searchDocsTool } from "./tools/search_docs.js";
-import { getDocTool } from "./tools/get_doc.js";
-import { listApisTool } from "./tools/list_apis.js";
-import { getApiTool } from "./tools/get_api.js";
-import { getExampleTool } from "./tools/get_example.js";
-import { readFileTool } from "./tools/read_file.js";
-import { listFilesTool } from "./tools/list_files.js";
-
-import { getDocResource, listDocResources } from "./resources/docs.js";
-import { getImageResource, listImageResources } from "./resources/images.js";
-
-const tools = [
-  searchDocsTool,
-  getDocTool,
-  listApisTool,
-  getApiTool,
-  getExampleTool,
-  readFileTool,
-  listFilesTool,
-];
-
-const toolMap = new Map(tools.map((tool) => [tool.name, tool]));
-
-export function createServer(): Server {
+export function createServer(client: Mpesa): Server {
   const server = new Server(
-    { name: "daraja-docs", version: "0.1.0" },
-    {
-      capabilities: {
-        tools: {},
-        resources: {},
-      },
-    }
+    { name: "daraja", version: "0.1.0" },
+    { capabilities: { tools: {} } }
   );
 
+  const tools: Tool[] = getAllTools();
+  const toolMap = new Map(tools.map((t) => [t.name, t]));
+
   server.setRequestHandler(ListToolsRequestSchema, async () => ({
-    tools: tools.map((tool) => ({
-      name: tool.name,
-      description: tool.description,
+    tools: tools.map((t) => ({
+      name: t.name,
+      description: t.description,
       inputSchema: {
-        type: "object",
-        properties: tool.schema,
+        type: "object" as const,
+        properties: t.inputSchema,
+        required: Object.keys(t.inputSchema).filter(
+          (k) => !(t.inputSchema[k] as Record<string, unknown>).hasOwnProperty("default") &&
+                 !(t.inputSchema[k] as Record<string, unknown>).hasOwnProperty("optional")
+        ),
       },
     })),
   }));
 
   server.setRequestHandler(CallToolRequestSchema, async (request) => {
-    const name = request.params.name;
+    const { name, arguments: args } = request.params;
     const tool = toolMap.get(name);
+
     if (!tool) {
       return {
+        content: [{ type: "text", text: `Unknown tool: ${name}` }],
         isError: true,
-        content: [
-          {
-            type: "text",
-            text: JSON.stringify({ error: `Unknown tool: ${name}` }),
-          },
-        ],
       };
     }
-    const input = (request.params.arguments ?? {}) as Record<string, unknown>;
+
     try {
-      const result = await tool.handler(input as never, undefined);
+      const result = await tool.handler(args ?? {}, client);
       return {
-        content: [{ type: "text", text: JSON.stringify(result) }],
+        content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
       };
-    } catch (err) {
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
       return {
+        content: [{ type: "text", text: `Error: ${message}` }],
         isError: true,
-        content: [
-          {
-            type: "text",
-            text: JSON.stringify({ error: (err as Error).message }),
-          },
-        ],
       };
     }
-  });
-
-  server.setRequestHandler(ListResourcesRequestSchema, async () => ({
-    resources: [
-      ...listDocResources().map((r) => ({
-        uri: r.uri,
-        name: r.name,
-        mimeType: r.mimeType,
-        description: r.description,
-      })),
-      ...listImageResources().map((r) => ({
-        uri: r.uri,
-        name: r.name,
-        mimeType: r.mimeType,
-        description: r.description,
-      })),
-    ],
-  }));
-
-  server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
-    const uri = request.params.uri;
-    if (uri.startsWith("daraja://docs/")) {
-      const resource = getDocResource(uri);
-      return {
-        contents: [
-          {
-            uri: resource.uri,
-            mimeType: resource.mimeType,
-            text: resource.text,
-          },
-        ],
-      };
-    }
-    if (uri.startsWith("daraja://assets/images/")) {
-      const resource = getImageResource(uri);
-      return {
-        contents: [
-          {
-            uri: resource.uri,
-            mimeType: resource.mimeType,
-            blob: resource.data,
-          },
-        ],
-      };
-    }
-    throw new Error(`Unknown resource uri: ${uri}`);
   });
 
   return server;
