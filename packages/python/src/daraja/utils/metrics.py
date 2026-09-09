@@ -1,7 +1,3 @@
-
-from prometheus_client import Counter, Gauge, Histogram
-
-
 class MetricsCollector:
     def increment(self, metric: str, tags: dict[str, str] | None = None, value: int = 1) -> None:
         pass
@@ -22,6 +18,8 @@ class NoopMetricsCollector(MetricsCollector):
 
 class PrometheusMetricsCollector(MetricsCollector):
     def __init__(self, prefix: str = "mpesa_", default_tags: dict[str, str] | None = None) -> None:
+        from prometheus_client import Counter, Gauge, Histogram
+
         self._prefix = prefix
         self._default_tags = default_tags or {}
 
