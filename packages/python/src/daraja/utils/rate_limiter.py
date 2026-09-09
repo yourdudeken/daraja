@@ -1,6 +1,6 @@
 import threading
 import time
-from typing import Protocol
+from typing import Any, Protocol
 
 
 class RateLimiter(Protocol):
@@ -43,7 +43,7 @@ class NoopRateLimiter:
 
 class RateLimiterConfig:
     def __init__(self, tokens_per_second: float = 5.0, burst_size: int = 10,
-                 endpoint_overrides: dict[str, dict] | None = None) -> None:
+                 endpoint_overrides: dict[str, dict[str, Any]] | None = None) -> None:
         self.tokens_per_second = tokens_per_second
         self.burst_size = burst_size
         self.endpoint_overrides = endpoint_overrides or {}

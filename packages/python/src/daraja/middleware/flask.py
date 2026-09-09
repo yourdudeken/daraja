@@ -1,8 +1,15 @@
+from typing import TYPE_CHECKING, Any
+
 from daraja import __version__
 from daraja.webhooks import WebhookManager
 
+if TYPE_CHECKING:
+    from daraja import Mpesa
 
-def create_flask_blueprint(webhook_manager: WebhookManager, secret: str = "", mpesa_client=None):
+
+def create_flask_blueprint(
+    webhook_manager: WebhookManager, secret: str = "", mpesa_client: "Mpesa | None" = None
+) -> Any:
     try:
         from flask import Blueprint, abort, jsonify, request
     except ImportError:
@@ -12,7 +19,7 @@ def create_flask_blueprint(webhook_manager: WebhookManager, secret: str = "", mp
 
     if mpesa_client:
         @bp.route("/health", methods=["GET"])
-        def health():
+        def health() -> Any:
             import time
             try:
                 mpesa_client._token_manager.get_token()
@@ -29,7 +36,7 @@ def create_flask_blueprint(webhook_manager: WebhookManager, secret: str = "", mp
             return jsonify(resp), 200 if token_ok else 503
 
     @bp.route("/webhook", methods=["POST"])
-    def handle_webhook():
+    def handle_webhook() -> Any:
         body = request.get_json(silent=True)
         if body is None:
             abort(400, description="Invalid JSON body")

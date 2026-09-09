@@ -58,7 +58,7 @@ class InMemorySharedTokenCache:
 class RedisTokenCache:
     def __init__(self, url: str) -> None:
         self._url = url
-        self._client: redis.Redis | None = None  # type: ignore
+        self._client: redis.Redis | None = None
         self._connect()
 
     def _connect(self) -> None:
@@ -78,7 +78,9 @@ class RedisTokenCache:
             return None
         try:
             val = self._client.get(key)
-            return val if val is not None else None
+            if isinstance(val, bytes):
+                return val.decode()
+            return val
         except Exception:
             return None
 

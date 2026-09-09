@@ -1,3 +1,6 @@
+from collections.abc import Callable
+from typing import Any
+
 from daraja import Mpesa, __version__
 
 _start_time: float | None = None
@@ -11,13 +14,13 @@ def _get_start_time() -> float:
     return _start_time
 
 
-def create_health_endpoint(mpesa_client: Mpesa):
+def create_health_endpoint(mpesa_client: Mpesa) -> Callable[[], dict[str, Any]]:
     import sys
     import time
 
     start = _get_start_time()
 
-    def health():
+    def health() -> dict[str, Any]:
         try:
             mpesa_client._token_manager.get_token()
             token_ok = True

@@ -77,9 +77,10 @@ def validate_amount(amount: int | float) -> bool:
 
 
 def calculate_backoff(attempt: int, base_delay_ms: int = 1000, max_delay_ms: int = 30000) -> float:
-    exponential = base_delay_ms * (2**attempt)
-    jitter = random.uniform(0, 100)
-    return min(exponential + jitter, max_delay_ms) / 1000.0
+    exponential = float(base_delay_ms * (2**attempt))
+    jitter = float(random.uniform(0, 100))
+    total = exponential + jitter
+    return min(total, float(max_delay_ms)) / 1000.0
 
 
 from daraja.utils.batch import execute_batch, execute_batch_async

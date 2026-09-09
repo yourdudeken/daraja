@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 import time
 import uuid
@@ -917,7 +919,7 @@ class Mpesa:
     def close(self) -> None:
         self._client.close()
 
-    def __enter__(self) -> "Mpesa":
+    def __enter__(self) -> Mpesa:
         return self
 
     def __exit__(self, *args: Any) -> None:

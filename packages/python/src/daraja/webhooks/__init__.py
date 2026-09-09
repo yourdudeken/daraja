@@ -38,7 +38,7 @@ class WebhookManager:
                     extra={"event": event_type, "error": str(e)},
                 )
 
-    def parse_stk_callback(self, body: dict) -> dict:
+    def parse_stk_callback(self, body: dict[str, Any]) -> dict[str, Any]:
         payload = STKCallbackPayload(**body)
         callback = payload.Body.stkCallback
         result = {
@@ -62,7 +62,7 @@ class WebhookManager:
 
         return result
 
-    def parse_c2b_validation_response(self, accept: bool = True) -> dict:
+    def parse_c2b_validation_response(self, accept: bool = True) -> dict[str, Any]:
         if accept:
             return {"ResultCode": "0", "ResultDesc": "Accepted"}
         return {"ResultCode": "C2B00011", "ResultDesc": "Rejected"}

@@ -43,8 +43,8 @@ class MpesaConfig(BaseModel):
     timeout: int = 30
     max_retries: int | None = None
     retry_config: RetryConfig = RetryConfig()
-    circuit_breaker_config: dict | None = None
-    rate_limiter_config: dict | None = None
+    circuit_breaker_config: dict[str, Any] | None = None
+    rate_limiter_config: dict[str, Any] | None = None
     enable_idempotency: bool = True
     logger: Logger | None = None
     tracer: Any | None = None
@@ -825,8 +825,8 @@ class RatibaResponse(BaseModel):
 
 
 class RatibaCallbackResponse(BaseModel):
-    responseHeader: dict | None = None
-    responseBody: dict | None = None
+    responseHeader: dict[str, Any] | None = None
+    responseBody: dict[str, Any] | None = None
 
 
 class TaxRemittanceRequest(BaseModel):

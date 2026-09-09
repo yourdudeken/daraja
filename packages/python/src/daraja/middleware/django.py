@@ -1,8 +1,13 @@
+from typing import TYPE_CHECKING, Any
+
 from daraja import __version__
 from daraja.webhooks import WebhookManager
 
+if TYPE_CHECKING:
+    from daraja import Mpesa
 
-def create_django_view(webhook_manager: WebhookManager, secret: str = ""):
+
+def create_django_view(webhook_manager: WebhookManager, secret: str = "") -> Any:
     try:
         from django.http import HttpResponse, HttpResponseBadRequest, JsonResponse
         from django.views.decorators.csrf import csrf_exempt
@@ -10,9 +15,9 @@ def create_django_view(webhook_manager: WebhookManager, secret: str = ""):
     except ImportError:
         raise ImportError("django is required. Install with: pip install daraja-sdk-py[django]")
 
-    @csrf_exempt
-    @require_POST
-    def handle_webhook(request):
+    @csrf_exempt  # type: ignore[untyped-decorator]
+    @require_POST  # type: ignore[untyped-decorator]
+    def handle_webhook(request: Any) -> Any:
         import json
 
         try:
@@ -64,7 +69,7 @@ def create_django_view(webhook_manager: WebhookManager, secret: str = ""):
     return handle_webhook
 
 
-def create_django_health_view(mpesa_client):
+def create_django_health_view(mpesa_client: "Mpesa") -> Any:
     try:
         from django.http import JsonResponse
     except ImportError:
@@ -75,7 +80,7 @@ def create_django_health_view(mpesa_client):
 
     start = time.time()
 
-    def health(request):
+    def health(request: Any) -> Any:
         try:
             mpesa_client._token_manager.get_token()
             token_ok = True

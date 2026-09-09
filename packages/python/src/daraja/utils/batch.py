@@ -1,12 +1,12 @@
 from collections.abc import Callable
 from typing import Any
 
-BatchPostFn = Callable[[str, dict], dict]
+BatchPostFn = Callable[[str, dict[str, Any]], dict[str, Any]]
 
 
 def execute_batch(
     post_fn: BatchPostFn,
-    requests: list[tuple[str, dict]],
+    requests: list[tuple[str, dict[str, Any]]],
     concurrency: int = 3,
 ) -> list[Any]:
     results: list[Any] = []
@@ -20,8 +20,8 @@ def execute_batch(
 
 
 async def execute_batch_async(
-    post_fn: Callable[[str, dict], Any],
-    requests: list[tuple[str, dict]],
+    post_fn: Callable[[str, dict[str, Any]], Any],
+    requests: list[tuple[str, dict[str, Any]]],
     concurrency: int = 3,
 ) -> list[Any]:
     import asyncio

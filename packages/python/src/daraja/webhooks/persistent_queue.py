@@ -10,7 +10,7 @@ from daraja.models import Logger, _get_logger
 
 
 class PersistentDeliveryRecord:
-    def __init__(self, row: dict) -> None:
+    def __init__(self, row: dict[str, Any]) -> None:
         self.id: int = row["id"]
         self.event: str = row["event"]
         self.payload: Any = json.loads(row["payload"])

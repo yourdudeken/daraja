@@ -6,12 +6,12 @@ from typing import Any
 
 
 class StructuredLogHandler(logging.Handler):
-    def __init__(self, stream=None, pretty: bool = False):
+    def __init__(self, stream: Any = None, pretty: bool = False) -> None:
         super().__init__()
         self.stream = stream or sys.stderr
         self.pretty = pretty
 
-    def emit(self, record: logging.LogRecord):
+    def emit(self, record: logging.LogRecord) -> None:
         entry = {
             "timestamp": datetime.fromtimestamp(record.created, tz=UTC).isoformat(),
             "level": record.levelname,
@@ -50,7 +50,7 @@ class StructuredLogger:
         self._logger.addHandler(StructuredLogHandler(pretty=pretty))
         self._logger.propagate = False
 
-    def _log(self, level: int, msg: str, **kwargs: Any):
+    def _log(self, level: int, msg: str, **kwargs: Any) -> None:
         extra = kwargs.pop("extra", None) or {}
         metadata = kwargs.pop("metadata", None) or extra
         if "request_id" in metadata:
