@@ -1,15 +1,38 @@
-FROM node:22-alpine AS build
+# Build stage
+FROM node:22-alpine AS builder
 WORKDIR /app
-COPY package.json package-lock.json* ./
+
+COPY mcp/package.json mcp/package-lock.json* ./
+COPY sdks/typescript/package.json ../sdks/typescript/package.json
+COPY sdks/typescript/src/ ../sdks/typescript/src/
+COPY sdks/typescript/tsconfig.json ../sdks/typescript/tsconfig.json
+COPY sdks/typescript/tsup.config.ts ../sdks/typescript/tsup.config.ts
+
 RUN npm install
-COPY tsconfig.json ./
-COPY src ./src
+RUN cd ../sdks/typescript && npm install && npm run build
+
+COPY mcp/tsconfig.json ./
+COPY mcp/src/ ./src/
 RUN npm run build
 
+# Runtime stage
 FROM node:22-alpine
 WORKDIR /app
+RUN apk add --no-cache tini
+
+COPY --from=builder /app/dist/ ./dist/
+COPY --from=builder /app/package.json ./
+COPY --from=builder /app/node_modules/ ./node_modules/
+COPY --from=builder /sdks/typescript/dist/ ../sdks/typescript/dist/
+COPY --from=builder /sdks/typescript/package.json ../sdks/typescript/package.json
+COPY --from=builder /sdks/typescript/node_modules/ ../sdks/typescript/node_modules/
+
 ENV NODE_ENV=production
-COPY --from=build /app/package.json ./
-COPY --from=build /app/dist ./dist
-# MCP server communicates over stdio (no HTTP port to expose).
+ENV DARAJA_MCP_MODE=http
+ENV MCP_PORT=3000
+ENV MCP_HOST=0.0.0.0
+
+EXPOSE 3000
+
+ENTRYPOINT ["tini", "--"]
 CMD ["node", "dist/index.js"]
