@@ -4,6 +4,7 @@ import type { Tool } from "./index.js";
 export const c2bSimulateTool: Tool = {
   name: "c2b_simulate",
   description: "Simulate a C2B (Customer to Business) payment in sandbox environment. Only works in sandbox mode.",
+  required: ["shortCode", "amount", "phoneNumber"],
   inputSchema: {
     shortCode: { type: "string", description: "Organization's shortcode or till number" },
     amount: { type: "number", description: "Transaction amount" },

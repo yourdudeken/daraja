@@ -4,6 +4,7 @@ import type { Tool } from "./index.js";
 export const b2bTool: Tool = {
   name: "b2b_payment",
   description: "Send money between businesses (B2B). Supports BusinessPayBill and BusinessBuyGoods. Results delivered asynchronously via callback.",
+  required: ["amount", "partyA", "partyB", "remarks", "queueTimeOutURL", "resultURL"],
   inputSchema: {
     amount: { type: "number", description: "Transaction amount" },
     partyA: { type: "string", description: "Sender's shortcode" },

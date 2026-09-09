@@ -4,6 +4,7 @@ import type { Tool } from "./index.js";
 export const b2cTool: Tool = {
   name: "b2c_payment",
   description: "Send money from a business to a customer's M-Pesa wallet (B2C). CommandID options: SalaryPayment, BusinessPayment, PromotionPayment. Results delivered asynchronously via callback.",
+  required: ["amount", "partyA", "partyB", "remarks", "queueTimeOutURL", "resultURL"],
   inputSchema: {
     amount: { type: "number", description: "Amount to send" },
     partyA: { type: "string", description: "Organization's shortcode (initiator)" },

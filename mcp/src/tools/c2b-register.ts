@@ -4,6 +4,7 @@ import type { Tool } from "./index.js";
 export const c2bRegisterTool: Tool = {
   name: "c2b_register_url",
   description: "Register callback URLs for C2B (Customer to Business) transactions. Sets up validation and confirmation URLs for incoming customer payments.",
+  required: ["shortCode", "validationURL", "confirmationURL"],
   inputSchema: {
     shortCode: { type: "string", description: "Organization's shortcode or till number" },
     validationURL: { type: "string", description: "URL to receive validation requests (must be HTTPS)" },

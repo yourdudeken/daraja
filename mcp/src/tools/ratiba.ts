@@ -4,6 +4,7 @@ import type { Tool } from "./index.js";
 export const ratibaTool: Tool = {
   name: "ratiba",
   description: "Create a standing order (recurring payment schedule) via M-Pesa Ratiba.",
+  required: ["data"],
   inputSchema: {
     data: { type: "object", description: "Ratiba request payload. See docs/apis/mpesa-ratiba.md for fields." },
   },

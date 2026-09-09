@@ -4,6 +4,7 @@ import type { Tool } from "./index.js";
 export const transactionStatusTool: Tool = {
   name: "transaction_status",
   description: "Query the status of an M-Pesa transaction by TransactionID or OriginalConversationID. Results delivered asynchronously via callback.",
+  required: ["resultURL", "queueTimeOutURL"],
   inputSchema: {
     transactionID: { type: "string", description: "The M-Pesa TransactionID" },
     originalConversationID: { type: "string", description: "The OriginalConversationID" },

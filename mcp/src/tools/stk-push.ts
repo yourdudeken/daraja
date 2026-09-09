@@ -4,6 +4,7 @@ import type { Tool } from "./index.js";
 export const stkPushTool: Tool = {
   name: "stk_push",
   description: "Initiate an STK Push (Lipa Na M-Pesa Online) to send a USSD prompt to a customer's phone for payment. Amount range: 1-250000. Returns CheckoutRequestID for status queries.",
+  required: ["businessShortCode", "amount", "partyA", "partyB", "phoneNumber"],
   inputSchema: {
     businessShortCode: { type: "number", description: "Organization's shortcode (5-7 digits)" },
     amount: { type: "number", description: "Transaction amount (1-250000)" },

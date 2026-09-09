@@ -4,6 +4,7 @@ import type { Tool } from "./index.js";
 export const billManagerTool: Tool = {
   name: "bill_manager",
   description: "Manage bills via M-Pesa Bill Manager. Operations: opt_in, single_invoice, bulk_invoice, reconciliation, cancel_single, cancel_bulk, change_opt_in.",
+  required: ["operation", "data"],
   inputSchema: {
     operation: { type: "string", description: "Operation: opt_in, single_invoice, bulk_invoice, reconciliation, cancel_single, cancel_bulk, change_opt_in" },
     data: { type: "object", description: "Operation-specific payload. See docs/apis/bill-manager.md for required fields." },

@@ -4,6 +4,7 @@ import type { Tool } from "./index.js";
 export const b2bExpressTool: Tool = {
   name: "b2b_express",
   description: "Send a B2B Express USSD push to resolve a customer's MSISDN. Synchronous acknowledgement, actual result delivered via callback.",
+  required: ["amount", "partyA", "partyB", "remarks", "queueTimeOutURL", "resultURL", "paymentReference"],
   inputSchema: {
     amount: { type: "number", description: "Transaction amount" },
     partyA: { type: "string", description: "Sender shortcode" },

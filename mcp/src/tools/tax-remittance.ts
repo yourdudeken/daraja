@@ -4,6 +4,7 @@ import type { Tool } from "./index.js";
 export const taxRemittanceTool: Tool = {
   name: "tax_remittance",
   description: "Remit tax to KRA via M-Pesa. CommandID defaults to PayTaxToKRA. PartyB defaults to 572572 (KRA paybill).",
+  required: ["amount", "partyA", "remarks", "resultURL", "queueTimeOutURL"],
   inputSchema: {
     amount: { type: "number", description: "Tax amount to remit" },
     partyA: { type: "string", description: "Payer's shortcode" },

@@ -22,10 +22,7 @@ export function createServer(client: Mpesa): Server {
       inputSchema: {
         type: "object" as const,
         properties: t.inputSchema,
-        required: Object.keys(t.inputSchema).filter(
-          (k) => !(t.inputSchema[k] as Record<string, unknown>).hasOwnProperty("default") &&
-                 !(t.inputSchema[k] as Record<string, unknown>).hasOwnProperty("optional")
-        ),
+        required: t.required ?? [],
       },
     })),
   }));

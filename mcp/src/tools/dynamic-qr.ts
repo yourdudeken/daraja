@@ -4,6 +4,7 @@ import type { Tool } from "./index.js";
 export const dynamicQRTool: Tool = {
   name: "dynamic_qr",
   description: "Generate a dynamic QR code for M-Pesa payments. Returns a base64-encoded PNG. TrxCode: BG (Buy Goods), WA (Withdraw Cash), PB (Pay Bill), SM (Send Money), SB (Send to Business).",
+  required: ["merchantName", "refNo", "amount", "trxCode", "cpi"],
   inputSchema: {
     merchantName: { type: "string", description: "Merchant/business name" },
     refNo: { type: "string", description: "Reference number" },
