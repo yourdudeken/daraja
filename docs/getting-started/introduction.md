@@ -12,7 +12,7 @@ MCP server for AI-assisted documentation search:
 | ------- | -------- | ---------- |
 | Python  | 3.11+    | `daraja-sdk-py` |
 | TypeScript | ES2022 | `@daraja-sdk/ts` |
-| Go      | 1.25+    | `github.com/yourdudeken/daraja-sdk/go` |
+| Go      | 1.25+    | `github.com/yourdudeken/daraja/sdks/go` |
 
 ## Feature overview
 

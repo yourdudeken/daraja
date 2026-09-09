@@ -1,10 +1,10 @@
 # Go SDK Reference
 
-Module: `github.com/yourdudeken/daraja-sdk/go`
+Module: `github.com/yourdudeken/daraja/sdks/go`
 
 ```go
-import "github.com/yourdudeken/daraja-sdk/go/client"
-import "github.com/yourdudeken/daraja-sdk/go/types"
+import "github.com/yourdudeken/daraja/sdks/go/client"
+import "github.com/yourdudeken/daraja/sdks/go/types"
 ```
 
 ## Creating a Client
@@ -174,12 +174,12 @@ tm.Invalidate()
 
 ## Services Package
 
-`github.com/yourdudeken/daraja-sdk/go/services` wraps the raw `client.Client` with a validated, result-typed API. Request types are `services/types` inputs (e.g. `STKPushInput`); responses are typed results (e.g. `STKPushResult`).
+`github.com/yourdudeken/daraja/sdks/go/services` wraps the raw `client.Client` with a validated, result-typed API. Request types are `services/types` inputs (e.g. `STKPushInput`); responses are typed results (e.g. `STKPushResult`).
 
 ```go
 import (
-	"github.com/yourdudeken/daraja-sdk/go/client"
-	"github.com/yourdudeken/daraja-sdk/go/services"
+	"github.com/yourdudeken/daraja/sdks/go/client"
+	"github.com/yourdudeken/daraja/sdks/go/services"
 )
 
 svc := services.NewService(client.NewClient(cfg))
@@ -234,7 +234,7 @@ res, err := svc.STKPush(ctx, svctypes.STKPushInput{ ... })
 | `TaxRemittance` | `TaxRemittanceInput` | `TaxRemittanceResult` |
 | `DynamicQR` | `DynamicQRInput` | `DynamicQRResult` |
 
-Input and result types live in `github.com/yourdudeken/daraja-sdk/go/services/types`.
+Input and result types live in `github.com/yourdudeken/daraja/sdks/go/services/types`.
 
 ---
 
@@ -257,7 +257,7 @@ Input and result types live in `github.com/yourdudeken/daraja-sdk/go/services/ty
 
 ## Errors Package
 
-`github.com/yourdudeken/daraja-sdk/go/errors`
+`github.com/yourdudeken/daraja/sdks/go/errors`
 
 ### Types
 
@@ -288,7 +288,7 @@ Input and result types live in `github.com/yourdudeken/daraja-sdk/go/services/ty
 
 ## Webhooks Package
 
-`github.com/yourdudeken/daraja-sdk/go/webhooks`
+`github.com/yourdudeken/daraja/sdks/go/webhooks`
 
 ### Event Types
 
@@ -341,7 +341,7 @@ q.Close()              // error
 
 ## Middleware
 
-`github.com/yourdudeken/daraja-sdk/go/middleware`
+`github.com/yourdudeken/daraja/sdks/go/middleware`
 
 ```go
 handler := middleware.GinWebhookHandler(mgr, secret, mpesaClient)  // startTime is optional variadic
@@ -354,7 +354,7 @@ handler := middleware.GinWebhookHandler(mgr, secret, mpesaClient)  // startTime 
 
 ## Validation Package
 
-`github.com/yourdudeken/daraja-sdk/go/validation`
+`github.com/yourdudeken/daraja/sdks/go/validation`
 
 | Function | Signature |
 |----------|-----------|
@@ -371,7 +371,7 @@ handler := middleware.GinWebhookHandler(mgr, secret, mpesaClient)  // startTime 
 
 ## Health Package
 
-`github.com/yourdudeken/daraja-sdk/go/health`
+`github.com/yourdudeken/daraja/sdks/go/health`
 
 ```go
 type HealthResponse struct {
@@ -413,7 +413,7 @@ Common flags: `--env sandbox|production`, `--consumer-key`, `--consumer-secret`.
 `types` provides the `Logger` interface plus standard and structured JSON logger implementations:
 
 ```go
-import "github.com/yourdudeken/daraja-sdk/go/types"
+import "github.com/yourdudeken/daraja/sdks/go/types"
 
 // Logger interface: Debug(msg, kv...), Info, Warn, Error
 logger := types.NewNoopLogger()                    // no-op implementation

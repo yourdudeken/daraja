@@ -116,8 +116,8 @@ package main
 
 import (
     "context"
-    "github.com/yourdudeken/daraja-sdk/go/client"
-    "github.com/yourdudeken/daraja-sdk/go/types"
+    "github.com/yourdudeken/daraja/sdks/go/client"
+    "github.com/yourdudeken/daraja/sdks/go/types"
 )
 
 func main() {

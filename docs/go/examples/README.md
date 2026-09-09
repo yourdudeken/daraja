@@ -12,8 +12,8 @@ import (
     "fmt"
     "log"
 
-    "github.com/yourdudeken/daraja-sdk/go/client"
-    "github.com/yourdudeken/daraja-sdk/go/types"
+    "github.com/yourdudeken/daraja/sdks/go/client"
+    "github.com/yourdudeken/daraja/sdks/go/types"
 )
 
 func main() {
@@ -46,8 +46,8 @@ func main() {
 
 ```go
 import (
-    "github.com/yourdudeken/daraja-sdk/go/middleware"
-    "github.com/yourdudeken/daraja-sdk/go/webhooks"
+    "github.com/yourdudeken/daraja/sdks/go/middleware"
+    "github.com/yourdudeken/daraja/sdks/go/webhooks"
 )
 
 mgr := webhooks.NewManager(logger)

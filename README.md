@@ -5,9 +5,9 @@ documentation and a Model Context Protocol (MCP) server.
 
 ```
 Daraja SDKs
- ├── Python SDK      packages/python   (pip: daraja-sdk-py)
- ├── TypeScript SDK  packages/typescript (npm: @daraja-sdk/ts)
- ├── Go SDK          packages/go        (module: github.com/yourdudeken/daraja-sdk/go)
+ ├── Python SDK      sdks/python   (pip: daraja-sdk-py)
+ ├── TypeScript SDK  sdks/typescript (npm: @daraja-sdk/ts)
+ ├── Go SDK          sdks/go        (module: github.com/yourdudeken/daraja/sdks/go)
  └── MCP Server      mcp               (npm: @daraja-sdk/mcp)
 ```
 
@@ -21,9 +21,9 @@ Daraja SDKs
 
 | Path | Description |
 | ---- | ----------- |
-| `packages/python` | Python SDK |
-| `packages/typescript` | TypeScript SDK |
-| `packages/go` | Go SDK |
+| `sdks/python` | Python SDK |
+| `sdks/typescript` | TypeScript SDK |
+| `sdks/go` | Go SDK |
 | `mcp/` | MCP server |
 | `docs/` | Shared documentation |
 | `scripts/` | Docs ingestion + validation tools |

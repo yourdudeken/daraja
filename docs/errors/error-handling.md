@@ -45,7 +45,7 @@ import { AuthenticationError } from "@daraja-sdk/ts";
 ```
 
 ```go
-import "github.com/yourdudeken/daraja-sdk/go/errors"
+import "github.com/yourdudeken/daraja/sdks/go/errors"
 errors.NewAuthenticationError("message", errors.WithStatusCode(401))
 ```
 
@@ -330,9 +330,9 @@ import (
     "errors"
     "fmt"
 
-    "github.com/yourdudeken/daraja-sdk/go/client"
-    "github.com/yourdudeken/daraja-sdk/go/types"
-    mpesaErrors "github.com/yourdudeken/daraja-sdk/go/errors"
+    "github.com/yourdudeken/daraja/sdks/go/client"
+    "github.com/yourdudeken/daraja/sdks/go/types"
+    mpesaErrors "github.com/yourdudeken/daraja/sdks/go/errors"
 )
 
 mpesaClient := client.NewClient(types.MpesaConfig{

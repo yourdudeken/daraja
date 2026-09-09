@@ -93,8 +93,8 @@ The `parseCallback` static method extracts `success`, `resultCode`, `resultDescr
 ```go
 import (
     "encoding/json"
-    "github.com/yourdudeken/daraja-sdk/go/types"
-    "github.com/yourdudeken/daraja-sdk/go/webhooks"
+    "github.com/yourdudeken/daraja/sdks/go/types"
+    "github.com/yourdudeken/daraja/sdks/go/webhooks"
 )
 
 manager := webhooks.NewManager(logger)

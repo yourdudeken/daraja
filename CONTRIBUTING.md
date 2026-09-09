@@ -7,16 +7,16 @@ Thanks for contributing to the Daraja SDK monorepo!
 ```bash
 npm install          # root tooling (tsx)
 npm install          # (in mcp/)
-cd packages/python && pip install -e ".[all]" pytest hypothesis respx
-cd packages/typescript && npm install
-cd packages/go && go mod tidy
+cd sdks/python && pip install -e ".[all]" pytest hypothesis respx
+cd sdks/typescript && npm install
+cd sdks/go && go mod tidy
 ```
 
 ## Tests
 
-- Python: `cd packages/python && pytest tests/unit`
-- TypeScript: `cd packages/typescript && npm test`
-- Go: `cd packages/go && go test ./...`
+- Python: `cd sdks/python && pytest tests/unit`
+- TypeScript: `cd sdks/typescript && npm test`
+- Go: `cd sdks/go && go test ./...`
 - MCP: `cd mcp && npm test`
 
 ## Documentation

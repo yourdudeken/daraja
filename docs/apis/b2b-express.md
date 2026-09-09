@@ -68,8 +68,8 @@ const resp = await mpesa.b2bExpress.send({
 ```
 
 ```go
-import "github.com/yourdudeken/daraja-sdk/go/client"
-import "github.com/yourdudeken/daraja-sdk/go/types"
+import "github.com/yourdudeken/daraja/sdks/go/client"
+import "github.com/yourdudeken/daraja/sdks/go/types"
 
 c := client.NewClient(types.MpesaConfig{
     ConsumerKey:    "...",

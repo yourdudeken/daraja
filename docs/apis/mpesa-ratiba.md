@@ -83,8 +83,8 @@ const resp = await mpesa.ratiba.createStandingOrder({
 ```
 
 ```go
-import "github.com/yourdudeken/daraja-sdk/go/client"
-import "github.com/yourdudeken/daraja-sdk/go/types"
+import "github.com/yourdudeken/daraja/sdks/go/client"
+import "github.com/yourdudeken/daraja/sdks/go/types"
 
 c := client.NewClient(types.MpesaConfig{
     ConsumerKey:    "...",

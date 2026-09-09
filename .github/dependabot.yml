@@ -9,7 +9,7 @@ updates:
         patterns: ["*"]
 
   - package-ecosystem: "npm"
-    directory: "/packages/typescript"
+    directory: "/sdks/typescript"
     schedule:
       interval: "weekly"
     groups:
@@ -25,7 +25,7 @@ updates:
         patterns: ["*"]
 
   - package-ecosystem: "pip"
-    directory: "/packages/python"
+    directory: "/sdks/python"
     schedule:
       interval: "weekly"
     groups:
@@ -33,7 +33,7 @@ updates:
         patterns: ["*"]
 
   - package-ecosystem: "gomod"
-    directory: "/packages/go"
+    directory: "/sdks/go"
     schedule:
       interval: "weekly"
     groups:

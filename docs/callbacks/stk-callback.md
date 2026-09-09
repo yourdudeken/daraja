@@ -87,8 +87,8 @@ The `on` method accepts a `WebhookEvent["type"]` string and a `WebhookHandler` c
 
 ```go
 import (
-    "github.com/yourdudeken/daraja-sdk/go/client"
-    "github.com/yourdudeken/daraja-sdk/go/webhooks"
+    "github.com/yourdudeken/daraja/sdks/go/client"
+    "github.com/yourdudeken/daraja/sdks/go/webhooks"
 )
 
 manager := webhooks.NewManager(logger)

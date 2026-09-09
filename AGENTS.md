@@ -5,9 +5,9 @@
 Monorepo for Safaricom M-Pesa Daraja API SDKs + MCP documentation server.
 
 ```
-packages/python    Python SDK (hatchling, pytest, ruff, mypy)
-packages/typescript TypeScript SDK (tsup, vitest, eslint, prettier)
-packages/go        Go SDK (go 1.25, go-releaser, gin, prometheus, otel)
+sdks/python    Python SDK (hatchling, pytest, ruff, mypy)
+sdks/typescript TypeScript SDK (tsup, vitest, eslint, prettier)
+sdks/go        Go SDK (go 1.25, go-releaser, gin, prometheus, otel)
 mcp/               MCP server (tsc, vitest)
 docs/              Shared markdown, ingested by MCP server
 scripts/           Doc ingestion + validation (run from root via tsx)
@@ -20,26 +20,26 @@ scripts/           Doc ingestion + validation (run from root via tsx)
 npm install
 
 # Each package independently (NOT a root workspace member)
-cd packages/typescript && npm install
-cd packages/python && pip install -e ".[all]" pytest hypothesis respx
-cd packages/go && go mod tidy
+cd sdks/typescript && npm install
+cd sdks/python && pip install -e ".[all]" pytest hypothesis respx
+cd sdks/go && go mod tidy
 ```
 
 ## Build
 
 | Package | Command |
 |---------|---------|
-| TypeScript SDK | `cd packages/typescript && npm run build` (tsup) |
+| TypeScript SDK | `cd sdks/typescript && npm run build` (tsup) |
 | MCP server | `npm run build:mcp` or `cd mcp && npm run build` (tsc) |
-| Go SDK | `cd packages/go && go build ./...` |
+| Go SDK | `cd sdks/go && go build ./...` |
 
 ## Test
 
 | Package | Command |
 |---------|---------|
-| TypeScript SDK | `cd packages/typescript && npm test` (vitest) |
-| Python SDK | `cd packages/python && pytest tests/unit` |
-| Go SDK | `cd packages/go && go test ./...` |
+| TypeScript SDK | `cd sdks/typescript && npm test` (vitest) |
+| Python SDK | `cd sdks/python && pytest tests/unit` |
+| Go SDK | `cd sdks/go && go test ./...` |
 | MCP server | `npm run test:mcp` or `cd mcp && npm test` (vitest) |
 
 Integration tests require sandbox credentials — do not run in CI without env setup.
@@ -48,11 +48,11 @@ Integration tests require sandbox credentials — do not run in CI without env s
 
 | Package | Command |
 |---------|---------|
-| TypeScript SDK | `cd packages/typescript && npm run lint` (tsc --noEmit + eslint) |
-| TypeScript typecheck only | `cd packages/typescript && npm run typecheck` |
-| Python SDK | `cd packages/python && ruff check src/` |
-| Python typecheck | `cd packages/python && mypy src/` |
-| Go SDK | `cd packages/go && go vet ./...` |
+| TypeScript SDK | `cd sdks/typescript && npm run lint` (tsc --noEmit + eslint) |
+| TypeScript typecheck only | `cd sdks/typescript && npm run typecheck` |
+| Python SDK | `cd sdks/python && ruff check src/` |
+| Python typecheck | `cd sdks/python && mypy src/` |
+| Go SDK | `cd sdks/go && go vet ./...` |
 | MCP server | `cd mcp && npm run lint` (tsc --noEmit) |
 
 ## Docs Pipeline
@@ -73,10 +73,10 @@ Both SDKs generate models from an OpenAPI spec (`openapi/mpesa.yaml`):
 
 ```bash
 # TypeScript (requires openapi-typescript)
-cd packages/typescript && npm run generate
+cd sdks/typescript && npm run generate
 
 # Python (requires datamodel-code-generator)
-cd packages/python && hatch run generate
+cd sdks/python && hatch run generate
 ```
 
 Note: `openapi/` is not committed — obtain the spec from Safaricom first.
@@ -86,7 +86,7 @@ Note: `openapi/` is not committed — obtain the spec from Safaricom first.
 - Root `package.json` workspaces only includes `mcp/`. TypeScript and Python packages are **not** root workspace members.
 - Packages must be installed and built independently.
 - Root scripts (`npm run build:index`, `ingest:docs`, etc.) run via `tsx` from root.
-- Go SDK module path: `github.com/yourdudeken/daraja-sdk/go`.
+- Go SDK module path: `github.com/yourdudeken/daraja/sdks/go`.
 
 ## Conventions
 

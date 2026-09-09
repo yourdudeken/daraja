@@ -72,8 +72,8 @@ const mpesa = new Mpesa({
 ### Go
 
 ```go
-import "github.com/yourdudeken/daraja-sdk/go/client"
-import "github.com/yourdudeken/daraja-sdk/go/types"
+import "github.com/yourdudeken/daraja/sdks/go/client"
+import "github.com/yourdudeken/daraja/sdks/go/types"
 
 mpesa := client.NewClient(types.MpesaConfig{
     ConsumerKey:       "...",

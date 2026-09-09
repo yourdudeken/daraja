@@ -1,0 +1,23 @@
+# My SDK
+
+> SDK for interacting with the My API.
+
+## Getting Started
+- /docs/getting-started.md
+- /docs/authentication.md
+
+## API Reference
+- /docs/reference/clients.md
+- /docs/reference/users.md
+- /docs/reference/payments.md
+
+## Examples
+- /docs/examples/create-user.md
+- /docs/examples/process-payment.md
+
+## Errors
+- /docs/error-handling.md
+
+## Versions
+- Current version: v2
+- API compatibility: v2

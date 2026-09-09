@@ -38,14 +38,14 @@ npm install @daraja-sdk/ts
 
 ## Go
 
-Requires Go 1.25+. Import the module as `github.com/yourdudeken/daraja-sdk/go`.
+Requires Go 1.25+. Import the module as `github.com/yourdudeken/daraja/sdks/go`.
 
 ```bash
-go get github.com/yourdudeken/daraja-sdk/go
+go get github.com/yourdudeken/daraja/sdks/go
 ```
 
 ```go
-import "github.com/yourdudeken/daraja-sdk/go/client"
+import "github.com/yourdudeken/daraja/sdks/go/client"
 ```
 
 ## Initializing the client
@@ -71,8 +71,8 @@ const mpesa = new Mpesa({
 ```
 
 ```go
-import "github.com/yourdudeken/daraja-sdk/go/client"
-import "github.com/yourdudeken/daraja-sdk/go/types"
+import "github.com/yourdudeken/daraja/sdks/go/client"
+import "github.com/yourdudeken/daraja/sdks/go/types"
 
 mpesa := client.NewClient(types.MpesaConfig{
     ConsumerKey:    "YOUR_CONSUMER_KEY",

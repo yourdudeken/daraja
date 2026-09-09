@@ -125,7 +125,7 @@ The `C2BValidationRequest` type has all fields from the payload: `TransactionTyp
 
 ```go
 import (
-    "github.com/yourdudeken/daraja-sdk/go/webhooks"
+    "github.com/yourdudeken/daraja/sdks/go/webhooks"
 )
 
 manager := webhooks.NewManager(logger)

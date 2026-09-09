@@ -256,7 +256,7 @@
     "title": "Go SDK Reference",
     "category": "go",
     "path": "docs/go/reference.md",
-    "text": "Module: github.com/yourdudeken/daraja-sdk/go import \"github.com/yourdudeken/daraja-sdk/go/client\""
+    "text": "Module: github.com/yourdudeken/daraja/sdks/go import \"github.com/yourdudeken/daraja/sdks/go/client\""
   },
   {
     "id": "readme",
