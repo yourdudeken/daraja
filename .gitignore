@@ -55,6 +55,7 @@ coverage.out
 vendor/
 
 # === Testing & tooling ===
+.daraja
 .nyc_output/
 .coverage
 coverage/
