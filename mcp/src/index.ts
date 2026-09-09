@@ -1,32 +1,33 @@
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { Mpesa } from "@daraja-sdk/ts";
 import { createServer } from "./server.js";
+import { loadConfig } from "./config.js";
+import { startHttpTransport } from "./transport.js";
 
-export async function main(): Promise<void> {
-  const client = new Mpesa({
-    consumerKey: process.env.MPESA_CONSUMER_KEY ?? "",
-    consumerSecret: process.env.MPESA_CONSUMER_SECRET ?? "",
-    environment: (process.env.MPESA_ENVIRONMENT as "sandbox" | "production") ?? "sandbox",
-    passkey: process.env.MPESA_PASSKEY,
-    initiatorName: process.env.MPESA_INITIATOR_NAME,
-    initiatorPassword: process.env.MPESA_INITIATOR_PASSWORD,
-    securityCredential: process.env.MPESA_SECURITY_CREDENTIAL,
-  });
-
-  const server = createServer(client);
-  const transport = new StdioServerTransport();
-  await server.connect(transport);
-  console.error("Daraja docs MCP server running over stdio");
-}
-
-const isMain =
+const isDirectExecution =
   process.argv[1] &&
-  (import.meta.url === new URL(`file://${process.argv[1]}`).href ||
-    import.meta.url.endsWith(process.argv[1]));
+  (import.meta.url.endsWith(process.argv[1]) ||
+    process.argv[1].endsWith("index.js") ||
+    process.argv[1].endsWith("daraja-mcp"));
 
-if (isMain) {
-  main().catch((err) => {
-    console.error("Failed to start Daraja docs MCP server:", err);
-    process.exit(1);
-  });
+if (isDirectExecution || process.env.DARAJA_MCP_MODE) {
+  const mode = process.env.DARAJA_MCP_MODE || "stdio";
+
+  const config = loadConfig();
+  const client = new Mpesa(config);
+
+  if (mode === "http") {
+    const port = parseInt(process.env.MCP_PORT || "3000", 10);
+    const host = process.env.MCP_HOST || "0.0.0.0";
+    startHttpTransport(() => createServer(client), { port, host });
+  } else {
+    console.error("Daraja MCP server running over stdio");
+    const transport = new StdioServerTransport();
+    const server = createServer(client);
+    await server.connect(transport);
+  }
 }
+
+export { createServer } from "./server.js";
+export { loadConfig } from "./config.js";
+export { startHttpTransport } from "./transport.js";
