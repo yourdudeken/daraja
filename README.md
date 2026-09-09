@@ -29,7 +29,6 @@ Daraja SDKs
 | `scripts/` | Docs ingestion + validation tools |
 | `examples/` | Cross-language examples |
 | `assets/` | Diagrams and images |
-| `daraja/` | Daraja developer portal documentation scraper |
 
 ## Contributing
 
