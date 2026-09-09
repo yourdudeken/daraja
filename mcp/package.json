@@ -1,37 +1,37 @@
 {
-  "name": "@daraja-sdk/mcp",
+  "name": "daraja-mcp",
   "version": "0.1.0",
-  "description": "Model Context Protocol server for Daraja documentation",
+  "description": "MCP server for Safaricom M-Pesa Daraja API access",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "bin": {
     "daraja-mcp": "./dist/index.js"
   },
-  "publishConfig": {
-    "access": "public"
-  },
   "files": [
-    "dist",
-    "src/data",
-    "README.md",
-    "LICENSE"
+    "dist"
   ],
   "scripts": {
     "build": "tsc",
     "clean": "rm -rf dist",
     "lint": "tsc --noEmit",
     "start": "node dist/index.js",
-    "prepublishOnly": "npm run lint && npm test && npm run build",
     "test": "vitest run"
   },
   "dependencies": {
+    "@daraja-sdk/ts": "file:../sdks/typescript",
     "@modelcontextprotocol/sdk": "^1.0.0",
+    "express": "^4.21.0",
     "zod": "^3.23.0"
   },
   "devDependencies": {
+    "@types/express": "^5.0.0",
     "@types/node": "^25.9.1",
     "typescript": "^5.5.0",
     "vitest": "^4.1.8"
+  },
+  "license": "MIT",
+  "engines": {
+    "node": ">=20.0.0"
   }
 }
