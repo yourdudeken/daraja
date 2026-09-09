@@ -1,23 +1,64 @@
-# My SDK
+# Daraja M-Pesa SDKs
 
-> SDK for interacting with the My API.
+> SDKs for interacting with Safaricom M-Pesa Daraja API. Three language implementations (Python, TypeScript, Go) with an MCP server for AI agent access.
 
 ## Getting Started
-- /docs/getting-started.md
-- /docs/authentication.md
+- /docs/getting-started/introduction.md
+- /docs/getting-started/installation.md
+- /docs/getting-started/configuration.md
+- /docs/getting-started/authentication.md
 
 ## API Reference
-- /docs/reference/clients.md
-- /docs/reference/users.md
-- /docs/reference/payments.md
+- /docs/apis/stk-push.md
+- /docs/apis/stk-query.md
+- /docs/apis/c2b.md
+- /docs/apis/b2c.md
+- /docs/apis/b2b.md
+- /docs/apis/b2b-express.md
+- /docs/apis/business-to-pochi.md
+- /docs/apis/business-buy-goods.md
+- /docs/apis/business-pay-bill.md
+- /docs/apis/b2c-account-top-up.md
+- /docs/apis/account-balance.md
+- /docs/apis/reversal.md
+- /docs/apis/transaction-status.md
+- /docs/apis/dynamic-qr.md
+- /docs/apis/tax-remittance.md
+- /docs/apis/mpesa-ratiba.md
+- /docs/apis/lipa-na-bonga.md
+- /docs/apis/pull-transaction.md
+- /docs/apis/query-org-info.md
+- /docs/apis/imsi.md
+- /docs/apis/swap.md
+- /docs/apis/age-on-network.md
+- /docs/apis/mobile-number-validation.md
+- /docs/apis/iot-sim.md
+- /docs/apis/bill-manager.md
+- /docs/apis/mobile-center.md
 
-## Examples
-- /docs/examples/create-user.md
-- /docs/examples/process-payment.md
+## Callbacks
+- /docs/callbacks/stk-callback.md
+- /docs/callbacks/result-callback.md
+- /docs/callbacks/c2b-callback.md
+- /docs/callbacks/b2b-express-callback.md
 
 ## Errors
-- /docs/error-handling.md
+- /docs/errors/error-handling.md
+
+## SDK References
+- /docs/python/reference.md
+- /docs/typescript/reference.md
+- /docs/go/reference.md
+
+## SDK Examples
+- /docs/python/examples/README.md
+- /docs/typescript/examples/README.md
+- /docs/go/examples/README.md
+
+## MCP Server
+- /docs/mcp/README.md
 
 ## Versions
-- Current version: v2
-- API compatibility: v2
+- Current version: v0.2.0
+- APIs supported: 27 M-Pesa Daraja endpoints
+- SDKs: Python 3.11+, TypeScript ES2022, Go 1.25+
