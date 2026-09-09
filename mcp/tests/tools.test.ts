@@ -1,60 +1,105 @@
-import { describe, it, expect } from "vitest";
-import { searchDocsTool } from "../src/tools/search_docs.js";
-import { getDocTool } from "../src/tools/get_doc.js";
-import { listApisTool } from "../src/tools/list_apis.js";
-import { getApiTool } from "../src/tools/get_api.js";
-import { getExampleTool } from "../src/tools/get_example.js";
-import { listFilesTool } from "../src/tools/list_files.js";
-import { readFileTool } from "../src/tools/read_file.js";
+import { describe, it, expect, vi } from "vitest";
+import { getAllTools } from "../src/tools/index.js";
 
-describe("search_docs", () => {
-  it("returns ranked results for a query", async () => {
-    const res = await searchDocsTool.handler({ query: "stk push" }, {} as any);
-    expect(res.results.length).toBeGreaterThan(0);
-    expect(res.results[0].id).toMatch(/stk/i);
+vi.mock("@daraja-sdk/ts", () => ({
+  Mpesa: vi.fn().mockImplementation(() => ({})),
+  generateTimestamp: vi.fn().mockReturnValue("20260909120000"),
+}));
+
+describe("tool registry", () => {
+  it("returns all 18 tools", () => {
+    const tools = getAllTools();
+    expect(tools).toHaveLength(18);
+  });
+
+  it("each tool has name, description, inputSchema, and handler", () => {
+    const tools = getAllTools();
+    for (const tool of tools) {
+      expect(tool.name).toBeDefined();
+      expect(tool.description).toBeDefined();
+      expect(typeof tool.handler).toBe("function");
+      expect(tool.inputSchema).toBeDefined();
+    }
+  });
+
+  it("tool names are unique", () => {
+    const tools = getAllTools();
+    const names = tools.map((t) => t.name);
+    expect(new Set(names).size).toBe(names.length);
   });
 });
 
-describe("get_doc", () => {
-  it("fetches a doc by id", async () => {
-    const res = await getDocTool.handler({ id: "stk-push" }, {} as any);
-    expect(res.doc.title).toMatch(/stk/i);
+describe("stk_push tool", () => {
+  it("calls client.stkPush.initiate with correct request", async () => {
+    const mockInitiate = vi.fn().mockResolvedValue({ CheckoutRequestID: "ws_CO_123" });
+    const mockClient = {
+      stkPush: { initiate: mockInitiate },
+    } as never;
+
+    const tools = getAllTools();
+    const stkPush = tools.find((t) => t.name === "stk_push")!;
+
+    const result = await stkPush.handler(
+      {
+        businessShortCode: 174379,
+        amount: 1000,
+        partyA: "254712345678",
+        partyB: "174379",
+        phoneNumber: "254712345678",
+        accountReference: "Test",
+        transactionDesc: "Test",
+      },
+      mockClient
+    );
+
+    expect(mockInitiate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        BusinessShortCode: 174379,
+        Amount: 1000,
+        PartyA: "254712345678",
+      })
+    );
+    expect(result).toEqual({ CheckoutRequestID: "ws_CO_123" });
   });
 });
 
-describe("list_apis", () => {
-  it("returns all daraja apis", async () => {
-    const res = await listApisTool.handler({}, {} as any);
-    expect(res.apis.length).toBeGreaterThanOrEqual(9);
+describe("stk_query tool", () => {
+  it("calls client.stkPush.query", async () => {
+    const mockQuery = vi.fn().mockResolvedValue({ ResponseCode: "0" });
+    const mockClient = { stkPush: { query: mockQuery } } as never;
+
+    const tools = getAllTools();
+    const stkQuery = tools.find((t) => t.name === "stk_query")!;
+
+    await stkQuery.handler(
+      { checkoutRequestID: "ws_CO_123", businessShortCode: 174379 },
+      mockClient
+    );
+
+    expect(mockQuery).toHaveBeenCalledWith(
+      expect.objectContaining({ CheckoutRequestID: "ws_CO_123" })
+    );
   });
 });
 
-describe("get_api", () => {
-  it("fetches an api by id", async () => {
-    const res = await getApiTool.handler({ id: "stk-push" }, {} as any);
-    expect(res.api.method).toBe("POST");
+describe("health_check tool", () => {
+  it("returns healthy status", async () => {
+    const tools = getAllTools();
+    const health = tools.find((t) => t.name === "health_check")!;
+
+    const result = await health.handler({} as never, {} as never);
+    expect(result).toEqual(
+      expect.objectContaining({ status: "healthy" })
+    );
   });
 });
 
-describe("get_example", () => {
-  it("fetches a python example for stk-push", async () => {
-    const res = await getExampleTool.handler({ apiId: "stk-push", language: "python" }, {} as any);
-    expect(res.example.language).toBe("python");
-  });
-});
+describe("generate_timestamp tool", () => {
+  it("returns formatted timestamp", async () => {
+    const tools = getAllTools();
+    const genTs = tools.find((t) => t.name === "generate_timestamp")!;
 
-describe("file tools", () => {
-  it("lists root files", async () => {
-    const res = await listFilesTool.handler({}, {} as any);
-    expect(res.files).toContain("package.json");
-  });
-
-  it("reads a real file", async () => {
-    const res = await readFileTool.handler({ path: "package.json" }, {} as any);
-    expect(res.content).toContain("daraja");
-  });
-
-  it("rejects path traversal", async () => {
-    await expect(readFileTool.handler({ path: "../../etc/passwd" }, {} as any)).rejects.toThrow();
+    const result = await genTs.handler({} as never, {} as never);
+    expect(result).toEqual({ timestamp: "20260909120000" });
   });
 });

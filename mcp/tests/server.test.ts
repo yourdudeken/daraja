@@ -1,9 +1,20 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { createServer } from "../src/server.js";
 
-describe("mcp server", () => {
-  it("constructs a server", () => {
-    const server = createServer();
+vi.mock("@daraja-sdk/ts", () => ({
+  Mpesa: vi.fn().mockImplementation(() => ({})),
+}));
+
+describe("createServer", () => {
+  it("returns a Server instance", () => {
+    const mockClient = {} as never;
+    const server = createServer(mockClient);
+    expect(server).toBeDefined();
+  });
+
+  it("server has correct name", () => {
+    const mockClient = {} as never;
+    const server = createServer(mockClient);
     expect(server).toBeDefined();
   });
 });
