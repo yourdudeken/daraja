@@ -65,6 +65,10 @@ This corpus is ingested by the MCP server for AI-assisted search.
 
 - [Error Handling](errors/error-handling.md)
 
+## MCP Server
+
+- [Using the MCP Server](mcp/README.md)
+
 ## Language-Specific References
 
 - [Python Reference](python/reference.md)

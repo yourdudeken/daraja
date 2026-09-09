@@ -259,6 +259,13 @@
     "text": "Module: github.com/yourdudeken/daraja-sdk/go import \"github.com/yourdudeken/daraja-sdk/go/client\""
   },
   {
+    "id": "readme",
+    "title": "MCP Server",
+    "category": "getting-started",
+    "path": "docs/mcp/README.md",
+    "text": "The Daraja Model Context Protocol (MCP) server lets AI assistants search and read the Daraja documentation, browse the supported APIs and code examples, and"
+  },
+  {
     "id": "python-readme",
     "title": "Python Examples",
     "category": "python",
