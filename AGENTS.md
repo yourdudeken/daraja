@@ -1,96 +1,52 @@
-# AGENTS.md
+# OpenCode SWE System
 
-## Repo Overview
+This repository ships a production-oriented multi-agent system for OpenCode. The default primary agent is `swe`.
 
-Monorepo for Safaricom M-Pesa Daraja API SDKs + MCP documentation server.
+## How to work here
 
-```
-sdks/python    Python SDK (hatchling, pytest, ruff, mypy)
-sdks/typescript TypeScript SDK (tsup, vitest, eslint, prettier)
-sdks/go        Go SDK (go 1.25, go-releaser, gin, prometheus, otel)
-mcp/               MCP server (tsc, vitest)
-docs/              Shared markdown, ingested by MCP server
-scripts/           Doc ingestion + validation (run from root via tsx)
-```
+- Prefer evidence from the repo over assumptions.
+- Prefer minimal diffs that match local conventions.
+- Never stop at “code written” — run relevant verification and report what you ran.
+- Do not fabricate test or command results.
+- Do not discard unrelated user changes.
 
-## Setup
+## Agent map
 
-```bash
-# Root (tooling + mcp workspace)
-npm install
+| Agent | Mode | Role |
+|-------|------|------|
+| `swe` | primary | Orchestrator — plans, implements, verifies, delegates |
+| `repo-explorer` | subagent | Repository mental model |
+| `planner` | subagent | Minimal implementation plans |
+| `debugger` | subagent | Reproduce → root cause → fix |
+| `test-engineer` | subagent | Tests that protect behavior |
+| `code-reviewer` | subagent | Adversarial review |
+| `architect` | subagent | Design tradeoffs (anti-overengineering) |
+| `security-reviewer` | subagent | Evidence-backed security findings |
+| `performance-engineer` | subagent | Evidence-backed performance findings |
+| `git-agent` | subagent | Safe git hygiene / commits when asked |
+| `dependency-agent` | subagent | Package/API upgrades |
+| `documentation-agent` | subagent | Docs synced to behavior |
 
-# Each package independently (NOT a root workspace member)
-cd sdks/typescript && npm install
-cd sdks/python && pip install -e ".[all]" pytest hypothesis respx
-cd sdks/go && go mod tidy
-```
+Built-in OpenCode agents (`build`, `plan`, `explore`, …) remain available; use `swe` for SWE-level tasks.
 
-## Build
+## Skills
 
-| Package | Command |
-|---------|---------|
-| TypeScript SDK | `cd sdks/typescript && npm run build` (tsup) |
-| MCP server | `npm run build:mcp` or `cd mcp && npm run build` (tsc) |
-| Go SDK | `cd sdks/go && go build ./...` |
+Load via the `skill` tool as needed: `repository-mapping`, `dependency-tracing`, `feature-implementation`, `focused-refactor`, `failure-reproduction`, `root-cause-analysis`, `verification-loop`, `regression-investigation`, `code-review`, `security-review`, `performance-review`, `git-hygiene`, `test-engineering`, `database-change`.
 
-## Test
+## Slash commands
 
-| Package | Command |
-|---------|---------|
-| TypeScript SDK | `cd sdks/typescript && npm test` (vitest) |
-| Python SDK | `cd sdks/python && pytest tests/unit` |
-| Go SDK | `cd sdks/go && go test ./...` |
-| MCP server | `npm run test:mcp` or `cd mcp && npm test` (vitest) |
+- `/swe-fix` — bug investigation and fix
+- `/swe-feature` — feature delivery
+- `/swe-review` — independent review
+- `/swe-explore` — repository mapping
+- `/swe-ci` — CI/build failure
 
-Integration tests require sandbox credentials — do not run in CI without env setup.
+## Protocols
 
-## Lint / Typecheck
+Loaded automatically via `opencode.jsonc` `instructions`:
 
-| Package | Command |
-|---------|---------|
-| TypeScript SDK | `cd sdks/typescript && npm run lint` (tsc --noEmit + eslint) |
-| TypeScript typecheck only | `cd sdks/typescript && npm run typecheck` |
-| Python SDK | `cd sdks/python && ruff check src/` |
-| Python typecheck | `cd sdks/python && mypy src/` |
-| Go SDK | `cd sdks/go && go vet ./...` |
-| MCP server | `cd mcp && npm run lint` (tsc --noEmit) |
+- `.opencode/instructions/swe-protocol.md`
+- `.opencode/instructions/delegation.md`
+- `.opencode/instructions/verification.md`
 
-## Docs Pipeline
-
-After editing markdown in `docs/`, rebuild the MCP index:
-
-```bash
-npm run ingest:docs && npm run build:index && npm run validate:docs
-```
-
-- `ingest:docs` — walks `docs/*.md` → `mcp/src/data/documents.json`
-- `build:index` — validates JSON data files
-- `validate-docs` — checks each doc entry references an existing file
-
-## Code Generation
-
-Both SDKs generate models from an OpenAPI spec (`openapi/mpesa.yaml`):
-
-```bash
-# TypeScript (requires openapi-typescript)
-cd sdks/typescript && npm run generate
-
-# Python (requires datamodel-code-generator)
-cd sdks/python && hatch run generate
-```
-
-Note: `openapi/` is not committed — obtain the spec from Safaricom first.
-
-## Monorepo Gotchas
-
-- Root `package.json` workspaces only includes `mcp/`. TypeScript and Python packages are **not** root workspace members.
-- Packages must be installed and built independently.
-- Root scripts (`npm run build:index`, `ingest:docs`, etc.) run via `tsx` from root.
-- Go SDK module path: `github.com/yourdudeken/daraja/sdks/go`.
-
-## Conventions
-
-- Commit style: conventional commits (`feat:`, `fix:`, `refactor:`, `docs:`, `ci:`, `chore:`)
-- TypeScript: ESM (`"type": "module"`), strict tsconfig, `noUncheckedIndexedAccess` enabled
-- Python: requires Python >=3.11, ruff line-length 100, PascalCase model fields match Daraja wire format (N815 ignored)
-- `.daraja/` is gitignored — contains a doc scraper, ignore it
+Example workflows live in `.opencode/workflows/`.

@@ -1,0 +1,67 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+
+  // SWE multi-agent system — primary orchestrator
+  "default_agent": "swe",
+
+  // Shared engineering protocols loaded into every session
+  "instructions": [
+    ".opencode/instructions/swe-protocol.md",
+    ".opencode/instructions/delegation.md",
+    ".opencode/instructions/verification.md"
+  ],
+
+  "permission": {
+    "skill": {
+      "*": "allow"
+    },
+    // Conservative defaults for destructive git; agents tighten further
+    "bash": {
+      "*": "allow",
+      "git push --force*": "ask",
+      "git push -f*": "ask",
+      "git reset --hard*": "ask",
+      "git clean*": "ask",
+      "rm -rf /*": "deny",
+      "rm -rf ~/*": "deny"
+    }
+  },
+
+  "agent": {
+    // Keep built-in build available; prefer swe for SWE work
+    "build": {
+      "description": "General-purpose builder (fallback). Prefer the swe agent for software-engineering tasks."
+    },
+    "plan": {
+      "description": "Read-only planning. Prefer @planner for implementation plans within the SWE system."
+    }
+  },
+
+  "command": {
+    "swe-fix": {
+      "description": "Investigate and fix a bug with full SWE loop",
+      "agent": "swe",
+      "template": "Bug report / failure:\n$ARGUMENTS\n\nFollow the SWE loop: understand → inspect → reproduce → root-cause → minimal fix → verify → independent review → report. Use @debugger and skills failure-reproduction / root-cause-analysis when useful. Do not stop after writing code."
+    },
+    "swe-feature": {
+      "description": "Implement a feature with plan, tests, and verification",
+      "agent": "swe",
+      "template": "Feature request:\n$ARGUMENTS\n\nFollow the SWE loop. Explore the repo first, plan minimal changes, implement, add/adjust tests, verify, then self-review. Delegate to @repo-explorer / @planner / @test-engineer only when complexity warrants it."
+    },
+    "swe-review": {
+      "description": "Independent review of current changes",
+      "agent": "swe",
+      "template": "Review the current uncommitted changes (and recent commits if relevant).\n$ARGUMENTS\n\nDelegate to @code-reviewer. Also run @security-reviewer if auth, input handling, secrets, or network boundaries are involved. Report actionable findings with file evidence. Do not claim success without reading the diff."
+    },
+    "swe-explore": {
+      "description": "Map repository structure for a task",
+      "agent": "swe",
+      "template": "Explore the repository for:\n$ARGUMENTS\n\nUse @repo-explorer and skill repository-mapping. Return architecture summary, relevant files, entry points, test strategy, and risks. Do not modify files."
+    },
+    "swe-ci": {
+      "description": "Diagnose and fix CI/build failures",
+      "agent": "swe",
+      "template": "CI / build failure:\n$ARGUMENTS\n\nReproduce locally if possible, classify environmental vs code failure, find root cause, apply minimal fix, re-run the failing check, then broader verification. Use @debugger and skill regression-investigation."
+    }
+  }
+}
