@@ -209,7 +209,7 @@ func NewClient(config types.MpesaConfig) *Client {
 		},
 	}
 
-	eps := getEndpoints(config.Environment)
+	eps := getEndpoints(config.Environment, config.BaseURL)
 
 	logger := config.Logger
 	if logger == nil {

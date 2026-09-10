@@ -23,13 +23,13 @@ jobs:
           python-version: "3.12"
           cache: pip
       - name: Install
-        run: pip install -e ".[all]" pytest hypothesis respx ruff mypy
+        run: pip install -e ".[all]" pytest hypothesis respx ruff mypy pytest-cov
       - name: Lint (ruff)
         run: ruff check .
       - name: Type check (mypy)
         run: mypy src/daraja
-      - name: Test
-        run: pytest tests/unit -v
+      - name: Test (coverage threshold enforced via pyproject.toml)
+        run: pytest tests/unit --cov=daraja -v
       - name: Build
         run: pip install build && python -m build
 
@@ -48,7 +48,7 @@ jobs:
           cache-dependency-path: sdks/typescript/package-lock.json
       - run: npm install
       - run: npm run lint
-      - run: npm test
+      - run: npm run test:coverage
       - run: npm run build
 
   go:
@@ -66,6 +66,10 @@ jobs:
       - run: go vet ./...
       - run: go build ./...
       - run: go test ./...
+      - name: Coverage (>=80%, excluding generated and integration harness)
+        run: |
+          go test -coverprofile=coverage.out ./...
+          awk 'BEGIN{t=0;c=0} !/^mode:/ && $0 !~ /\/generated\// && $0 !~ /\/tests\/integration\// {t+=$2; if($3>0)c+=$2} END{p=100*c/t; printf "coverage: %.1f%% of statements\n", p; if (p < 80) exit 1}' coverage.out
 
   mcp:
     name: MCP Server
@@ -80,7 +84,7 @@ jobs:
           node-version: 22
       - run: npm install
       - run: npm run lint
-      - run: npm test
+      - run: npm run test:coverage
       - run: npm run build
 
   docs:

@@ -51,8 +51,8 @@ func NewPersistentRetryQueue(webhookManager *Manager, options ...PersistentRetry
 		logger:     types.NewNoopLogger(),
 		maxRetries: 3,
 	}
-	if len(options) > 0 {
-		options[0](&opts)
+	for _, opt := range options {
+		opt(&opts)
 	}
 	return &PersistentRetryQueue{
 		webhookManager: webhookManager,
@@ -238,7 +238,7 @@ func (rq *PersistentRetryQueue) GetDeadLetterQueue() []PersistentDeliveryRecord 
 	rq.mu.Lock()
 	defer rq.mu.Unlock()
 
-	rows, err := rq.db.Query("SELECT id, event, payload, attempts, COALESCE(last_error, ''), created_at, next_retry_at FROM webhook_dlq ORDER BY id ASC")
+	rows, err := rq.db.Query("SELECT id, event, payload, attempts, COALESCE(last_error, ''), created_at, failed_at FROM webhook_dlq ORDER BY id ASC")
 	if err != nil {
 		rq.logger.Error("Failed to query DLQ", "error", err.Error())
 		return nil

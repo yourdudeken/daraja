@@ -114,5 +114,12 @@ func (s *StructuredLogger) Error(msg string, keysAndValues ...interface{}) {
 }
 
 func (s *StructuredLogger) Child(service string) *StructuredLogger {
-	return NewStructuredLogger(s.minLevel, s.service+"."+service)
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return &StructuredLogger{
+		minLevel: s.minLevel,
+		service:  s.service + "." + service,
+		writer:   s.writer,
+		encoder:  json.NewEncoder(s.writer),
+	}
 }

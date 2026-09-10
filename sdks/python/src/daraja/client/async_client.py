@@ -227,12 +227,12 @@ class AsyncMpesa:
             },
         )
 
-    def _log_request(self, request: httpx.Request) -> None:
+    async def _log_request(self, request: httpx.Request) -> None:
         self._logger.debug(
             "Outgoing request", extra={"method": request.method, "url": str(request.url)}
         )
 
-    def _log_response(self, response: httpx.Response) -> None:
+    async def _log_response(self, response: httpx.Response) -> None:
         self._logger.debug(
             "Response received", extra={"status": response.status_code, "url": str(response.url)}
         )

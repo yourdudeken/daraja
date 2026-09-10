@@ -66,6 +66,7 @@ type MpesaConfig struct {
 	ConsumerKey          string
 	ConsumerSecret       string
 	Environment          Environment
+	BaseURL              string
 	Passkey              string
 	InitiatorName        string
 	InitiatorPassword    string

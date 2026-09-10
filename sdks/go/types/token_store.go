@@ -60,7 +60,7 @@ func (s *EncryptedTokenStore) Save(token string, expiresAt time.Time) error {
 	}
 
 	data := storedToken{
-		Token:     string(encrypted),
+		Token:     base64.StdEncoding.EncodeToString(encrypted),
 		ExpiresAt: expiresAt.UTC().Format(time.RFC3339),
 		IV:        base64.StdEncoding.EncodeToString(iv),
 		Tag:       "",
@@ -99,7 +99,11 @@ func (s *EncryptedTokenStore) Load() (string, time.Time, error) {
 	if err != nil {
 		return "", time.Time{}, err
 	}
-	decrypted, err := aesgcm.Open(nil, iv, []byte(data.Token), nil)
+	encrypted, err := base64.StdEncoding.DecodeString(data.Token)
+	if err != nil {
+		return "", time.Time{}, err
+	}
+	decrypted, err := aesgcm.Open(nil, iv, encrypted, nil)
 	if err != nil {
 		return "", time.Time{}, err
 	}

@@ -1,83 +1,74 @@
-import { describe, it, expect, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { loadConfig, ConfigError } from "../src/config.js";
 
+const ENV_KEYS = [
+  "MPESA_CONSUMER_KEY",
+  "MPESA_CONSUMER_SECRET",
+  "MPESA_ENVIRONMENT",
+  "MPESA_PASSKEY",
+  "MPESA_INITIATOR_NAME",
+  "MPESA_INITIATOR_PASSWORD",
+  "MPESA_SECURITY_CREDENTIAL",
+  "MPESA_TIMEOUT",
+];
+
 describe("loadConfig", () => {
-  const originalEnv = process.env;
+  const originalEnv = { ...process.env };
+
+  beforeEach(() => {
+    for (const key of ENV_KEYS) {
+      delete process.env[key];
+    }
+  });
 
   afterEach(() => {
     process.env = { ...originalEnv };
   });
 
-  it("loads config from environment variables", () => {
-    process.env = {
-      MPESA_CONSUMER_KEY: "test-key",
-      MPESA_CONSUMER_SECRET: "test-secret",
-      MPESA_ENVIRONMENT: "sandbox",
-    };
-    const config = loadConfig();
-    expect(config.consumerKey).toBe("test-key");
-    expect(config.consumerSecret).toBe("test-secret");
-    expect(config.environment).toBe("sandbox");
-  });
-
   it("throws ConfigError when consumer key is missing", () => {
-    process.env = { MPESA_CONSUMER_SECRET: "test-secret" };
+    process.env.MPESA_CONSUMER_SECRET = "secret";
     expect(() => loadConfig()).toThrow(ConfigError);
+    expect(() => loadConfig()).toThrow("MPESA_CONSUMER_KEY");
   });
 
   it("throws ConfigError when consumer secret is missing", () => {
-    process.env = { MPESA_CONSUMER_KEY: "test-key" };
+    process.env.MPESA_CONSUMER_KEY = "key";
     expect(() => loadConfig()).toThrow(ConfigError);
+    expect(() => loadConfig()).toThrow("MPESA_CONSUMER_SECRET");
   });
 
-  it("defaults to sandbox environment", () => {
-    process.env = {
-      MPESA_CONSUMER_KEY: "test-key",
-      MPESA_CONSUMER_SECRET: "test-secret",
-    };
+  it("loads minimal config with sandbox default", () => {
+    process.env.MPESA_CONSUMER_KEY = "key";
+    process.env.MPESA_CONSUMER_SECRET = "secret";
+
     const config = loadConfig();
-    expect(config.environment).toBe("sandbox");
+    expect(config).toEqual({
+      consumerKey: "key",
+      consumerSecret: "secret",
+      environment: "sandbox",
+    });
   });
 
-  it("loads optional passkey", () => {
-    process.env = {
-      MPESA_CONSUMER_KEY: "test-key",
-      MPESA_CONSUMER_SECRET: "test-secret",
-      MPESA_PASSKEY: "test-passkey",
-    };
-    const config = loadConfig();
-    expect(config.passkey).toBe("test-passkey");
-  });
+  it("loads full config with all optional values", () => {
+    process.env.MPESA_CONSUMER_KEY = "key";
+    process.env.MPESA_CONSUMER_SECRET = "secret";
+    process.env.MPESA_ENVIRONMENT = "production";
+    process.env.MPESA_PASSKEY = "passkey";
+    process.env.MPESA_INITIATOR_NAME = "initiator";
+    process.env.MPESA_INITIATOR_PASSWORD = "password";
+    process.env.MPESA_SECURITY_CREDENTIAL = "credential";
+    process.env.MPESA_TIMEOUT = "15000";
 
-  it("loads optional initiator credentials", () => {
-    process.env = {
-      MPESA_CONSUMER_KEY: "test-key",
-      MPESA_CONSUMER_SECRET: "test-secret",
-      MPESA_INITIATOR_NAME: "testapi",
-      MPESA_INITIATOR_PASSWORD: "password123",
-    };
     const config = loadConfig();
-    expect(config.initiatorName).toBe("testapi");
-    expect(config.initiatorPassword).toBe("password123");
-  });
-
-  it("loads optional security credential", () => {
-    process.env = {
-      MPESA_CONSUMER_KEY: "test-key",
-      MPESA_CONSUMER_SECRET: "test-secret",
-      MPESA_SECURITY_CREDENTIAL: "cred123",
-    };
-    const config = loadConfig();
-    expect(config.securityCredential).toBe("cred123");
-  });
-
-  it("loads optional timeout", () => {
-    process.env = {
-      MPESA_CONSUMER_KEY: "test-key",
-      MPESA_CONSUMER_SECRET: "test-secret",
-      MPESA_TIMEOUT: "60000",
-    };
-    const config = loadConfig();
-    expect(config.timeout).toBe(60000);
+    expect(config).toEqual({
+      consumerKey: "key",
+      consumerSecret: "secret",
+      environment: "production",
+      passkey: "passkey",
+      initiatorName: "initiator",
+      initiatorPassword: "password",
+      securityCredential: "credential",
+      timeout: 15000,
+    });
   });
 });

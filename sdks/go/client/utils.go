@@ -7,6 +7,7 @@ import (
 	"crypto/sha256"
 	"crypto/x509"
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/pem"
 	"fmt"
 	"math"
@@ -105,11 +106,14 @@ func VerifySignature(payload, signature, secret string) bool {
 	mac := hmac.New(sha256.New, []byte(secret))
 	mac.Write([]byte(payload))
 	expected := mac.Sum(nil)
-	decodedSig, err := base64.StdEncoding.DecodeString(signature)
-	if err != nil {
-		return hmac.Equal([]byte(signature), []byte(fmt.Sprintf("%x", expected)))
+
+	if decodedSig, err := base64.StdEncoding.DecodeString(signature); err == nil && len(decodedSig) == len(expected) {
+		return hmac.Equal(decodedSig, expected)
 	}
-	return hmac.Equal(decodedSig, expected)
+	if decodedHex, err := hex.DecodeString(signature); err == nil {
+		return hmac.Equal(decodedHex, expected)
+	}
+	return false
 }
 
 // ---- Environment helpers ----
@@ -220,10 +224,13 @@ type environmentEndpoints struct {
 	MobileNumberValidation    string
 }
 
-func getEndpoints(env types.Environment) environmentEndpoints {
+func getEndpoints(env types.Environment, baseURL string) environmentEndpoints {
 	base := sandboxBaseURL
 	if env == types.Production {
 		base = productionBaseURL
+	}
+	if baseURL != "" {
+		base = baseURL
 	}
 
 	return environmentEndpoints{

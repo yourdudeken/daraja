@@ -14,7 +14,13 @@ class DeliveryRecord:
 
 
 class WebhookRetryQueue:
-    def __init__(self, logger: Logger | None = None, max_retries: int = 3) -> None:
+    def __init__(
+        self,
+        webhook_manager: Any,
+        logger: Logger | None = None,
+        max_retries: int = 3,
+    ) -> None:
+        self._webhook_manager = webhook_manager
         self._queue: list[DeliveryRecord] = []
         self._dead_letter_queue: list[DeliveryRecord] = []
         self._processing = False
@@ -40,6 +46,7 @@ class WebhookRetryQueue:
 
             try:
                 record.attempts += 1
+                self._webhook_manager.emit(record.event, record.payload)
                 self._logger.info("Retrying webhook delivery",
                                   extra={"event": record.event, "attempt": record.attempts})
             except Exception as e:

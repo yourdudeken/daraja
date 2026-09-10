@@ -20,8 +20,12 @@ func (e *MpesaError) Unwrap() error {
 }
 
 func (e *MpesaError) ToJSON() map[string]interface{} {
+	return e.toJSON("MpesaError")
+}
+
+func (e *MpesaError) toJSON(name string) map[string]interface{} {
 	m := map[string]interface{}{
-		"name":    errorName(e),
+		"name":    name,
 		"message": e.Message,
 	}
 	if e.StatusCode != 0 {
@@ -83,6 +87,8 @@ func NewAuthenticationError(message string, opts ...ErrorOption) *Authentication
 	return e
 }
 
+func (e *AuthenticationError) ToJSON() map[string]interface{} { return e.MpesaError.toJSON("AuthenticationError") }
+
 type ValidationError struct {
 	MpesaError
 }
@@ -97,6 +103,8 @@ func NewValidationError(message string, opts ...ErrorOption) *ValidationError {
 	}
 	return e
 }
+
+func (e *ValidationError) ToJSON() map[string]interface{} { return e.MpesaError.toJSON("ValidationError") }
 
 type TimeoutError struct {
 	MpesaError
@@ -113,6 +121,8 @@ func NewTimeoutError(message string, opts ...ErrorOption) *TimeoutError {
 	return e
 }
 
+func (e *TimeoutError) ToJSON() map[string]interface{} { return e.MpesaError.toJSON("TimeoutError") }
+
 type APIConnectionError struct {
 	MpesaError
 }
@@ -127,6 +137,8 @@ func NewAPIConnectionError(message string, opts ...ErrorOption) *APIConnectionEr
 	}
 	return e
 }
+
+func (e *APIConnectionError) ToJSON() map[string]interface{} { return e.MpesaError.toJSON("APIConnectionError") }
 
 type RateLimitError struct {
 	MpesaError
@@ -147,6 +159,8 @@ func NewRateLimitError(message string, retryAfter int, opts ...ErrorOption) *Rat
 	return e
 }
 
+func (e *RateLimitError) ToJSON() map[string]interface{} { return e.MpesaError.toJSON("RateLimitError") }
+
 type MpesaAPIError struct {
 	MpesaError
 	ErrorCode string
@@ -163,6 +177,8 @@ func NewMpesaAPIError(message string, errorCode string, opts ...ErrorOption) *Mp
 	return e
 }
 
+func (e *MpesaAPIError) ToJSON() map[string]interface{} { return e.MpesaError.toJSON("MpesaAPIError") }
+
 type WebhookVerificationError struct {
 	MpesaError
 }
@@ -177,6 +193,8 @@ func NewWebhookVerificationError(message string, opts ...ErrorOption) *WebhookVe
 	}
 	return e
 }
+
+func (e *WebhookVerificationError) ToJSON() map[string]interface{} { return e.MpesaError.toJSON("WebhookVerificationError") }
 
 type ErrorOption func(*MpesaError)
 

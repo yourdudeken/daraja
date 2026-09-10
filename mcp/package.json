@@ -16,7 +16,8 @@
     "clean": "rm -rf dist",
     "lint": "tsc --noEmit",
     "start": "node dist/index.js",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@daraja-sdk/ts": "file:../sdks/typescript",
@@ -27,7 +28,8 @@
     "@types/express": "^4.17.21",
     "@types/node": "^25.9.1",
     "typescript": "^5.5.0",
-    "vitest": "^4.1.8"
+    "vitest": "^4.1.8",
+    "@vitest/coverage-v8": "4.1.11"
   },
   "license": "MIT",
   "engines": {

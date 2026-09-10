@@ -51,6 +51,8 @@ class StructuredLogger:
         self._logger.propagate = False
 
     def _log(self, level: int, msg: str, **kwargs: Any) -> None:
+        if not self._logger.isEnabledFor(level):
+            return
         extra = kwargs.pop("extra", None) or {}
         metadata = kwargs.pop("metadata", None) or extra
         if "request_id" in metadata:

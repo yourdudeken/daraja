@@ -32,6 +32,6 @@ class AuditLogger:
     def log_error(self, error_type: str, message: str, request_id: str) -> None:
         self.audit("api_error", {
             "error_type": error_type,
-            "message": message,
+            "error_message": message,
             "request_id": request_id,
         })

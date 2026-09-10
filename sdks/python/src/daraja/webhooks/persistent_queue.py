@@ -17,7 +17,7 @@ class PersistentDeliveryRecord:
         self.attempts: int = row["attempts"]
         self.last_error: str | None = row.get("last_error")
         self.created_at: str = row["created_at"]
-        self.next_retry_at: str = row["next_retry_at"]
+        self.next_retry_at: str = row.get("next_retry_at", "")
 
 
 class PersistentWebhookRetryQueue:
