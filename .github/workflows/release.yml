@@ -107,8 +107,6 @@ jobs:
         with:
           node-version: 22
           registry-url: "https://registry.npmjs.org"
-      - name: Regenerate data files
-        run: npm --prefix .. run ingest:docs && npm --prefix .. run build:index
       - name: Set package version
         run: npm pkg set version="${{ needs.version.outputs.version }}"
       - run: npm install

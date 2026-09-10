@@ -21,11 +21,8 @@ cd sdks/go && go mod tidy
 
 ## Documentation
 
-Edit Markdown under `docs/`, then rebuild the MCP index:
-
-```bash
-npm run ingest:docs && npm run build:index && npm run validate:docs
-```
+Edit Markdown under `docs/`. The MCP server is an API-access server and does not
+ingest or serve the documentation corpus.
 
 ## Commit style
 

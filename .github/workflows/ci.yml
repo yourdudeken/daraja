@@ -83,19 +83,8 @@ jobs:
         with:
           node-version: 22
       - run: npm install
+      - name: Build TypeScript SDK dependency
+        run: npm --prefix ../sdks/typescript install && npm --prefix ../sdks/typescript run build
       - run: npm run lint
       - run: npm run test:coverage
       - run: npm run build
-
-  docs:
-    name: Docs pipeline
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-      - run: npm install
-      - run: npm run ingest:docs && npm run build:index && npm run validate:docs
-      - name: Ensure data files are up to date
-        run: git diff --exit-code -- mcp/src/data

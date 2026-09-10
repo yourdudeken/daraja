@@ -1,63 +1,76 @@
 # MCP Server
 
-The Daraja **Model Context Protocol (MCP)** server lets AI assistants search and
-read the Daraja documentation, browse the supported APIs and code examples, and
-inspect repository files directly.
+The Daraja **Model Context Protocol (MCP)** server exposes Safaricom M-Pesa
+Daraja API operations as MCP tools that AI agents can call. It is an API-access
+server — it does not serve or index the documentation corpus.
 
 The server packages exposes a single binary, `daraja-mcp`, and speaks MCP over
-**stdio**.
+**stdio** or **HTTP/SSE**.
 
 ## What it provides
 
-The server exposes a set of **tools** (callable functions) and **resources**
-(readable documents and images), backed by a prebuilt index of the docs corpus.
+The server exposes a set of **tools** backed by the Daraja TypeScript SDK:
 
-### Tools
-
-| Tool | Input | Description |
-| ---- | ----- | ----------- |
-| `search_docs` | `query`, `limit?` | Search the documentation corpus and return ranked results. |
-| `get_doc` | `id` | Fetch a single documentation entry by id. |
-| `list_apis` | — | List all available Daraja M-Pesa APIs. |
-| `get_api` | `id` | Fetch details for a single Daraja API by id. |
-| `get_example` | `apiId`, `language` | Fetch a code example for an API in a specific language. |
-| `read_file` | `path` | Read a source file from the repository. |
-| `list_files` | `path?` | List files in a directory within the repository. |
-
-### Resources
-
-Resources use the `daraja://` URI scheme:
-
-- `daraja://docs/<id>` — a markdown documentation entry (`text/markdown`)
-- `daraja://assets/images/<path>` — an image asset
+| Tool | Description |
+| ---- | ----------- |
+| `stk_push` | Initiate STK Push payment |
+| `stk_query` | Query STK Push result |
+| `c2b_register_url` | Register C2B callback URLs |
+| `c2b_simulate` | Simulate C2B payment (sandbox) |
+| `b2c_payment` | Business to Customer payment |
+| `b2b_payment` | Business to Business payment |
+| `reversal` | Reverse a transaction |
+| `transaction_status` | Query transaction status |
+| `account_balance` | Query account balance |
+| `dynamic_qr` | Generate dynamic QR code |
+| `b2b_express` | B2B Express USSD push |
+| `bill_manager` | Bill Manager operations |
+| `ratiba` | Create standing orders |
+| `tax_remittance` | Remit tax to KRA |
+| `query_org_info` | Query organization info |
+| `validate_phone` | Validate phone number (KYC) |
+| `generate_timestamp` | Generate M-Pesa timestamp |
+| `health_check` | Check SDK health |
 
 ## Installation
 
 ```bash
-npm install @daraja-sdk/mcp
+npm install
+npm run build
 ```
 
 ## Running
 
-The server runs over stdio and is typically launched by an MCP client (Claude
-Desktop, an IDE, or another MCP host) rather than executed directly.
+### Stdio mode (default)
 
 ```bash
-# Run directly (for testing)
-npx @daraja-sdk/mcp
-
-# Or use the installed binary
-daraja-mcp
+MPESA_CONSUMER_KEY=your_key MPESA_CONSUMER_SECRET=your_secret npm start
 ```
 
-### From the repo
+MCP client config:
+
+```json
+{
+  "mcpServers": {
+    "daraja": {
+      "command": "node",
+      "args": ["dist/index.js"],
+      "env": {
+        "MPESA_CONSUMER_KEY": "your_key",
+        "MPESA_CONSUMER_SECRET": "your_secret"
+      }
+    }
+  }
+}
+```
+
+### HTTP/SSE mode (remote access)
 
 ```bash
-cd mcp
-npm install
-npm run build
-node dist/index.js
+DARAJA_MCP_MODE=http MCP_PORT=3000 npm start
 ```
+
+Connect via SSE: `http://localhost:3000/sse`
 
 ### Via Docker
 
@@ -65,34 +78,21 @@ node dist/index.js
 docker compose up mcp
 ```
 
-## Configuring an MCP client
+## Environment Variables
 
-Point your MCP client at the local binary, for example in Claude Desktop's
-`claude_desktop_config.json`:
-
-```json
-{
-  "mcpServers": {
-    "daraja-docs": {
-      "command": "npx",
-      "args": ["@daraja-sdk/mcp"]
-    }
-  }
-}
-```
-
-## Example usage
-
-- **Search for a topic:** call `search_docs` with `query: "STK push"` to find
-  ranked, relevant docs.
-- **Read a specific doc:** call `get_doc` with the returned `id`, or read the
-  `daraja://docs/<id>` resource.
-- **Check the API surface:** call `list_apis`, then `get_api` with an `id` for
-  endpoint, method, and description details.
-- **Pull a code sample:** call `get_example` with an `apiId` and
-  `language` (e.g. `python`, `typescript`, `go`).
-- **Inspect the codebase:** call `list_files` / `read_file` to explore the
-  repository source.
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `MPESA_CONSUMER_KEY` | Yes | - | OAuth consumer key |
+| `MPESA_CONSUMER_SECRET` | Yes | - | OAuth consumer secret |
+| `MPESA_ENVIRONMENT` | No | `sandbox` | `sandbox` or `production` |
+| `MPESA_PASSKEY` | No | - | STK Push passkey |
+| `MPESA_INITIATOR_NAME` | No | - | Initiator name for B2C/B2B |
+| `MPESA_INITIATOR_PASSWORD` | No | - | Initiator password |
+| `MPESA_SECURITY_CREDENTIAL` | No | - | RSA-encrypted security credential |
+| `MPESA_TIMEOUT` | No | `30000` | Request timeout in ms |
+| `DARAJA_MCP_MODE` | No | `stdio` | `stdio` or `http` |
+| `MCP_PORT` | No | `3000` | HTTP port (http mode) |
+| `MCP_HOST` | No | `0.0.0.0` | HTTP bind host (http mode) |
 
 ## Building from source
 

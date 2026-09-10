@@ -12,10 +12,13 @@
     "dist"
   ],
   "scripts": {
+    "prebuild": "npm --prefix ../sdks/typescript run build",
     "build": "tsc",
     "clean": "rm -rf dist",
+    "prelint": "npm --prefix ../sdks/typescript run build",
     "lint": "tsc --noEmit",
     "start": "node dist/index.js",
+    "pretest": "npm --prefix ../sdks/typescript run build",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage"
   },
