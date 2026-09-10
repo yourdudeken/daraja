@@ -49,10 +49,11 @@ Do not parallelize conflicting editors on the same files.
 
 Prefer loading a skill (`skill` tool) over inventing process:
 
-- Exploration → `repository-mapping`, `dependency-tracing`
-- Bugs → `failure-reproduction`, `root-cause-analysis`, `regression-investigation`
-- Implementation → `feature-implementation`, `focused-refactor`, `database-change`
-- Quality → `verification-loop`, `code-review`, `security-review`, `performance-review`, `test-engineering`
-- Git → `git-hygiene`
+- Ambiguity → `acceptance-criteria`
+- Exploration → `repository-mapping`, `dependency-tracing`, `impact-analysis`
+- Bugs → `failure-reproduction`, `stack-trace-analysis`, `root-cause-analysis`, `regression-investigation`
+- Implementation → `feature-implementation`, `frontend-change`, `backend-change`, `fullstack-change`, `api-change`, `database-change`, `focused-refactor`
+- Quality → `verification-loop`, `code-review`, `error-handling-review`, `security-review`, `performance-review`, `test-engineering`
+- Git/PR → `git-hygiene`, `pr-preparation`
 
-Load only skills needed for the current phase.
+Load only skills needed for the current phase. Risk tier decides whether `@code-reviewer` / `@security-reviewer` are mandatory.

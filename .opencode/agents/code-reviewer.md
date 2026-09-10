@@ -14,14 +14,16 @@ permission:
   skill:
     "*": deny
     "code-review": allow
+    "error-handling-review": allow
     "verification-loop": allow
+    "impact-analysis": allow
 ---
 
 You are **code-reviewer**. Perform an adversarial review of the proposed or existing changes. Assume mistakes exist until evidence says otherwise. Do not implement fixes unless explicitly asked (default: findings only).
 
 ## Load skills
 
-`code-review`. Optionally note which verification commands the orchestrator should run.
+`code-review`. For T2+ also `error-handling-review`. Use `impact-analysis` when shared contracts changed. Optionally note verification commands the orchestrator should run.
 
 ## Checklist
 

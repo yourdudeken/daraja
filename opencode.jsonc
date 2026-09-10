@@ -8,7 +8,10 @@
   "instructions": [
     ".opencode/instructions/swe-protocol.md",
     ".opencode/instructions/delegation.md",
-    ".opencode/instructions/verification.md"
+    ".opencode/instructions/verification.md",
+    ".opencode/instructions/definition-of-done.md",
+    ".opencode/instructions/risk-tiers.md",
+    ".opencode/instructions/change-discipline.md"
   ],
 
   "permission": {
@@ -41,27 +44,42 @@
     "swe-fix": {
       "description": "Investigate and fix a bug with full SWE loop",
       "agent": "swe",
-      "template": "Bug report / failure:\n$ARGUMENTS\n\nFollow the SWE loop: understand → inspect → reproduce → root-cause → minimal fix → verify → independent review → report. Use @debugger and skills failure-reproduction / root-cause-analysis when useful. Do not stop after writing code."
+      "template": "Bug report / failure:\n$ARGUMENTS\n\nAssign a risk tier. Follow: understand → reproduce → root-cause → minimal fix → regression test → verification-loop → DoD checklist → report. Use @debugger and skills failure-reproduction / stack-trace-analysis / root-cause-analysis when useful. Do not stop after writing code."
     },
     "swe-feature": {
       "description": "Implement a feature with plan, tests, and verification",
       "agent": "swe",
-      "template": "Feature request:\n$ARGUMENTS\n\nFollow the SWE loop. Explore the repo first, plan minimal changes, implement, add/adjust tests, verify, then self-review. Delegate to @repo-explorer / @planner / @test-engineer only when complexity warrants it."
+      "template": "Feature request:\n$ARGUMENTS\n\nIf ambiguous, load acceptance-criteria first. Assign risk tier. Explore → plan → implement with the right domain skill (frontend-change / backend-change / fullstack-change / api-change / database-change) → tests → verification-loop → DoD. Delegate only when complexity warrants it."
     },
     "swe-review": {
       "description": "Independent review of current changes",
       "agent": "swe",
-      "template": "Review the current uncommitted changes (and recent commits if relevant).\n$ARGUMENTS\n\nDelegate to @code-reviewer. Also run @security-reviewer if auth, input handling, secrets, or network boundaries are involved. Report actionable findings with file evidence. Do not claim success without reading the diff."
+      "template": "Review current changes.\n$ARGUMENTS\n\nInspect git status/diff first. @code-reviewer (include error-handling-review for T2+). @security-reviewer if trust boundaries. Report ranked findings with file evidence."
     },
     "swe-explore": {
       "description": "Map repository structure for a task",
       "agent": "swe",
-      "template": "Explore the repository for:\n$ARGUMENTS\n\nUse @repo-explorer and skill repository-mapping. Return architecture summary, relevant files, entry points, test strategy, and risks. Do not modify files."
+      "template": "Explore the repository for:\n$ARGUMENTS\n\nUse @repo-explorer and repository-mapping / impact-analysis as needed. Do not modify files."
     },
     "swe-ci": {
       "description": "Diagnose and fix CI/build failures",
       "agent": "swe",
-      "template": "CI / build failure:\n$ARGUMENTS\n\nReproduce locally if possible, classify environmental vs code failure, find root cause, apply minimal fix, re-run the failing check, then broader verification. Use @debugger and skill regression-investigation."
+      "template": "CI / build failure:\n$ARGUMENTS\n\nReproduce → classify env|flake|deps|code|test → root-cause → minimal fix → re-run failing check → broader verification → DoD."
+    },
+    "swe-refactor": {
+      "description": "Behavior-preserving focused refactor",
+      "agent": "swe",
+      "template": "Refactor request:\n$ARGUMENTS\n\nDefine invariants. Prefer characterization tests. Use focused-refactor only. No feature work mixed in. verification-loop after risky steps. @code-reviewer for scope creep."
+    },
+    "swe-deps": {
+      "description": "Upgrade or adapt dependencies safely",
+      "agent": "swe",
+      "template": "Dependency change:\n$ARGUMENTS\n\nDelegate to @dependency-agent or follow its procedure. impact-analysis on usages, minimal API adaptations, install + verify. Do not upgrade unrelated packages."
+    },
+    "swe-pr": {
+      "description": "Package current work for review/PR",
+      "agent": "swe",
+      "template": "Prepare this work for review/PR.\n$ARGUMENTS\n\nLoad pr-preparation and git-hygiene. Inspect real diff vs base. Ensure DoD + verification evidence. Only commit/push/create PR if the user explicitly asked. Summary must match the diff."
     }
   }
 }

@@ -6,8 +6,9 @@ You are operating as a senior software engineer inside a real repository. Prefer
 
 ```text
 TASK            — user objective in one sentence
-REQUIREMENTS    — must-change behavior
+REQUIREMENTS    — must-change behavior (testable)
 CONSTRAINTS     — must-not-change behavior / hard limits
+RISK_TIER       — T0–T4 (upgrade when blast radius grows)
 RELEVANT_FILES  — paths discovered with purpose
 ARCHITECTURE    — concise mental model (entry → flow → persistence)
 HYPOTHESES      — ranked, testable (bugs only)
@@ -17,6 +18,7 @@ TESTS           — commands run + results
 FAILURES        — failures seen + classification
 VERIFICATION    — what was actually checked
 REVIEW_FINDINGS — issues from self/specialist review
+DOD             — which Definition-of-Done gates passed/failed
 FINAL_STATE     — done | blocked | partial
 ```
 

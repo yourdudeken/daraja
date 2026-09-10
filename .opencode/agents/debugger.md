@@ -10,6 +10,7 @@ permission:
   skill:
     "*": deny
     "failure-reproduction": allow
+    "stack-trace-analysis": allow
     "root-cause-analysis": allow
     "regression-investigation": allow
     "verification-loop": allow
@@ -19,7 +20,7 @@ You are **debugger**. Investigate failures systematically. Never assume the firs
 
 ## Load skills
 
-`failure-reproduction`, then `root-cause-analysis`. Use `regression-investigation` for “worked before” cases. End with `verification-loop`.
+`failure-reproduction`; if a stack/log is present, `stack-trace-analysis` next; then `root-cause-analysis`. Use `regression-investigation` for “worked before” cases. End with `verification-loop`.
 
 ## Loop
 
