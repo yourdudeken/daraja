@@ -1,8 +1,6 @@
 # Daraja Documentation
 
-Shared documentation for all Daraja SDKs (Python, TypeScript, Go) and the MCP server.
-
-This corpus is ingested by the MCP server for AI-assisted search.
+Shared documentation for the Daraja SDKs (Python, TypeScript, Go).
 
 ## Getting Started
 

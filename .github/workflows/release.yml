@@ -94,33 +94,9 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-  publish-mcp:
-    name: Publish MCP Server to npm
-    needs: version
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: mcp
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          registry-url: "https://registry.npmjs.org"
-      - name: Set package version
-        run: npm pkg set version="${{ needs.version.outputs.version }}"
-      - run: npm install
-      - run: npm run lint
-      - run: npm test
-      - run: npm run build
-      - name: Publish to npm
-        run: npm publish --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-
   release:
     name: Create GitHub Release
-    needs: [version, publish-python, publish-typescript, publish-mcp]
+    needs: [version, publish-python, publish-typescript]
     runs-on: ubuntu-latest
     if: github.ref_type == 'tag'
     steps:

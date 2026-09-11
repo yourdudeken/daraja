@@ -4,6 +4,7 @@ WORKDIR /app
 
 COPY mcp/package.json mcp/package-lock.json* ./
 COPY sdks/typescript/package.json ../sdks/typescript/package.json
+COPY sdks/typescript/package-lock.json* ../sdks/typescript/
 COPY sdks/typescript/src/ ../sdks/typescript/src/
 COPY sdks/typescript/tsconfig.json ../sdks/typescript/tsconfig.json
 COPY sdks/typescript/tsup.config.ts ../sdks/typescript/tsup.config.ts

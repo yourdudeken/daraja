@@ -8,7 +8,7 @@ Daraja SDKs
  ├── Python SDK      sdks/python   (pip: daraja-sdk-py)
  ├── TypeScript SDK  sdks/typescript (npm: @daraja-sdk/ts)
  ├── Go SDK          sdks/go        (module: github.com/yourdudeken/daraja/sdks/go)
- └── MCP Server      mcp               (npm: @daraja-sdk/mcp)
+ └── MCP Server      mcp               (self-hosted)
 ```
 
 ## Quick links
@@ -26,7 +26,6 @@ Daraja SDKs
 | `sdks/go` | Go SDK |
 | `mcp/` | MCP server |
 | `docs/` | Shared documentation |
-| `scripts/` | Docs ingestion + validation tools |
 | `examples/` | Cross-language examples |
 | `assets/` | Diagrams and images |
 
