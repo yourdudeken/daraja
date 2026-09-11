@@ -55,12 +55,12 @@ coverage.out
 vendor/
 
 # === Testing & tooling ===
-.daraja
 .nyc_output/
 .coverage
 coverage/
 test-results/
 playwright-report/
+daraja-docs
 eslintcache
 .eslintcache
 .stylelintcache
