@@ -562,6 +562,79 @@ def test_23_tax_remittance():
         client.close()
 
 
+def test_25_b2c_account_top_up():
+    print("\n25. B2C Account Top-Up")
+    if not CONFIG["initiator_name"]:
+        print("   SKIP: initiator_name not set")
+        return
+    client = Mpesa(CONFIG)
+    try:
+        resp = client.b2c_account_top_up(
+            {
+                "CommandID": "BusinessPayToBulk",
+                "SenderIdentifierType": "4",
+                "RecieverIdentifierType": "4",
+                "Amount": "10",
+                "PartyA": str(SHORTCODE),
+                "PartyB": str(PARTY_B),
+                "AccountReference": "TOPUP-TEST",
+                "Remarks": "Test top up",
+                "QueueTimeOutURL": f"{CALLBACK_BASE}/topup/queue",
+                "ResultURL": f"{CALLBACK_BASE}/topup/result",
+            }
+        )
+        print(f"   OriginatorConversationID: {resp.OriginatorConversationID}")
+        print(f"   ResponseCode: {resp.ResponseCode}")
+    except Exception as e:
+        if not check_blocked("B2C Account Top-Up", e):
+            log_error("B2C Account Top-Up", e)
+    finally:
+        client.close()
+
+
+def test_26_lipa_na_bonga_redeem():
+    print("\n26. Lipa Na Bonga Redeem")
+    client = Mpesa(CONFIG)
+    try:
+        resp = client.lipa_na_bonga_redeem(
+            {
+                "msisdn": str(PHONE),
+                "amount": 50,
+                "bongaPoints": 20,
+                "conversionRate": 0.2,
+                "shortCode": str(SHORTCODE),
+                "accountNumber": "test",
+            }
+        )
+        if resp.header is not None:
+            print(f"   responseCode: {resp.header.responseCode}")
+            print(f"   responseMessage: {resp.header.responseMessage}")
+    except Exception as e:
+        log_error("Lipa Na Bonga Redeem", e)
+    finally:
+        client.close()
+
+
+def test_27_pull_transactions_register():
+    print("\n27. Pull Transactions Register")
+    client = Mpesa(CONFIG)
+    try:
+        resp = client.pull_transactions_register(
+            {
+                "ShortCode": str(SHORTCODE),
+                "RequestType": "Pull",
+                "NominatedNumber": str(PHONE),
+                "CallBackURL": f"{CALLBACK_BASE}/pull/register",
+            }
+        )
+        print(f"   ResponseStatus: {resp.ResponseStatus}")
+        print(f"   ResponseDescription: {resp.ResponseDescription}")
+    except Exception as e:
+        log_error("Pull Transactions Register", e)
+    finally:
+        client.close()
+
+
 def test_24_webhook_handling():
     print("\n24. Webhook Handling")
     try:
@@ -630,6 +703,9 @@ if __name__ == "__main__":
     _run_test(test_21_b2b_express)
     _run_test(test_22_ratiba)
     _run_test(test_23_tax_remittance)
+    _run_test(test_25_b2c_account_top_up)
+    _run_test(test_26_lipa_na_bonga_redeem)
+    _run_test(test_27_pull_transactions_register)
     _run_test(test_04_c2b_register_url)
     _run_test(test_24_webhook_handling)
 

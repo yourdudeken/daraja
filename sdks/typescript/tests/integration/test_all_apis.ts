@@ -493,6 +493,70 @@ async function test23TaxRemittance() {
   }
 }
 
+async function test25B2CAccountTopUp() {
+  console.log("\n25. B2C Account Top-Up");
+  if (!CONFIG.initiatorName) {
+    console.log("   SKIP: initiatorName not set");
+    return;
+  }
+  if (sandboxBlocked) return;
+  const mpesa = new Mpesa(CONFIG);
+  try {
+    const resp = await mpesa.b2b.topUp({
+      CommandID: "BusinessPayToBulk",
+      SenderIdentifierType: "4",
+      RecieverIdentifierType: "4",
+      Amount: "10",
+      PartyA: String(SHORTCODE),
+      PartyB: String(PARTY_B),
+      AccountReference: "TOPUP-TEST",
+      Remarks: "Test top up",
+      QueueTimeOutURL: `${CALLBACK_BASE}/topup/queue`,
+      ResultURL: `${CALLBACK_BASE}/topup/result`,
+    });
+    console.log(`   OriginatorConversationID: ${resp.OriginatorConversationID}`);
+    console.log(`   ResponseCode: ${resp.ResponseCode}`);
+  } catch (e) {
+    if (!checkBlocked("B2C Account Top-Up", e)) logError("B2C Account Top-Up", e);
+  }
+}
+
+async function test26LipaNaBongaRedeem() {
+  console.log("\n26. Lipa Na Bonga Redeem");
+  const mpesa = new Mpesa(CONFIG);
+  try {
+    const resp = await mpesa.lipaNaBonga.redeem({
+      msisdn: String(PHONE),
+      amount: 50,
+      bongaPoints: 20,
+      conversionRate: 0.2,
+      shortCode: String(SHORTCODE),
+      accountNumber: "test",
+    });
+    console.log(`   responseCode: ${resp.header.responseCode}`);
+    console.log(`   responseMessage: ${resp.header.responseMessage}`);
+  } catch (e) {
+    logError("Lipa Na Bonga Redeem", e);
+  }
+}
+
+async function test27PullTransactionsRegister() {
+  console.log("\n27. Pull Transactions Register");
+  const mpesa = new Mpesa(CONFIG);
+  try {
+    const resp = await mpesa.pullTransactions.register({
+      ShortCode: String(SHORTCODE),
+      RequestType: "Pull",
+      NominatedNumber: String(PHONE),
+      CallBackURL: `${CALLBACK_BASE}/pull/register`,
+    });
+    console.log(`   ResponseStatus: ${resp.ResponseStatus}`);
+    console.log(`   ResponseDescription: ${resp.ResponseDescription}`);
+  } catch (e) {
+    logError("Pull Transactions Register", e);
+  }
+}
+
 function test24WebhookHandling() {
   console.log("\n24. Webhook Handling");
   try {
@@ -572,6 +636,12 @@ async function main() {
   await test22Ratiba();
   await sleep(DELAY);
   await test23TaxRemittance();
+  await sleep(DELAY);
+  await test25B2CAccountTopUp();
+  await sleep(DELAY);
+  await test26LipaNaBongaRedeem();
+  await sleep(DELAY);
+  await test27PullTransactionsRegister();
   await sleep(DELAY);
   await test04C2BRegisterURL();
   await sleep(DELAY);

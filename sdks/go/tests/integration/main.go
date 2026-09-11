@@ -494,6 +494,70 @@ func main() {
 	}
 
 	sleep()
+	// Test 25: B2C Account Top-Up
+	fmt.Println("\n25. B2C Account Top-Up")
+	if os.Getenv("MPESA_INITIATOR_NAME") == "" {
+		fmt.Println("   SKIP: initiator_name not set")
+	} else if sandboxBlocked {
+		// skip
+	} else {
+		topUpResp, err := mpesa.AccountTopUp(ctx, types.B2CAccountTopUpRequest{
+			CommandID:              "BusinessPayToBulk",
+			SenderIdentifierType:   "4",
+			RecieverIdentifierType: "4",
+			Amount:                 "10",
+			PartyA:                 "174379",
+			PartyB:                 "600000",
+			AccountReference:       "TOPUP-TEST",
+			Remarks:                "Test top up",
+			QueueTimeOutURL:        callbackBase + "/topup/queue",
+			ResultURL:              callbackBase + "/topup/result",
+		})
+		if err != nil {
+			if !checkBlocked("B2C Account Top-Up", err) {
+				logError("B2C Account Top-Up", err)
+			}
+		} else {
+			fmt.Printf("   OriginatorConversationID: %s\n", topUpResp.OriginatorConversationID)
+			fmt.Printf("   ResponseCode: %s\n", topUpResp.ResponseCode)
+		}
+	}
+
+	sleep()
+	// Test 26: Lipa Na Bonga Redeem
+	fmt.Println("\n26. Lipa Na Bonga Redeem")
+	lnbRedeemResp, err := mpesa.LipaNaBongaRedeem(ctx, types.LipaNaBongaRedeemRequest{
+		Msisdn:         "254708374149",
+		Amount:         50,
+		BongaPoints:    20,
+		ConversionRate: 0.2,
+		ShortCode:      "174379",
+		AccountNumber:  "test",
+	})
+	if err != nil {
+		logError("Lipa Na Bonga Redeem", err)
+	} else {
+		fmt.Printf("   responseCode: %d\n", lnbRedeemResp.Header.ResponseCode)
+		fmt.Printf("   responseMessage: %s\n", lnbRedeemResp.Header.ResponseMessage)
+	}
+
+	sleep()
+	// Test 27: Pull Transactions Register
+	fmt.Println("\n27. Pull Transactions Register")
+	ptRegResp, err := mpesa.PullTransactionsRegister(ctx, types.PullTransactionsRegisterRequest{
+		ShortCode:       "174379",
+		RequestType:     "Pull",
+		NominatedNumber: "254708374149",
+		CallBackURL:     callbackBase + "/pull/register",
+	})
+	if err != nil {
+		logError("Pull Transactions Register", err)
+	} else {
+		fmt.Printf("   ResponseStatus: %s\n", ptRegResp.ResponseStatus)
+		fmt.Printf("   ResponseDescription: %s\n", ptRegResp.ResponseDescription)
+	}
+
+	sleep()
 	// Test 4: C2B Register URL (last — triggers sandbox WAF block)
 	fmt.Println("\n4. C2B Register URL")
 	c2bRegResp, err := mpesa.C2BRegisterURL(ctx, types.C2BRegisterURLRequest{
