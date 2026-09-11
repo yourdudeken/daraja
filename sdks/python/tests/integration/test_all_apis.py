@@ -199,7 +199,7 @@ def test_07_reversal():
                 "TransactionID": "NLA00TEST",
                 "Amount": 10,
                 "ReceiverParty": SHORTCODE,
-                "RecieverIdentifierType": 11,
+                "RecieverIdentifierType": "11",
                 "QueueTimeOutURL": f"{CALLBACK_BASE}/reversal/queue",
                 "ResultURL": f"{CALLBACK_BASE}/reversal/result",
                 "Remarks": "Test reversal",

@@ -24,9 +24,11 @@ import type {
 function createFakeClient(): MpesaApiClient {
   const post = vi.fn().mockResolvedValue({ ResponseCode: "0" });
   const get = vi.fn().mockResolvedValue({ ResponseCode: "0" });
+  const request = vi.fn().mockResolvedValue({ ResponseCode: "0" });
   const client = {
     post,
     get,
+    request,
     getConfig: () => ({
       securityCredential: "test-cred",
       initiatorName: "test-init",
@@ -118,6 +120,7 @@ describe("B2BService", () => {
 describe("B2CService", () => {
   function baseRequest(overrides: Partial<B2CRequest> = {}): B2CRequest {
     return {
+      OriginatorConversationID: "600997_Test_32et3241ed8yu",
       CommandID: "BusinessPayment",
       Amount: 100,
       PartyA: 600000,
@@ -202,7 +205,13 @@ describe("B2PochiService", () => {
   it("send injects credentials and posts to B2POCHI endpoint", async () => {
     const client = createFakeClient();
     const service = new B2PochiService(client);
-    const request = { CommandID: "BusinessPayBill", Amount: 100, PartyA: 600000, PartyB: 254708374149 };
+    const request = {
+      OriginatorConversationID: "600997_Test_32et3241ed8yu",
+      CommandID: "BusinessPayBill",
+      Amount: 100,
+      PartyA: 600000,
+      PartyB: 254708374149,
+    };
     await service.send(request as never);
     const payload = client.post.mock.calls[0][1];
     expect(payload).toMatchObject({
@@ -359,12 +368,16 @@ describe("PullTransactionsService", () => {
     expect(client.post).toHaveBeenCalledWith("/endpoint/PULL_TRANSACTIONS_REGISTER", request);
   });
 
-  it("query posts to PULL_TRANSACTIONS_QUERY endpoint", async () => {
+  it("query GETs PULL_TRANSACTIONS_QUERY endpoint with the request body", async () => {
     const client = createFakeClient();
     const service = new PullTransactionsService(client);
     const request = { startDate: "2024-01-01" };
     await service.query(request as never);
-    expect(client.post).toHaveBeenCalledWith("/endpoint/PULL_TRANSACTIONS_QUERY", request);
+    expect(client.request).toHaveBeenCalledWith({
+      method: "GET",
+      url: "/endpoint/PULL_TRANSACTIONS_QUERY",
+      data: request,
+    });
   });
 });
 

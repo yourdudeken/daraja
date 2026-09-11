@@ -248,7 +248,7 @@ class TestReversal:
                     "TransactionID": "dummy-tx-id",
                     "Amount": 1,
                     "ReceiverParty": PHONE,
-                    "RecieverIdentifierType": 11,
+                    "RecieverIdentifierType": "11",
                     "QueueTimeOutURL": "https://example.com/timeout",
                     "ResultURL": "https://example.com/result",
                 },
@@ -288,8 +288,8 @@ class TestBusinessGoods:
                     "Initiator": "testapi",
                     "SecurityCredential": "<dummy>",
                     "CommandID": "BusinessBuyGoods",
-                    "SenderIdentifierType": 4,
-                    "RecieverIdentifierType": 4,
+                    "SenderIdentifierType": "4",
+                    "RecieverIdentifierType": "4",
                     "Amount": 1,
                     "PartyA": SHORTCODE,
                     "PartyB": SHORTCODE,
@@ -311,8 +311,8 @@ class TestBusinessGoods:
                     "Initiator": "testapi",
                     "SecurityCredential": "<dummy>",
                     "CommandID": "BusinessPayBill",
-                    "SenderIdentifierType": 4,
-                    "RecieverIdentifierType": 4,
+                    "SenderIdentifierType": "4",
+                    "RecieverIdentifierType": "4",
                     "Amount": 1,
                     "PartyA": SHORTCODE,
                     "PartyB": SHORTCODE,
@@ -380,15 +380,13 @@ class TestPullTransactions:
     def test_pull_transactions(self, client: Mpesa) -> None:
         try:
             result = client._request(
-                "POST",
+                "GET",
                 _url("PULL_TRANSACTIONS_QUERY"),
                 {
                     "ShortCode": str(SHORTCODE),
-                    "StartDate": "2026-01-01",
-                    "EndDate": "2026-06-01",
-                    "TransactionType": "All",
-                    "PageNumber": 1,
-                    "PageSize": 10,
+                    "StartDate": "2026-01-01 00:00:00",
+                    "EndDate": "2026-06-01 00:00:00",
+                    "OffSetValue": "0",
                 },
             )
             assert "ResponseCode" in result

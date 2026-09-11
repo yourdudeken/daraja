@@ -76,6 +76,7 @@ class TestModels:
 
     def test_b2c_request(self):
         req = B2CRequest(
+            OriginatorConversationID="600997_Test_32et3241ed8yu",
             InitiatorName="testapi",
             SecurityCredential="cred",
             CommandID="BusinessPayment",

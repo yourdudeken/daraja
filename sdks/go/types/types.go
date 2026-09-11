@@ -256,7 +256,7 @@ const (
 )
 
 type B2CRequest struct {
-	OriginatorConversationID string       `json:"OriginatorConversationID,omitempty"`
+	OriginatorConversationID string       `json:"OriginatorConversationID"`
 	InitiatorName            string       `json:"InitiatorName"`
 	SecurityCredential       string       `json:"SecurityCredential"`
 	CommandID                B2CCommandID `json:"CommandID"`
@@ -308,7 +308,7 @@ type ReversalRequest struct {
 	TransactionID          string `json:"TransactionID"`
 	Amount                 int    `json:"Amount"`
 	ReceiverParty          int    `json:"ReceiverParty"`
-	RecieverIdentifierType int    `json:"RecieverIdentifierType"`
+	RecieverIdentifierType string `json:"RecieverIdentifierType"`
 	QueueTimeOutURL        string `json:"QueueTimeOutURL"`
 	ResultURL              string `json:"ResultURL"`
 	Remarks                string `json:"Remarks"`
@@ -367,8 +367,8 @@ type BusinessBuyGoodsRequest struct {
 	Initiator              string `json:"Initiator"`
 	SecurityCredential     string `json:"SecurityCredential"`
 	CommandID              string `json:"CommandID"`
-	SenderIdentifierType   int    `json:"SenderIdentifierType"`
-	RecieverIdentifierType int    `json:"RecieverIdentifierType"`
+	SenderIdentifierType   string `json:"SenderIdentifierType"`
+	RecieverIdentifierType string `json:"RecieverIdentifierType"`
 	Amount                 int    `json:"Amount"`
 	PartyA                 int    `json:"PartyA"`
 	PartyB                 int    `json:"PartyB"`
@@ -384,8 +384,8 @@ type BusinessPayBillRequest struct {
 	Initiator              string `json:"Initiator"`
 	SecurityCredential     string `json:"SecurityCredential"`
 	CommandID              string `json:"CommandID"`
-	SenderIdentifierType   int    `json:"SenderIdentifierType"`
-	RecieverIdentifierType int    `json:"RecieverIdentifierType"`
+	SenderIdentifierType   string `json:"SenderIdentifierType"`
+	RecieverIdentifierType string `json:"RecieverIdentifierType"`
 	Amount                 int    `json:"Amount"`
 	PartyA                 int    `json:"PartyA"`
 	PartyB                 int    `json:"PartyB"`
@@ -686,7 +686,7 @@ type IoTDeleteMessageResponse struct {
 
 // ---- B2Pochi ----
 type B2PochiRequest struct {
-	OriginatorConversationID string `json:"OriginatorConversationID,omitempty"`
+	OriginatorConversationID string `json:"OriginatorConversationID"`
 	InitiatorName            string `json:"InitiatorName"`
 	SecurityCredential       string `json:"SecurityCredential"`
 	CommandID                string `json:"CommandID"`

@@ -191,6 +191,7 @@ class TestB2CService:
         post = FakePost()
         service = B2CService(post, make_config())
         result = service.send({
+            "OriginatorConversationID": "600997_Test_32et3241ed8yu",
             "CommandID": "SalaryPayment",
             "Amount": 100,
             "PartyA": 600984,
@@ -210,6 +211,7 @@ class TestB2CService:
         from daraja.models import B2CRequest
 
         request = B2CRequest(
+            OriginatorConversationID="600997_Test_32et3241ed8yu",
             InitiatorName="",
             SecurityCredential="",
             CommandID="SalaryPayment",
@@ -228,6 +230,7 @@ class TestB2CService:
         service = B2CService(FakePost(), make_config())
         with pytest.raises(ValidationError):
             service.send({
+                "OriginatorConversationID": "600997_Test_32et3241ed8yu",
                 "CommandID": "SalaryPayment",
                 "Amount": 0,
                 "PartyA": 600984,
@@ -494,7 +497,7 @@ class TestPullTransactionsService:
             "ShortCode": "600984",
             "ResponseDescription": "success",
         })
-        service = PullTransactionsService(post)
+        service = PullTransactionsService(post, FakeGet())
         result = service.register({
             "ShortCode": "600984",
             "NominatedNumber": "254708374149",
@@ -504,20 +507,22 @@ class TestPullTransactionsService:
         assert post.calls[0][0] == "PULL_TRANSACTIONS_REGISTER"
 
     def test_query(self):
-        post = FakePost({
+        post = FakePost()
+        get = FakeGet({
             "ResponseRefID": "r1",
             "ResponseCode": "0",
             "ResponseMessage": "ok",
             "Response": [],
         })
-        service = PullTransactionsService(post)
+        service = PullTransactionsService(post, get)
         result = service.query({
             "ShortCode": "600984",
             "StartDate": "2024-01-01",
             "EndDate": "2024-01-02",
         })
         assert result.ResponseCode == "0"
-        assert post.calls[0][0] == "PULL_TRANSACTIONS_QUERY"
+        assert get.calls[0][0] == "PULL_TRANSACTIONS_QUERY"
+        assert post.calls == []
 
 
 class TestSwapService:

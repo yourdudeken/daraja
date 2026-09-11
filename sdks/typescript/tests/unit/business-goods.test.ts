@@ -54,7 +54,7 @@ function buyGoodsBase(overrides: Partial<BusinessBuyGoodsRequest> = {}): Busines
 
 describe("BusinessGoodsService", () => {
   describe("payBill", () => {
-    it("should default SenderIdentifierType and RecieverIdentifierType to 4 when omitted", async () => {
+    it("should default SenderIdentifierType and RecieverIdentifierType to \"4\" when omitted", async () => {
       const client = createFakeClient();
       const service = new BusinessGoodsService(client);
 
@@ -62,8 +62,8 @@ describe("BusinessGoodsService", () => {
 
       const sentPayload = client.post.mock.calls[0][1];
       expect(sentPayload).toMatchObject({
-        SenderIdentifierType: 4,
-        RecieverIdentifierType: 4,
+        SenderIdentifierType: "4",
+        RecieverIdentifierType: "4",
       });
     });
 
@@ -71,12 +71,12 @@ describe("BusinessGoodsService", () => {
       const client = createFakeClient();
       const service = new BusinessGoodsService(client);
 
-      await service.payBill(payBillBase({ SenderIdentifierType: 4, RecieverIdentifierType: 4 }));
+      await service.payBill(payBillBase({ SenderIdentifierType: "4", RecieverIdentifierType: "4" }));
 
       const sentPayload = client.post.mock.calls[0][1];
       expect(sentPayload).toMatchObject({
-        SenderIdentifierType: 4,
-        RecieverIdentifierType: 4,
+        SenderIdentifierType: "4",
+        RecieverIdentifierType: "4",
       });
     });
 
@@ -101,7 +101,7 @@ describe("BusinessGoodsService", () => {
   });
 
   describe("buyGoods", () => {
-    it("should default SenderIdentifierType and RecieverIdentifierType to 4 when omitted", async () => {
+    it("should default SenderIdentifierType and RecieverIdentifierType to \"4\" when omitted", async () => {
       const client = createFakeClient();
       const service = new BusinessGoodsService(client);
 
@@ -109,8 +109,8 @@ describe("BusinessGoodsService", () => {
 
       const sentPayload = client.post.mock.calls[0][1];
       expect(sentPayload).toMatchObject({
-        SenderIdentifierType: 4,
-        RecieverIdentifierType: 4,
+        SenderIdentifierType: "4",
+        RecieverIdentifierType: "4",
       });
     });
 

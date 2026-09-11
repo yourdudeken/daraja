@@ -12,6 +12,7 @@ import (
 	"encoding/json"
 	"encoding/pem"
 	"errors"
+	"io"
 	"math/big"
 	"net/http"
 	"net/http/httptest"
@@ -164,7 +165,7 @@ func TestAllServiceMethods(t *testing.T) {
 			call: func(c *Client) (interface{}, error) {
 				return c.Reversal(ctx, types.ReversalRequest{
 					Initiator: "i", SecurityCredential: "c", TransactionID: "TID", Amount: 100,
-					ReceiverParty: 254722111111, RecieverIdentifierType: 11,
+					ReceiverParty: 254722111111, RecieverIdentifierType: "11",
 					QueueTimeOutURL: "https://example.com/t", ResultURL: "https://example.com/r", Remarks: "r",
 				})
 			},
@@ -1276,5 +1277,68 @@ func TestGetCertificatePEM(t *testing.T) {
 	}
 	if _, err := GetCertificatePEM(types.Environment("bogus")); err == nil {
 		t.Error("expected error for unknown environment")
+	}
+}
+
+// TestPullTransactionsQueryUsesGET verifies the doc contract
+// (PullTransaction.md: "Method is POST for Register Pull and GET for Pull transaction")
+// and that the documented JSON request body is still transmitted on the GET request.
+func TestPullTransactionsQueryUsesGET(t *testing.T) {
+	var methods []string
+	var queryBodies []map[string]interface{}
+	token := "test-token-pull"
+	authServer := httptest.NewServer(mockAuthHandler(token))
+	t.Cleanup(authServer.Close)
+
+	apiServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		methods = append(methods, r.Method)
+		if r.Method == "GET" {
+			body, _ := io.ReadAll(r.Body)
+			var parsed map[string]interface{}
+			_ = json.Unmarshal(body, &parsed)
+			queryBodies = append(queryBodies, parsed)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.Write([]byte(`{"ResponseRefID":"r","ResponseCode":"0","ResponseMessage":"m","Response":[]}`))
+	}))
+	t.Cleanup(apiServer.Close)
+
+	c := NewClient(types.MpesaConfig{
+		ConsumerKey:    "test-key",
+		ConsumerSecret: "test-secret",
+		Environment:    types.Sandbox,
+		Passkey:        "test-passkey",
+	})
+	c.endpoints.Auth = authServer.URL + "/oauth/v1/generate"
+	c.tokenManager.SetAuthEndpoint(c.endpoints.Auth)
+	c.endpoints.PullTransactionsRegister = apiServer.URL + "/pulltransactions/v1/register"
+	c.endpoints.PullTransactionsQuery = apiServer.URL + "/pulltransactions/v1/query"
+
+	ctx := context.Background()
+	if _, err := c.PullTransactionsRegister(ctx, types.PullTransactionsRegisterRequest{
+		ShortCode: "600984", RequestType: "Pull", NominatedNumber: "254722111111", CallBackURL: "https://example.com/c",
+	}); err != nil {
+		t.Fatalf("PullTransactionsRegister failed: %v", err)
+	}
+	if _, err := c.PullTransactionsQuery(ctx, types.PullTransactionsQueryRequest{
+		ShortCode: "600984", StartDate: "d", EndDate: "d", OffSetValue: "0",
+	}); err != nil {
+		t.Fatalf("PullTransactionsQuery failed: %v", err)
+	}
+
+	if len(methods) != 2 {
+		t.Fatalf("expected 2 API calls, got %d: %v", len(methods), methods)
+	}
+	if methods[0] != "POST" {
+		t.Errorf("expected PullTransactionsRegister to use POST, got %s", methods[0])
+	}
+	if methods[1] != "GET" {
+		t.Errorf("expected PullTransactionsQuery to use GET, got %s", methods[1])
+	}
+	if len(queryBodies) != 1 {
+		t.Fatalf("expected 1 GET request body, got %d", len(queryBodies))
+	}
+	if sc, ok := queryBodies[0]["ShortCode"].(string); !ok || sc != "600984" {
+		t.Errorf("expected ShortCode in GET request body, got %v", queryBodies[0]["ShortCode"])
 	}
 }

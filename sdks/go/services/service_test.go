@@ -60,18 +60,18 @@ func TestReversalRequestDefaultsRecieverIdentifierTypeTo11(t *testing.T) {
 		Amount:        200,
 		ReceiverParty: 603021,
 	})
-	if req.RecieverIdentifierType != 11 {
-		t.Errorf("expected RecieverIdentifierType to default to 11, got %d", req.RecieverIdentifierType)
+	if req.RecieverIdentifierType != "11" {
+		t.Errorf("expected RecieverIdentifierType to default to \"11\", got %q", req.RecieverIdentifierType)
 	}
 }
 
 func TestReversalRequestPreservesExplicitRecieverIdentifierType(t *testing.T) {
 	req := newReversalRequest(svctypes.ReversalInput{
-		RecieverIdentifierType: 4,
+		RecieverIdentifierType: "11",
 		TransactionID:          "PDU91HIVIT",
 	})
-	if req.RecieverIdentifierType != 4 {
-		t.Errorf("expected RecieverIdentifierType 4, got %d", req.RecieverIdentifierType)
+	if req.RecieverIdentifierType != "11" {
+		t.Errorf("expected RecieverIdentifierType \"11\", got %q", req.RecieverIdentifierType)
 	}
 }
 

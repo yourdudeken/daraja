@@ -21,9 +21,10 @@ export class PullTransactionsService {
   async query(
     request: PullTransactionsQueryRequest,
   ): Promise<PullTransactionsQueryResponse> {
-    return this.client.post<PullTransactionsQueryResponse>(
-      this.client.getEndpoint("PULL_TRANSACTIONS_QUERY"),
-      request,
-    );
+    return this.client.request<PullTransactionsQueryResponse>({
+      method: "GET",
+      url: this.client.getEndpoint("PULL_TRANSACTIONS_QUERY"),
+      data: request,
+    });
   }
 }

@@ -164,7 +164,7 @@ async function test07Reversal() {
       TransactionID: "NLA00TEST",
       Amount: 10,
       ReceiverParty: SHORTCODE,
-      RecieverIdentifierType: 11,
+      RecieverIdentifierType: "11",
       QueueTimeOutURL: `${CALLBACK_BASE}/reversal/queue`,
       ResultURL: `${CALLBACK_BASE}/reversal/result`,
       Remarks: "Test reversal",
@@ -255,8 +255,8 @@ async function test11BusinessBuyGoods() {
   try {
     const resp = await mpesa.businessGoods.buyGoods({
       CommandID: "BusinessBuyGoods",
-      SenderIdentifierType: 4,
-      RecieverIdentifierType: 4,
+      SenderIdentifierType: "4",
+      RecieverIdentifierType: "4",
       Amount: 100,
       PartyA: SHORTCODE,
       PartyB: PARTY_B,
@@ -282,8 +282,8 @@ async function test12BusinessPayBill() {
   try {
     const resp = await mpesa.businessGoods.payBill({
       CommandID: "BusinessPayBill",
-      SenderIdentifierType: 4,
-      RecieverIdentifierType: 4,
+      SenderIdentifierType: "4",
+      RecieverIdentifierType: "4",
       Amount: 100,
       PartyA: SHORTCODE,
       PartyB: PARTY_B,

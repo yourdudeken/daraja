@@ -351,6 +351,7 @@ class TestWrapperMethods:
     def test_b2c(self, client, monkeypatch):
         monkeypatch.setattr(client, "_post", lambda k, d: _BIZ_RESPONSE)
         result = client.b2c({
+            "OriginatorConversationID": "600997_Test_32et3241ed8yu",
             "CommandID": "SalaryPayment", "Amount": 100,
             "PartyA": 600984, "PartyB": 254708374149,
             "Remarks": "salary", "QueueTimeOutURL": "https://e.com/to",
@@ -445,6 +446,7 @@ class TestWrapperMethods:
     def test_b2pochi(self, client, monkeypatch):
         monkeypatch.setattr(client, "_post", lambda k, d: _BIZ_RESPONSE)
         result = client.b2pochi({
+            "OriginatorConversationID": "600997_Test_32et3241ed8yu",
             "CommandID": "BusinessPayToPochi", "Amount": 100,
             "PartyA": 600984, "PartyB": 254708374149,
             "Remarks": "p", "QueueTimeOutURL": "https://e.com/to", "ResultURL": "https://e.com/r",
@@ -480,7 +482,10 @@ class TestWrapperMethods:
         assert result.ResponseRefID == "r1"
 
     def test_pull_transactions_query(self, client, monkeypatch):
-        monkeypatch.setattr(client, "_post", lambda k, d: {
+        captured = {}
+        monkeypatch.setattr(client, "_get_with_body", lambda k, d: captured.update(
+            {"endpoint": k, "data": d}
+        ) or {
             "ResponseRefID": "r1", "ResponseCode": "0",
             "ResponseMessage": "ok", "Response": [],
         })
@@ -488,6 +493,8 @@ class TestWrapperMethods:
             "ShortCode": "600984", "StartDate": "2024-01-01", "EndDate": "2024-01-02",
         })
         assert result.ResponseCode == "0"
+        assert captured["endpoint"] == "PULL_TRANSACTIONS_QUERY"
+        assert captured["data"]["ShortCode"] == "600984"
 
     def test_swap(self, client, monkeypatch):
         monkeypatch.setattr(client, "_post", lambda k, d: {

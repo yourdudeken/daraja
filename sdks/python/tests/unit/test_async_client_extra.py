@@ -111,6 +111,7 @@ async def test_async_b2c(monkeypatch):
     client = AsyncMpesa(make_config())
     await capture_post(client, monkeypatch)
     result = await client.b2c({
+        "OriginatorConversationID": "600997_Test_32et3241ed8yu",
         "InitiatorName": "test-initiator", "SecurityCredential": "test-cred",
         "CommandID": "SalaryPayment", "Amount": 100,
         "PartyA": 600984, "PartyB": 254708374149,
@@ -221,6 +222,7 @@ async def test_async_b2pochi(monkeypatch):
     client = AsyncMpesa(make_config())
     await capture_post(client, monkeypatch)
     result = await client.b2pochi({
+        "OriginatorConversationID": "600997_Test_32et3241ed8yu",
         "InitiatorName": "test-initiator", "SecurityCredential": "test-cred",
         "CommandID": "BusinessPayToPochi", "Amount": 100,
         "PartyA": 600984, "PartyB": 254708374149,
@@ -268,13 +270,21 @@ async def test_async_pull_transactions_register(monkeypatch):
 @pytest.mark.anyio
 async def test_async_pull_transactions_query(monkeypatch):
     client = AsyncMpesa(make_config())
-    await capture_post(client, monkeypatch, {
-        "ResponseRefID": "r1", "ResponseCode": "0", "ResponseMessage": "ok", "Response": [],
-    })
+    captured: dict = {}
+
+    async def fake_request(method, url, json_data=None, operation_name=None):
+        captured["method"] = method
+        captured["url"] = url
+        captured["data"] = json_data
+        return {"ResponseRefID": "r1", "ResponseCode": "0", "ResponseMessage": "ok", "Response": []}
+
+    monkeypatch.setattr(client, "_request", fake_request)
     result = await client.pull_transactions_query({
         "ShortCode": "600984", "StartDate": "2024-01-01", "EndDate": "2024-01-02",
     })
     assert result.ResponseCode == "0"
+    assert captured["method"] == "GET"
+    assert captured["data"]["ShortCode"] == "600984"
     await client.close()
 
 

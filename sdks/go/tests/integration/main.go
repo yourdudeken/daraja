@@ -174,7 +174,7 @@ func main() {
 			TransactionID:          "NLA00TEST",
 			Amount:                 10,
 			ReceiverParty:          shortcode,
-			RecieverIdentifierType: 11,
+			RecieverIdentifierType: "11",
 			QueueTimeOutURL:        callbackBase + "/reversal/queue",
 			ResultURL:              callbackBase + "/reversal/result",
 			Remarks:                "Test reversal",
@@ -252,8 +252,8 @@ func main() {
 	} else {
 		bgResp, err := mpesa.BusinessBuyGoods(ctx, types.BusinessBuyGoodsRequest{
 			CommandID:              "BusinessBuyGoods",
-			SenderIdentifierType:   4,
-			RecieverIdentifierType: 4,
+			SenderIdentifierType:   "4",
+			RecieverIdentifierType: "4",
 			Amount:                 100,
 			PartyA:                 shortcode,
 			PartyB:                 600000,
@@ -281,8 +281,8 @@ func main() {
 	} else {
 		pbResp, err := mpesa.BusinessPayBill(ctx, types.BusinessPayBillRequest{
 			CommandID:              "BusinessPayBill",
-			SenderIdentifierType:   4,
-			RecieverIdentifierType: 4,
+			SenderIdentifierType:   "4",
+			RecieverIdentifierType: "4",
 			Amount:                 100,
 			PartyA:                 shortcode,
 			PartyB:                 600000,

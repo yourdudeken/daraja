@@ -187,7 +187,7 @@ func TestServiceHappyPaths(t *testing.T) {
 		}},
 		{"BusinessBuyGoods", func() (interface{}, error) {
 			return svc.BusinessBuyGoods(ctx, svctypes.BusinessBuyGoodsInput{
-				Initiator: "i", SecurityCredential: "c", SenderIdentifierType: 4, RecieverIdentifierType: 4,
+				Initiator: "i", SecurityCredential: "c", SenderIdentifierType: "4", RecieverIdentifierType: "4",
 				Amount: 100, PartyA: 600984, PartyB: 600000, Requester: 254722111111,
 				AccountReference: "ref", Remarks: "r",
 				QueueTimeOutURL: "https://example.com/t", ResultURL: "https://example.com/r",
@@ -195,7 +195,7 @@ func TestServiceHappyPaths(t *testing.T) {
 		}},
 		{"BusinessPayBill", func() (interface{}, error) {
 			return svc.BusinessPayBill(ctx, svctypes.BusinessPayBillInput{
-				Initiator: "i", SecurityCredential: "c", SenderIdentifierType: 4, RecieverIdentifierType: 4,
+				Initiator: "i", SecurityCredential: "c", SenderIdentifierType: "4", RecieverIdentifierType: "4",
 				Amount: 100, PartyA: 600984, PartyB: 600000, Requester: 254722111111,
 				AccountReference: "ref", Remarks: "r",
 				QueueTimeOutURL: "https://example.com/t", ResultURL: "https://example.com/r",
@@ -543,5 +543,33 @@ func TestServiceClientErrorPropagation(t *testing.T) {
 	// Sanity: the happy-path service still works.
 	if _, err := svc.STKQuery(ctx, svctypes.STKQueryInput{BusinessShortCode: 174379, CheckoutRequestID: "cri"}); err != nil {
 		t.Fatalf("STKQuery failed: %v", err)
+	}
+}
+
+// TestServiceB2CPreservesOriginatorConversationID verifies the B2C service
+// passes OriginatorConversationID through to the wire payload
+// (BusinessToCustomer.md: "Optional: No").
+func TestServiceB2CPreservesOriginatorConversationID(t *testing.T) {
+	ctx := context.Background()
+	svc, ms := newMockService(t, nil)
+
+	if _, err := svc.B2C(ctx, svctypes.B2CInput{
+		OriginatorConversationID: "600997_Test_32et3241ed8yu",
+		InitiatorName:            "testapi",
+		SecurityCredential:       "sec",
+		CommandID:                types.SalaryPayment,
+		Amount:                   100,
+		PartyA:                   600984,
+		PartyB:                   254722111111,
+		Remarks:                  "salary",
+		QueueTimeOutURL:          "https://example.com/to",
+		ResultURL:                "https://example.com/r",
+	}); err != nil {
+		t.Fatalf("B2C failed: %v", err)
+	}
+
+	body := ms.lastBody("/mpesa/b2c/v3/paymentrequest")
+	if !strings.Contains(body, `"OriginatorConversationID":"600997_Test_32et3241ed8yu"`) {
+		t.Errorf("expected OriginatorConversationID in B2C wire payload, got %s", body)
 	}
 }

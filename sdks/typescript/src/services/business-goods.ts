@@ -16,8 +16,8 @@ export class BusinessGoodsService {
       ...request,
       SecurityCredential: request.SecurityCredential || config.securityCredential,
       Initiator: request.Initiator || config.initiatorName,
-      SenderIdentifierType: request.SenderIdentifierType ?? 4,
-      RecieverIdentifierType: request.RecieverIdentifierType ?? 4,
+      SenderIdentifierType: request.SenderIdentifierType ?? "4",
+      RecieverIdentifierType: request.RecieverIdentifierType ?? "4",
     };
     return this.client.post<BusinessGoodsResponse>(
       this.client.getEndpoint("B2B"),
@@ -32,8 +32,8 @@ export class BusinessGoodsService {
       ...request,
       SecurityCredential: request.SecurityCredential || config.securityCredential,
       Initiator: request.Initiator || config.initiatorName,
-      SenderIdentifierType: request.SenderIdentifierType ?? 4,
-      RecieverIdentifierType: request.RecieverIdentifierType ?? 4,
+      SenderIdentifierType: request.SenderIdentifierType ?? "4",
+      RecieverIdentifierType: request.RecieverIdentifierType ?? "4",
     };
     return this.client.post<BusinessGoodsResponse>(
       this.client.getEndpoint("B2B"),

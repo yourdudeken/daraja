@@ -240,7 +240,7 @@ describeIf("M-Pesa Sandbox Integration", hasCredentials(), () => {
           TransactionID: "dummy-tx-id",
           Amount: 1,
           ReceiverParty: PHONE,
-          RecieverIdentifierType: 11,
+          RecieverIdentifierType: "11",
           QueueTimeOutURL: "https://example.com/timeout",
           ResultURL: "https://example.com/result",
         });
@@ -364,13 +364,15 @@ describeIf("M-Pesa Sandbox Integration", hasCredentials(), () => {
   describe("Pull Transactions", () => {
     it("should pull transactions", async () => {
       try {
-        const result = await client.post("/mpesa/pulltransactions/v1/query", {
-          ShortCode: String(SHORTCODE),
-          StartDate: "2026-01-01",
-          EndDate: "2026-06-01",
-          TransactionType: "All",
-          PageNumber: 1,
-          PageSize: 10,
+        const result = await client.request({
+          method: "GET",
+          url: "/mpesa/pulltransactions/v1/query",
+          data: {
+            ShortCode: String(SHORTCODE),
+            StartDate: "2026-01-01 00:00:00",
+            EndDate: "2026-06-01 00:00:00",
+            OffSetValue: "0",
+          },
         });
         expect(result).toHaveProperty("ResponseCode");
       } catch (err: any) {

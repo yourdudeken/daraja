@@ -173,7 +173,7 @@ class C2BValidationResponse(BaseModel):
 
 
 class B2CRequest(BaseModel):
-    OriginatorConversationID: str | None = None
+    OriginatorConversationID: str
     InitiatorName: str
     SecurityCredential: str
     CommandID: Literal["SalaryPayment", "BusinessPayment", "PromotionPayment"]
@@ -200,7 +200,7 @@ class ReversalRequest(BaseModel):
     TransactionID: str
     Amount: int
     ReceiverParty: int
-    RecieverIdentifierType: int = 11
+    RecieverIdentifierType: str = "11"
     QueueTimeOutURL: str
     ResultURL: str
     Remarks: str = Field(max_length=100)
@@ -321,8 +321,8 @@ class BusinessBuyGoodsRequest(BaseModel):
     Initiator: str
     SecurityCredential: str
     CommandID: Literal["BusinessBuyGoods"] = "BusinessBuyGoods"
-    SenderIdentifierType: int = 4
-    RecieverIdentifierType: int = 4
+    SenderIdentifierType: str = "4"
+    RecieverIdentifierType: str = "4"
     Amount: int
     PartyA: int
     PartyB: int
@@ -338,8 +338,8 @@ class BusinessPayBillRequest(BaseModel):
     Initiator: str
     SecurityCredential: str
     CommandID: Literal["BusinessPayBill"] = "BusinessPayBill"
-    SenderIdentifierType: int = 4
-    RecieverIdentifierType: int = 4
+    SenderIdentifierType: str = "4"
+    RecieverIdentifierType: str = "4"
     Amount: int
     PartyA: int
     PartyB: int
@@ -581,7 +581,7 @@ class IoTDeleteMessageResponse(BaseModel):
 
 
 class B2PochiRequest(BaseModel):
-    OriginatorConversationID: str | None = None
+    OriginatorConversationID: str
     InitiatorName: str
     SecurityCredential: str
     CommandID: str = "BusinessPayToPochi"

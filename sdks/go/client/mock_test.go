@@ -3,6 +3,7 @@ package client
 import (
 	"context"
 	"encoding/json"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -171,7 +172,10 @@ func TestB2CWithMockServer(t *testing.T) {
 	authServer := httptest.NewServer(mockAuthHandler(token))
 	defer authServer.Close()
 
+	var captured map[string]interface{}
 	apiServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body, _ := io.ReadAll(r.Body)
+		_ = json.Unmarshal(body, &captured)
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(types.B2CResponse{
 			ConversationID:           "conv-1",
@@ -195,15 +199,16 @@ func TestB2CWithMockServer(t *testing.T) {
 	client.endpoints.B2C = apiServer.URL + "/mpesa/b2c/v1/paymentrequest"
 
 	req := types.B2CRequest{
-		InitiatorName:      "test-initiator",
-		SecurityCredential: "test-cred",
-		CommandID:          types.SalaryPayment,
-		Amount:             100,
-		PartyA:             600984,
-		PartyB:             254722111111,
-		Remarks:            "test",
-		QueueTimeOutURL:    "https://example.com/timeout",
-		ResultURL:          "https://example.com/result",
+		OriginatorConversationID: "600997_Test_32et3241ed8yu",
+		InitiatorName:            "test-initiator",
+		SecurityCredential:       "test-cred",
+		CommandID:                types.SalaryPayment,
+		Amount:                   100,
+		PartyA:                   600984,
+		PartyB:                   254722111111,
+		Remarks:                  "test",
+		QueueTimeOutURL:          "https://example.com/timeout",
+		ResultURL:                "https://example.com/result",
 	}
 
 	resp, err := client.B2C(context.Background(), req)
@@ -213,6 +218,12 @@ func TestB2CWithMockServer(t *testing.T) {
 
 	if resp.ResponseCode != "0" {
 		t.Errorf("expected 0, got %s", resp.ResponseCode)
+	}
+	if captured == nil {
+		t.Fatal("expected request body to be captured")
+	}
+	if orig, ok := captured["OriginatorConversationID"].(string); !ok || orig != "600997_Test_32et3241ed8yu" {
+		t.Errorf("expected OriginatorConversationID in wire payload, got %v", captured["OriginatorConversationID"])
 	}
 }
 
@@ -440,11 +451,11 @@ func TestBusinessBuyGoodsForcesCommandIDAndIdentifierTypes(t *testing.T) {
 	if cmd, ok := captured["CommandID"].(string); !ok || cmd != "BusinessBuyGoods" {
 		t.Errorf("expected CommandID to be forced to BusinessBuyGoods, got %v", captured["CommandID"])
 	}
-	if sender, ok := captured["SenderIdentifierType"].(float64); !ok || sender != 4 {
-		t.Errorf("expected SenderIdentifierType to be 4, got %v", captured["SenderIdentifierType"])
+	if sender, ok := captured["SenderIdentifierType"].(string); !ok || sender != "4" {
+		t.Errorf("expected SenderIdentifierType to be \"4\", got %v", captured["SenderIdentifierType"])
 	}
-	if recv, ok := captured["RecieverIdentifierType"].(float64); !ok || recv != 4 {
-		t.Errorf("expected RecieverIdentifierType to be 4, got %v", captured["RecieverIdentifierType"])
+	if recv, ok := captured["RecieverIdentifierType"].(string); !ok || recv != "4" {
+		t.Errorf("expected RecieverIdentifierType to be \"4\", got %v", captured["RecieverIdentifierType"])
 	}
 }
 

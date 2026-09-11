@@ -38,24 +38,24 @@ function baseRequest(overrides: Partial<ReversalRequest> = {}): ReversalRequest 
 
 describe("ReversalService", () => {
   describe("reverse", () => {
-    it("should default RecieverIdentifierType to 11 when omitted", async () => {
+    it("should default RecieverIdentifierType to \"11\" when omitted", async () => {
       const client = createFakeClient();
       const service = new ReversalService(client);
 
       await service.reverse(baseRequest());
 
       const sentPayload = client.post.mock.calls[0][1];
-      expect(sentPayload).toMatchObject({ RecieverIdentifierType: 11 });
+      expect(sentPayload).toMatchObject({ RecieverIdentifierType: "11" });
     });
 
     it("should preserve an explicit RecieverIdentifierType", async () => {
       const client = createFakeClient();
       const service = new ReversalService(client);
 
-      await service.reverse(baseRequest({ RecieverIdentifierType: 11 }));
+      await service.reverse(baseRequest({ RecieverIdentifierType: "11" }));
 
       const sentPayload = client.post.mock.calls[0][1];
-      expect(sentPayload).toMatchObject({ RecieverIdentifierType: 11 });
+      expect(sentPayload).toMatchObject({ RecieverIdentifierType: "11" });
     });
 
     it("should require TransactionID", async () => {

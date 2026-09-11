@@ -53,23 +53,24 @@ type C2BSimulateInput struct {
 }
 
 type B2CInput struct {
-	InitiatorName      string
-	SecurityCredential string
-	CommandID          types.B2CCommandID
-	Amount             int
-	PartyA             int
-	PartyB             int
-	Remarks            string
-	QueueTimeOutURL    string
-	ResultURL          string
-	Occassion          string
+	OriginatorConversationID string
+	InitiatorName            string
+	SecurityCredential       string
+	CommandID                types.B2CCommandID
+	Amount                   int
+	PartyA                   int
+	PartyB                   int
+	Remarks                  string
+	QueueTimeOutURL          string
+	ResultURL                string
+	Occassion                string
 }
 
 type ReversalInput struct {
 	Initiator              string
 	SecurityCredential     string
 	TransactionID          string
-	RecieverIdentifierType int
+	RecieverIdentifierType string
 	Amount                 int
 	ReceiverParty          int
 	QueueTimeOutURL        string
@@ -100,8 +101,8 @@ type AccountBalanceInput struct {
 type BusinessBuyGoodsInput struct {
 	Initiator              string
 	SecurityCredential     string
-	SenderIdentifierType   int
-	RecieverIdentifierType int
+	SenderIdentifierType   string
+	RecieverIdentifierType string
 	Amount                 int
 	PartyA                 int
 	PartyB                 int
@@ -116,8 +117,8 @@ type BusinessBuyGoodsInput struct {
 type BusinessPayBillInput struct {
 	Initiator              string
 	SecurityCredential     string
-	SenderIdentifierType   int
-	RecieverIdentifierType int
+	SenderIdentifierType   string
+	RecieverIdentifierType string
 	Amount                 int
 	PartyA                 int
 	PartyB                 int

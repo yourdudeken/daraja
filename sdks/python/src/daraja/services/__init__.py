@@ -96,6 +96,7 @@ from daraja.utils import (
 )
 
 PostFn = Callable[[str, dict[str, Any] | list[Any]], dict[str, Any]]
+GetFn = Callable[[str, dict[str, Any]], dict[str, Any]]
 
 
 def _validate_phone(phone: int | str, field_name: str = "PhoneNumber") -> None:
@@ -545,8 +546,9 @@ class LipaNaBongaService:
 
 
 class PullTransactionsService:
-    def __init__(self, post: PostFn) -> None:
+    def __init__(self, post: PostFn, get: GetFn) -> None:
         self._post = post
+        self._get = get
 
     def register(
         self, request: PullTransactionsRegisterRequest | dict[str, Any]
@@ -563,7 +565,7 @@ class PullTransactionsService:
     ) -> PullTransactionsQueryResponse:
         if isinstance(request, dict):
             request = PullTransactionsQueryRequest(**request)
-        result = self._post("PULL_TRANSACTIONS_QUERY", request.model_dump())
+        result = self._get("PULL_TRANSACTIONS_QUERY", request.model_dump())
         return PullTransactionsQueryResponse(**result)
 
 
@@ -696,9 +698,6 @@ class TaxRemittanceService:
                     request.Initiator = self._config.initiator_name
         result = self._post("TAX_REMITTANCE", request.model_dump())
         return TaxRemittanceResponse(**result)
-
-
-GetFn = Callable[[str, dict[str, Any]], dict[str, Any]]
 
 
 class MobileCenterService:

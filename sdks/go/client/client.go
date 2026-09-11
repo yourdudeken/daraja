@@ -668,11 +668,11 @@ func (c *Client) BusinessBuyGoods(ctx context.Context, req types.BusinessBuyGood
 		req.Initiator = c.config.InitiatorName
 	}
 	req.CommandID = "BusinessBuyGoods"
-	if req.SenderIdentifierType == 0 {
-		req.SenderIdentifierType = 4
+	if req.SenderIdentifierType == "" {
+		req.SenderIdentifierType = "4"
 	}
-	if req.RecieverIdentifierType == 0 {
-		req.RecieverIdentifierType = 4
+	if req.RecieverIdentifierType == "" {
+		req.RecieverIdentifierType = "4"
 	}
 	respBody, err := c.doRequest(ctx, "POST", c.endpoints.B2B, req)
 	if err != nil {
@@ -695,11 +695,11 @@ func (c *Client) BusinessPayBill(ctx context.Context, req types.BusinessPayBillR
 		req.Initiator = c.config.InitiatorName
 	}
 	req.CommandID = "BusinessPayBill"
-	if req.SenderIdentifierType == 0 {
-		req.SenderIdentifierType = 4
+	if req.SenderIdentifierType == "" {
+		req.SenderIdentifierType = "4"
 	}
-	if req.RecieverIdentifierType == 0 {
-		req.RecieverIdentifierType = 4
+	if req.RecieverIdentifierType == "" {
+		req.RecieverIdentifierType = "4"
 	}
 	respBody, err := c.doRequest(ctx, "POST", c.endpoints.B2B, req)
 	if err != nil {
@@ -993,7 +993,7 @@ func (c *Client) PullTransactionsRegister(ctx context.Context, req types.PullTra
 }
 
 func (c *Client) PullTransactionsQuery(ctx context.Context, req types.PullTransactionsQueryRequest) (*types.PullTransactionsQueryResponse, error) {
-	respBody, err := c.doRequest(ctx, "POST", c.endpoints.PullTransactionsQuery, req)
+	respBody, err := c.doRequest(ctx, "GET", c.endpoints.PullTransactionsQuery, req)
 	if err != nil {
 		return nil, err
 	}

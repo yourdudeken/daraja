@@ -243,7 +243,7 @@ export interface C2BValidationResponse {
 export type B2CCommandID = "SalaryPayment" | "BusinessPayment" | "PromotionPayment";
 
 export interface B2CRequest {
-  OriginatorConversationID?: string;
+  OriginatorConversationID: string;
   InitiatorName?: string;
   SecurityCredential?: string;
   CommandID: B2CCommandID;
@@ -296,7 +296,7 @@ export interface ReversalRequest {
   TransactionID: string;
   Amount: number;
   ReceiverParty: number;
-  RecieverIdentifierType?: number;
+  RecieverIdentifierType?: string;
   QueueTimeOutURL: string;
   ResultURL: string;
   Remarks: string;
@@ -382,8 +382,8 @@ export interface BusinessBuyGoodsRequest {
   Initiator?: string;
   SecurityCredential?: string;
   CommandID: "BusinessBuyGoods";
-  SenderIdentifierType?: number;
-  RecieverIdentifierType?: number;
+  SenderIdentifierType?: string;
+  RecieverIdentifierType?: string;
   Amount: number;
   PartyA: number;
   PartyB: number;
@@ -399,8 +399,8 @@ export interface BusinessPayBillRequest {
   Initiator?: string;
   SecurityCredential?: string;
   CommandID: "BusinessPayBill";
-  SenderIdentifierType?: number;
-  RecieverIdentifierType?: number;
+  SenderIdentifierType?: string;
+  RecieverIdentifierType?: string;
   Amount: number;
   PartyA: number;
   PartyB: number;
@@ -705,7 +705,7 @@ export interface IoTDeleteMessageRequest {
 // B2Pochi
 // ============================================================
 export interface B2PochiRequest {
-  OriginatorConversationID?: string;
+  OriginatorConversationID: string;
   InitiatorName?: string;
   SecurityCredential?: string;
   CommandID: string;

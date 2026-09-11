@@ -129,16 +129,17 @@ func (s *Service) B2C(ctx context.Context, input svctypes.B2CInput) (*svctypes.B
 		input.InitiatorName = cfg.InitiatorName
 	}
 	req := types.B2CRequest{
-		InitiatorName:      input.InitiatorName,
-		SecurityCredential: input.SecurityCredential,
-		CommandID:          input.CommandID,
-		Amount:             input.Amount,
-		PartyA:             input.PartyA,
-		PartyB:             input.PartyB,
-		Remarks:            input.Remarks,
-		QueueTimeOutURL:    input.QueueTimeOutURL,
-		ResultURL:          input.ResultURL,
-		Occassion:          input.Occassion,
+		OriginatorConversationID: input.OriginatorConversationID,
+		InitiatorName:            input.InitiatorName,
+		SecurityCredential:       input.SecurityCredential,
+		CommandID:                input.CommandID,
+		Amount:                   input.Amount,
+		PartyA:                   input.PartyA,
+		PartyB:                   input.PartyB,
+		Remarks:                  input.Remarks,
+		QueueTimeOutURL:          input.QueueTimeOutURL,
+		ResultURL:                input.ResultURL,
+		Occassion:                input.Occassion,
 	}
 	resp, err := s.client.B2C(ctx, req)
 	if err != nil {
@@ -153,8 +154,8 @@ func (s *Service) B2C(ctx context.Context, input svctypes.B2CInput) (*svctypes.B
 }
 
 func newReversalRequest(input svctypes.ReversalInput) types.ReversalRequest {
-	if input.RecieverIdentifierType == 0 {
-		input.RecieverIdentifierType = 11
+	if input.RecieverIdentifierType == "" {
+		input.RecieverIdentifierType = "11"
 	}
 	return types.ReversalRequest{
 		Initiator:              input.Initiator,

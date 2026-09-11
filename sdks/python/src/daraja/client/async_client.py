@@ -563,7 +563,8 @@ class AsyncMpesa:
     ) -> PullTransactionsQueryResponse:
         if isinstance(request, dict):
             request = PullTransactionsQueryRequest(**request)
-        result = await self._post("PULL_TRANSACTIONS_QUERY", request.model_dump())
+        url = get_full_url(self._config.environment, ENDPOINTS["PULL_TRANSACTIONS_QUERY"])
+        result = await self._request("GET", url, request.model_dump())
         return PullTransactionsQueryResponse(**result)
 
     async def swap(self, request: SwapRequest | dict[str, Any]) -> SwapResponse:

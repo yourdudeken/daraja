@@ -459,6 +459,10 @@ class Mpesa:
             url = f"{url}?{urlencode(params)}"
         return self._request("GET", url)
 
+    def _get_with_body(self, endpoint_key: str, data: dict[str, Any]) -> dict[str, Any]:
+        url = get_full_url(self._config.environment, ENDPOINTS[endpoint_key])
+        return self._request("GET", url, data)
+
     def stk_push(self, request: STKPushRequest | dict[str, Any]) -> STKPushResponse:
         if isinstance(request, dict):
             request = STKPushRequest(**request)
@@ -737,7 +741,7 @@ class Mpesa:
     ) -> PullTransactionsQueryResponse:
         if isinstance(request, dict):
             request = PullTransactionsQueryRequest(**request)
-        result = self._post("PULL_TRANSACTIONS_QUERY", request.model_dump())
+        result = self._get_with_body("PULL_TRANSACTIONS_QUERY", request.model_dump())
         return PullTransactionsQueryResponse(**result)
 
     def swap(self, request: SwapRequest | dict[str, Any]) -> SwapResponse:
@@ -850,7 +854,7 @@ class Mpesa:
     def pull_transactions_service(self) -> PullTransactionsService:
         from daraja.services import PullTransactionsService
 
-        return PullTransactionsService(self._post)
+        return PullTransactionsService(self._post, self._get_with_body)
 
     @property
     def swap_service(self) -> SwapService:

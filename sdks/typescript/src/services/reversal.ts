@@ -12,7 +12,7 @@ export class ReversalService {
       ...request,
       SecurityCredential: request.SecurityCredential || config.securityCredential,
       Initiator: request.Initiator || config.initiatorName,
-      RecieverIdentifierType: request.RecieverIdentifierType ?? 11,
+      RecieverIdentifierType: request.RecieverIdentifierType ?? "11",
     };
     return this.client.post<ReversalResponse>(
       this.client.getEndpoint("REVERSAL"),
