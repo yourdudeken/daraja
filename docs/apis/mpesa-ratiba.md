@@ -1,5 +1,7 @@
 # Mpesa Ratiba (Standing Orders)
 
+> **Status:** ✅ Verified against the sandbox in all three SDKs (Go, Python, TypeScript).
+
 Mpesa Ratiba lets a business create a **standing order** with Safaricom so that
 M-Pesa payments are made automatically on a recurring basis.
 

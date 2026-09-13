@@ -1,5 +1,7 @@
 # Account Balance
 
+> **Status:** ✅ Verified against the sandbox in all three SDKs (Go, Python, TypeScript).
+
 Queries the balance of an M-Pesa paybill or till account. Results are delivered asynchronously via callback.
 
 ## Endpoint

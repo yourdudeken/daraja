@@ -1,5 +1,7 @@
 # B2B (Business to Business)
 
+> **Status:** ✅ Verified against the sandbox in all three SDKs (Go, Python, TypeScript) for both `BusinessBuyGoods` and `BusinessPayBill`.
+
 Moves funds between two business accounts using the Buy Goods or Pay Bill command. Both operations share the same endpoint but differ by `CommandID`.
 
 ## Endpoint

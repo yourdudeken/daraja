@@ -1,5 +1,7 @@
 # STK Push (Lipa Na M-Pesa Online)
 
+> **Status:** ✅ Verified against the sandbox in all three SDKs (Go, Python, TypeScript).
+
 Initiates a USSD prompt (STK push) on the customer's phone to authorize a payment.
 
 ## Endpoint

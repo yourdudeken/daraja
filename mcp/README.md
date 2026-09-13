@@ -4,7 +4,10 @@ Model Context Protocol server for Safaricom M-Pesa Daraja API access.
 
 ## Overview
 
-This MCP server uses the Daraja TypeScript SDK to interact with M-Pesa APIs. It exposes M-Pesa operations as MCP tools that AI agents can call.
+This MCP server is **built on the Daraja TypeScript SDK** (`@daraja-sdk/ts`). Every
+tool is a thin wrapper around a typed SDK service method — the server does not
+re-implement any M-Pesa logic. It exposes M-Pesa operations as MCP tools that AI
+agents can call over **stdio** or **HTTP/SSE**.
 
 ## Installation
 
@@ -67,25 +70,42 @@ docker compose up mcp
 | `MCP_PORT` | No | `3000` | HTTP port (http mode) |
 | `MCP_HOST` | No | `0.0.0.0` | HTTP bind host (http mode) |
 
+These map directly onto the TypeScript SDK's `MpesaConfig` (see
+[`mcp/src/config.ts`](src/config.ts)).
+
 ## Available Tools
 
-| Tool | Description |
-|------|-------------|
-| `stk_push` | Initiate STK Push payment |
-| `stk_query` | Query STK Push result |
-| `c2b_register_url` | Register C2B callback URLs |
-| `c2b_simulate` | Simulate C2B payment (sandbox) |
-| `b2c_payment` | Business to Customer payment |
-| `b2b_payment` | Business to Business payment |
-| `reversal` | Reverse a transaction |
-| `transaction_status` | Query transaction status |
-| `account_balance` | Query account balance |
-| `dynamic_qr` | Generate dynamic QR code |
-| `b2b_express` | B2B Express USSD push |
-| `bill_manager` | Bill Manager operations |
-| `ratiba` | Create standing orders |
-| `tax_remittance` | Remit tax to KRA |
-| `query_org_info` | Query organization info |
-| `validate_phone` | Validate phone number (KYC) |
-| `generate_timestamp` | Generate M-Pesa timestamp |
-| `health_check` | Check SDK health |
+Each tool wraps the corresponding `@daraja-sdk/ts` service method:
+
+| Tool | TS SDK call | Description |
+|------|-------------|-------------|
+| `stk_push` | `mpesa.stkPush.initiate()` | Initiate STK Push payment |
+| `stk_query` | `mpesa.stkPush.query()` | Query STK Push result |
+| `c2b_register_url` | `mpesa.c2b.registerURL()` | Register C2B callback URLs |
+| `c2b_simulate` | `mpesa.c2b.simulate()` | Simulate C2B payment (sandbox) |
+| `b2c_payment` | `mpesa.b2c.send()` | Business to Customer payment |
+| `b2b_payment` | `mpesa.businessGoods.buyGoods()` / `payBill()` | Business to Business payment |
+| `reversal` | `mpesa.reversal.reverse()` | Reverse a transaction |
+| `transaction_status` | `mpesa.transactionStatus.query()` | Query transaction status |
+| `account_balance` | `mpesa.accountBalance.query()` | Query account balance |
+| `dynamic_qr` | `mpesa.dynamicQR.generate()` | Generate dynamic QR code |
+| `b2b_express` | `mpesa.b2bExpress.send()` | B2B Express USSD push |
+| `bill_manager` | `mpesa.billManager.*()` | Bill Manager operations |
+| `ratiba` | `mpesa.ratiba.createStandingOrder()` | Create standing orders |
+| `tax_remittance` | `mpesa.taxRemittance.remit()` | Remit tax to KRA |
+| `query_org_info` | `mpesa.queryOrgInfo.query()` | Query organization info |
+| `validate_phone` | `mpesa.mobileNumberValidation.validate()` | Validate phone number (KYC) |
+| `generate_timestamp` | `generateTimestamp()` | Generate M-Pesa timestamp |
+| `health_check` | - | Check SDK connection health |
+
+Tool implementations live in [`mcp/src/tools/`](src/tools/). Each tool declares
+its own `inputSchema` and `required` fields, which the MCP server exposes to
+clients via the `tools/list` capability.
+
+## Development
+
+```bash
+npm run build   # compile TypeScript -> dist/
+npm run lint    # type-check + lint
+npm test        # unit tests (vitest)
+```

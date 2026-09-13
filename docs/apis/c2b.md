@@ -1,5 +1,7 @@
 # C2B (Customer to Business)
 
+> **Status:** ⚠️ **Simulate** is ✅ verified against the sandbox in all three SDKs. **Register URL** is implemented per the docs but the sandbox WAF blocks the endpoint for some accounts (`Service is currently unreachable` / `500`).
+
 Registers confirmation/validation URLs for customer-initiated payments and simulates customer payments for testing.
 
 ## Endpoints

@@ -1,5 +1,7 @@
 # Business to Pochi La M-Pesa (B2Pochi)
 
+> **Status:** ✅ Verified against the sandbox in all three SDKs (Go, Python, TypeScript).
+
 Sends a payment from a business account to a Pochi La M-Pesa wallet (personal mini-wallet for receiving business payments).
 
 ## Endpoint

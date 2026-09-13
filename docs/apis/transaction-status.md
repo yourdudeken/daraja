@@ -1,5 +1,7 @@
 # Transaction Status
 
+> **Status:** ✅ Verified against the sandbox in all three SDKs (Go, Python, TypeScript).
+
 Queries the status of a previously initiated M-Pesa transaction. You can look up by `TransactionID` or `OriginalConversationID`.
 
 ## Endpoint

@@ -1,5 +1,7 @@
 # B2C (Business to Customer)
 
+> **Status:** ✅ Verified against the sandbox in all three SDKs (Go, Python, TypeScript).
+
 Disburses funds from a business account to a customer's M-Pesa wallet (e.g. salary payments, business payments, promotions).
 
 ## Endpoint
