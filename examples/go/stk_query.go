@@ -39,6 +39,6 @@ func main() {
 
 	fmt.Printf("ResultCode: %s\n", resp.ResultCode)
 	fmt.Printf("ResultDesc: %s\n", resp.ResultDesc)
-	fmt.Printf("Amount: %s\n", resp.Amount)
-	fmt.Printf("MpesaReceiptNumber: %s\n", resp.MpesaReceiptNumber)
+	fmt.Printf("MerchantRequestID: %s\n", resp.MerchantRequestID)
+	fmt.Printf("CheckoutRequestID: %s\n", resp.CheckoutRequestID)
 }

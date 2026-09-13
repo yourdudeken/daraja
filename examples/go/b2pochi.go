@@ -4,7 +4,9 @@
 // (business wallet). Result arrives via ResultURL.
 //
 // Requires: MPESA_CONSUMER_KEY, MPESA_CONSUMER_SECRET,
-//           MPESA_INITIATOR_NAME, MPESA_INITIATOR_PASSWORD
+//
+//	MPESA_INITIATOR_NAME, MPESA_INITIATOR_PASSWORD
+//
 // Verified against the sandbox.
 package main
 
@@ -30,13 +32,13 @@ func main() {
 	ctx := context.Background()
 
 	resp, err := mpesa.B2Pochi(ctx, types.B2PochiRequest{
-		CommandID:                "BusinessPayToPochi",
-		Amount:                   10,
-		PartyA:                   174379, // business shortcode
-		PartyB:                   254708374149, // customer phone
-		Remarks:                  "Pochi test",
-		QueueTimeOutURL:          "https://example.com/b2pochi/queue",
-		ResultURL:                "https://example.com/b2pochi/result",
+		CommandID:       "BusinessPayToPochi",
+		Amount:          10,
+		PartyA:          174379,       // business shortcode
+		PartyB:          254708374149, // customer phone
+		Remarks:         "Pochi test",
+		QueueTimeOutURL: "https://example.com/b2pochi/queue",
+		ResultURL:       "https://example.com/b2pochi/result",
 	})
 	if err != nil {
 		log.Fatalf("B2Pochi failed: %v", err)

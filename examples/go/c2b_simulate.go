@@ -29,7 +29,7 @@ func main() {
 
 	resp, err := mpesa.C2BSimulate(ctx, types.C2BSimulateRequest{
 		ShortCode:     174379,
-		CommandID:     types.CustomerPaybillOnline,
+		CommandID:     types.C2BPayBill,
 		Amount:        100,
 		Msisdn:        254708374149,
 		BillRefNumber: "INV-001",

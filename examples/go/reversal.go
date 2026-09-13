@@ -4,7 +4,9 @@
 // exceed the original transaction amount. Result arrives via ResultURL.
 //
 // Requires: MPESA_CONSUMER_KEY, MPESA_CONSUMER_SECRET,
-//           MPESA_INITIATOR_NAME, MPESA_INITIATOR_PASSWORD
+//
+//	MPESA_INITIATOR_NAME, MPESA_INITIATOR_PASSWORD
+//
 // Verified against the sandbox.
 package main
 
