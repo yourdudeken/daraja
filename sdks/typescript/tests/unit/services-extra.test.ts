@@ -379,6 +379,36 @@ describe("PullTransactionsService", () => {
       data: request,
     });
   });
+
+  it("register parses the spaced wire keys (Response Status / Response Description)", async () => {
+    const client = createFakeClient();
+    client.post.mockResolvedValue({
+      ResponseRefID: "r1",
+      "Response Status": "1001",
+      ShortCode: "174379",
+      "Response Description": "Shortcode already Registered!",
+    });
+    const service = new PullTransactionsService(client);
+    const result = await service.register({ shortCode: "600000" } as never);
+    expect(result.ResponseStatus).toBe("1001");
+    expect(result.ResponseDescription).toBe("Shortcode already Registered!");
+  });
+
+  it("register prefers the canonical doc keys when both are present", async () => {
+    const client = createFakeClient();
+    client.post.mockResolvedValue({
+      ResponseRefID: "r1",
+      ResponseStatus: "1000",
+      "Response Status": "1001",
+      ShortCode: "174379",
+      ResponseDescription: "ok",
+      "Response Description": "spaced",
+    });
+    const service = new PullTransactionsService(client);
+    const result = await service.register({ shortCode: "600000" } as never);
+    expect(result.ResponseStatus).toBe("1000");
+    expect(result.ResponseDescription).toBe("ok");
+  });
 });
 
 describe("QueryOrgInfoService", () => {

@@ -640,10 +640,16 @@ class PullTransactionsRegisterRequest(BaseModel):
 
 
 class PullTransactionsRegisterResponse(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
     ResponseRefID: str
-    ResponseStatus: str
+    ResponseStatus: str = Field(
+        validation_alias=AliasChoices("ResponseStatus", "Response Status")
+    )
     ShortCode: str
-    ResponseDescription: str
+    ResponseDescription: str = Field(
+        validation_alias=AliasChoices("ResponseDescription", "Response Description")
+    )
 
 
 class PullTransactionItem(BaseModel):
@@ -665,9 +671,9 @@ class PullTransactionsQueryRequest(BaseModel):
 
 
 class PullTransactionsQueryResponse(BaseModel):
-    ResponseRefID: str
-    ResponseCode: str
-    ResponseMessage: str
+    ResponseRefID: str = ""
+    ResponseCode: str = ""
+    ResponseMessage: str = ""
     Response: list[list[PullTransactionItem]] = []
 
 

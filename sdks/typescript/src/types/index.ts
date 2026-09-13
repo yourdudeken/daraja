@@ -799,10 +799,10 @@ export interface PullTransactionItem {
 }
 
 export interface PullTransactionsQueryResponse {
-  ResponseRefID: string;
-  ResponseCode: string;
-  ResponseMessage: string;
-  Response: PullTransactionItem[][];
+  ResponseRefID?: string;
+  ResponseCode?: string;
+  ResponseMessage?: string;
+  Response?: PullTransactionItem[][];
 }
 
 // ============================================================

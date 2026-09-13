@@ -524,6 +524,41 @@ class TestPullTransactionsService:
         assert get.calls[0][0] == "PULL_TRANSACTIONS_QUERY"
         assert post.calls == []
 
+    def test_register_parses_spaced_wire_keys(self):
+        # The sandbox returns "Response Status" / "Response Description"
+        # (with spaces) while the docs use the unspaced keys.
+        post = FakePost({
+            "ResponseRefID": "r1",
+            "Response Status": "1001",
+            "ShortCode": "174379",
+            "Response Description": "Shortcode already Registered!",
+        })
+        service = PullTransactionsService(post, FakeGet())
+        result = service.register({
+            "ShortCode": "174379",
+            "NominatedNumber": "254708374149",
+            "CallBackURL": "https://example.com/cb",
+        })
+        assert result.ResponseStatus == "1001"
+        assert result.ResponseDescription == "Shortcode already Registered!"
+
+    def test_query_tolerates_echo_body(self):
+        # The sandbox echoes the request body back for the query endpoint.
+        get = FakeGet({
+            "ShortCode": "174379",
+            "StartDate": "2026-01-01",
+            "EndDate": "2026-06-18",
+            "OffSetValue": "0",
+        })
+        service = PullTransactionsService(FakePost(), get)
+        result = service.query({
+            "ShortCode": "174379",
+            "StartDate": "2026-01-01",
+            "EndDate": "2026-06-18",
+        })
+        assert result.ResponseCode == ""
+        assert result.Response == []
+
 
 class TestSwapService:
     def test_query(self):

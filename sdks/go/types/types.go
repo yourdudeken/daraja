@@ -759,6 +759,34 @@ type PullTransactionsRegisterResponse struct {
 	ResponseDescription string `json:"ResponseDescription"`
 }
 
+// The sandbox returns "Response Status" / "Response Description" (with
+// spaces) while the docs use "ResponseStatus" / "ResponseDescription".
+// Accept both, preferring the doc-conformant keys.
+func (r *PullTransactionsRegisterResponse) UnmarshalJSON(data []byte) error {
+	var raw struct {
+		ResponseRefID       string `json:"ResponseRefID"`
+		ResponseStatus      string `json:"ResponseStatus"`
+		ResponseStatusSp    string `json:"Response Status"`
+		ShortCode           string `json:"ShortCode"`
+		ResponseDescription string `json:"ResponseDescription"`
+		ResponseDescSp      string `json:"Response Description"`
+	}
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return err
+	}
+	r.ResponseRefID = raw.ResponseRefID
+	r.ResponseStatus = raw.ResponseStatus
+	if r.ResponseStatus == "" {
+		r.ResponseStatus = raw.ResponseStatusSp
+	}
+	r.ShortCode = raw.ShortCode
+	r.ResponseDescription = raw.ResponseDescription
+	if r.ResponseDescription == "" {
+		r.ResponseDescription = raw.ResponseDescSp
+	}
+	return nil
+}
+
 type PullTransactionItem struct {
 	TransactionID    string `json:"transactionId"`
 	TrxDate          string `json:"trxDate"`

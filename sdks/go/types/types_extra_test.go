@@ -790,6 +790,32 @@ func TestC2BResponseUnmarshalInvalid(t *testing.T) {
 	}
 }
 
+func TestPullTransactionsRegisterResponseUnmarshalSpacedKeys(t *testing.T) {
+	var r PullTransactionsRegisterResponse
+	if err := json.Unmarshal([]byte(`{"ResponseRefID":"r1","Response Status":"1001","ShortCode":"174379","Response Description":"Shortcode already Registered!"}`), &r); err != nil {
+		t.Fatalf("unmarshal failed: %v", err)
+	}
+	if r.ResponseStatus != "1001" {
+		t.Errorf("expected 1001 from spaced key, got %q", r.ResponseStatus)
+	}
+	if r.ResponseDescription != "Shortcode already Registered!" {
+		t.Errorf("expected description from spaced key, got %q", r.ResponseDescription)
+	}
+}
+
+func TestPullTransactionsRegisterResponseUnmarshalCanonicalKeysWin(t *testing.T) {
+	var r PullTransactionsRegisterResponse
+	if err := json.Unmarshal([]byte(`{"ResponseRefID":"r1","ResponseStatus":"1000","Response Status":"1001","ShortCode":"174379","ResponseDescription":"ok","Response Description":"spaced"}`), &r); err != nil {
+		t.Fatalf("unmarshal failed: %v", err)
+	}
+	if r.ResponseStatus != "1000" {
+		t.Errorf("expected canonical key to win, got %q", r.ResponseStatus)
+	}
+	if r.ResponseDescription != "ok" {
+		t.Errorf("expected canonical description to win, got %q", r.ResponseDescription)
+	}
+}
+
 // ---- loggers ----
 
 func TestNewNoopLogger(t *testing.T) {
