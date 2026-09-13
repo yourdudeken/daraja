@@ -10,7 +10,7 @@ Verified against the sandbox.
 
 import os
 
-from daraja import Mpesa, TransactionStatusRequest
+from daraja import Mpesa
 
 mpesa = Mpesa({
     "consumer_key": os.environ["MPESA_CONSUMER_KEY"],
@@ -20,17 +20,15 @@ mpesa = Mpesa({
     "initiator_password": os.environ["MPESA_INITIATOR_PASSWORD"],
 })
 
-response = mpesa.transaction_status(
-    TransactionStatusRequest(
-        CommandID="TransactionStatusQuery",
-        TransactionID="NLA00TEST",
-        PartyA=174379,
-        IdentifierType=4,  # 4 = shortcode
-        ResultURL="https://example.com/status/result",
-        QueueTimeOutURL="https://example.com/status/queue",
-        Remarks="Status check",
-    )
-)
+response = mpesa.transaction_status({
+    "CommandID": "TransactionStatusQuery",
+    "TransactionID": "NLA00TEST",
+    "PartyA": 174379,
+    "IdentifierType": 4,  # 4 = shortcode
+    "ResultURL": "https://example.com/status/result",
+    "QueueTimeOutURL": "https://example.com/status/queue",
+    "Remarks": "Status check",
+})
 
 print(f"ResponseCode: {response.ResponseCode}")
 print(f"ResponseDescription: {response.ResponseDescription}")

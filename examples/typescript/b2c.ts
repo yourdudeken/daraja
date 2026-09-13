@@ -7,6 +7,7 @@
 //           MPESA_INITIATOR_NAME, MPESA_INITIATOR_PASSWORD
 // Verified against the sandbox.
 
+import { randomUUID } from "node:crypto";
 import { Mpesa } from "@daraja-sdk/ts";
 
 const mpesa = new Mpesa({
@@ -18,6 +19,7 @@ const mpesa = new Mpesa({
 });
 
 const response = await mpesa.b2c.send({
+  OriginatorConversationID: randomUUID(),
   CommandID: "BusinessPayment",
   Amount: 10,
   PartyA: 174379, // business shortcode

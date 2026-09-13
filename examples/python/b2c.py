@@ -9,8 +9,9 @@ Verified against the sandbox.
 """
 
 import os
+import uuid
 
-from daraja import B2CRequest, Mpesa
+from daraja import Mpesa
 
 mpesa = Mpesa({
     "consumer_key": os.environ["MPESA_CONSUMER_KEY"],
@@ -20,18 +21,17 @@ mpesa = Mpesa({
     "initiator_password": os.environ["MPESA_INITIATOR_PASSWORD"],
 })
 
-response = mpesa.b2c(
-    B2CRequest(
-        CommandID="BusinessPayment",
-        Amount=10,
-        PartyA=174379,          # business shortcode
-        PartyB=254708374149,    # customer phone
-        Remarks="Test B2C",
-        QueueTimeOutURL="https://example.com/b2c/queue",
-        ResultURL="https://example.com/b2c/result",
-        Occassion="Test",
-    )
-)
+response = mpesa.b2c({
+    "OriginatorConversationID": str(uuid.uuid4()),
+    "CommandID": "BusinessPayment",
+    "Amount": 10,
+    "PartyA": 174379,          # business shortcode
+    "PartyB": 254708374149,    # customer phone
+    "Remarks": "Test B2C",
+    "QueueTimeOutURL": "https://example.com/b2c/queue",
+    "ResultURL": "https://example.com/b2c/result",
+    "Occassion": "Test",
+})
 
 print(f"OriginatorConversationID: {response.OriginatorConversationID}")
 print(f"ResponseCode: {response.ResponseCode}")

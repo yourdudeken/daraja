@@ -1,5 +1,7 @@
 # Lipa Na Bonga
 
+> **Status:** ⚠️ Implemented per the docs in all three SDKs (Go, Python, TypeScript), but the sandbox returns `404` for both endpoints. Request/response shapes match the docs exactly.
+
 Calculate Bonga Points redemption value and redeem points to pay for goods/services.
 
 ## Endpoints

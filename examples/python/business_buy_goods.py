@@ -10,7 +10,7 @@ Verified against the sandbox.
 
 import os
 
-from daraja import BusinessBuyGoodsRequest, Mpesa
+from daraja import Mpesa
 
 mpesa = Mpesa({
     "consumer_key": os.environ["MPESA_CONSUMER_KEY"],
@@ -20,19 +20,17 @@ mpesa = Mpesa({
     "initiator_password": os.environ["MPESA_INITIATOR_PASSWORD"],
 })
 
-response = mpesa.business_buy_goods(
-    BusinessBuyGoodsRequest(
-        CommandID="BusinessBuyGoods",
-        SenderIdentifierType="4",
-        RecieverIdentifierType="4",
-        Amount=100,
-        PartyA=174379,  # business shortcode
-        PartyB=600000,  # till number
-        Remarks="Buy goods test",
-        QueueTimeOutURL="https://example.com/buygoods/queue",
-        ResultURL="https://example.com/buygoods/result",
-    )
-)
+response = mpesa.business_buy_goods({
+    "CommandID": "BusinessBuyGoods",
+    "SenderIdentifierType": "4",
+    "RecieverIdentifierType": "4",
+    "Amount": 100,
+    "PartyA": 174379,  # business shortcode
+    "PartyB": 600000,  # till number
+    "Remarks": "Buy goods test",
+    "QueueTimeOutURL": "https://example.com/buygoods/queue",
+    "ResultURL": "https://example.com/buygoods/result",
+})
 
 print(f"ResponseCode: {response.ResponseCode}")
 print(f"ResponseDescription: {response.ResponseDescription}")

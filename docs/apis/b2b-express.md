@@ -1,5 +1,7 @@
 # B2B Express
 
+> **Status:** ⚠️ Implemented per the docs in all three SDKs (Go, Python, TypeScript), but the sandbox gateway returns `504` for this endpoint. Request/response shapes match the docs exactly.
+
 B2B Express (Lipa na M-Pesa B2B / USSD push) lets a partner trigger a USSD
 prompt on a customer's phone to authorize a B2B payment, resolving the
 customer's MSISDN to the primary shortcode.

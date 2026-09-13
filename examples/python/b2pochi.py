@@ -9,8 +9,9 @@ Verified against the sandbox.
 """
 
 import os
+import uuid
 
-from daraja import B2PochiRequest, Mpesa
+from daraja import Mpesa
 
 mpesa = Mpesa({
     "consumer_key": os.environ["MPESA_CONSUMER_KEY"],
@@ -20,17 +21,16 @@ mpesa = Mpesa({
     "initiator_password": os.environ["MPESA_INITIATOR_PASSWORD"],
 })
 
-response = mpesa.b2pochi(
-    B2PochiRequest(
-        CommandID="BusinessPayToPochi",
-        Amount=10,
-        PartyA=174379,          # business shortcode
-        PartyB=254708374149,    # customer phone
-        Remarks="Pochi test",
-        QueueTimeOutURL="https://example.com/b2pochi/queue",
-        ResultURL="https://example.com/b2pochi/result",
-    )
-)
+response = mpesa.b2pochi({
+    "OriginatorConversationID": str(uuid.uuid4()),
+    "CommandID": "BusinessPayToPochi",
+    "Amount": 10,
+    "PartyA": 174379,          # business shortcode
+    "PartyB": 254708374149,    # customer phone
+    "Remarks": "Pochi test",
+    "QueueTimeOutURL": "https://example.com/b2pochi/queue",
+    "ResultURL": "https://example.com/b2pochi/result",
+})
 
 print(f"OriginatorConversationID: {response.OriginatorConversationID}")
 print(f"ResponseCode: {response.ResponseCode}")

@@ -10,7 +10,7 @@ Verified against the sandbox.
 
 import os
 
-from daraja import AccountBalanceRequest, Mpesa
+from daraja import Mpesa
 
 mpesa = Mpesa({
     "consumer_key": os.environ["MPESA_CONSUMER_KEY"],
@@ -20,16 +20,14 @@ mpesa = Mpesa({
     "initiator_password": os.environ["MPESA_INITIATOR_PASSWORD"],
 })
 
-response = mpesa.account_balance(
-    AccountBalanceRequest(
-        CommandID="AccountBalance",
-        PartyA=174379,
-        IdentifierType=4,  # 4 = shortcode
-        Remarks="Balance check",
-        QueueTimeOutURL="https://example.com/balance/queue",
-        ResultURL="https://example.com/balance/result",
-    )
-)
+response = mpesa.account_balance({
+    "CommandID": "AccountBalance",
+    "PartyA": 174379,
+    "IdentifierType": 4,  # 4 = shortcode
+    "Remarks": "Balance check",
+    "QueueTimeOutURL": "https://example.com/balance/queue",
+    "ResultURL": "https://example.com/balance/result",
+})
 
 print(f"OriginatorConversationID: {response.OriginatorConversationID}")
 print(f"ResponseCode: {response.ResponseCode}")

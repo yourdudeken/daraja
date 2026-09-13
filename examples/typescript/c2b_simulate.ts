@@ -17,7 +17,7 @@ const mpesa = new Mpesa({
 
 const response = await mpesa.c2b.simulate({
   ShortCode: 174379,
-  CommandID: "CustomerPaybillOnline",
+  CommandID: "CustomerPayBillOnline",
   Amount: 100,
   Msisdn: 254708374149,
   BillRefNumber: "INV-001",

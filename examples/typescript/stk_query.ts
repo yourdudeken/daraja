@@ -17,10 +17,12 @@ const mpesa = new Mpesa({
 
 const response = await mpesa.stkPush.query({
   BusinessShortCode: "174379",
+  Password: "", // SDK derives this from passkey + timestamp
+  Timestamp: "",
   CheckoutRequestID: "ws_CO_1234567890", // from STK Push response
 });
 
 console.log(`ResultCode: ${response.ResultCode}`);
 console.log(`ResultDesc: ${response.ResultDesc}`);
-console.log(`Amount: ${response.Amount}`);
-console.log(`MpesaReceiptNumber: ${response.MpesaReceiptNumber}`);
+console.log(`MerchantRequestID: ${response.MerchantRequestID}`);
+console.log(`CheckoutRequestID: ${response.CheckoutRequestID}`);

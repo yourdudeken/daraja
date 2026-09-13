@@ -10,7 +10,7 @@ Verified against the sandbox.
 
 import os
 
-from daraja import C2BSimulateRequest, Mpesa
+from daraja import Mpesa
 
 mpesa = Mpesa({
     "consumer_key": os.environ["MPESA_CONSUMER_KEY"],
@@ -18,15 +18,13 @@ mpesa = Mpesa({
     "environment": "sandbox",
 })
 
-response = mpesa.c2b_simulate(
-    C2BSimulateRequest(
-        ShortCode=174379,
-        CommandID="CustomerPaybillOnline",
-        Amount=100,
-        Msisdn=254708374149,
-        BillRefNumber="INV-001",
-    )
-)
+response = mpesa.c2b_simulate({
+    "ShortCode": 174379,
+    "CommandID": "CustomerPayBillOnline",
+    "Amount": 100,
+    "Msisdn": 254708374149,
+    "BillRefNumber": "INV-001",
+})
 
 print(f"ResponseCode: {response.ResponseCode}")
 print(f"ResponseDescription: {response.ResponseDescription}")

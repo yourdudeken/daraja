@@ -19,6 +19,8 @@ const response = await mpesa.stkPush.initiate({
   CallBackURL: "https://example.com/callback",
   AccountReference: "INV-001",
   TransactionDesc: "Payment",
+  Password: "", // SDK derives this from passkey + timestamp
+  Timestamp: "",
 });
 
 console.log(`Checkout ID: ${response.CheckoutRequestID}`);

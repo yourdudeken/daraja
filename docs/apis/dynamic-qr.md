@@ -1,5 +1,7 @@
 # Dynamic QR Code
 
+> **Status:** ⚠️ Implemented per the docs in all three SDKs (Go, Python, TypeScript), but the sandbox endpoint returns `503` (service unavailable). Request/response shapes match the docs exactly.
+
 Generates a dynamic QR code that customers can scan with the M-Pesa app to make a payment.
 
 ## Endpoint

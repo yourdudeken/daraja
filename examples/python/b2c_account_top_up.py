@@ -10,7 +10,7 @@ Verified against the sandbox.
 
 import os
 
-from daraja import B2CAccountTopUpRequest, Mpesa
+from daraja import Mpesa
 
 mpesa = Mpesa({
     "consumer_key": os.environ["MPESA_CONSUMER_KEY"],
@@ -20,20 +20,18 @@ mpesa = Mpesa({
     "initiator_password": os.environ["MPESA_INITIATOR_PASSWORD"],
 })
 
-response = mpesa.b2c_account_top_up(
-    B2CAccountTopUpRequest(
-        CommandID="BusinessPayToBulk",
-        SenderIdentifierType="4",
-        RecieverIdentifierType="4",
-        Amount="10",
-        PartyA="174379",
-        PartyB="600000",
-        AccountReference="TOPUP-TEST",
-        Remarks="Test top up",
-        QueueTimeOutURL="https://example.com/topup/queue",
-        ResultURL="https://example.com/topup/result",
-    )
-)
+response = mpesa.b2c_account_top_up({
+    "CommandID": "BusinessPayToBulk",
+    "SenderIdentifierType": "4",
+    "RecieverIdentifierType": "4",
+    "Amount": "10",
+    "PartyA": "174379",
+    "PartyB": "600000",
+    "AccountReference": "TOPUP-TEST",
+    "Remarks": "Test top up",
+    "QueueTimeOutURL": "https://example.com/topup/queue",
+    "ResultURL": "https://example.com/topup/result",
+})
 
 print(f"OriginatorConversationID: {response.OriginatorConversationID}")
 print(f"ResponseCode: {response.ResponseCode}")

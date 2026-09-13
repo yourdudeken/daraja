@@ -10,7 +10,7 @@ Verified against the sandbox.
 
 import os
 
-from daraja import Mpesa, TaxRemittanceRequest
+from daraja import Mpesa
 
 mpesa = Mpesa({
     "consumer_key": os.environ["MPESA_CONSUMER_KEY"],
@@ -20,20 +20,18 @@ mpesa = Mpesa({
     "initiator_password": os.environ["MPESA_INITIATOR_PASSWORD"],
 })
 
-response = mpesa.tax_remittance(
-    TaxRemittanceRequest(
-        CommandID="PayTaxToKRA",
-        SenderIdentifierType="4",
-        RecieverIdentifierType="4",
-        Amount="100",
-        PartyA="174379",
-        PartyB="572572",  # KRA paybill
-        AccountReference="TAX-TEST",
-        Remarks="Test tax remittance",
-        QueueTimeOutURL="https://example.com/tax/queue",
-        ResultURL="https://example.com/tax/result",
-    )
-)
+response = mpesa.tax_remittance({
+    "CommandID": "PayTaxToKRA",
+    "SenderIdentifierType": "4",
+    "RecieverIdentifierType": "4",
+    "Amount": "100",
+    "PartyA": "174379",
+    "PartyB": "572572",  # KRA paybill
+    "AccountReference": "TAX-TEST",
+    "Remarks": "Test tax remittance",
+    "QueueTimeOutURL": "https://example.com/tax/queue",
+    "ResultURL": "https://example.com/tax/result",
+})
 
 print(f"OriginatorConversationID: {response.OriginatorConversationID}")
 print(f"ResponseCode: {response.ResponseCode}")
