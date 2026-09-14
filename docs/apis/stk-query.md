@@ -1,6 +1,6 @@
 # STK Push Query
 
-> **Status:** ✅ Verified against the sandbox in all three SDKs (Go, Python, TypeScript).
+> **Status:**  Verified against the sandbox in all three SDKs (Go, Python, TypeScript).
 
 Queries the result of a previously initiated STK push request.
 

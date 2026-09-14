@@ -1,6 +1,6 @@
 # B2C Account Top-Up
 
-> **Status:** ✅ Verified against the sandbox in all three SDKs (Go, Python, TypeScript).
+> **Status:**  Verified against the sandbox in all three SDKs (Go, Python, TypeScript).
 
 Tops up a business M-Pesa account from another business account. Uses the same endpoint as B2B but with a dedicated `CommandID`.
 

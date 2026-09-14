@@ -1,6 +1,6 @@
 # Reversal
 
-> **Status:** ✅ Verified against the sandbox in all three SDKs (Go, Python, TypeScript).
+> **Status:**  Verified against the sandbox in all three SDKs (Go, Python, TypeScript).
 
 Reverses a completed M-Pesa transaction. The reversal amount must not exceed the original transaction amount.
 
