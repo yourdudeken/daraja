@@ -70,6 +70,10 @@ Shared documentation for the Daraja SDKs (Python, TypeScript, Go).
 
 - [Using the MCP Server](mcp/README.md)
 
+## Releasing
+
+- [Release process, versioning & tags](releasing.md)
+
 ## Language-Specific References
 
 - [Python Reference](python/reference.md)
