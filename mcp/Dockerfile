@@ -2,40 +2,41 @@
 FROM node:22-alpine AS builder
 WORKDIR /app
 
-# Copy workspace root + package manifests (npm needs the root package.json
-# to resolve the mcp workspace and its file:../sdks/typescript dependency)
-COPY package.json package-lock.json ./
-COPY mcp/package.json mcp/
-COPY sdks/typescript/package.json sdks/typescript/
+# npm 10.x (shipped with node:22) hits an arborist bug resolving this
+# dependency tree ("Cannot read properties of null (reading 'edgesOut')").
+# Pin npm 11, which fixes it.
+RUN npm install -g npm@11.19.1
 
-# Install all workspace dependencies
+# Local development resolves the TypeScript SDK through a workspace symlink
+# (file:../sdks/typescript in mcp/package.json). The Docker image instead
+# installs the published daraja-sdk-ts package from the npm registry, so the
+# SDK version is read from its manifest and swapped in at build time.
+COPY mcp/package.json ./
+COPY sdks/typescript/package.json /tmp/sdk-package.json
+RUN TS_SDK_VERSION=$(node -p "require('/tmp/sdk-package.json').version") && \
+    npm pkg set "dependencies.daraja-sdk-ts=^${TS_SDK_VERSION}"
+
+# Install dependencies (daraja-sdk-ts resolves from the npm registry; npm 11
+# auto-installs its required axios peer)
 RUN npm install
 
-# Copy SDK source and build it
-COPY sdks/typescript/ sdks/typescript/
-RUN npm --prefix sdks/typescript run build
+# Compile. npx tsc is used instead of `npm run build` to bypass the prebuild
+# hook, which builds the local SDK symlink (not present in this image).
+COPY mcp/tsconfig.json ./
+COPY mcp/src/ ./src/
+RUN npx tsc
 
-# Copy MCP source and build it
-COPY mcp/tsconfig.json mcp/
-COPY mcp/src/ mcp/src/
-RUN npm --prefix mcp run build
+# Drop dev dependencies before the runtime stage
+RUN npm prune --omit=dev
 
 # Runtime stage
 FROM node:22-alpine
 WORKDIR /app
 RUN apk add --no-cache tini
 
-# MCP application
-COPY --from=builder /app/mcp/dist/ ./dist/
-COPY --from=builder /app/mcp/package.json ./
-
-# Hoisted dependencies (express, @modelcontextprotocol/sdk, axios, ...)
-# plus the daraja-sdk-ts symlink -> ../../sdks/typescript
+COPY --from=builder /app/dist/ ./dist/
+COPY --from=builder /app/package.json ./
 COPY --from=builder /app/node_modules/ ./node_modules/
-
-# SDK package (resolves the daraja-sdk-ts symlink at runtime)
-COPY --from=builder /app/sdks/typescript/dist/ ./sdks/typescript/dist/
-COPY --from=builder /app/sdks/typescript/package.json ./sdks/typescript/package.json
 
 ENV NODE_ENV=production
 ENV DARAJA_MCP_MODE=http
