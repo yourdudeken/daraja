@@ -1,6 +1,6 @@
 # Pull Transactions
 
-> **Status:** ✅ Verified against the sandbox in all three SDKs (Go, Python, TypeScript).
+> **Status:**  Verified against the sandbox in all three SDKs (Go, Python, TypeScript).
 
 Register to receive transaction notifications and query historical pull transactions for a business shortcode.
 

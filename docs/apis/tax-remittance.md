@@ -1,6 +1,6 @@
 # Tax Remittance
 
-> **Status:** ✅ Verified against the sandbox in all three SDKs (Go, Python, TypeScript).
+> **Status:**  Verified against the sandbox in all three SDKs (Go, Python, TypeScript).
 
 Remits tax payments to the Kenya Revenue Authority (KRA) via M-Pesa. Uses a dedicated endpoint with `CommandID` set to `PayTaxToKRA`.
 

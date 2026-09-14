@@ -1,6 +1,6 @@
 # Business Buy Goods
 
-> **Status:** ✅ Verified against the sandbox in all three SDKs (Go, Python, TypeScript).
+> **Status:**  Verified against the sandbox in all three SDKs (Go, Python, TypeScript).
 
 Sends a payment from a business account to a buy goods (till) merchant. This is a convenience wrapper around the B2B endpoint with `CommandID` set to `BusinessBuyGoods`.
 
