@@ -1,4 +1,4 @@
-import { Mpesa, WebhookManager } from "@daraja-sdk/ts";
+import { Mpesa, WebhookManager } from "daraja-sdk-ts";
 
 const ERRORS: Array<{ api: string; error: string; type: string }> = [];
 

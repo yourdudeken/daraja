@@ -1,9 +1,9 @@
 # TypeScript SDK Reference
 
-Package: `@daraja-sdk/ts` (npm install @daraja-sdk/ts)
+Package: `daraja-sdk-ts` (npm install daraja-sdk-ts)
 
 ```typescript
-import { Mpesa, type MpesaConfig } from "@daraja-sdk/ts";
+import { Mpesa, type MpesaConfig } from "daraja-sdk-ts";
 ```
 
 ## Classes
@@ -247,7 +247,7 @@ interface MpesaConfig {
 
 ## Errors
 
-From `@daraja-sdk/ts`:
+From `daraja-sdk-ts`:
 
 | Class | Extra Fields | Notes |
 |-------|-------------|-------|
@@ -267,7 +267,7 @@ Function: `isMpesaError(error): error is MpesaError` -- type guard.
 ## WebhookManager
 
 ```typescript
-import { WebhookManager } from "@daraja-sdk/ts";
+import { WebhookManager } from "daraja-sdk-ts";
 
 const webhooks = new WebhookManager({ passkey });
 
@@ -317,7 +317,7 @@ Also exports:
 
 ## Utilities
 
-From `@daraja-sdk/ts`:
+From `daraja-sdk-ts`:
 
 | Function | Signature | Notes |
 |----------|-----------|-------|
@@ -339,10 +339,10 @@ Also exports: `Validation` class (static methods: `requiredString`, `requiredNum
 
 ## Middleware
 
-From `@daraja-sdk/ts` (Express and Fastify webhook middleware):
+From `daraja-sdk-ts` (Express and Fastify webhook middleware):
 
 ```typescript
-import { createExpressMiddleware, createFastifyPlugin } from "@daraja-sdk/ts";
+import { createExpressMiddleware, createFastifyPlugin } from "daraja-sdk-ts";
 
 // Express
 app.use(createExpressMiddleware({

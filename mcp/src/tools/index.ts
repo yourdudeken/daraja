@@ -1,4 +1,4 @@
-import type { Mpesa } from "@daraja-sdk/ts";
+import type { Mpesa } from "daraja-sdk-ts";
 import { stkPushTool } from "./stk-push.js";
 import { stkQueryTool } from "./stk-query.js";
 import { c2bRegisterTool } from "./c2b-register.js";

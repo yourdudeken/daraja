@@ -69,7 +69,7 @@ resp = mpesa.ratiba(RatibaRequest(
 ```
 
 ```ts
-import { Mpesa } from "@daraja-sdk/ts";
+import { Mpesa } from "daraja-sdk-ts";
 
 const resp = await mpesa.ratiba.createStandingOrder({
   StandingOrderName: "Rent Payment",

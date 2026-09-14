@@ -45,7 +45,7 @@ qr_image = response.QRCode  # base64 string
 ```
 
 ```typescript
-import { Mpesa } from "@daraja-sdk/ts";
+import { Mpesa } from "daraja-sdk-ts";
 
 const mpesa = new Mpesa({ consumerKey: "...", consumerSecret: "..." });
 const response = await mpesa.dynamicQR.generate({

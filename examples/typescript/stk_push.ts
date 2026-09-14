@@ -1,6 +1,6 @@
 // Example shows how to use the M-Pesa TypeScript SDK to initiate an STK Push.
 
-import { Mpesa } from "@daraja-sdk/ts";
+import { Mpesa } from "daraja-sdk-ts";
 
 const mpesa = new Mpesa({
   consumerKey: process.env.MPESA_CONSUMER_KEY!,

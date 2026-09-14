@@ -32,7 +32,7 @@ Note: `Password` and `Timestamp` are auto-generated from the configured passkey;
 ## Webhook Handler
 
 ```typescript
-import { WebhookManager } from "@daraja-sdk/ts";
+import { WebhookManager } from "daraja-sdk-ts";
 
 const webhooks = new WebhookManager({ passkey: "YOUR_PASSKEY" });
 

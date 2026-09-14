@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
-vi.mock("@daraja-sdk/ts", () => ({
+vi.mock("daraja-sdk-ts", () => ({
   Mpesa: class {},
 }));
 

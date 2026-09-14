@@ -3,7 +3,7 @@ import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
-import type { Mpesa } from "@daraja-sdk/ts";
+import type { Mpesa } from "daraja-sdk-ts";
 import { getAllTools, type Tool } from "./tools/index.js";
 
 export function createServer(client: Mpesa): Server {

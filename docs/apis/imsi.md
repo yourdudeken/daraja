@@ -35,7 +35,7 @@ print(response.imsi)
 ```
 
 ```typescript
-import { Mpesa } from "@daraja-sdk/ts";
+import { Mpesa } from "daraja-sdk-ts";
 
 const mpesa = new Mpesa({ consumerKey: "...", consumerSecret: "..." });
 const response = await mpesa.imsi.query({ customerNumber: "254712345678" });

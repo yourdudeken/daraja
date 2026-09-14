@@ -1,4 +1,4 @@
-import type { Mpesa } from "@daraja-sdk/ts";
+import type { Mpesa } from "daraja-sdk-ts";
 import type { Tool } from "./index.js";
 
 export const healthTool: Tool = {
