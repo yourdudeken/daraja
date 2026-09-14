@@ -20,7 +20,7 @@ from daraja.models import (
     TransactionStatusRequest,
 )
 
-VERSION = "0.0.1"
+VERSION = "0.2.0"  # x-release-please-version
 
 
 def _client(args: argparse.Namespace) -> Mpesa:

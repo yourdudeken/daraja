@@ -14,7 +14,7 @@ import (
 	"github.com/yourdudeken/daraja/sdks/go/types"
 )
 
-const version = "0.2.0"
+var version = "0.2.0" // x-release-please-version
 
 type envFlag struct {
 	value types.Environment

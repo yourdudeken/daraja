@@ -1,66 +1,58 @@
 name: Release
 
 on:
-  workflow_dispatch:
-    inputs:
-      version:
-        description: "Version to release (e.g. 1.2.3). Leave empty to use package.json versions."
-        required: false
-        type: string
   push:
-    tags: ["v*"]
+    branches: [main]
+
+concurrency:
+  group: release-please
+  cancel-in-progress: false
 
 permissions:
   contents: write
+  issues: write
+  pull-requests: write
   id-token: write
 
 jobs:
-  version:
-    name: Resolve version
+  release-please:
+    name: Release Please
     runs-on: ubuntu-latest
     outputs:
-      version: ${{ steps.resolve.outputs.version }}
+      python--release_created: ${{ steps.release.outputs['sdks/python--release_created'] }}
+      python--tag_name: ${{ steps.release.outputs['sdks/python--tag_name'] }}
+      python--version: ${{ steps.release.outputs['sdks/python--version'] }}
+      typescript--release_created: ${{ steps.release.outputs['sdks/typescript--release_created'] }}
+      typescript--tag_name: ${{ steps.release.outputs['sdks/typescript--tag_name'] }}
+      typescript--version: ${{ steps.release.outputs['sdks/typescript--version'] }}
+      go--release_created: ${{ steps.release.outputs['sdks/go--release_created'] }}
+      go--tag_name: ${{ steps.release.outputs['sdks/go--tag_name'] }}
+      go--version: ${{ steps.release.outputs['sdks/go--version'] }}
     steps:
-      - uses: actions/checkout@v4
-      - id: resolve
-        run: |
-          if [ -n "${{ github.event.inputs.version }}" ]; then
-            echo "version=${{ github.event.inputs.version }}"
-          elif [ -n "${{ github.ref_type }}" ] && [ "${{ github.ref_type }}" = "tag" ]; then
-            TAG="${GITHUB_REF_NAME#v}"
-            echo "version=${TAG}"
-          else
-            echo "version="
-          fi
-      - name: Ensure version present
-        run: |
-          if [ -z "${{ steps.resolve.outputs.version }}" ]; then
-            echo "::error::No version provided. Use a v* tag or workflow_dispatch.version input."
-            exit 1
-          fi
+      - uses: googleapis/release-please-action@v4
+        id: release
+        with:
+          # Use a PAT (RELEASE_PLEASE_TOKEN) so release PRs trigger CI;
+          # falls back to GITHUB_TOKEN until one is configured.
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN || secrets.GITHUB_TOKEN }}
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
 
   publish-python:
     name: Publish Python SDK to PyPI
-    needs: version
+    needs: release-please
+    if: ${{ needs.release-please.outputs.python--release_created == 'true' }}
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: sdks/python
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.release-please.outputs.python--tag_name }}
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Set distribution version
-        run: |
-          python - "${{ needs.version.outputs.version }}" <<'EOF'
-          import re, sys, pathlib
-          v = sys.argv[1]
-          p = pathlib.Path("pyproject.toml")
-          t = p.read_text()
-          t = re.sub(r'version\s*=\s*"[^"]+"', f'version = "{v}"', t, count=1)
-          p.write_text(t)
-          EOF
       - name: Test
         run: pip install -e ".[all]" pytest hypothesis respx && pytest tests/unit -v
       - name: Build
@@ -72,19 +64,20 @@ jobs:
 
   publish-typescript:
     name: Publish TypeScript SDK to npm
-    needs: version
+    needs: release-please
+    if: ${{ needs.release-please.outputs.typescript--release_created == 'true' }}
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: sdks/typescript
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.release-please.outputs.typescript--tag_name }}
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           registry-url: "https://registry.npmjs.org"
-      - name: Set package version
-        run: npm pkg set version="${{ needs.version.outputs.version }}"
       - run: npm install
       - run: npm run lint
       - run: npm test
@@ -94,25 +87,31 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-  release:
-    name: Create GitHub Release
-    needs: [version, publish-python, publish-typescript]
+  publish-go:
+    name: Release Go SDK binaries
+    needs: release-please
+    if: ${{ needs.release-please.outputs.go--release_created == 'true' }}
     runs-on: ubuntu-latest
-    if: github.ref_type == 'tag'
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: ${{ needs.release-please.outputs.go--tag_name }}
       - uses: actions/setup-go@v5
         with:
           go-version: "1.25"
           cache-dependency-path: sdks/go/go.sum
-      - name: Run GoReleaser
+      - name: Build CLI binaries
         uses: goreleaser/goreleaser-action@v6
         with:
           distribution: goreleaser
           version: "~> v2"
-          args: release --clean --skip=validate
+          args: build --clean --skip=validate
           workdir: sdks/go
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}`
+          GORELEASER_CURRENT_TAG: v${{ needs.release-please.outputs.go--version }}
+      - name: Upload binaries to GitHub Release
+        working-directory: sdks/go
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release upload "${{ needs.release-please.outputs.go--tag_name }}" dist/* --clobber

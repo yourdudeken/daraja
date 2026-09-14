@@ -1,4 +1,4 @@
-export const VERSION = "0.2.0" as const;
+export const VERSION = "0.2.0" as const; // x-release-please-version
 
 export const SANDBOX_BASE_URL = "https://sandbox.safaricom.co.ke" as const;
 export const PRODUCTION_BASE_URL = "https://api.safaricom.co.ke" as const;

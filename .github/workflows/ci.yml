@@ -88,3 +88,17 @@ jobs:
       - run: npm run lint
       - run: npm run test:coverage
       - run: npm run build
+
+  lint-commits:
+    name: Conventional Commits
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: wagoid/commitlint-github-action@v6
+        with:
+          configFile: commitlint.config.mjs
