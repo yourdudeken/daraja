@@ -10,7 +10,9 @@
     "clean": "rm -rf dist",
     "prelint": "npm --prefix ../sdks/typescript run build",
     "lint": "tsc --noEmit",
+    "prestart": "npm run build",
     "start": "node dist/index.js",
+    "dev": "tsx watch src/index.ts",
     "pretest": "npm --prefix ../sdks/typescript run build",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage"
@@ -23,6 +25,7 @@
   "devDependencies": {
     "@types/express": "^4.17.21",
     "@types/node": "^25.9.1",
+    "tsx": "^4.19.0",
     "typescript": "^5.5.0",
     "vitest": "^4.1.8",
     "@vitest/coverage-v8": "4.1.11"

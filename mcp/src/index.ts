@@ -17,7 +17,7 @@ if (isDirectExecution || process.env.DARAJA_MCP_MODE) {
   const client = new Mpesa(config);
 
   if (mode === "http") {
-    const port = parseInt(process.env.MCP_PORT || "3000", 10);
+    const port = parseInt(process.env.MCP_PORT || "3999", 10);
     const host = process.env.MCP_HOST || "0.0.0.0";
     startHttpTransport(() => createServer(client), { port, host });
   } else {

@@ -69,10 +69,10 @@ MCP client config:
 ### HTTP/SSE mode (remote access)
 
 ```bash
-DARAJA_MCP_MODE=http MCP_PORT=3000 npm start
+DARAJA_MCP_MODE=http MCP_PORT=3999 npm start
 ```
 
-Connect via SSE: `http://localhost:3000/sse`
+Connect via SSE: `http://localhost:3999/sse`
 
 ### Via Docker
 
@@ -93,7 +93,7 @@ docker compose up mcp
 | `MPESA_SECURITY_CREDENTIAL` | No | - | RSA-encrypted security credential |
 | `MPESA_TIMEOUT` | No | `30000` | Request timeout in ms |
 | `DARAJA_MCP_MODE` | No | `stdio` | `stdio` or `http` |
-| `MCP_PORT` | No | `3000` | HTTP port (http mode) |
+| `MCP_PORT` | No | `3999` | HTTP port (http mode) |
 | `MCP_HOST` | No | `0.0.0.0` | HTTP bind host (http mode) |
 
 These map directly onto the TypeScript SDK's `MpesaConfig` (see

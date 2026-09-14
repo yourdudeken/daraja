@@ -4,10 +4,10 @@ services:
       context: .
       dockerfile: mcp/Dockerfile
     ports:
-      - "${MCP_PORT:-3000}:3000"
+      - "${MCP_PORT:-3999}:3999"
     environment:
       - DARAJA_MCP_MODE=http
-      - MCP_PORT=3000
+      - MCP_PORT=3999
       - MCP_HOST=0.0.0.0
       - MPESA_CONSUMER_KEY=${MPESA_CONSUMER_KEY}
       - MPESA_CONSUMER_SECRET=${MPESA_CONSUMER_SECRET}
@@ -18,7 +18,7 @@ services:
       - MPESA_SECURITY_CREDENTIAL=${MPESA_SECURITY_CREDENTIAL:-}
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/v1/health"]
+      test: ["CMD", "wget", "-qO-", "http://localhost:3999/api/v1/health"]
       interval: 30s
       timeout: 5s
       retries: 3
