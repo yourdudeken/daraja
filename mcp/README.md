@@ -1,6 +1,10 @@
 # Daraja MCP Server
 
-Model Context Protocol server for Safaricom M-Pesa Daraja API access.
+Self-hosted Model Context Protocol server for Safaricom M-Pesa Daraja API access.
+
+> **Not an npm package.** This server is designed to be deployed on your own
+> infrastructure — a VPS, local machine, Render, Railway, Fly.io, or any
+> Docker-compatible environment.
 
 ## Overview
 
@@ -8,6 +12,8 @@ This MCP server is **built on the Daraja TypeScript SDK** (`@daraja-sdk/ts`). Ev
 tool is a thin wrapper around a typed SDK service method — the server does not
 re-implement any M-Pesa logic. It exposes M-Pesa operations as MCP tools that AI
 agents can call over **stdio** or **HTTP/SSE**.
+
+All HTTP endpoints are versioned under `/api/v1`.
 
 ## Installation
 
@@ -46,7 +52,15 @@ MCP client config:
 DARAJA_MCP_MODE=http MCP_PORT=3000 npm start
 ```
 
-Connect via SSE: `http://localhost:3000/sse`
+Connect via SSE: `http://localhost:3000/api/v1/sse`
+
+All endpoints live under the `/api/v1` prefix:
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/v1/sse` | GET | SSE stream — MCP client connects here |
+| `/api/v1/messages` | POST | Send JSON-RPC messages (query param `sessionId`) |
+| `/api/v1/health` | GET | Health check (`{ status, activeSessions }`) |
 
 ### Docker
 

@@ -18,7 +18,7 @@ services:
       - MPESA_SECURITY_CREDENTIAL=${MPESA_SECURITY_CREDENTIAL:-}
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:3000/health"]
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/v1/health"]
       interval: 30s
       timeout: 5s
       retries: 3

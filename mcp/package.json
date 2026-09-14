@@ -1,16 +1,9 @@
 {
   "name": "daraja-mcp",
   "version": "0.0.1",
-  "description": "MCP server for Safaricom M-Pesa Daraja API access",
+  "private": true,
+  "description": "Self-hosted MCP server for Safaricom M-Pesa Daraja API access (not an npm package)",
   "type": "module",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "bin": {
-    "daraja-mcp": "./dist/index.js"
-  },
-  "files": [
-    "dist"
-  ],
   "scripts": {
     "prebuild": "npm --prefix ../sdks/typescript run build",
     "build": "tsc",

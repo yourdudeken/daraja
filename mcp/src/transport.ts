@@ -2,6 +2,10 @@ import express from "express";
 import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
 import type { Server } from "@modelcontextprotocol/sdk/server/index.js";
 
+/** API version prefix — all MCP endpoints live under /api/v{version} */
+const API_VERSION = "v1";
+const API_PREFIX = `/api/${API_VERSION}`;
+
 export interface TransportOptions {
   port: number;
   host?: string;
@@ -16,8 +20,12 @@ export function startHttpTransport(
 
   const transports = new Map<string, SSEServerTransport>();
 
-  app.get("/sse", async (_req, res) => {
-    const transport = new SSEServerTransport("/messages", res);
+  // --- versioned routes ------------------------------------------------
+  app.get(`${API_PREFIX}/sse`, async (_req, res) => {
+    const transport = new SSEServerTransport(
+      `${API_PREFIX}/messages`,
+      res,
+    );
     transports.set(transport.sessionId, transport);
 
     res.on("close", () => {
@@ -28,7 +36,7 @@ export function startHttpTransport(
     await server.connect(transport);
   });
 
-  app.post("/messages", async (req, res) => {
+  app.post(`${API_PREFIX}/messages`, async (req, res) => {
     const sessionId = req.query.sessionId as string;
     const transport = transports.get(sessionId);
 
@@ -40,16 +48,17 @@ export function startHttpTransport(
     await transport.handlePostMessage(req, res);
   });
 
-  app.get("/health", (_req, res) => {
+  app.get(`${API_PREFIX}/health`, (_req, res) => {
     res.json({ status: "ok", activeSessions: transports.size });
   });
 
+  // --- start -----------------------------------------------------------
   const { port, host = "0.0.0.0" } = options;
   app.listen(port, host, () => {
     console.error(`Daraja MCP server listening on http://${host}:${port}`);
-    console.error(`  SSE endpoint: http://${host}:${port}/sse`);
-    console.error(`  Messages endpoint: http://${host}:${port}/messages`);
-    console.error(`  Health check: http://${host}:${port}/health`);
+    console.error(`  SSE endpoint: http://${host}:${port}${API_PREFIX}/sse`);
+    console.error(`  Messages endpoint: http://${host}:${port}${API_PREFIX}/messages`);
+    console.error(`  Health check: http://${host}:${port}${API_PREFIX}/health`);
   });
 
   return app;

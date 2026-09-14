@@ -22,11 +22,11 @@ describe("startHttpTransport", () => {
     expect(typeof app).toBe("function");
   });
 
-  it("serves /health with zero active sessions", async () => {
+  it("serves /api/v1/health with zero active sessions", async () => {
     const app = startHttpTransport(mockServerFactory, { port: 0, host: "127.0.0.1" });
     const { server, port } = await listen(app);
     try {
-      const res = await fetch(`http://127.0.0.1:${port}/health`);
+      const res = await fetch(`http://127.0.0.1:${port}/api/v1/health`);
       expect(res.status).toBe(200);
       const body = await res.json();
       expect(body).toEqual({ status: "ok", activeSessions: 0 });
@@ -35,11 +35,11 @@ describe("startHttpTransport", () => {
     }
   });
 
-  it("returns 404 for an unknown message session", async () => {
+  it("returns 404 for an unknown message session at /api/v1/messages", async () => {
     const app = startHttpTransport(mockServerFactory, { port: 0, host: "127.0.0.1" });
     const { server, port } = await listen(app);
     try {
-      const res = await fetch(`http://127.0.0.1:${port}/messages?sessionId=nope`, {
+      const res = await fetch(`http://127.0.0.1:${port}/api/v1/messages?sessionId=nope`, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "ping" }),
@@ -52,14 +52,25 @@ describe("startHttpTransport", () => {
     }
   });
 
-  it("serves the SSE endpoint", async () => {
+  it("serves the SSE endpoint at /api/v1/sse", async () => {
     const app = startHttpTransport(mockServerFactory, { port: 0, host: "127.0.0.1" });
     const { server, port } = await listen(app);
     try {
-      const res = await fetch(`http://127.0.0.1:${port}/sse`);
+      const res = await fetch(`http://127.0.0.1:${port}/api/v1/sse`);
       expect(res.status).toBe(200);
       expect(res.headers.get("content-type")).toContain("text/event-stream");
       await res.body?.cancel();
+    } finally {
+      server.close();
+    }
+  });
+
+  it("does not serve unversioned legacy paths", async () => {
+    const app = startHttpTransport(mockServerFactory, { port: 0, host: "127.0.0.1" });
+    const { server, port } = await listen(app);
+    try {
+      const res = await fetch(`http://127.0.0.1:${port}/health`);
+      expect(res.status).toBe(404);
     } finally {
       server.close();
     }

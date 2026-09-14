@@ -16,14 +16,6 @@ updates:
       ts-deps:
         patterns: ["*"]
 
-  - package-ecosystem: "npm"
-    directory: "/mcp"
-    schedule:
-      interval: "weekly"
-    groups:
-      mcp-deps:
-        patterns: ["*"]
-
   - package-ecosystem: "pip"
     directory: "/sdks/python"
     schedule:
