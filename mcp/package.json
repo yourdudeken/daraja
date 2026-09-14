@@ -2,7 +2,7 @@
   "name": "daraja-mcp",
   "version": "0.0.1",
   "private": true,
-  "description": "Self-hosted MCP server for Safaricom M-Pesa Daraja API access (not an npm package)",
+  "description": "Self-hosted MCP server for Safaricom M-Pesa Daraja API access",
   "type": "module",
   "scripts": {
     "prebuild": "npm --prefix ../sdks/typescript run build",

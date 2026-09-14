@@ -2,7 +2,7 @@
 
 Self-hosted Model Context Protocol server for Safaricom M-Pesa Daraja API access.
 
-> **Not an npm package.** This server is designed to be deployed on your own
+> This server is designed to be deployed on your own
 > infrastructure — a VPS, local machine, Render, Railway, Fly.io, or any
 > Docker-compatible environment.
 
