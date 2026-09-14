@@ -32,7 +32,7 @@ print(response.lastSwapDate)
 ```
 
 ```typescript
-import { Mpesa } from "@daraja-sdk/ts";
+import { Mpesa } from "daraja-sdk-ts";
 
 const mpesa = new Mpesa({ consumerKey: "...", consumerSecret: "..." });
 const response = await mpesa.swap.query({ customerNumber: "254712345678" });

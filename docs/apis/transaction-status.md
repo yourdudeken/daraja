@@ -57,7 +57,7 @@ response = mpesa.transaction_status(TransactionStatusRequest(
 ```
 
 ```typescript
-import { Mpesa } from "@daraja-sdk/ts";
+import { Mpesa } from "daraja-sdk-ts";
 
 const mpesa = new Mpesa({
   consumerKey: "...",

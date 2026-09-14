@@ -58,7 +58,7 @@ response = mpesa.b2c(B2CRequest(
 ```
 
 ```typescript
-import { Mpesa } from "@daraja-sdk/ts";
+import { Mpesa } from "daraja-sdk-ts";
 
 const mpesa = new Mpesa({
   consumerKey: "...",

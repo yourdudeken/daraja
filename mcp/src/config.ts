@@ -1,4 +1,4 @@
-import type { MpesaConfig } from "@daraja-sdk/ts";
+import type { MpesaConfig } from "daraja-sdk-ts";
 
 export class ConfigError extends Error {
   constructor(message: string) {

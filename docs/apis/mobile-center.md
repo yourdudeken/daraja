@@ -129,7 +129,7 @@ status = mpesa.mobile_center_service.check_status({
 ```
 
 ```typescript
-import { Mpesa } from "@daraja-sdk/ts";
+import { Mpesa } from "daraja-sdk-ts";
 
 const mpesa = new Mpesa({ consumerKey: "...", consumerSecret: "..." });
 

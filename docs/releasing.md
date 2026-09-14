@@ -7,7 +7,7 @@ to one SDK does not bump the others.
 
 | SDK | Version lives in | Registry |
 |-----|------------------|----------|
-| TypeScript | `sdks/typescript/package.json` → `version` | npm (`@daraja-sdk/ts`) |
+| TypeScript | `sdks/typescript/package.json` → `version` | npm (`daraja-sdk-ts`) |
 | Python | `sdks/python/pyproject.toml` → `version` | PyPI (`daraja-sdk-py`) |
 | Go | `sdks/go/VERSION` | GitHub Releases + Go modules |
 
@@ -63,8 +63,15 @@ versions (leave a field empty to use the manifest version):
 | Secret | Used by |
 |--------|---------|
 | `NPM_TOKEN` | TypeScript SDK publish |
-| `PYPI_API_TOKEN` (or trusted publishing) | Python SDK publish |
-| `GITHUB_TOKEN` | automatic (repo-scoped) |
+| `PYPI_API_TOKEN` | Python SDK publish (token auth) |
+
+`GITHUB_TOKEN` is automatic (repo-scoped).
+
+> **Alternative for Python:** the workflow can use trusted publishing instead of
+> a token. Remove the `username`/`password` lines from the `Publish to PyPI`
+> step in `.github/workflows/release.yml`, then add a trusted publisher on PyPI
+> with: owner `yourdudeken`, repository `daraja`, workflow name `release.yml`,
+> environment empty.
 
 ## First release
 

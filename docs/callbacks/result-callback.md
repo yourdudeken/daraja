@@ -106,7 +106,7 @@ The handler signature is `Callable[[str, Any], None]` — the first argument is 
 ### TypeScript
 
 ```typescript
-import { Mpesa, type MpesaResult } from "@daraja-sdk/ts";
+import { Mpesa, type MpesaResult } from "daraja-sdk-ts";
 
 const mpesa = new Mpesa({ consumerKey: "…", consumerSecret: "…" });
 

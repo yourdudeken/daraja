@@ -41,7 +41,7 @@ print(response.OrganizationName)
 ```
 
 ```typescript
-import { Mpesa } from "@daraja-sdk/ts";
+import { Mpesa } from "daraja-sdk-ts";
 
 const mpesa = new Mpesa({ consumerKey: "...", consumerSecret: "..." });
 const response = await mpesa.queryOrgInfo.query({

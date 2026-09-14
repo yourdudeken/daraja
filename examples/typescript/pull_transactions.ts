@@ -6,7 +6,7 @@
 // Requires: MPESA_CONSUMER_KEY, MPESA_CONSUMER_SECRET
 // Verified against the sandbox.
 
-import { Mpesa } from "@daraja-sdk/ts";
+import { Mpesa } from "daraja-sdk-ts";
 
 const mpesa = new Mpesa({
   consumerKey: process.env.MPESA_CONSUMER_KEY!,

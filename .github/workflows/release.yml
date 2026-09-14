@@ -126,7 +126,7 @@ jobs:
       - run: npm test
       - run: npm run build
       - name: Publish to npm
-        run: npm publish --access public
+        run: npm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       - name: Create tag and GitHub Release
@@ -166,7 +166,14 @@ jobs:
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
-          packages-dir: dist
+          # Build step runs in sdks/python (working-directory), so dist/ is
+          # relative to the workspace root, not the job's working directory.
+          packages-dir: sdks/python/dist
+          # Token auth (set PYPI_API_TOKEN secret). For trusted publishing
+          # instead, remove these two lines and configure the publisher on
+          # PyPI with workflow name "release.yml" and no environment.
+          username: __token__
+          password: ${{ secrets.PYPI_API_TOKEN }}
       - name: Create tag and GitHub Release
         uses: softprops/action-gh-release@v2
         with:

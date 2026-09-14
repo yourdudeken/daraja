@@ -4,7 +4,7 @@ The Daraja **Model Context Protocol (MCP)** server exposes Safaricom M-Pesa
 Daraja API operations as MCP tools that AI agents can call. It is an API-access
 server — it does not serve or index the documentation corpus.
 
-The server is **built on the Daraja TypeScript SDK** (`@daraja-sdk/ts`): every
+The server is **built on the Daraja TypeScript SDK** (`daraja-sdk-ts`): every
 tool is a thin wrapper around a typed SDK service method, so the MCP server
 inherits the SDK's authentication, retries, rate limiting, and error taxonomy
 for free. It speaks MCP over **stdio** or **HTTP/SSE**.

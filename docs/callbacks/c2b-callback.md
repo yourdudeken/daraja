@@ -96,7 +96,7 @@ reject = manager.parse_c2b_validation_response(accept=False)
 ### TypeScript
 
 ```typescript
-import { Mpesa, C2BValidationRequest } from "@daraja-sdk/ts";
+import { Mpesa, C2BValidationRequest } from "daraja-sdk-ts";
 
 const mpesa = new Mpesa({ consumerKey: "…", consumerSecret: "…" });
 

@@ -1,4 +1,4 @@
-import { generateTimestamp } from "@daraja-sdk/ts";
+import { generateTimestamp } from "daraja-sdk-ts";
 import type { Tool } from "./index.js";
 
 export const generateTimestampTool: Tool = {

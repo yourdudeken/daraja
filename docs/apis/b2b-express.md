@@ -56,7 +56,7 @@ resp = mpesa.b2b_express(B2BExpressRequest(
 ```
 
 ```ts
-import { Mpesa } from "@daraja-sdk/ts";
+import { Mpesa } from "daraja-sdk-ts";
 
 const resp = await mpesa.b2bExpress.send({
   primaryShortCode: "174379",

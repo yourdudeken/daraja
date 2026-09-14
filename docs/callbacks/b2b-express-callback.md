@@ -61,7 +61,7 @@ The `B2BExpressService.parse_callback` is a static method that takes a `dict` pa
 ### TypeScript
 
 ```typescript
-import { Mpesa, type B2BExpressCallbackPayload } from "@daraja-sdk/ts";
+import { Mpesa, type B2BExpressCallbackPayload } from "daraja-sdk-ts";
 
 const mpesa = new Mpesa({ consumerKey: "…", consumerSecret: "…" });
 

@@ -64,7 +64,7 @@ The `on` method accepts an event type string and a handler callable `(event_type
 ### TypeScript
 
 ```typescript
-import { Mpesa } from "@daraja-sdk/ts";
+import { Mpesa } from "daraja-sdk-ts";
 
 const mpesa = new Mpesa({ consumerKey: "…", consumerSecret: "…" });
 

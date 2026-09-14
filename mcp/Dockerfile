@@ -30,10 +30,10 @@ COPY --from=builder /app/mcp/dist/ ./dist/
 COPY --from=builder /app/mcp/package.json ./
 
 # Hoisted dependencies (express, @modelcontextprotocol/sdk, axios, ...)
-# plus the @daraja-sdk/ts symlink -> ../../sdks/typescript
+# plus the daraja-sdk-ts symlink -> ../../sdks/typescript
 COPY --from=builder /app/node_modules/ ./node_modules/
 
-# SDK package (resolves the @daraja-sdk/ts symlink at runtime)
+# SDK package (resolves the daraja-sdk-ts symlink at runtime)
 COPY --from=builder /app/sdks/typescript/dist/ ./sdks/typescript/dist/
 COPY --from=builder /app/sdks/typescript/package.json ./sdks/typescript/package.json
 

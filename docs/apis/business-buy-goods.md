@@ -61,7 +61,7 @@ response = mpesa.business_buy_goods(BusinessBuyGoodsRequest(
 ```
 
 ```typescript
-import { Mpesa } from "@daraja-sdk/ts";
+import { Mpesa } from "daraja-sdk-ts";
 
 const mpesa = new Mpesa({
   consumerKey: "...",

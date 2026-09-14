@@ -8,7 +8,7 @@
 // Verified against the sandbox.
 
 import { randomUUID } from "node:crypto";
-import { Mpesa } from "@daraja-sdk/ts";
+import { Mpesa } from "daraja-sdk-ts";
 
 const mpesa = new Mpesa({
   consumerKey: process.env.MPESA_CONSUMER_KEY!,

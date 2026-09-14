@@ -1,17 +1,17 @@
-# @daraja-sdk/ts
+# daraja-sdk-ts
 
 Production-grade TypeScript SDK for the Safaricom M-Pesa Daraja API.
 
 ## Install
 
 ```bash
-npm install @daraja-sdk/ts
+npm install daraja-sdk-ts
 ```
 
 ## Usage
 
 ```ts
-import { Mpesa } from "@daraja-sdk/ts";
+import { Mpesa } from "daraja-sdk-ts";
 
 const mpesa = new Mpesa({
   consumerKey: "YOUR_KEY",

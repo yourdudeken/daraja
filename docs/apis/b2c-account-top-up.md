@@ -63,7 +63,7 @@ response = mpesa.b2c_account_top_up(B2CAccountTopUpRequest(
 ```
 
 ```typescript
-import { Mpesa } from "@daraja-sdk/ts";
+import { Mpesa } from "daraja-sdk-ts";
 
 const mpesa = new Mpesa({
   consumerKey: "...",

@@ -1,5 +1,5 @@
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { Mpesa } from "@daraja-sdk/ts";
+import { Mpesa } from "daraja-sdk-ts";
 import { createServer } from "./server.js";
 import { loadConfig } from "./config.js";
 import { startHttpTransport } from "./transport.js";

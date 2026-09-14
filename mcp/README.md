@@ -8,7 +8,7 @@ Self-hosted Model Context Protocol server for Safaricom M-Pesa Daraja API access
 
 ## Overview
 
-This MCP server is **built on the Daraja TypeScript SDK** (`@daraja-sdk/ts`). Every
+This MCP server is **built on the Daraja TypeScript SDK** (`daraja-sdk-ts`). Every
 tool is a thin wrapper around a typed SDK service method — the server does not
 re-implement any M-Pesa logic. It exposes M-Pesa operations as MCP tools that AI
 agents can call over **stdio** or **HTTP/SSE**.
@@ -89,7 +89,7 @@ These map directly onto the TypeScript SDK's `MpesaConfig` (see
 
 ## Available Tools
 
-Each tool wraps the corresponding `@daraja-sdk/ts` service method:
+Each tool wraps the corresponding `daraja-sdk-ts` service method:
 
 | Tool | TS SDK call | Description |
 |------|-------------|-------------|

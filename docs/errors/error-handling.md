@@ -41,7 +41,7 @@ from daraja.exceptions import AuthenticationError
 ```
 
 ```typescript
-import { AuthenticationError } from "@daraja-sdk/ts";
+import { AuthenticationError } from "daraja-sdk-ts";
 ```
 
 ```go
@@ -58,7 +58,7 @@ from daraja.exceptions import ValidationError
 ```
 
 ```typescript
-import { ValidationError } from "@daraja-sdk/ts";
+import { ValidationError } from "daraja-sdk-ts";
 ```
 
 ```go
@@ -74,7 +74,7 @@ from daraja.exceptions import TimeoutError
 ```
 
 ```typescript
-import { TimeoutError } from "@daraja-sdk/ts";
+import { TimeoutError } from "daraja-sdk-ts";
 ```
 
 ```go
@@ -90,7 +90,7 @@ from daraja.exceptions import APIConnectionError
 ```
 
 ```typescript
-import { APIConnectionError } from "@daraja-sdk/ts";
+import { APIConnectionError } from "daraja-sdk-ts";
 ```
 
 ```go
@@ -111,7 +111,7 @@ except RateLimitError as e:
 ```
 
 ```typescript
-import { RateLimitError } from "@daraja-sdk/ts";
+import { RateLimitError } from "daraja-sdk-ts";
 
 try {
   const result = await mpesa.b2c.send(request);
@@ -143,7 +143,7 @@ except MpesaAPIError as e:
 ```
 
 ```typescript
-import { MpesaAPIError } from "@daraja-sdk/ts";
+import { MpesaAPIError } from "daraja-sdk-ts";
 
 try {
   const result = await mpesa.b2c.send(request);
@@ -170,7 +170,7 @@ from daraja.exceptions import WebhookVerificationError
 ```
 
 ```typescript
-import { WebhookVerificationError } from "@daraja-sdk/ts";
+import { WebhookVerificationError } from "daraja-sdk-ts";
 ```
 
 ```go
@@ -189,7 +189,7 @@ if is_mpesa_error(err):
 ```
 
 ```typescript
-import { isMpesaError } from "@daraja-sdk/ts";
+import { isMpesaError } from "daraja-sdk-ts";
 
 if (isMpesaError(err)) {
   console.log("M-Pesa error:", err.message);
@@ -280,11 +280,11 @@ except MpesaError as e:
 ### TypeScript
 
 ```typescript
-import { Mpesa } from "@daraja-sdk/ts";
+import { Mpesa } from "daraja-sdk-ts";
 import {
   MpesaError, RateLimitError, MpesaAPIError,
   AuthenticationError, ValidationError, isMpesaError,
-} from "@daraja-sdk/ts";
+} from "daraja-sdk-ts";
 
 const mpesa = new Mpesa({
   consumerKey: "…",

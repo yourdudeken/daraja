@@ -81,7 +81,7 @@ redeem = mpesa.lipa_na_bonga_service.redeem({
 ```
 
 ```typescript
-import { Mpesa } from "@daraja-sdk/ts";
+import { Mpesa } from "daraja-sdk-ts";
 
 const mpesa = new Mpesa({ consumerKey: "...", consumerSecret: "..." });
 

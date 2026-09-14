@@ -30,10 +30,10 @@ The package also ships a `daraja` CLI.
 
 ## TypeScript
 
-Package `@daraja-sdk/ts` (ESM + CJS dual output).
+Package `daraja-sdk-ts` (ESM + CJS dual output).
 
 ```bash
-npm install @daraja-sdk/ts
+npm install daraja-sdk-ts
 ```
 
 ## Go
@@ -62,7 +62,7 @@ mpesa = Mpesa({
 ```
 
 ```ts
-import { Mpesa } from "@daraja-sdk/ts";
+import { Mpesa } from "daraja-sdk-ts";
 
 const mpesa = new Mpesa({
   consumerKey: "YOUR_CONSUMER_KEY",

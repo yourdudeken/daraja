@@ -41,7 +41,7 @@ response = mpesa.stk_query(STKQueryRequest(
 ```
 
 ```typescript
-import { Mpesa } from "@daraja-sdk/ts";
+import { Mpesa } from "daraja-sdk-ts";
 
 const mpesa = new Mpesa({ consumerKey: "...", consumerSecret: "...", passkey: "..." });
 const response = await mpesa.stkPush.query({

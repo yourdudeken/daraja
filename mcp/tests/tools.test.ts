@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { getAllTools, type Tool } from "../src/tools/index.js";
 
-vi.mock("@daraja-sdk/ts", () => ({
+vi.mock("daraja-sdk-ts", () => ({
   Mpesa: vi.fn().mockImplementation(() => ({})),
   generateTimestamp: vi.fn().mockReturnValue("20260909120000"),
 }));

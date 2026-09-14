@@ -34,7 +34,7 @@ print(response.msisdnRegistrationDate)
 ```
 
 ```typescript
-import { Mpesa } from "@daraja-sdk/ts";
+import { Mpesa } from "daraja-sdk-ts";
 
 const mpesa = new Mpesa({ consumerKey: "...", consumerSecret: "..." });
 const response = await mpesa.ageOnNetwork.check({ customerNumber: "254712345678" });
