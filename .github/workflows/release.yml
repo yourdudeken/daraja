@@ -50,7 +50,7 @@ jobs:
       go_version: ${{ steps.go.outputs.version }}
       go_release: ${{ steps.go.outputs.release }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
@@ -114,8 +114,8 @@ jobs:
       run:
         working-directory: sdks/typescript
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
           registry-url: "https://registry.npmjs.org"
@@ -130,7 +130,7 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       - name: Create tag and GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: typescript-v${{ needs.detect.outputs.typescript_version }}
           name: TypeScript SDK v${{ needs.detect.outputs.typescript_version }}
@@ -145,8 +145,8 @@ jobs:
       run:
         working-directory: sdks/python
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
       - name: Set distribution version
@@ -175,7 +175,7 @@ jobs:
           username: __token__
           password: ${{ secrets.PYPI_API_TOKEN }}
       - name: Create tag and GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: python-v${{ needs.detect.outputs.python_version }}
           name: Python SDK v${{ needs.detect.outputs.python_version }}
@@ -187,8 +187,8 @@ jobs:
     if: needs.detect.outputs.go_release == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
         with:
           go-version: "1.25"
           cache-dependency-path: sdks/go/go.sum
@@ -215,7 +215,7 @@ jobs:
           git tag "sdks/go/v${VERSION}"
           git push origin "sdks/go/v${VERSION}"
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: go-v${{ needs.detect.outputs.go_version }}
           name: Go SDK v${{ needs.detect.outputs.go_version }}
