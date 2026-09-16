@@ -1,6 +1,6 @@
 # Business to Pochi La M-Pesa (B2Pochi)
 
-> **Status:**  Verified against the sandbox in all three SDKs (Go, Python, TypeScript).
+> **Status:**  Verified against the sandbox in (Python, TypeScript).
 
 Sends a payment from a business account to a Pochi La M-Pesa wallet (personal mini-wallet for receiving business payments).
 
@@ -75,35 +75,6 @@ const response = await mpesa.b2Pochi.send({
   InitiatorName: "",
   SecurityCredential: "",
 });
-```
-
-```go
-package main
-
-import (
-    "context"
-    "github.com/yourdudeken/daraja/sdks/go/client"
-    "github.com/yourdudeken/daraja/sdks/go/types"
-)
-
-func main() {
-    c := client.NewClient(types.MpesaConfig{
-        ConsumerKey:      "...",
-        ConsumerSecret:   "...",
-        InitiatorName:    "testapi",
-        InitiatorPassword: "...",
-        Environment:      types.Sandbox,
-    })
-    resp, err := c.B2Pochi(context.Background(), types.B2PochiRequest{
-        CommandID:  "BusinessPayToPochi",
-        Amount:     1000,
-        PartyA:     174379,
-        PartyB:     254712345678,
-        Remarks:    "Payment for goods",
-        QueueTimeOutURL: "https://example.com/timeout",
-        ResultURL:       "https://example.com/result",
-    })
-}
 ```
 
 ## Notes

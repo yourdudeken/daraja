@@ -250,43 +250,6 @@ await mpesa.iot.sendSingleMessage({
 });
 ```
 
-```go
-package main
-
-import (
-    "context"
-    "github.com/yourdudeken/daraja/sdks/go/client"
-    "github.com/yourdudeken/daraja/sdks/go/types"
-)
-
-func main() {
-    c := client.NewClient(types.MpesaConfig{
-        ConsumerKey:    "...",
-        ConsumerSecret: "...",
-        Environment:    types.Sandbox,
-    })
-
-    sims, _ := c.IoTGetAllSIMs(context.Background(), types.IoTGetAllSIMsRequest{
-        VpnGroup:     []string{"my-vpn-group"},
-        StartAtIndex: "0",
-        PageSize:     "50",
-        Username:     "portal_user",
-    })
-
-    status, _ := c.IoTQueryLifeCycle(context.Background(), types.IoTQueryLifeCycleRequest{
-        Msisdn:   "254700000000",
-        VpnGroup: "my-vpn-group",
-        Username: "portal_user",
-    })
-
-    c.IoTSendSingleMessage(context.Background(), types.IoTSendSingleMessageRequest{
-        Msisdn:   "254700000000",
-        Message:  "Hello from IoT",
-        VpnGroup: "my-vpn-group",
-    })
-}
-```
-
 ## Notes
 
 - All IoT endpoints use `POST` with JSON bodies.

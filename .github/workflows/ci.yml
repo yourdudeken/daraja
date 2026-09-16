@@ -51,26 +51,6 @@ jobs:
       - run: npm run test:coverage
       - run: npm run build
 
-  go:
-    name: Go SDK
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: sdks/go
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
-        with:
-          go-version: "1.25"
-      - run: go mod tidy && git diff --exit-code go.mod go.sum
-      - run: go vet ./...
-      - run: go build ./...
-      - run: go test ./...
-      - name: Coverage (>=80%, excluding generated and integration harness)
-        run: |
-          go test -coverprofile=coverage.out ./...
-          awk 'BEGIN{t=0;c=0} !/^mode:/ && $0 !~ /\/generated\// && $0 !~ /\/tests\/integration\// {t+=$2; if($3>0)c+=$2} END{p=100*c/t; printf "coverage: %.1f%% of statements\n", p; if (p < 80) exit 1}' coverage.out
-
   mcp:
     name: MCP Server
     runs-on: ubuntu-latest

@@ -121,29 +121,6 @@ const reject = mpesa.webhooks.createC2BValidationResponse(false);
 
 The `C2BValidationRequest` type has all fields from the payload: `TransactionType`, `TransID`, `TransTime`, `TransAmount`, `BusinessShortCode`, `BillRefNumber`, `InvoiceNumber`, `OrgAccountBalance`, `ThirdPartyTransID`, `MSISDN`, `FirstName`, `MiddleName`, `LastName`.
 
-### Go
-
-```go
-import (
-    "github.com/yourdudeken/daraja/sdks/go/webhooks"
-)
-
-manager := webhooks.NewManager(logger)
-
-// Handle validation
-manager.On(webhooks.EventC2BValidation, func(eventType webhooks.EventType, payload interface{}) {
-    // payload is the raw JSON body (json.RawMessage)
-    fmt.Println("C2B validation received")
-})
-
-// Handle confirmation
-manager.On(webhooks.EventC2BConfirmation, func(eventType webhooks.EventType, payload interface{}) {
-    fmt.Println("C2B confirmation received")
-})
-```
-
-The Go middleware (`middleware.GinWebhookHandler`) automatically routes C2B payloads to `EventC2BValidation` or `EventC2BConfirmation` based on whether a `TransID` field is present. Validation payloads are dispatched as `EventC2BValidation`; confirmation payloads as `EventC2BConfirmation`.
-
 ## Signature Verification
 
 ```python
@@ -152,6 +129,4 @@ manager.verify_signature(payload_body, signature_header, secret)
 
 # TypeScript
 mpesa.webhooks.verifySignature(payloadBody, signatureHeader, secret)
-
-// Go — handled automatically by GinWebhookHandler when secret is provided
 ```

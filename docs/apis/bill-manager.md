@@ -185,47 +185,6 @@ await mpesa.billManager.cancelSingleInvoice({
 });
 ```
 
-```go
-package main
-
-import (
-    "context"
-    "github.com/yourdudeken/daraja/sdks/go/client"
-    "github.com/yourdudeken/daraja/sdks/go/types"
-)
-
-func main() {
-    c := client.NewClient(types.MpesaConfig{
-        ConsumerKey:    "...",
-        ConsumerSecret: "...",
-        Environment:    types.Sandbox,
-    })
-
-    c.BillManagerOptin(context.Background(), types.BillManagerOptinRequest{
-        ShortCode:       "123456",
-        Email:           "billing@example.com",
-        OfficialContact: "Finance Team",
-        SendReminders:   "YES",
-        CallbackURL:     "https://example.com/callback",
-    })
-
-    c.BillManagerSingleInvoice(context.Background(), types.BillManagerSingleInvoiceRequest{
-        ExternalReference: "INV-001",
-        BilledFullName:    "John Doe",
-        BilledPhoneNumber: "254712345678",
-        BilledPeriod:      "January 2025",
-        InvoiceName:       "Monthly Subscription",
-        DueDate:           "2025-02-01",
-        AccountReference:  "ACC-001",
-        Amount:            "1500",
-    })
-
-    c.BillManagerCancelSingle(context.Background(), types.BillManagerCancelSingleRequest{
-        ExternalReference: "INV-001",
-    })
-}
-```
-
 ## Notes
 
 - All Bill Manager endpoints use `POST` with JSON bodies.

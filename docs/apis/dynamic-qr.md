@@ -1,6 +1,6 @@
 # Dynamic QR Code
 
-> **Status:**  Implemented per the docs in all three SDKs (Go, Python, TypeScript), but the sandbox endpoint returns `503` (service unavailable). Request/response shapes match the docs exactly.
+> **Status:**  Implemented per the docs in (Python, TypeScript), but the sandbox endpoint returns `503` (service unavailable). Request/response shapes match the docs exactly.
 
 Generates a dynamic QR code that customers can scan with the M-Pesa app to make a payment.
 
@@ -58,33 +58,6 @@ const response = await mpesa.dynamicQR.generate({
 });
 // response.QRCode is a base64-encoded PNG
 const dataUrl = mpesa.dynamicQR.getQRImageUrl(response);
-```
-
-```go
-package main
-
-import (
-    "context"
-    "github.com/yourdudeken/daraja/sdks/go/client"
-    "github.com/yourdudeken/daraja/sdks/go/types"
-)
-
-func main() {
-    c := client.NewClient(types.MpesaConfig{
-        ConsumerKey:    "...",
-        ConsumerSecret: "...",
-        Environment:    types.Sandbox,
-    })
-    resp, err := c.DynamicQR(context.Background(), types.DynamicQRRequest{
-        MerchantName: "My Shop",
-        RefNo:        "ORD-001",
-        Amount:       500,
-        TrxCode:      types.TrxBuyGoods,
-        CPI:          "174379",
-        Size:         "300",
-    })
-    // resp.QRCode is a base64-encoded PNG
-}
 ```
 
 ## Notes

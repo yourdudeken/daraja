@@ -1,6 +1,6 @@
 # Transaction Status
 
-> **Status:**  Verified against the sandbox in all three SDKs (Go, Python, TypeScript).
+> **Status:**  Verified against the sandbox in (Python, TypeScript).
 
 Queries the status of a previously initiated M-Pesa transaction. You can look up by `TransactionID` or `OriginalConversationID`.
 
@@ -73,34 +73,6 @@ const response = await mpesa.transactionStatus.query({
   QueueTimeOutURL: "https://example.com/timeout",
   Remarks: "Status check",
 });
-```
-
-```go
-package main
-
-import (
-    "context"
-    "github.com/yourdudeken/daraja/sdks/go/client"
-    "github.com/yourdudeken/daraja/sdks/go/types"
-)
-
-func main() {
-    c := client.NewClient(types.MpesaConfig{
-        ConsumerKey:      "...",
-        ConsumerSecret:   "...",
-        InitiatorName:    "testapi",
-        InitiatorPassword: "...",
-        Environment:      types.Sandbox,
-    })
-    resp, err := c.TransactionStatus(context.Background(), types.TransactionStatusRequest{
-        TransactionID:  "QKH09V3RVP",
-        PartyA:         174379,
-        IdentifierType: 4,
-        ResultURL:       "https://example.com/result",
-        QueueTimeOutURL: "https://example.com/timeout",
-        Remarks:         "Status check",
-    })
-}
 ```
 
 ## Notes

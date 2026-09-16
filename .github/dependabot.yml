@@ -24,14 +24,6 @@ updates:
       python-deps:
         patterns: ["*"]
 
-  - package-ecosystem: "gomod"
-    directory: "/sdks/go"
-    schedule:
-      interval: "weekly"
-    groups:
-      go-deps:
-        patterns: ["*"]
-
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:

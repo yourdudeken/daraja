@@ -40,20 +40,6 @@ coverage.xml
 build/
 dist/
 
-# === Go ===
-*.exe
-*.exe~
-*.dll
-*.so
-*.dylib
-*.test
-*.out
-*.mod.orig
-/build/
-/bin/
-coverage.out
-vendor/
-
 # === Testing & tooling ===
 .nyc_output/
 .coverage

@@ -5,8 +5,6 @@ name: Release
 # Each SDK owns its own version and release tag:
 #   TypeScript SDK -> typescript-vX.Y.Z  (npm)
 #   Python SDK     -> python-vX.Y.Z      (PyPI)
-#   Go SDK         -> go-vX.Y.Z          (GitHub Release + binaries)
-#                     sdks/go/vX.Y.Z     (Go module resolution for `go get`)
 #
 # On push to main, the detect job compares each SDK's manifest version
 # against its latest tag and releases only the SDKs whose version changed.
@@ -23,10 +21,6 @@ on:
         type: string
       python_version:
         description: "Python SDK version (e.g. 0.0.2). Leave empty to use pyproject.toml."
-        required: false
-        type: string
-      go_version:
-        description: "Go SDK version (e.g. 0.0.2). Leave empty to use sdks/go/VERSION."
         required: false
         type: string
 
@@ -47,8 +41,6 @@ jobs:
       typescript_release: ${{ steps.ts.outputs.release }}
       python_version: ${{ steps.py.outputs.version }}
       python_release: ${{ steps.py.outputs.release }}
-      go_version: ${{ steps.go.outputs.version }}
-      go_release: ${{ steps.go.outputs.release }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -80,23 +72,6 @@ jobs:
           else
             VERSION=$(grep -m1 '^version' sdks/python/pyproject.toml | sed 's/version = "\(.*\)"/\1/')
             LATEST=$(git tag -l 'python-v*' --sort=-v:refname | head -1 | sed 's/python-v//')
-            echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
-            if [ -z "$LATEST" ] || [ "$VERSION" != "$LATEST" ]; then
-              echo "release=true" >> "$GITHUB_OUTPUT"
-            else
-              echo "release=false" >> "$GITHUB_OUTPUT"
-            fi
-          fi
-
-      - name: Detect Go SDK
-        id: go
-        run: |
-          if [ -n "${{ github.event.inputs.go_version }}" ]; then
-            echo "version=${{ github.event.inputs.go_version }}" >> "$GITHUB_OUTPUT"
-            echo "release=true" >> "$GITHUB_OUTPUT"
-          else
-            VERSION=$(cat sdks/go/VERSION)
-            LATEST=$(git tag -l 'go-v*' --sort=-v:refname | head -1 | sed 's/go-v//')
             echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
             if [ -z "$LATEST" ] || [ "$VERSION" != "$LATEST" ]; then
               echo "release=true" >> "$GITHUB_OUTPUT"
@@ -179,45 +154,4 @@ jobs:
         with:
           tag_name: python-v${{ needs.detect.outputs.python_version }}
           name: Python SDK v${{ needs.detect.outputs.python_version }}
-          generate_release_notes: true
-
-  publish-go:
-    name: Publish Go SDK
-    needs: detect
-    if: needs.detect.outputs.go_release == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
-        with:
-          go-version: "1.25"
-          cache-dependency-path: sdks/go/go.sum
-      - name: Test
-        run: go test ./...
-        working-directory: sdks/go
-      - name: Build binaries
-        run: |
-          set -euo pipefail
-          mkdir -p dist
-          cd sdks/go
-          for os in linux darwin windows; do
-            for arch in amd64 arm64; do
-              ext=""
-              [ "$os" = "windows" ] && ext=".exe"
-              GOOS="$os" GOARCH="$arch" CGO_ENABLED=0 go build -trimpath -ldflags "-s -w" -o "../../dist/mpesa_${os}_${arch}${ext}" ./cli
-            done
-          done
-          cd ../..
-          sha256sum dist/* > dist/checksums.txt
-      - name: Create Go module tag
-        run: |
-          VERSION="${{ needs.detect.outputs.go_version }}"
-          git tag "sdks/go/v${VERSION}"
-          git push origin "sdks/go/v${VERSION}"
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: go-v${{ needs.detect.outputs.go_version }}
-          name: Go SDK v${{ needs.detect.outputs.go_version }}
-          files: dist/*
           generate_release_notes: true

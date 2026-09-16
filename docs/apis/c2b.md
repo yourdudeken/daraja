@@ -88,41 +88,6 @@ await mpesa.c2b.simulate({
 });
 ```
 
-```go
-package main
-
-import (
-    "context"
-    "github.com/yourdudeken/daraja/sdks/go/client"
-    "github.com/yourdudeken/daraja/sdks/go/types"
-)
-
-func main() {
-    c := client.NewClient(types.MpesaConfig{
-        ConsumerKey:    "...",
-        ConsumerSecret: "...",
-        Environment:    types.Sandbox,
-    })
-
-    // Register URLs
-    c.C2BRegisterURL(context.Background(), types.C2BRegisterURLRequest{
-        ShortCode:       "174379",
-        ResponseType:    types.ResponseCompleted,
-        ConfirmationURL: "https://example.com/confirm",
-        ValidationURL:   "https://example.com/validate",
-    })
-
-    // Simulate a payment
-    c.C2BSimulate(context.Background(), types.C2BSimulateRequest{
-        ShortCode:     174379,
-        CommandID:     types.C2BPayBill,
-        Amount:        1000,
-        Msisdn:        254712345678,
-        BillRefNumber: "INV001",
-    })
-}
-```
-
 ## Notes
 
 - Register URL sets up callback URLs that M-Pesa calls when customers send money to your paybill/till.

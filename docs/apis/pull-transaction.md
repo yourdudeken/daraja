@@ -1,6 +1,6 @@
 # Pull Transactions
 
-> **Status:**  Verified against the sandbox in all three SDKs (Go, Python, TypeScript).
+> **Status:**  Verified against the sandbox in (Python, TypeScript).
 
 Register to receive transaction notifications and query historical pull transactions for a business shortcode.
 
@@ -111,45 +111,6 @@ const txns = await mpesa.pullTransactions.query({
   OffSetValue: "0",
 });
 txns.Response.flat().forEach((t) => console.log(t.transactionId, t.amount));
-```
-
-```go
-package main
-
-import (
-    "context"
-    "github.com/yourdudeken/daraja/sdks/go/client"
-    "github.com/yourdudeken/daraja/sdks/go/types"
-)
-
-func main() {
-    c := client.NewClient(types.MpesaConfig{
-        ConsumerKey:    "...",
-        ConsumerSecret: "...",
-        Environment:    types.Sandbox,
-    })
-
-    reg, _ := c.PullTransactionsRegister(context.Background(),
-        types.PullTransactionsRegisterRequest{
-            ShortCode:       "123456",
-            RequestType:     "Pull",
-            NominatedNumber: "254712345678",
-            CallBackURL:     "https://example.com/callback",
-        })
-
-    txns, _ := c.PullTransactionsQuery(context.Background(),
-        types.PullTransactionsQueryRequest{
-            ShortCode:   "123456",
-            StartDate:   "2025-01-01",
-            EndDate:     "2025-01-31",
-            OffSetValue: "0",
-        })
-    for _, batch := range txns.Response {
-        for _, item := range batch {
-            fmt.Println(item.TransactionID, item.Amount)
-        }
-    }
-}
 ```
 
 ## Notes

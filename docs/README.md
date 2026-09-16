@@ -1,6 +1,6 @@
 # Daraja Documentation
 
-Shared documentation for the Daraja SDKs (Python, TypeScript, Go).
+Shared documentation for the Daraja SDKs (Python, TypeScript).
 
 ## Getting Started
 
@@ -11,7 +11,7 @@ Shared documentation for the Daraja SDKs (Python, TypeScript, Go).
 
 ## API Reference
 
->  Verified against the sandbox in all three SDKs (Go, Python, TypeScript).
+>  Verified against the sandbox in (Python, TypeScript).
 >  Implemented per the docs, but the sandbox endpoint is unavailable/blocked for some APIs.
 
 ### Payments
@@ -78,10 +78,8 @@ Shared documentation for the Daraja SDKs (Python, TypeScript, Go).
 
 - [Python Reference](python/reference.md)
 - [TypeScript Reference](typescript/reference.md)
-- [Go Reference](go/reference.md)
 
 ## Examples
 
 - [Python Examples](python/examples/README.md)
 - [TypeScript Examples](typescript/examples/README.md)
-- [Go Examples](go/examples/README.md)

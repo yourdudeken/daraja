@@ -9,10 +9,7 @@ to one SDK does not bump the others.
 |-----|------------------|----------|
 | TypeScript | `sdks/typescript/package.json` → `version` | npm (`daraja-sdk-ts`) |
 | Python | `sdks/python/pyproject.toml` → `version` | PyPI (`daraja-sdk-py`) |
-| Go | `sdks/go/VERSION` | GitHub Releases + Go modules |
 
-> Go's `go.mod` has no version field, so `sdks/go/VERSION` is the source of
-> truth for the Go SDK version.
 
 ## Release tags
 
@@ -21,16 +18,13 @@ Each SDK gets its own tag on `main`:
 | SDK | Release tag | Purpose |
 |-----|-------------|---------|
 | TypeScript | `typescript-vX.Y.Z` | npm release + GitHub Release |
-| Python | `python-vX.Y.Z` | PyPI release + GitHub Release |
-| Go | `go-vX.Y.Z` | GitHub Release + binaries |
-| Go (module) | `sdks/go/vX.Y.Z` | Required for `go get github.com/yourdudeken/daraja/sdks/go@vX.Y.Z` |
+| Python | `python-vX.Y.Z` | PyPI release + GitHub Release ||
 
-Example — after a JavaScript feature, then a Python change, then a Go change:
+Example — after a JavaScript feature, then a Python change:
 
 ```text
 typescript-v2.4.0   (TypeScript SDK v2.4.0)
 python-v1.8.0       (Python SDK v1.8.0)
-go-v1.5.0           (Go SDK v1.5.0)
 ```
 
 All from the same `main` branch. Versions belong to the individual SDKs, not
@@ -38,16 +32,13 @@ to the repository as a whole.
 
 ## How releases happen
 
-1. **Bump the version** in the SDK's manifest (`package.json`, `pyproject.toml`,
-   or `sdks/go/VERSION`) as part of your PR.
+1. **Bump the version** in the SDK's manifest (`package.json` or `pyproject.toml`) as part of your PR.
 2. **Merge the PR to `main`.** The `Release` workflow
    (`.github/workflows/release.yml`) runs automatically on push to `main`.
 3. The workflow compares each SDK's manifest version against its latest tag and
    releases **only the SDKs whose version changed**:
    - TypeScript → `npm publish` + `typescript-vX.Y.Z` tag + GitHub Release
    - Python → PyPI publish + `python-vX.Y.Z` tag + GitHub Release
-   - Go → builds CLI binaries (linux/darwin/windows × amd64/arm64) +
-     `go-vX.Y.Z` tag + `sdks/go/vX.Y.Z` tag + GitHub Release
 
 ## Manual release
 
@@ -56,7 +47,6 @@ versions (leave a field empty to use the manifest version):
 
 - `typescript_version` — e.g. `0.0.2`
 - `python_version` — e.g. `0.0.2`
-- `go_version` — e.g. `0.0.2`
 
 ## Required secrets
 

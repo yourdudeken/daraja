@@ -1,6 +1,6 @@
 # Business Buy Goods
 
-> **Status:**  Verified against the sandbox in all three SDKs (Go, Python, TypeScript).
+> **Status:**  Verified against the sandbox in (Python, TypeScript).
 
 Sends a payment from a business account to a buy goods (till) merchant. This is a convenience wrapper around the B2B endpoint with `CommandID` set to `BusinessBuyGoods`.
 
@@ -78,35 +78,6 @@ const response = await mpesa.businessGoods.buyGoods({
   QueueTimeOutURL: "https://example.com/timeout",
   ResultURL: "https://example.com/result",
 });
-```
-
-```go
-package main
-
-import (
-    "context"
-    "github.com/yourdudeken/daraja/sdks/go/client"
-    "github.com/yourdudeken/daraja/sdks/go/types"
-)
-
-func main() {
-    c := client.NewClient(types.MpesaConfig{
-        ConsumerKey:      "...",
-        ConsumerSecret:   "...",
-        InitiatorName:    "testapi",
-        InitiatorPassword: "...",
-        Environment:      types.Sandbox,
-    })
-    resp, err := c.BusinessBuyGoods(context.Background(), types.BusinessBuyGoodsRequest{
-        CommandID:  "BusinessBuyGoods",
-        Amount:     5000,
-        PartyA:     174379,
-        PartyB:     174379,
-        Remarks:    "Buy goods payment",
-        QueueTimeOutURL: "https://example.com/timeout",
-        ResultURL:       "https://example.com/result",
-    })
-}
 ```
 
 ## Notes
