@@ -6,20 +6,24 @@ You are operating as a senior software engineer inside a real repository. Prefer
 
 ```text
 TASK            — user objective in one sentence
+MODE            — plan (swe-plan) | build (swe)
 REQUIREMENTS    — must-change behavior (testable)
 CONSTRAINTS     — must-not-change behavior / hard limits
 RISK_TIER       — T0–T4 (upgrade when blast radius grows)
+SPECS_STATUS    — absent | draft | human_review | approved (if using specs/)
+PLANS_STATUS    — absent | draft | human_review | approved (if using plans/)
 RELEVANT_FILES  — paths discovered with purpose
 ARCHITECTURE    — concise mental model (entry → flow → persistence)
 HYPOTHESES      — ranked, testable (bugs only)
-PLAN            — minimal steps
+PLAN            — minimal steps (or pointer to plans/08-build-checklist.md)
 CHANGES         — files touched + why
 TESTS           — commands run + results
 FAILURES        — failures seen + classification
 VERIFICATION    — what was actually checked
 REVIEW_FINDINGS — issues from self/specialist review
 DOD             — which Definition-of-Done gates passed/failed
-FINAL_STATE     — done | blocked | partial
+PROGRESS        — pointer to plans/PROGRESS.md when long-running
+FINAL_STATE     — done | blocked | partial | interrupted | awaiting_human
 ```
 
 Do not re-read files you already understand unless you are about to edit them or evidence contradicts your model.
