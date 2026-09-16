@@ -36,18 +36,6 @@ Package `daraja-sdk-ts` (ESM + CJS dual output).
 npm install daraja-sdk-ts
 ```
 
-## Go
-
-Requires Go 1.25+. Import the module as `github.com/yourdudeken/daraja/sdks/go`.
-
-```bash
-go get github.com/yourdudeken/daraja/sdks/go
-```
-
-```go
-import "github.com/yourdudeken/daraja/sdks/go/client"
-```
-
 ## Initializing the client
 
 Minimal setup:
@@ -68,17 +56,6 @@ const mpesa = new Mpesa({
   consumerKey: "YOUR_CONSUMER_KEY",
   consumerSecret: "YOUR_CONSUMER_SECRET",
 });
-```
-
-```go
-import "github.com/yourdudeken/daraja/sdks/go/client"
-import "github.com/yourdudeken/daraja/sdks/go/types"
-
-mpesa := client.NewClient(types.MpesaConfig{
-    ConsumerKey:    "YOUR_CONSUMER_KEY",
-    ConsumerSecret: "YOUR_CONSUMER_SECRET",
-    // defaults to sandbox
-})
 ```
 
 See [Configuration](configuration.md) for all available options.

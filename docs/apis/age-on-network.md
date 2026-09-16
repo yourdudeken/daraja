@@ -41,28 +41,6 @@ const response = await mpesa.ageOnNetwork.check({ customerNumber: "254712345678"
 console.log(response.msisdnRegistrationDate);
 ```
 
-```go
-package main
-
-import (
-    "context"
-    "github.com/yourdudeken/daraja/sdks/go/client"
-    "github.com/yourdudeken/daraja/sdks/go/types"
-)
-
-func main() {
-    c := client.NewClient(types.MpesaConfig{
-        ConsumerKey:    "...",
-        ConsumerSecret: "...",
-        Environment:    types.Sandbox,
-    })
-    resp, err := c.AgeOnNetwork(context.Background(), types.AgeOnNetworkRequest{
-        CustomerNumber: "254712345678",
-    })
-    fmt.Println(resp.MsisdnRegistrationDate)
-}
-```
-
 ## Notes
 
 - This is a synchronous POST request with no callback URLs.

@@ -69,23 +69,6 @@ const mpesa = new Mpesa({
 });
 ```
 
-### Go
-
-```go
-import "github.com/yourdudeken/daraja/sdks/go/client"
-import "github.com/yourdudeken/daraja/sdks/go/types"
-
-mpesa := client.NewClient(types.MpesaConfig{
-    ConsumerKey:       "...",
-    ConsumerSecret:    "...",
-    Environment:       types.Sandbox,
-    Passkey:           "...",
-    InitiatorName:     "...",
-    InitiatorPassword: "...",
-    Timeout:           30 * time.Second,
-})
-```
-
 ## Production readiness
 
 - Switch `environment` to `"production"` to target
@@ -96,4 +79,4 @@ mpesa := client.NewClient(types.MpesaConfig{
   Bill, B2Pochi, Tax Remittance, B2C Account Top-Up).
 - All environments can share credentials across processes via
   `sharedTokenCache` / `shared_token_cache` (or `redisUrl` / `redis_url` in
-  Python and TypeScript, `RedisAddr` in Go).
+  Python and TypeScript).

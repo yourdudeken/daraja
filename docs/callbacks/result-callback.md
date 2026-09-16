@@ -60,14 +60,6 @@ Asynchronous API requests (B2C, B2B Buy Goods/Pay Bill, Reversal, Transaction St
 
 ## How the SDKs Route Result Callbacks
 
-The Go middleware (`GinWebhookHandler`) inspects `ResultParameter` keys to route to the correct event:
-
-- `AccountBalance` key present → `EventAccountBalance`
-- `TransactionStatus` key present → `EventTransactionStatus`
-- `B2BRecipientPartyPublicName` or `B2BSenderPartyPublicName` key present → `EventB2BResult`
-- `OriginalTransactionID` key present → `EventReversalResult`
-- Default → `EventB2CResult`
-
 TypeScript and Python emit result callbacks as typed events; the handler receives the full `MpesaResult` object.
 
 ## SDK Examples
@@ -153,66 +145,6 @@ interface MpesaResult {
   };
 }
 ```
-
-### Go
-
-```go
-import (
-    "github.com/yourdudeken/daraja/sdks/go/client"
-    "github.com/yourdudeken/daraja/sdks/go/types"
-    "github.com/yourdudeken/daraja/sdks/go/webhooks"
-)
-
-manager := webhooks.NewManager(logger)
-
-// Handle B2C result
-manager.On(webhooks.EventB2CResult, func(eventType webhooks.EventType, payload interface{}) {
-    result := payload.(types.MpesaResult)
-    fmt.Println(result.Result.TransactionID, result.Result.ResultCode)
-})
-
-// Handle B2B result
-manager.On(webhooks.EventB2BResult, func(eventType webhooks.EventType, payload interface{}) {
-    result := payload.(types.MpesaResult)
-    for _, p := range result.Result.ResultParameters.ResultParameter {
-        fmt.Println(p.Key, p.Value)
-    }
-})
-
-// Handle reversal, account balance, transaction status
-manager.On(webhooks.EventReversalResult, func(eventType webhooks.EventType, payload interface{}) { /* … */ })
-manager.On(webhooks.EventAccountBalance, func(eventType webhooks.EventType, payload interface{}) { /* … */ })
-manager.On(webhooks.EventTransactionStatus, func(eventType webhooks.EventType, payload interface{}) { /* … */ })
-
-// Parse manually
-var result types.MpesaResult
-json.Unmarshal(body, &result)
-
-// Or use HandleResultCallback for automatic routing
-manager.HandleResultCallback(body)
-```
-
-The `types.MpesaResult` struct:
-
-```go
-type MpesaResult struct {
-    Result ResultDetail
-}
-
-type ResultDetail struct {
-    ResultType               int
-    ResultCode               int
-    ResultDesc               string
-    OriginatorConversationID string
-    ConversationID           string
-    TransactionID            string
-    ResultParameters         *ResultParameters  // optional
-    ReferenceData            *ReferenceData     // optional
-}
-```
-
-The Go middleware automatically routes result callbacks to the correct event type based on `ResultParameter` keys. When using the Gin middleware, just register handlers and the routing happens automatically.
-
 ## Signature Verification
 
 ```python
@@ -221,7 +153,4 @@ manager.verify_signature(payload_body, signature_header, secret)
 
 # TypeScript
 mpesa.webhooks.verifySignature(payloadBody, signatureHeader, secret)
-
-// Go — handled automatically by GinWebhookHandler when secret is provided
-webhooks.VerifySignature([]byte(payloadBody), signatureHeader, secret)
 ```

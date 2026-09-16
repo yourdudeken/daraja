@@ -1,6 +1,6 @@
 # Account Balance
 
-> **Status:**  Verified against the sandbox in all three SDKs (Go, Python, TypeScript).
+> **Status:**  Verified against the sandbox in (Python, TypeScript).
 
 Queries the balance of an M-Pesa paybill or till account. Results are delivered asynchronously via callback.
 
@@ -68,34 +68,6 @@ const response = await mpesa.accountBalance.query({
   QueueTimeOutURL: "https://example.com/timeout",
   ResultURL: "https://example.com/result",
 });
-```
-
-```go
-package main
-
-import (
-    "context"
-    "github.com/yourdudeken/daraja/sdks/go/client"
-    "github.com/yourdudeken/daraja/sdks/go/types"
-)
-
-func main() {
-    c := client.NewClient(types.MpesaConfig{
-        ConsumerKey:      "...",
-        ConsumerSecret:   "...",
-        InitiatorName:    "testapi",
-        InitiatorPassword: "...",
-        Environment:      types.Sandbox,
-    })
-    resp, err := c.AccountBalance(context.Background(), types.AccountBalanceRequest{
-        CommandID:      "AccountBalance",
-        PartyA:         174379,
-        IdentifierType: 4,
-        Remarks:        "Balance check",
-        QueueTimeOutURL: "https://example.com/timeout",
-        ResultURL:       "https://example.com/result",
-    })
-}
 ```
 
 ## Notes

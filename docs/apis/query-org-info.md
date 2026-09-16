@@ -51,29 +51,6 @@ const response = await mpesa.queryOrgInfo.query({
 console.log(response.OrganizationName);
 ```
 
-```go
-package main
-
-import (
-    "context"
-    "github.com/yourdudeken/daraja/sdks/go/client"
-    "github.com/yourdudeken/daraja/sdks/go/types"
-)
-
-func main() {
-    c := client.NewClient(types.MpesaConfig{
-        ConsumerKey:    "...",
-        ConsumerSecret: "...",
-        Environment:    types.Sandbox,
-    })
-    resp, err := c.QueryOrgInfo(context.Background(), types.QueryOrgInfoRequest{
-        IdentifierType: 4,
-        Identifier:     174379,
-    })
-    fmt.Println(resp.OrganizationName)
-}
-```
-
 ## Notes
 
 - This is a synchronous request (no callback URLs needed).

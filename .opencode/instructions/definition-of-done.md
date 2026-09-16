@@ -29,6 +29,7 @@ Assign a tier early; upgrade if discovery increases blast radius.
 - User-visible / API / CLI / config contract updated → docs or changelog touched when the repo expects it.
 - Bug fix → regression test when the harness can express it.
 - Schema change → migration ordering + rollback notes (`database-change`).
+- Build-from-spec → checklist items verified; no silent scope beyond approved `specs/`.
 
 ## Explicit non-done states
 
@@ -38,5 +39,7 @@ Report **partial/blocked** if any of:
 - Missing credentials/services prevent the decisive check
 - Requirements still ambiguous on a load-bearing decision
 - Verification failed and is unresolved
+- Specs/plans still awaiting human approval for work that requires them
+- Interrupted with incomplete PROGRESS and not yet resumed
 
 Never relabel these as success.

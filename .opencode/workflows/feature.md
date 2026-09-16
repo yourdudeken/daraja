@@ -3,6 +3,8 @@
 ```text
 User feature request
     ↓
+[large / greenfield?] → swe-plan Spec→Plan→Build workflow → swe build
+    ↓ else
 swe: requirements + constraints + non-goals
     ↓
 @repo-explorer + repository-mapping (if needed)
@@ -34,3 +36,4 @@ Report
 - Conventions matched
 - Tests + verification recorded
 - No unrelated refactors
+- Large work used approved specs/plans when applicable

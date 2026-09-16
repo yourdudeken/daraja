@@ -42,28 +42,6 @@ const response = await mpesa.imsi.query({ customerNumber: "254712345678" });
 console.log(response.imsi);
 ```
 
-```go
-package main
-
-import (
-    "context"
-    "github.com/yourdudeken/daraja/sdks/go/client"
-    "github.com/yourdudeken/daraja/sdks/go/types"
-)
-
-func main() {
-    c := client.NewClient(types.MpesaConfig{
-        ConsumerKey:    "...",
-        ConsumerSecret: "...",
-        Environment:    types.Sandbox,
-    })
-    resp, err := c.IMSI(context.Background(), types.IMSIRequest{
-        CustomerNumber: "254712345678",
-    })
-    fmt.Println(resp.IMSI)
-}
-```
-
 ## Notes
 
 - This is a synchronous POST request with no callback URLs.

@@ -2,7 +2,7 @@
   "name": "daraja-mcp",
   "version": "0.0.1",
   "private": true,
-  "description": "Self-hosted MCP server for Safaricom M-Pesa Daraja API access (not an npm package)",
+  "description": "Self-hosted MCP server for Safaricom M-Pesa Daraja API access",
   "type": "module",
   "scripts": {
     "prebuild": "npm --prefix ../sdks/typescript run build",
@@ -18,17 +18,17 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
-    "daraja-sdk-ts": "file:../sdks/typescript",
     "@modelcontextprotocol/sdk": "^1.0.0",
+    "daraja-sdk-ts": "file:../sdks/typescript",
     "express": "^4.21.0"
   },
   "devDependencies": {
     "@types/express": "^4.17.21",
     "@types/node": "^25.9.1",
+    "@vitest/coverage-v8": "4.1.11",
     "tsx": "^4.19.0",
     "typescript": "^5.5.0",
-    "vitest": "^4.1.8",
-    "@vitest/coverage-v8": "4.1.11"
+    "vitest": "^4.1.8"
   },
   "license": "MIT",
   "engines": {

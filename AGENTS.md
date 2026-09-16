@@ -1,6 +1,6 @@
 # OpenCode SWE System
 
-This repository ships a production-oriented multi-agent system for OpenCode. The default primary agent is `swe`.
+This repository ships a production-oriented multi-agent system for OpenCode. The default primary agent is `swe` (build mode). Use `swe-plan` for Spec→Plan human-gated delivery.
 
 Quality bar: [docs/SWE-STANDARD.md](docs/SWE-STANDARD.md) (Definition of Done, risk tiers, change discipline).
 
@@ -13,14 +13,18 @@ Quality bar: [docs/SWE-STANDARD.md](docs/SWE-STANDARD.md) (Definition of Done, r
 - Do not fabricate test or command results.
 - Do not discard unrelated user changes.
 - Do not claim done unless Definition of Done gates pass (or report blocked/partial).
+- Large/greenfield work: `specs/` then `plans/` under the **project root**, each with agent self-review + **human approval**, before build mode.
 
 ## Agent map
 
 | Agent | Mode | Role |
 |-------|------|------|
-| `swe` | primary | Orchestrator — plans, implements, verifies, DoD, delegates |
+| `swe` | primary | Build orchestrator — implements, verifies, DoD, delegates |
+| `swe-plan` | primary | Plan orchestrator — `specs/` → gate → `plans/` → gate (no app code) |
+| `spec-writer` | subagent | Full Markdown specs under `specs/` |
+| `plan-writer` | subagent | Full Markdown plans under `plans/` from approved specs |
 | `repo-explorer` | subagent | Repository mental model |
-| `planner` | subagent | Minimal implementation plans |
+| `planner` | subagent | Lightweight in-session implementation plans |
 | `debugger` | subagent | Reproduce → root cause → fix |
 | `test-engineer` | subagent | Tests that protect behavior |
 | `code-reviewer` | subagent | Adversarial review |
@@ -31,11 +35,13 @@ Quality bar: [docs/SWE-STANDARD.md](docs/SWE-STANDARD.md) (Definition of Done, r
 | `dependency-agent` | subagent | Package/API upgrades |
 | `documentation-agent` | subagent | Docs synced to behavior |
 
-Built-in OpenCode agents (`build`, `plan`, `explore`, …) remain available; use `swe` for SWE-level tasks.
+Built-in OpenCode agents (`build`, `plan`, `explore`, …) remain available; prefer `swe-plan` → `swe` for Spec→Plan→Build.
 
 ## Skills
 
 **Intelligence:** `repository-mapping`, `dependency-tracing`, `impact-analysis`, `acceptance-criteria`, `stack-trace-analysis`
+
+**Spec / plan lifecycle:** `spec-authoring`, `plan-authoring`, `human-review-gate`, `interrupt-handling`, `build-from-spec`
 
 **Implementation:** `feature-implementation`, `frontend-change`, `backend-change`, `fullstack-change`, `api-change`, `database-change`, `focused-refactor`
 
@@ -47,6 +53,11 @@ Built-in OpenCode agents (`build`, `plan`, `explore`, …) remain available; use
 
 ## Slash commands
 
+- `/swe-spec` — plan mode: create `specs/` (+ `plans/` after approval)
+- `/swe-plan` — plan mode: durable `plans/` from approved specs
+- `/swe-build` — build mode: implement from approved specs/plans
+- `/swe-interrupt` — checkpoint + stop
+- `/swe-resume` — resume from PROGRESS
 - `/swe-fix` — bug investigation and fix
 - `/swe-feature` — feature delivery
 - `/swe-refactor` — behavior-preserving refactor
@@ -56,6 +67,8 @@ Built-in OpenCode agents (`build`, `plan`, `explore`, …) remain available; use
 - `/swe-ci` — CI/build failure
 - `/swe-pr` — package for review/PR
 
+Mid-turn stop: press **Esc** (`session_interrupt`).
+
 ## Protocols (auto-loaded)
 
 - `.opencode/instructions/swe-protocol.md`
@@ -64,5 +77,7 @@ Built-in OpenCode agents (`build`, `plan`, `explore`, …) remain available; use
 - `.opencode/instructions/definition-of-done.md`
 - `.opencode/instructions/risk-tiers.md`
 - `.opencode/instructions/change-discipline.md`
+- `.opencode/instructions/spec-plan-build.md`
+- `.opencode/instructions/interrupt.md`
 
-Workflows: `.opencode/workflows/`.
+Workflows: `.opencode/workflows/` (includes `spec-plan-build.md`).

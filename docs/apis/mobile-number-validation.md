@@ -55,32 +55,6 @@ const response = await mpesa.mobileNumberValidation.validate({
 console.log(response.status);
 ```
 
-```go
-package main
-
-import (
-    "context"
-    "github.com/yourdudeken/daraja/sdks/go/client"
-    "github.com/yourdudeken/daraja/sdks/go/types"
-)
-
-func main() {
-    c := client.NewClient(types.MpesaConfig{
-        ConsumerKey:    "...",
-        ConsumerSecret: "...",
-        Environment:    types.Sandbox,
-    })
-    resp, err := c.MobileNumberValidation(context.Background(), types.MobileNumberValidationRequest{
-        RequestRefID: "",
-        ShortCode:    "174379",
-        Msisdn:       "254712345678",
-        IDType:       "NationalID",
-        IDNumber:     "12345678",
-    })
-    fmt.Println(resp.Status)
-}
-```
-
 ## Notes
 
 - This is a synchronous POST request with no callback URLs.

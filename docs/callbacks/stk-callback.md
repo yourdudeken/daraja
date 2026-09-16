@@ -83,29 +83,6 @@ const parsed = mpesa.webhooks.parseSTKCallback(rawBody);
 
 The `on` method accepts a `WebhookEvent["type"]` string and a `WebhookHandler` callback `(event: WebhookEvent) => unknown | Promise<unknown>`. The static `STKPushService.parseCallback` and the manager's `parseSTKCallback` both return an `STKCallbackResult`.
 
-### Go
-
-```go
-import (
-    "github.com/yourdudeken/daraja/sdks/go/client"
-    "github.com/yourdudeken/daraja/sdks/go/webhooks"
-)
-
-manager := webhooks.NewManager(logger)
-
-// Option 1: register a handler
-manager.On(webhooks.EventSTKCallback, func(eventType webhooks.EventType, payload interface{}) {
-    result := payload.(types.STKCallbackResult)
-    fmt.Println(result.MerchantRequestID, result.ResultCode)
-})
-
-// Option 2: parse directly
-result := client.ParseSTKCallback(stkPayload)
-// Returns: types.STKCallbackResult{Success: true, MerchantRequestID: "…", …}
-```
-
-The `On` method accepts a `webhooks.EventType` constant and a `webhooks.WebhookHandler` function `func(eventType EventType, payload interface{})`. The `ParseSTKCallback` function lives in `client` package and returns `types.STKCallbackResult` with pointer fields (`*float64` Amount, `*string` ReceiptNumber etc.).
-
 ## Signature Verification
 
 All SDKs verify the `x-mpesa-signature` HMAC-SHA256 header against the raw body using your webhook secret:
@@ -116,7 +93,4 @@ manager.verify_signature(payload_body, signature_header, secret)
 
 # TypeScript
 mpesa.webhooks.verifySignature(payloadBody, signatureHeader, secret)
-
-// Go
-webhooks.VerifySignature([]byte(payloadBody), signatureHeader, secret)
 ```

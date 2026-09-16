@@ -1,6 +1,6 @@
 # Reversal
 
-> **Status:**  Verified against the sandbox in all three SDKs (Go, Python, TypeScript).
+> **Status:**  Verified against the sandbox in (Python, TypeScript).
 
 Reverses a completed M-Pesa transaction. The reversal amount must not exceed the original transaction amount.
 
@@ -76,38 +76,9 @@ const response = await mpesa.reversal.reverse({
 });
 ```
 
-```go
-package main
-
-import (
-    "context"
-    "github.com/yourdudeken/daraja/sdks/go/client"
-    "github.com/yourdudeken/daraja/sdks/go/types"
-)
-
-func main() {
-    c := client.NewClient(types.MpesaConfig{
-        ConsumerKey:      "...",
-        ConsumerSecret:   "...",
-        InitiatorName:    "testapi",
-        InitiatorPassword: "...",
-        Environment:      types.Sandbox,
-    })
-    resp, err := c.Reversal(context.Background(), types.ReversalRequest{
-        TransactionID:  "QKH09V3RVP",
-        Amount:         1000,
-        ReceiverParty:  174379,
-        QueueTimeOutURL: "https://example.com/timeout",
-        ResultURL:       "https://example.com/result",
-        Remarks:         "Reversal request",
-    })
-}
-```
-
 ## Notes
 
 - `Initiator` and `SecurityCredential` are auto-filled from the SDK configuration when omitted.
-- The Go SDK auto-sets `CommandID` to `"TransactionReversal"`.
 - The reversal result is delivered asynchronously via the `ResultURL` callback.
 - `RecieverIdentifierType` defaults to `11`. Note the typo (`Reciever`) is in the M-Pesa API itself.
 - Only completed transactions can be reversed. Pending or failed transactions cannot be reversed.

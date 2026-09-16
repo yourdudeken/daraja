@@ -1,6 +1,6 @@
 # B2B (Business to Business)
 
-> **Status:**  Verified against the sandbox in all three SDKs (Go, Python, TypeScript) for both `BusinessBuyGoods` and `BusinessPayBill`.
+> **Status:**  Verified against the sandbox in (Python, TypeScript) for both `BusinessBuyGoods` and `BusinessPayBill`.
 
 Moves funds between two business accounts using the Buy Goods or Pay Bill command. Both operations share the same endpoint but differ by `CommandID`.
 
@@ -108,49 +108,6 @@ await mpesa.businessGoods.payBill({
   QueueTimeOutURL: "https://example.com/timeout",
   ResultURL: "https://example.com/result",
 });
-```
-
-```go
-package main
-
-import (
-    "context"
-    "github.com/yourdudeken/daraja/sdks/go/client"
-    "github.com/yourdudeken/daraja/sdks/go/types"
-)
-
-func main() {
-    c := client.NewClient(types.MpesaConfig{
-        ConsumerKey:      "...",
-        ConsumerSecret:   "...",
-        InitiatorName:    "testapi",
-        InitiatorPassword: "...",
-        Environment:      types.Sandbox,
-    })
-
-    // Buy Goods
-    c.BusinessBuyGoods(context.Background(), types.BusinessBuyGoodsRequest{
-        CommandID:  "BusinessBuyGoods",
-        Amount:     5000,
-        PartyA:     174379,
-        PartyB:     174379,
-        Remarks:    "Buy goods payment",
-        QueueTimeOutURL: "https://example.com/timeout",
-        ResultURL:       "https://example.com/result",
-    })
-
-    // Pay Bill
-    c.BusinessPayBill(context.Background(), types.BusinessPayBillRequest{
-        CommandID:       "BusinessPayBill",
-        Amount:          5000,
-        PartyA:          174379,
-        PartyB:          174379,
-        AccountReference: "INV001",
-        Remarks:         "Pay bill payment",
-        QueueTimeOutURL: "https://example.com/timeout",
-        ResultURL:       "https://example.com/result",
-    })
-}
 ```
 
 ## Notes

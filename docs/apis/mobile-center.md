@@ -149,41 +149,6 @@ await mpesa.mobileCenter.purchase({
 const status = await mpesa.mobileCenter.getStatus("TXN-001", "ACC-001");
 ```
 
-```go
-package main
-
-import (
-    "context"
-    "github.com/yourdudeken/daraja/sdks/go/client"
-    "github.com/yourdudeken/daraja/sdks/go/types"
-)
-
-func main() {
-    c := client.NewClient(types.MpesaConfig{
-        ConsumerKey:    "...",
-        ConsumerSecret: "...",
-        Environment:    types.Sandbox,
-    })
-
-    offers, _ := c.MobileCenterFetchOffers(context.Background(),
-        types.MobileCenterFetchOffersRequest{Msisdn: "254712345678"})
-
-    c.MobileCenterPurchase(context.Background(), types.MobileCenterPurchaseRequest{
-        OfferingID:     "1234",
-        AccountID:      "ACC-001",
-        Price:          "500",
-        ResourceAmount: "1024",
-        Validity:       "30",
-        Msisdn:         "254712345678",
-        TransactionID:  "TXN-001",
-        PaymentMode:    "airtime",
-    })
-
-    status, _ := c.MobileCenterStatus(context.Background(),
-        types.MobileCenterStatusRequest{ID: "TXN-001", ServiceAccountID: "ACC-001"})
-}
-```
-
 ## Notes
 
 - Fetch Offers and Check Status use `GET` with query parameters; Purchase uses `POST`.

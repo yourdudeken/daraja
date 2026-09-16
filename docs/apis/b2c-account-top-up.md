@@ -1,6 +1,6 @@
 # B2C Account Top-Up
 
-> **Status:**  Verified against the sandbox in all three SDKs (Go, Python, TypeScript).
+> **Status:**  Verified against the sandbox in (Python, TypeScript).
 
 Tops up a business M-Pesa account from another business account. Uses the same endpoint as B2B but with a dedicated `CommandID`.
 
@@ -83,38 +83,6 @@ const response = await mpesa.b2b.topUp({
   QueueTimeOutURL: "https://example.com/timeout",
   ResultURL: "https://example.com/result",
 });
-```
-
-```go
-package main
-
-import (
-    "context"
-    "github.com/yourdudeken/daraja/sdks/go/client"
-    "github.com/yourdudeken/daraja/sdks/go/types"
-)
-
-func main() {
-    c := client.NewClient(types.MpesaConfig{
-        ConsumerKey:      "...",
-        ConsumerSecret:   "...",
-        InitiatorName:    "testapi",
-        InitiatorPassword: "...",
-        Environment:      types.Sandbox,
-    })
-    resp, err := c.AccountTopUp(context.Background(), types.B2CAccountTopUpRequest{
-        CommandID:              "BusinessPayToBulk",
-        SenderIdentifierType:   "4",
-        RecieverIdentifierType: "4",
-        Amount:                 "10000",
-        PartyA:                 "174379",
-        PartyB:                 "174379",
-        AccountReference:       "TOPUP001",
-        Remarks:                "Account top-up",
-        QueueTimeOutURL:        "https://example.com/timeout",
-        ResultURL:              "https://example.com/result",
-    })
-}
 ```
 
 ## Notes

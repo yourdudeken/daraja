@@ -88,28 +88,6 @@ interface B2BExpressCallbackPayload {
 
 The `parseCallback` static method extracts `success`, `resultCode`, `resultDescription`, `requestId`, `transactionId`, `amount`, and `status` into a normalized object.
 
-### Go
-
-```go
-import (
-    "encoding/json"
-    "github.com/yourdudeken/daraja/sdks/go/types"
-    "github.com/yourdudeken/daraja/sdks/go/webhooks"
-)
-
-manager := webhooks.NewManager(logger)
-
-// B2B Express callbacks arrive as a result callback;
-// route them to the appropriate handler via ResultURL
-manager.On(webhooks.EventB2CResult, func(eventType webhooks.EventType, payload interface{}) {
-    // The payload is a types.MpesaResult; B2B Express fields are in ResultParameters
-    result := payload.(types.MpesaResult)
-    fmt.Println(result.Result.TransactionID)
-})
-```
-
-In the Go SDK, B2B Express callbacks are delivered via the `ResultURL` and routed through the standard result callback flow. The `GinWebhookHandler` middleware handles routing automatically.
-
 ## Signature Verification
 
 ```python
@@ -119,5 +97,4 @@ manager.verify_signature(payload_body, signature_header, secret)
 # TypeScript
 mpesa.webhooks.verifySignature(payloadBody, signatureHeader, secret)
 
-// Go — handled automatically by GinWebhookHandler when secret is provided
 ```

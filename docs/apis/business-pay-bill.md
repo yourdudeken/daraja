@@ -1,6 +1,6 @@
 # Business Pay Bill
 
-> **Status:**  Verified against the sandbox in all three SDKs (Go, Python, TypeScript).
+> **Status:**  Verified against the sandbox in (Python, TypeScript).
 
 Sends a payment from a business account to a paybill merchant. This is a convenience wrapper around the B2B endpoint with `CommandID` set to `BusinessPayBill`.
 
@@ -80,36 +80,6 @@ const response = await mpesa.businessGoods.payBill({
   QueueTimeOutURL: "https://example.com/timeout",
   ResultURL: "https://example.com/result",
 });
-```
-
-```go
-package main
-
-import (
-    "context"
-    "github.com/yourdudeken/daraja/sdks/go/client"
-    "github.com/yourdudeken/daraja/sdks/go/types"
-)
-
-func main() {
-    c := client.NewClient(types.MpesaConfig{
-        ConsumerKey:      "...",
-        ConsumerSecret:   "...",
-        InitiatorName:    "testapi",
-        InitiatorPassword: "...",
-        Environment:      types.Sandbox,
-    })
-    resp, err := c.BusinessPayBill(context.Background(), types.BusinessPayBillRequest{
-        CommandID:       "BusinessPayBill",
-        Amount:          5000,
-        PartyA:          174379,
-        PartyB:          174379,
-        AccountReference: "INV001",
-        Remarks:         "Pay bill payment",
-        QueueTimeOutURL: "https://example.com/timeout",
-        ResultURL:       "https://example.com/result",
-    })
-}
 ```
 
 ## Notes

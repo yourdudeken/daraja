@@ -1,6 +1,6 @@
 # Lipa Na Bonga
 
-> **Status:**  Implemented per the docs in all three SDKs (Go, Python, TypeScript), but the sandbox returns `404` for both endpoints. Request/response shapes match the docs exactly.
+> **Status:**  Implemented per the docs in (Python, TypeScript), but the sandbox returns `404` for both endpoints. Request/response shapes match the docs exactly.
 
 Calculate Bonga Points redemption value and redeem points to pay for goods/services.
 
@@ -98,42 +98,10 @@ await mpesa.lipaNaBonga.redeem({
 });
 ```
 
-```go
-package main
-
-import (
-    "context"
-    "github.com/yourdudeken/daraja/sdks/go/client"
-    "github.com/yourdudeken/daraja/sdks/go/types"
-)
-
-func main() {
-    c := client.NewClient(types.MpesaConfig{
-        ConsumerKey:    "...",
-        ConsumerSecret: "...",
-        Environment:    types.Sandbox,
-    })
-
-    calc, _ := c.LipaNaBongaCalculate(context.Background(),
-        types.LipaNaBongaCalculateRequest{Points: "5000"})
-    fmt.Println(calc.Body.Amount, calc.Body.Rate)
-
-    c.LipaNaBongaRedeem(context.Background(), types.LipaNaBongaRedeemRequest{
-        Msisdn:         "254712345678",
-        Amount:         500,
-        BongaPoints:    5000,
-        ConversionRate: 10.0,
-        ShortCode:      "123456",
-        AccountNumber:  "ACC-001",
-    })
-}
-```
-
 ## Notes
 
 - Both endpoints use `POST` with JSON bodies.
 - Responses are nested `{ header: {...}, body: {...} }` — Python returns `LipaNaBongaCalculateResponse` with typed `header` and dict `body`.
 - The Calculate endpoint returns a typed body with `amount`, `points`, and `rate` as strings.
 - The Redeem endpoint's body may be `null` on success — check the header's `responseCode` for status.
-- The Go SDK types the Calculate body as `LipaNaBongaCalculateBody` with `Amount`, `Points`, and `Rate` string fields.
 - Points input is a string in the Calculate request, but an integer in the Redeem request.

@@ -39,28 +39,6 @@ const response = await mpesa.swap.query({ customerNumber: "254712345678" });
 console.log(response.lastSwapDate);
 ```
 
-```go
-package main
-
-import (
-    "context"
-    "github.com/yourdudeken/daraja/sdks/go/client"
-    "github.com/yourdudeken/daraja/sdks/go/types"
-)
-
-func main() {
-    c := client.NewClient(types.MpesaConfig{
-        ConsumerKey:    "...",
-        ConsumerSecret: "...",
-        Environment:    types.Sandbox,
-    })
-    resp, err := c.Swap(context.Background(), types.SwapRequest{
-        CustomerNumber: "254712345678",
-    })
-    fmt.Println(resp.LastSwapDate)
-}
-```
-
 ## Notes
 
 - This uses the v2 IMSI endpoint (`/imsi/v2/checkATI`), which is distinct from the v1 IMSI endpoint used for IMSI lookups.

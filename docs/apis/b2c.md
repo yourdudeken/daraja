@@ -1,6 +1,6 @@
 # B2C (Business to Customer)
 
-> **Status:**  Verified against the sandbox in all three SDKs (Go, Python, TypeScript).
+> **Status:**  Verified against the sandbox in (Python, TypeScript).
 
 Disburses funds from a business account to a customer's M-Pesa wallet (e.g. salary payments, business payments, promotions).
 
@@ -75,35 +75,6 @@ const response = await mpesa.b2c.send({
   QueueTimeOutURL: "https://example.com/timeout",
   ResultURL: "https://example.com/result",
 });
-```
-
-```go
-package main
-
-import (
-    "context"
-    "github.com/yourdudeken/daraja/sdks/go/client"
-    "github.com/yourdudeken/daraja/sdks/go/types"
-)
-
-func main() {
-    c := client.NewClient(types.MpesaConfig{
-        ConsumerKey:      "...",
-        ConsumerSecret:   "...",
-        InitiatorName:    "testapi",
-        InitiatorPassword: "...",
-        Environment:      types.Sandbox,
-    })
-    resp, err := c.B2C(context.Background(), types.B2CRequest{
-        CommandID:  types.BusinessPayment,
-        Amount:     5000,
-        PartyA:     174379,
-        PartyB:     254712345678,
-        Remarks:    "Payment for services",
-        QueueTimeOutURL: "https://example.com/timeout",
-        ResultURL:       "https://example.com/result",
-    })
-}
 ```
 
 ## Notes

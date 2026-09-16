@@ -1,6 +1,6 @@
 # STK Push (Lipa Na M-Pesa Online)
 
-> **Status:**  Verified against the sandbox in all three SDKs (Go, Python, TypeScript).
+> **Status:**  Verified against the sandbox in (Python, TypeScript).
 
 Initiates a USSD prompt (STK push) on the customer's phone to authorize a payment.
 
@@ -70,36 +70,6 @@ const response = await mpesa.stkPush.initiate({
   Password: "",
   Timestamp: "",
 });
-```
-
-```go
-package main
-
-import (
-    "context"
-    "github.com/yourdudeken/daraja/sdks/go/client"
-    "github.com/yourdudeken/daraja/sdks/go/types"
-)
-
-func main() {
-    c := client.NewClient(types.MpesaConfig{
-        ConsumerKey:    "...",
-        ConsumerSecret: "...",
-        Passkey:        "...",
-        Environment:    types.Sandbox,
-    })
-    resp, err := c.STKPush(context.Background(), types.STKPushRequest{
-        BusinessShortCode: 174379,
-        TransactionType:   types.CustomerPayBillOnline,
-        Amount:            1000,
-        PartyA:            254712345678,
-        PartyB:            174379,
-        PhoneNumber:       254712345678,
-        CallBackURL:       "https://example.com/callback",
-        AccountReference:  "Order123",
-        TransactionDesc:   "Payment",
-    })
-}
 ```
 
 ## Notes

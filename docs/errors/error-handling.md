@@ -17,18 +17,18 @@ MpesaError (base)
 
 ## Base Error Fields
 
-| Field | Python | TypeScript | Go | Description |
-|---|---|---|---|---|
-| Message | `.message` | `.message` | `.Message` | Human-readable error description |
-| Status Code | `.status_code` | `.statusCode` | `.StatusCode` | HTTP status code (if applicable) |
-| Request ID | `.request_id` | `.requestId` | `.RequestID` | Unique request identifier from Safaricom |
-| Raw Response | `.raw_response` | `.rawResponse` | `.RawResponse` | The unparsed API response body |
-| Cause | `.cause` | `.cause` (via `Error.cause`) | `.Err` | Underlying error (Go uses `Unwrap()`) |
+| Field | Python | TypeScript | Description |
+|---|---|---|---|
+| Message | `.message` | `.message` | Human-readable error description |
+| Status Code | `.status_code` | `.statusCode` | HTTP status code (if applicable) |
+| Request ID | `.request_id` | `.requestId` | Unique request identifier from Safaricom |
+| Raw Response | `.raw_response` | `.rawResponse` | The unparsed API response body |
+| Cause | `.cause` | `.cause` (via `Error.cause`) | Underlying error |
 
 **Additional fields on specific error types:**
 
-- `RateLimitError` — `.retry_after` (Python), `.retryAfter` (TS), `.RetryAfter` (int, Go): seconds to wait before retrying.
-- `MpesaAPIError` — `.error_code` (Python), `.errorCode` (TS), `.ErrorCode` (Go): the Daraja-specific error code string.
+- `RateLimitError` — `.retry_after` (Python), `.retryAfter` (TS): seconds to wait before retrying.
+- `MpesaAPIError` — `.error_code` (Python), `.errorCode` (TS): the Daraja-specific error code string.
 
 ## Typed Errors
 
@@ -44,11 +44,6 @@ from daraja.exceptions import AuthenticationError
 import { AuthenticationError } from "daraja-sdk-ts";
 ```
 
-```go
-import "github.com/yourdudeken/daraja/sdks/go/errors"
-errors.NewAuthenticationError("message", errors.WithStatusCode(401))
-```
-
 ### ValidationError
 
 Raised when the SDK's input validation rejects a request before it's sent (e.g. invalid phone number format, missing required fields).
@@ -59,10 +54,6 @@ from daraja.exceptions import ValidationError
 
 ```typescript
 import { ValidationError } from "daraja-sdk-ts";
-```
-
-```go
-errors.NewValidationError("message", errors.WithCause(err))
 ```
 
 ### TimeoutError
@@ -77,10 +68,6 @@ from daraja.exceptions import TimeoutError
 import { TimeoutError } from "daraja-sdk-ts";
 ```
 
-```go
-errors.NewTimeoutError("", errors.WithCause(err))
-```
-
 ### APIConnectionError
 
 Raised when the SDK cannot establish a network connection to the Safaricom API.
@@ -91,10 +78,6 @@ from daraja.exceptions import APIConnectionError
 
 ```typescript
 import { APIConnectionError } from "daraja-sdk-ts";
-```
-
-```go
-errors.NewAPIConnectionError("", errors.WithCause(err))
 ```
 
 ### RateLimitError
@@ -119,13 +102,6 @@ try {
   if (e instanceof RateLimitError) {
     const wait = e.retryAfter;  // seconds
   }
-}
-```
-
-```go
-var rateErr *errors.RateLimitError
-if errors.As(err, &rateErr) {
-    fmt.Println(rateErr.RetryAfter)
 }
 ```
 
@@ -154,13 +130,6 @@ try {
 }
 ```
 
-```go
-var apiErr *errors.MpesaAPIError
-if errors.As(err, &apiErr) {
-    fmt.Println(apiErr.ErrorCode, apiErr.Message)
-}
-```
-
 ### WebhookVerificationError
 
 Raised when HMAC-SHA256 signature verification of a webhook payload fails.
@@ -171,10 +140,6 @@ from daraja.exceptions import WebhookVerificationError
 
 ```typescript
 import { WebhookVerificationError } from "daraja-sdk-ts";
-```
-
-```go
-errors.NewWebhookVerificationError("signature mismatch")
 ```
 
 ## Error Detection Helpers
@@ -196,15 +161,7 @@ if (isMpesaError(err)) {
 }
 ```
 
-```go
-if errors.IsMpesaError(err) {
-    fmt.Println("M-Pesa error:", err)
-}
-```
-
 ## Serialization
-
-**Go:** `MpesaError` provides a `ToJSON()` method that returns a `map[string]interface{}` with `name`, `message`, `statusCode`, `requestId`, and `rawResponse` (non-nil fields only). Useful for logging or API responses.
 
 **Python:** `MpesaError` provides a `to_dict()` method that returns a `dict[str, Any]` with `name`, `message`, `status_code`, `request_id`, and `raw_response`.
 
@@ -216,11 +173,11 @@ All SDKs include built-in resilience mechanisms configured via `MpesaConfig`:
 
 ### Retries with Exponential Backoff
 
-On transient failures (408, 429, 5xx), the SDK retries the request automatically. Configure via `max_retries`, `retry_config` (Python), `retry` (TS), or `RetryConfig` (Go). Backoff uses exponential delay with jitter up to `maxDelayMs`.
+On transient failures (408, 429, 5xx), the SDK retries the request automatically. Configure via `max_retries`, `retry_config` (Python), or `retry` (TS). Backoff uses exponential delay with jitter up to `maxDelayMs`.
 
 ### Circuit Breaker
 
-After repeated consecutive failures, the circuit breaker opens and short-circuits requests without hitting the network. Configure via `circuit_breaker_config` (Python), `circuitBreaker` (TS), or `CircuitBreakerConfig` (Go).
+After repeated consecutive failures, the circuit breaker opens and short-circuits requests without hitting the network. Configure via `circuit_breaker_config` (Python), or `circuitBreaker` (TS).
 
 ### Rate Limiting
 
@@ -228,11 +185,11 @@ The SDK tracks request rates and will surface a `RateLimitError` with the `retry
 
 ### Idempotency
 
-Enabled by default (`enable_idempotency=True`). Generates deterministic request IDs to prevent duplicate processing. Configure via `idempotency_store` (Python), `idempotencyStore` (TS), or `IdempotencyStore` (Go).
+Enabled by default (`enable_idempotency=True`). Generates deterministic request IDs to prevent duplicate processing. Configure via `idempotency_store` (Python), or `idempotencyStore` (TS).
 
 ### Connection Pooling
 
-Configure via `connection_pool_config` (Python), `connectionPoolConfig` (TS), or `ConnectionPoolConfig` (Go) to reuse HTTP connections.
+Configure via `connection_pool_config` (Python), or `connectionPoolConfig` (TS) to reuse HTTP connections.
 
 ## Error Handling Examples
 
@@ -321,67 +278,3 @@ try {
   }
 }
 ```
-
-### Go
-
-```go
-import (
-    "context"
-    "errors"
-    "fmt"
-
-    "github.com/yourdudeken/daraja/sdks/go/client"
-    "github.com/yourdudeken/daraja/sdks/go/types"
-    mpesaErrors "github.com/yourdudeken/daraja/sdks/go/errors"
-)
-
-mpesaClient := client.NewClient(types.MpesaConfig{
-    ConsumerKey:    "…",
-    ConsumerSecret: "…",
-    Environment:    types.Sandbox,
-})
-
-result, err := mpesaClient.STKPush(ctx, types.STKPushRequest{
-    BusinessShortCode: 174379,
-    TransactionType:   types.CustomerPayBillOnline,
-    Amount:            100,
-    PartyA:            254712345678,
-    PartyB:            174379,
-    PhoneNumber:       254712345678,
-    CallBackURL:       "https://yourapp.com/callback",
-    AccountReference:  "Order123",
-    TransactionDesc:   "Payment",
-})
-
-if err != nil {
-    if mpesaErrors.IsMpesaError(err) {
-        var rateLimit *mpesaErrors.RateLimitError
-        if errors.As(err, &rateLimit) {
-            fmt.Printf("Rate limited. Retry after %ds\n", rateLimit.RetryAfter)
-        }
-
-        var apiErr *mpesaErrors.MpesaAPIError
-        if errors.As(err, &apiErr) {
-            fmt.Printf("API error %s: %s\n", apiErr.ErrorCode, apiErr.Message)
-        }
-
-        var base *mpesaErrors.MpesaError
-        if errors.As(err, &base) {
-            fmt.Println(base.ToJSON())
-        }
-    }
-}
-```
-
-## Go ErrorOption Constructors
-
-Go error constructors accept variadic `ErrorOption` functions:
-
-```go
-errors.NewAuthenticationError("", errors.WithStatusCode(401))
-errors.NewValidationError("bad phone", errors.WithCause(originalErr))
-errors.NewMpesaAPIError("insufficient funds", "1", errors.WithRequestID("req-123"))
-errors.NewRateLimitError("", 60, errors.WithRawResponse(body))
-```
-
-Available options: `WithStatusCode(int)`, `WithRequestID(string)`, `WithRawResponse(interface{})`, `WithCause(error)`.

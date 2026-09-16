@@ -1,6 +1,6 @@
 # B2B Express
 
-> **Status:**  Implemented per the docs in all three SDKs (Go, Python, TypeScript), but the sandbox gateway returns `504` for this endpoint. Request/response shapes match the docs exactly.
+> **Status:**  Implemented per the docs in (Python, TypeScript), but the sandbox gateway returns `504` for this endpoint. Request/response shapes match the docs exactly.
 
 B2B Express (Lipa na M-Pesa B2B / USSD push) lets a partner trigger a USSD
 prompt on a customer's phone to authorize a B2B payment, resolving the
@@ -67,26 +67,6 @@ const resp = await mpesa.b2bExpress.send({
   partnerName: "Partner Ltd",
   RequestRefID: "REQ-123",
 });
-```
-
-```go
-import "github.com/yourdudeken/daraja/sdks/go/client"
-import "github.com/yourdudeken/daraja/sdks/go/types"
-
-c := client.NewClient(types.MpesaConfig{
-    ConsumerKey:    "...",
-    ConsumerSecret: "...",
-    Environment:    types.Sandbox,
-})
-resp, err := c.B2BExpress(context.Background(), types.B2BExpressRequest{
-    PrimaryShortCode:  "174379",
-    ReceiverShortCode: "600000",
-    Amount:            "1000",
-    PaymentRef:        "INV-001",
-    CallbackUrl:       "https://example.com/callback",
-    PartnerName:       "Partner Ltd",
-    RequestRefID:      "REQ-123",
-})
 ```
 
 ## Notes

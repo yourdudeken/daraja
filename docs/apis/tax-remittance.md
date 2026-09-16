@@ -1,6 +1,6 @@
 # Tax Remittance
 
-> **Status:**  Verified against the sandbox in all three SDKs (Go, Python, TypeScript).
+> **Status:**  Verified against the sandbox in (Python, TypeScript).
 
 Remits tax payments to the Kenya Revenue Authority (KRA) via M-Pesa. Uses a dedicated endpoint with `CommandID` set to `PayTaxToKRA`.
 
@@ -82,38 +82,6 @@ const response = await mpesa.taxRemittance.remit({
   QueueTimeOutURL: "https://example.com/timeout",
   ResultURL: "https://example.com/result",
 });
-```
-
-```go
-package main
-
-import (
-    "context"
-    "github.com/yourdudeken/daraja/sdks/go/client"
-    "github.com/yourdudeken/daraja/sdks/go/types"
-)
-
-func main() {
-    c := client.NewClient(types.MpesaConfig{
-        ConsumerKey:      "...",
-        ConsumerSecret:   "...",
-        InitiatorName:    "testapi",
-        InitiatorPassword: "...",
-        Environment:      types.Sandbox,
-    })
-    resp, err := c.TaxRemittance(context.Background(), types.TaxRemittanceRequest{
-        CommandID:              "PayTaxToKRA",
-        SenderIdentifierType:   "4",
-        RecieverIdentifierType: "4",
-        Amount:                 "10000",
-        PartyA:                 "174379",
-        PartyB:                 "572572",
-        AccountReference:       "TAX-2024-001",
-        Remarks:                "VAT remittance",
-        QueueTimeOutURL:        "https://example.com/timeout",
-        ResultURL:              "https://example.com/result",
-    })
-}
 ```
 
 ## Notes
