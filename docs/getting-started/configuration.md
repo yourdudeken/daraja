@@ -1,7 +1,7 @@
 # Configuration
 
 Every SDK is configured through an `MpesaConfig`-style object. The core options
-are shared across Python, TypeScript, and Go.
+are shared across Python, and TypeScript.
 
 Core options:
 
@@ -33,7 +33,6 @@ connection-pool subsystems:
 | `connectionPoolConfig` / `connection_pool_config` | 50 max connections | Connection pool tuning |
 | `sharedTokenCache` / `shared_token_cache` | — | Share the OAuth token across instances |
 | `redisUrl` / `redis_url` (Python, TypeScript) | — | Redis connection URL for shared token cache |
-| `RedisAddr` / `RedisPassword` / `RedisDB` (Go) | — | Redis connection fields for shared token cache |
 
 ## Language specifics
 

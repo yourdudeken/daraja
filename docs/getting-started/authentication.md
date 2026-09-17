@@ -40,10 +40,6 @@ token = mpesa.get_access_token()
 const token = await mpesa.client.getAccessToken();
 ```
 
-```go
-token, err := mpesa.GetAccessToken(ctx)
-```
-
 ## Rotating credentials
 
 The SDKs can swap to new consumer credentials at runtime without rebuilding
@@ -55,10 +51,6 @@ mpesa.rotate_credentials("new_key", "new_secret")
 
 ```ts
 mpesa.client.rotateCredentials("new_key", "new_secret");
-```
-
-```go
-mpesa.RotateCredentials("new_key", "new_secret")
 ```
 
 ## Shared token cache (Redis)
@@ -81,7 +73,7 @@ const mpesa = new Mpesa({
 });
 ```
 
-When `redisUrl`/`redis_url` (Python, TypeScript) or `RedisAddr` (Go) is
+When `redisUrl`/`redis_url` (Python, TypeScript) is
 configured, the access token is stored in Redis and shared across client
 instances and processes. All SDKs also accept a custom `sharedTokenCache` /
 `shared_token_cache` / `SharedTokenCache` implementation.

@@ -38,7 +38,7 @@ to the repository as a whole.
 3. The workflow compares each SDK's manifest version against its latest tag and
    releases **only the SDKs whose version changed**:
    - TypeScript → `npm publish` + `typescript-vX.Y.Z` tag + GitHub Release
-   - Python → PyPI publish + `python-vX.Y.Z` tag + GitHub Release
+   - Python → `PyPI publish` + `python-vX.Y.Z` tag + GitHub Release
 
 ## Manual release
 
