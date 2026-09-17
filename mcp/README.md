@@ -68,11 +68,9 @@ All endpoints live under the `/api/v1` prefix:
 docker compose up mcp
 ```
 
-The Docker image installs the **published** `daraja-sdk-ts` package from the
-npm registry (the SDK version is read from `sdks/typescript/package.json` at
-build time). Local development instead uses a **symlink to the local SDK**
-(`file:../sdks/typescript` in `package.json`), so SDK changes are picked up
-immediately without publishing.
+Both local development and the Docker image install the **published**
+`daraja-sdk-ts` package from the npm registry. The MCP server is fully
+self-contained and does not depend on the SDK source tree in this repository.
 
 ## Environment Variables
 

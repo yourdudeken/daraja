@@ -40,13 +40,17 @@ coverage.xml
 build/
 dist/
 
+# === Typescript ===
+
+# === Mcp ===
+
 # === Testing & tooling ===
 .nyc_output/
 .coverage
 coverage/
 test-results/
 playwright-report/
-daraja-docs
+daraja_docs_v3/
 eslintcache
 .eslintcache
 .stylelintcache
