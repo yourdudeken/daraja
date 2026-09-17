@@ -1,7 +1,7 @@
 version: 2
 updates:
   - package-ecosystem: "npm"
-    directory: "/"
+    directory: "/mcp"
     schedule:
       interval: "weekly"
     groups:
@@ -22,12 +22,4 @@ updates:
       interval: "weekly"
     groups:
       python-deps:
-        patterns: ["*"]
-
-  - package-ecosystem: "github-actions"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-    groups:
-      actions-deps:
         patterns: ["*"]

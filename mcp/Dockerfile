@@ -8,13 +8,8 @@ WORKDIR /app
 RUN npm install -g npm@11.19.1
 
 # Local development resolves the TypeScript SDK through a workspace symlink
-# (file:../sdks/typescript in mcp/package.json). The Docker image instead
-# installs the published daraja-sdk-ts package from the npm registry, so the
-# SDK version is read from its manifest and swapped in at build time.
+# The Docker image installs the published daraja-sdk-ts package from the npm registry.
 COPY mcp/package.json ./
-COPY sdks/typescript/package.json /tmp/sdk-package.json
-RUN TS_SDK_VERSION=$(node -p "require('/tmp/sdk-package.json').version") && \
-    npm pkg set "dependencies.daraja-sdk-ts=^${TS_SDK_VERSION}"
 
 # Install dependencies (daraja-sdk-ts resolves from the npm registry; npm 11
 # auto-installs its required axios peer)

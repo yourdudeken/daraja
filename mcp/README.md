@@ -69,10 +69,7 @@ docker compose up mcp
 ```
 
 The Docker image installs the **published** `daraja-sdk-ts` package from the
-npm registry (the SDK version is read from `sdks/typescript/package.json` at
-build time). Local development instead uses a **symlink to the local SDK**
-(`file:../sdks/typescript` in `package.json`), so SDK changes are picked up
-immediately without publishing.
+npm registry. Local development instead uses a **symlink to the local SDK**
 
 ## Environment Variables
 

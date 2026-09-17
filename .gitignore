@@ -40,6 +40,10 @@ coverage.xml
 build/
 dist/
 
+# === Typescript ===
+
+# === Mcp ===
+
 # === Testing & tooling ===
 .nyc_output/
 .coverage
