@@ -1,8 +1,10 @@
 services:
   mcp:
+    image: mcp:latest
+    container_name: mcp
     build:
       context: .
-      dockerfile: mcp/Dockerfile
+      dockerfile: Dockerfile
     ports:
       - "${MCP_PORT:-3999}:3999"
     environment:

@@ -9,15 +9,15 @@ RUN npm install -g npm@11.19.1
 
 # The published daraja-sdk-ts package is installed from the npm registry —
 # no local SDK symlink or workspace is required.
-COPY mcp/package.json mcp/package-lock.json ./
+COPY package.json package-lock.json ./
 
 # Install dependencies from the lockfile (daraja-sdk-ts resolves from the npm
 # registry; npm 11 auto-installs its required axios peer)
 RUN npm ci
 
 # Compile the TypeScript sources.
-COPY mcp/tsconfig.json ./
-COPY mcp/src/ ./src/
+COPY tsconfig.json ./
+COPY src/ ./src/
 RUN npm run build
 
 # Drop dev dependencies before the runtime stage
