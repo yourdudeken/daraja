@@ -153,7 +153,8 @@ def run_suite_b():
     finally:
         c2.close()
 
-    print(f"\nSuite B results: {sum(1 for v in results.values() if v is True)}/{len(results)} passed")
+    passed = sum(1 for v in results.values() if v is True)
+    print(f"\nSuite B results: {passed}/{len(results)} passed")
     return results
 
 
