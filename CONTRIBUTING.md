@@ -5,8 +5,7 @@ Thanks for contributing to the Daraja SDK monorepo!
 ## Setup
 
 ```bash
-npm install          # root tooling (tsx)
-npm install          # (in mcp/)
+cd mcp && npm install
 cd sdks/python && pip install -e ".[all]" pytest hypothesis respx
 cd sdks/typescript && npm install
 ```
