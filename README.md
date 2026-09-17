@@ -25,7 +25,6 @@ Daraja SDKs
 | `mcp/` | MCP server |
 | `docs/` | Shared documentation |
 | `examples/` | Cross-language examples |
-| `assets/` | Diagrams and images |
 
 ## Contributing
 
