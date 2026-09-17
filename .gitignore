@@ -41,8 +41,12 @@ build/
 dist/
 
 # === Typescript ===
+tsconfig.tsbuildinfo
+.tscache/
 
 # === Mcp ===
+.mcp/
+.mcp-data/
 
 # === Testing & tooling ===
 .nyc_output/
