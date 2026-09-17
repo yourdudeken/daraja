@@ -7,19 +7,18 @@ WORKDIR /app
 # Pin npm 11, which fixes it.
 RUN npm install -g npm@11.19.1
 
-# Local development resolves the TypeScript SDK through a workspace symlink
-# The Docker image installs the published daraja-sdk-ts package from the npm registry.
-COPY mcp/package.json ./
+# The published daraja-sdk-ts package is installed from the npm registry —
+# no local SDK symlink or workspace is required.
+COPY mcp/package.json mcp/package-lock.json ./
 
-# Install dependencies (daraja-sdk-ts resolves from the npm registry; npm 11
-# auto-installs its required axios peer)
-RUN npm install
+# Install dependencies from the lockfile (daraja-sdk-ts resolves from the npm
+# registry; npm 11 auto-installs its required axios peer)
+RUN npm ci
 
-# Compile. npx tsc is used instead of `npm run build` to bypass the prebuild
-# hook, which builds the local SDK symlink (not present in this image).
+# Compile the TypeScript sources.
 COPY mcp/tsconfig.json ./
 COPY mcp/src/ ./src/
-RUN npx tsc
+RUN npm run build
 
 # Drop dev dependencies before the runtime stage
 RUN npm prune --omit=dev

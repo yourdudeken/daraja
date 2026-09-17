@@ -63,8 +63,6 @@ jobs:
         with:
           node-version: 22
       - run: npm install
-      - name: Build TypeScript SDK dependency
-        run: npm install && npm run build
       - run: npm run lint
       - run: npm run test:coverage
       - run: npm run build
