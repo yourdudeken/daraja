@@ -12,7 +12,7 @@ Shared documentation for the Daraja SDKs (Python, TypeScript).
 ## API Reference
 
 >  Verified against the sandbox in (Python, TypeScript).
->  Implemented per the docs, but the sandbox endpoint is unavailable/blocked for some APIs.
+>  Implemented per the docs, but the sandbox endpoint is unavailable/blocked for some APIs ie C2B, B2B Express, Dynamic QR and Lipa Na Bonga.
 
 ### Payments
 
