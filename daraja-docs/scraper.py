@@ -44,6 +44,17 @@ DOCS_DIR = os.path.join(OUTPUT_DIR, "docs")
 IMG_DIR = os.path.join(OUTPUT_DIR, "images")
 AUTH_FILE = "auth.json"
 
+# Navigation resilience — the portal often returns non-2xx / HTTP2 glitches
+# under rapid full-page loads, and a failed goto leaves an in-flight navigation
+# that interrupts the next one.
+GOTO_RETRIES = 4
+GOTO_TIMEOUT_MS = 60000
+PAGE_PACING_MS = 1500
+USER_AGENT = (
+    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
+    "(KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
+)
+
 # Selectors for in-page documentation tabs (same URL, JS-swapped panels).
 TAB_SELECTOR = (
     '[role="tab"], .MuiTab-root, .MuiButtonBase-root.MuiTab-root, '
@@ -149,6 +160,149 @@ def is_valid_page_url(url):
         return False
     return True
 
+
+def same_docs_page(a, b):
+    """True when two URLs point at the same /apis/ document (ignore fragment)."""
+    return normalize_url(a) == normalize_url(b)
+
+
+async def page_has_docs_content(page):
+    """Heuristic: the live page looks like API documentation, not an error shell."""
+    try:
+        if page.url.startswith("chrome-error://") or page.url == "about:blank":
+            return False
+        return await page.evaluate("""() => {
+            const body = document.body;
+            if (!body) return false;
+            const text = (body.innerText || '').trim();
+            if (text.length < 80) return false;
+            // Chrome / portal error shells
+            if (/ERR_|This site (can.?t|cannot) be reached|HTTP ERROR/i.test(text)) {
+                return false;
+            }
+            const main = document.querySelector('main, .api-details-container, [role="main"]');
+            if (main && (main.innerText || '').trim().length > 40) return true;
+            return text.length > 200;
+        }""")
+    except Exception:
+        return False
+
+
+async def settle_navigation(page, timeout_ms=8000):
+    """Wait out any in-flight navigation so the next goto is not interrupted."""
+    try:
+        await page.wait_for_load_state("domcontentloaded", timeout=timeout_ms)
+    except Exception:
+        pass
+    try:
+        await page.wait_for_load_state("networkidle", timeout=min(timeout_ms, 5000))
+    except Exception:
+        pass
+
+
+async def recover_page(page):
+    """
+    Clear a stuck error document so the next navigation can start cleanly.
+
+    Failed gotos often leave ``chrome-error://chromewebdata/`` or a pending
+    navigation that causes 'interrupted by another navigation' on the next URL.
+    """
+    try:
+        await settle_navigation(page, timeout_ms=3000)
+    except Exception:
+        pass
+    try:
+        await page.goto("about:blank", wait_until="domcontentloaded", timeout=15000)
+    except Exception:
+        pass
+    await page.wait_for_timeout(300)
+
+
+async def safe_goto(page, url, context=None, retries=GOTO_RETRIES):
+    """
+    Navigate to a docs URL with retries and recovery from portal/network glitches.
+
+    Handles:
+    - ``ERR_HTTP_RESPONSE_CODE_FAILURE`` (portal sometimes returns 4xx for the
+      document while the SPA shell still hydrates)
+    - ``interrupted by another navigation`` (previous goto still in flight)
+    - ``ERR_HTTP2_PROTOCOL_ERROR``
+
+    Returns the page to keep using (may be a freshly opened page after recovery).
+    """
+    target = normalize_url(url)
+
+    # Already on the page (e.g. just finished login on the first seed URL).
+    if same_docs_page(page.url, url) and await page_has_docs_content(page):
+        await settle_navigation(page)
+        return page
+
+    last_error = None
+    for attempt in range(1, retries + 1):
+        try:
+            await settle_navigation(page, timeout_ms=4000)
+
+            # On the last attempts, replace a wedged tab (chrome-error / stuck).
+            if attempt >= retries - 1 and context is not None:
+                if page.url.startswith("chrome-error://") or page.url == "about:blank":
+                    try:
+                        fresh = await context.new_page()
+                        await page.close()
+                        page = fresh
+                    except Exception:
+                        pass
+
+            response = await page.goto(
+                url,
+                wait_until="domcontentloaded",
+                timeout=GOTO_TIMEOUT_MS,
+            )
+
+            # Soft-wait for SPA hydration without requiring perfect networkidle.
+            await page.wait_for_timeout(PAGE_PACING_MS)
+            try:
+                await page.wait_for_load_state("networkidle", timeout=10000)
+            except Exception:
+                pass
+
+            status = response.status if response else None
+            has_content = await page_has_docs_content(page)
+            on_target = same_docs_page(page.url, url)
+
+            if on_target and has_content:
+                return page
+
+            if status and status >= 400 and not has_content:
+                raise RuntimeError(f"HTTP {status} with no usable content at {url}")
+
+            if not on_target:
+                raise RuntimeError(
+                    f"Navigated to unexpected URL {page.url!r} (wanted {target})"
+                )
+
+            if has_content:
+                return page
+
+            raise RuntimeError(f"Page loaded but content looks empty/errorful: {url}")
+
+        except Exception as exc:
+            last_error = exc
+            msg = str(exc)
+            print(f"   nav attempt {attempt}/{retries} failed: {msg.splitlines()[0]}")
+
+            # HTTP response-code failures sometimes still leave a hydratable SPA.
+            if "ERR_HTTP_RESPONSE_CODE_FAILURE" in msg:
+                await page.wait_for_timeout(2500)
+                if same_docs_page(page.url, url) and await page_has_docs_content(page):
+                    print("   nav recovered: content present after HTTP error status")
+                    return page
+
+            await recover_page(page)
+            await page.wait_for_timeout(1000 * attempt)
+
+    raise RuntimeError(
+        f"Failed to navigate to {url} after {retries} attempts: {last_error}"
+    )
 
 def image_extension(src):
     """Pick a sensible file extension from an image src URL or data URI."""
@@ -281,7 +435,6 @@ async def list_content_tabs(page):
                         .forEach((el) => {
                             if (!isShown(el)) return;
                             const label = (el.innerText || '').replace(/\\s+/g, ' ').trim();
-                            // Prefer leaf-ish controls with short labels
                             if (!label || label.length > 60) return;
                             if (el.querySelector('button, a, [role="tab"]')) return;
                             nodes.push(el);
@@ -289,7 +442,6 @@ async def list_content_tabs(page):
                 });
             }
 
-            // Index is position in the deduped list so activate_tab matches.
             const seen = new Set();
             const tabs = [];
             nodes.forEach((el) => {
@@ -308,88 +460,15 @@ async def list_content_tabs(page):
     )
 
 
-async def activate_tab(page, tab_index):
-    """Click a content tab by the index returned from ``list_content_tabs``."""
-    return await page.evaluate(
-        """({ tabSelector, tabIndex }) => {
-            const root =
-                document.querySelector('main') ||
-                document.querySelector('.api-details-container') ||
-                document.body;
-            const chrome =
-                'header, nav, footer, aside, [role="navigation"], [role="banner"], [role="contentinfo"]';
-
-            const isShown = (el) => {
-                if (!el) return false;
-                if (el.getAttribute('aria-disabled') === 'true') return false;
-                if (el.disabled) return false;
-                const style = window.getComputedStyle(el);
-                if (style.display === 'none' || style.visibility === 'hidden') return false;
-                return true;
-            };
-
-            let nodes = Array.from(root.querySelectorAll(tabSelector)).filter((el) => {
-                if (el.closest(chrome)) return false;
-                return isShown(el);
-            });
-
-            if (nodes.length < 2) {
-                const lists = root.querySelectorAll(
-                    '[role="tablist"], .MuiTabs-root, .ant-tabs-nav-list, .nav-tabs'
-                );
-                lists.forEach((list) => {
-                    if (list.closest(chrome)) return;
-                    Array.from(list.querySelectorAll('button, a, [role="tab"], div, span'))
-                        .forEach((el) => {
-                            if (!isShown(el)) return;
-                            const label = (el.innerText || '').replace(/\\s+/g, ' ').trim();
-                            if (!label || label.length > 60) return;
-                            if (el.querySelector('button, a, [role="tab"]')) return;
-                            nodes.push(el);
-                        });
-                });
-            }
-
-            // Rebuild the same deduped list as list_content_tabs so indices match.
-            const seen = new Set();
-            const tabs = [];
-            nodes.forEach((el) => {
-                const label = (el.innerText || el.getAttribute('aria-label') || '')
-                    .replace(/\\s+/g, ' ')
-                    .trim();
-                if (!label) return;
-                const key = label.toLowerCase();
-                if (seen.has(key)) return;
-                seen.add(key);
-                tabs.push(el);
-            });
-
-            const tab = tabs[tabIndex];
-            if (!tab) return false;
-            tab.scrollIntoView({ block: 'nearest', inline: 'nearest' });
-            tab.click();
-            return true;
-        }""",
-        {"tabSelector": TAB_SELECTOR, "tabIndex": tab_index},
-    )
-
-
-async def extract_active_panel_html(page):
-    """
-    Extract HTML for the currently visible documentation panel.
-
-    Prefers an active ``role=tabpanel`` / MUI tab panel so repeated tab
-    captures do not duplicate the page header and tab strip. Falls back to
-    the full main content container.
-    """
+async def panel_fingerprint(page):
+    """Short fingerprint of the active docs panel (used to detect tab swaps)."""
     return await page.evaluate("""() => {
-        const isVisible = (el) => {
-            if (!el) return false;
-            if (el.hasAttribute('hidden')) return false;
-            if (el.getAttribute('aria-hidden') === 'true') return false;
+        const isHidden = (el) => {
+            if (!el) return true;
+            if (el.hasAttribute('hidden')) return true;
+            if (el.getAttribute('aria-hidden') === 'true') return true;
             const style = window.getComputedStyle(el);
-            if (style.display === 'none' || style.visibility === 'hidden') return false;
-            return (el.innerText || '').trim().length > 20;
+            return style.display === 'none' || style.visibility === 'hidden';
         };
 
         const root =
@@ -397,14 +476,220 @@ async def extract_active_panel_html(page):
             document.querySelector('.api-details-container') ||
             document.body;
 
-        const panels = Array.from(root.querySelectorAll(
-            '[role="tabpanel"], .MuiTabPanel-root, .tab-pane, [class*="TabPanel"]'
-        ));
-        const visible = panels.find(isVisible);
-        if (visible) return visible.innerHTML;
+        const selected =
+            root.querySelector('[role="tab"][aria-selected="true"]') ||
+            root.querySelector('.Mui-selected[role="tab"]') ||
+            root.querySelector('.MuiTab-root.Mui-selected');
 
-        // Some portals keep only the active panel mounted — use main body.
-        return root.innerHTML;
+        let panel = null;
+        if (selected) {
+            const id = selected.getAttribute('aria-controls');
+            if (id) panel = document.getElementById(id);
+        }
+        if (!panel) {
+            const panels = Array.from(root.querySelectorAll(
+                '[role="tabpanel"], .MuiTabPanel-root, .tab-pane'
+            )).filter((p) => !isHidden(p));
+            if (panels.length === 1) panel = panels[0];
+            else if (panels.length > 1) {
+                panels.sort((a, b) =>
+                    ((b.innerText || '').length) - ((a.innerText || '').length)
+                );
+                panel = panels[0];
+            }
+        }
+        const node = panel || root;
+        const text = (node.innerText || '').replace(/\\s+/g, ' ').trim();
+        return `${text.length}:${text.slice(0, 240)}`;
+    }""")
+
+
+async def activate_tab_by_label(page, label):
+    """
+    Activate a docs tab using Playwright's trusted click (more reliable than
+    DOM ``el.click()`` for React/MUI tab lists).
+    """
+    before = await panel_fingerprint(page)
+
+    locators = [
+        page.get_by_role("tab", name=label, exact=True),
+        page.locator('[role="tablist"] [role="tab"]').filter(
+            has_text=re.compile(rf"^\s*{re.escape(label)}\s*$")
+        ),
+        page.locator(".MuiTab-root").filter(
+            has_text=re.compile(rf"^\s*{re.escape(label)}\s*$")
+        ),
+        page.locator(TAB_SELECTOR).filter(
+            has_text=re.compile(rf"^\s*{re.escape(label)}\s*$")
+        ),
+    ]
+
+    clicked = False
+    last_err = None
+    for loc in locators:
+        try:
+            count = await loc.count()
+            if count == 0:
+                continue
+            target = loc.first
+            await target.scroll_into_view_if_needed()
+            await target.click(timeout=5000)
+            clicked = True
+            break
+        except Exception as exc:
+            last_err = exc
+            continue
+
+    if not clicked:
+        # Last resort: JS click by label match (same dedupe order as discovery).
+        clicked = await page.evaluate(
+            """({ tabSelector, label }) => {
+                const root =
+                    document.querySelector('main') ||
+                    document.querySelector('.api-details-container') ||
+                    document.body;
+                const chrome =
+                    'header, nav, footer, aside, [role="navigation"], [role="banner"], [role="contentinfo"]';
+                const want = label.replace(/\\s+/g, ' ').trim().toLowerCase();
+                const nodes = Array.from(root.querySelectorAll(tabSelector));
+                for (const el of nodes) {
+                    if (el.closest(chrome)) continue;
+                    const text = (el.innerText || el.getAttribute('aria-label') || '')
+                        .replace(/\\s+/g, ' ').trim().toLowerCase();
+                    if (text === want) {
+                        el.scrollIntoView({ block: 'nearest' });
+                        el.click();
+                        return true;
+                    }
+                }
+                return false;
+            }""",
+            {"tabSelector": TAB_SELECTOR, "label": label},
+        )
+        if not clicked:
+            if last_err:
+                raise RuntimeError(f"Could not click tab {label!r}: {last_err}")
+            return False
+
+    # Wait until the panel content actually changes (or selection flips).
+    try:
+        await page.wait_for_function(
+            """(args) => {
+                const [before, label] = args;
+                const selected =
+                    document.querySelector('[role="tab"][aria-selected="true"]') ||
+                    document.querySelector('.MuiTab-root.Mui-selected');
+                if (selected) {
+                    const text = (selected.innerText || '').replace(/\\s+/g, ' ').trim();
+                    if (text.toLowerCase() === label.toLowerCase()) {
+                        // Selected correct tab — also require content settle when possible.
+                        return true;
+                    }
+                }
+                // Fallback: body text fingerprint changed.
+                const root =
+                    document.querySelector('main') ||
+                    document.querySelector('.api-details-container') ||
+                    document.body;
+                const text = (root.innerText || '').replace(/\\s+/g, ' ').trim();
+                const fp = `${text.length}:${text.slice(0, 240)}`;
+                return fp !== before;
+            }""",
+            arg=[before, label],
+            timeout=8000,
+        )
+    except Exception:
+        pass
+
+    await page.wait_for_timeout(600)
+    return True
+
+
+async def extract_active_panel_html(page):
+    """
+    Extract HTML for the currently visible documentation panel only.
+
+    Resolves the selected tab via ``aria-controls`` / ``aria-selected``, and
+    strips hidden panels so inactive tab markup is never mixed in (raw
+    ``innerHTML`` includes ``display:none`` / ``hidden`` nodes).
+    """
+    return await page.evaluate("""() => {
+        const isHidden = (el) => {
+            if (!el) return true;
+            if (el.hasAttribute('hidden')) return true;
+            if (el.getAttribute('aria-hidden') === 'true') return true;
+            const style = window.getComputedStyle(el);
+            return style.display === 'none' || style.visibility === 'hidden';
+        };
+
+        const root =
+            document.querySelector('main') ||
+            document.querySelector('.api-details-container') ||
+            document.body;
+
+        const selected =
+            root.querySelector('[role="tab"][aria-selected="true"]') ||
+            root.querySelector('.Mui-selected[role="tab"]') ||
+            root.querySelector('.MuiTab-root.Mui-selected') ||
+            root.querySelector('.ant-tabs-tab-active');
+
+        let panel = null;
+        if (selected) {
+            const controls = selected.getAttribute('aria-controls');
+            if (controls) {
+                panel = document.getElementById(controls);
+            }
+            // MUI sometimes points at a wrapper id; prefer a nested tabpanel.
+            if (panel && !panel.matches('[role="tabpanel"], .MuiTabPanel-root, .tab-pane')) {
+                const nested = panel.querySelector(
+                    '[role="tabpanel"], .MuiTabPanel-root, .tab-pane'
+                );
+                if (nested && !isHidden(nested)) panel = nested;
+            }
+        }
+
+        if (!panel) {
+            const panels = Array.from(root.querySelectorAll(
+                '[role="tabpanel"], .MuiTabPanel-root, .tab-pane, [class*="TabPanel"]'
+            )).filter((p) => !isHidden(p));
+            if (panels.length === 1) {
+                panel = panels[0];
+            } else if (panels.length > 1) {
+                panels.sort((a, b) =>
+                    ((b.innerText || '').length) - ((a.innerText || '').length)
+                );
+                panel = panels[0];
+            }
+        }
+
+        if (panel) return panel.innerHTML;
+
+        // No tabpanel nodes: clone main and drop tab strip + live-hidden nodes.
+        const stripSelectors = [
+            '[role="tablist"]',
+            '.MuiTabs-root',
+            '.ant-tabs-nav',
+            '.nav-tabs',
+        ];
+        const hiddenEls = [];
+        root.querySelectorAll('*').forEach((el) => {
+            if (stripSelectors.some((sel) => el.matches(sel))) {
+                hiddenEls.push(el);
+                return;
+            }
+            // Only mark leaves/containers that are themselves hidden, not ancestors of visible content.
+            if (isHidden(el)) hiddenEls.push(el);
+        });
+
+        const clone = root.cloneNode(true);
+        const allLive = [root, ...root.querySelectorAll('*')];
+        const allClone = [clone, ...clone.querySelectorAll('*')];
+        for (let i = 0; i < allLive.length; i++) {
+            if (hiddenEls.includes(allLive[i]) && allClone[i]) {
+                allClone[i].remove();
+            }
+        }
+        return clone.innerHTML;
     }""")
 
 
@@ -451,9 +736,12 @@ async def process_images(page, soup, source_url, slug, image_counter):
         img_filename = f"{slug}_img_{image_counter[0]}.{ext}"
         local_path = os.path.join(IMG_DIR, img_filename)
         full_img_url = urljoin(source_url, src)
-        if await download_image(page, full_img_url, local_path):
-            img["src"] = f"../images/{img_filename}"
-        else:
+        try:
+            if await download_image(page, full_img_url, local_path):
+                img["src"] = f"../images/{img_filename}"
+            else:
+                img["src"] = full_img_url
+        except Exception:
             img["src"] = full_img_url
     return soup
 
@@ -486,12 +774,7 @@ async def capture_all_tab_panels(page, url, slug):
 
     # No tab UI — scrape the whole main content once.
     if len(tabs) <= 1:
-        content_html = await page.evaluate("""() => {
-            const main = document.querySelector('main') ||
-                        document.querySelector('.api-details-container') ||
-                        document.body;
-            return main.innerHTML;
-        }""")
+        content_html = await extract_active_panel_html(page)
         found_links |= await discover_links(page, url)
         body = await html_fragment_to_markdown(
             page, content_html, url, slug, image_counter
@@ -499,42 +782,59 @@ async def capture_all_tab_panels(page, url, slug):
         return body, tabs, found_links
 
     sections = []
-    shell_html = await extract_page_shell_html(page)
-    shell_md = await html_fragment_to_markdown(
-        page, shell_html, url, slug, image_counter
-    )
-    if shell_md:
-        sections.append(shell_md)
+    seen_fingerprints = set()
+
+    try:
+        shell_html = await extract_page_shell_html(page)
+        shell_md = await html_fragment_to_markdown(
+            page, shell_html, url, slug, image_counter
+        )
+        if shell_md:
+            sections.append(shell_md)
+    except Exception as exc:
+        print(f"   warn: page shell capture failed: {exc}")
 
     for tab in tabs:
         label = tab["label"]
-        idx = int(tab["index"])
         print(f"   tab: {label}")
-        clicked = await activate_tab(page, idx)
-        if not clicked:
-            print(f"   warn: could not activate tab '{label}'")
-            continue
-
-        # Wait for panel swap (SPA content often replaces on click).
-        await page.wait_for_timeout(1000)
         try:
-            await page.wait_for_load_state("networkidle", timeout=10000)
-        except Exception:
-            pass
+            activated = await activate_tab_by_label(page, label)
+            if not activated:
+                print(f"   warn: could not activate tab '{label}'")
+                continue
 
-        found_links |= await discover_links(page, url)
+            # Do NOT wait for networkidle here — tab XHRs / analytics often
+            # prevent idle and previously caused navigation races/errors.
+            await page.wait_for_timeout(500)
 
-        panel_html = await extract_active_panel_html(page)
-        panel_md = await html_fragment_to_markdown(
-            page, panel_html, url, slug, image_counter
-        )
-        if not panel_md or len(panel_md) < 20:
-            print(f"   warn: little/no content for tab '{label}'")
+            fp = await panel_fingerprint(page)
+            if fp in seen_fingerprints:
+                # Same content as another tab — click once more and re-check.
+                await page.wait_for_timeout(800)
+                await activate_tab_by_label(page, label)
+                await page.wait_for_timeout(800)
+                fp = await panel_fingerprint(page)
+
+            found_links |= await discover_links(page, url)
+
+            panel_html = await extract_active_panel_html(page)
+            panel_md = await html_fragment_to_markdown(
+                page, panel_html, url, slug, image_counter
+            )
+            if not panel_md or len(panel_md) < 20:
+                print(f"   warn: little/no content for tab '{label}'")
+                continue
+
+            seen_fingerprints.add(fp)
+            print(f"   tab ok: {label} ({len(panel_md)} chars)")
+            sections.append(f"## {label}\n\n{panel_md}")
+        except Exception as exc:
+            # Keep other tabs even if one panel throws.
+            print(f"   warn: tab '{label}' failed: {exc}")
             continue
-        sections.append(f"## {label}\n\n{panel_md}")
 
-    if not sections:
-        # Fallback: whatever is currently visible
+    tab_sections = [s for s in sections if s.startswith("## ")]
+    if not tab_sections:
         content_html = await extract_active_panel_html(page)
         found_links |= await discover_links(page, url)
         body = await html_fragment_to_markdown(
@@ -562,47 +862,113 @@ async def run():
     os.makedirs(DOCS_DIR, exist_ok=True)
     os.makedirs(IMG_DIR, exist_ok=True)
 
+    context_kwargs = {
+        "user_agent": USER_AGENT,
+        "viewport": {"width": 1440, "height": 900},
+        "locale": "en-US",
+        "ignore_https_errors": True,
+        "extra_http_headers": {
+            "Accept-Language": "en-US,en;q=0.9",
+        },
+    }
+
     async with async_playwright() as p:
-        # Browser Setup - Keep visible for login debugging
-        browser = await p.chromium.launch(headless=False)
+        # Disable HTTP/2 — the portal intermittently raises ERR_HTTP2_PROTOCOL_ERROR.
+        browser = await p.chromium.launch(
+            headless=False,
+            args=[
+                "--disable-http2",
+                "--disable-blink-features=AutomationControlled",
+            ],
+        )
 
         # Load existing authentication or create new context
         if os.path.exists(AUTH_FILE) and os.path.getsize(AUTH_FILE) > 0:
             try:
-                # Verify the auth file contains valid JSON
                 with open(AUTH_FILE, "r") as f:
                     json.load(f)
                 print("Loading saved authentication session...")
-                context = await browser.new_context(storage_state=AUTH_FILE)
+                context = await browser.new_context(
+                    storage_state=AUTH_FILE, **context_kwargs
+                )
             except (json.JSONDecodeError, Exception) as e:
                 print(f"Saved session is corrupted ({e}). Starting fresh...")
-                context = await browser.new_context()
+                context = await browser.new_context(**context_kwargs)
         else:
             print("No session found. Creating new context.")
-            context = await browser.new_context()
+            context = await browser.new_context(**context_kwargs)
 
         page = await context.new_page()
 
         # Check authentication status with first URL
         print("Checking login status...")
-        await page.goto(URLS[0], timeout=60000)
-        await asyncio.sleep(3)  # Wait for UI to settle
+        try:
+            page = await safe_goto(page, URLS[0], context=context)
+        except Exception as e:
+            print(f"Initial navigation warning: {e}")
+            print("Continuing — log in manually if the page did not load.")
+        await asyncio.sleep(2)
 
-        # Prompt for manual login if needed
         print("\nACTION REQUIRED: Check the browser window.")
         print("If you are not logged in, please log in now.")
         print("Press ENTER here once you can see the API documentation on screen.")
         input()
 
-        # Save session for future runs
         await context.storage_state(path=AUTH_FILE)
         print("Session saved for future use.")
 
         index_data = []
         visited = set()
+        failed = []
         queue = deque(normalize_url(u) for u in URLS)
 
-        print(f"Starting scrape of {len(URLS)} seed API endpoints (crawling all linked sub-pages)...")
+        print(
+            f"Starting scrape of {len(URLS)} seed API endpoints "
+            "(crawling all linked sub-pages)..."
+        )
+
+        async def scrape_one(url):
+            nonlocal page
+            path = urlparse(url).path
+            slug = path[len("/apis/"):] if path.startswith("/apis/") else path.strip("/")
+            slug = slug.strip("/").replace("/", "_") or "index"
+            print(f"\nProcessing: {slug}...")
+
+            page = await safe_goto(page, url, context=context)
+
+            markdown_text, tabs, new_links = await capture_all_tab_panels(
+                page, url, slug
+            )
+            if not markdown_text:
+                print(f"   warn: no content extracted for {slug}")
+                return False, set()
+
+            md_filename = os.path.join(DOCS_DIR, f"{slug}.md")
+            tab_note = ""
+            if len(tabs) > 1:
+                tab_note = (
+                    "**Tabs captured:** "
+                    + ", ".join(t["label"] for t in tabs)
+                    + "\n\n"
+                )
+            header = f"# {slug}\n**Source:** {url}\n\n{tab_note}---\n\n"
+
+            with open(md_filename, "w", encoding="utf-8") as f:
+                f.write(header + markdown_text + "\n")
+
+            print(
+                f"   Saved documentation: {slug}.md"
+                + (f" ({len(tabs)} tabs)" if len(tabs) > 1 else "")
+            )
+
+            index_data.append({
+                "name": slug,
+                "url": url,
+                "local_path": f"docs/{slug}.md",
+                "description": f"Documentation for {slug}",
+                "tabs": [t["label"] for t in tabs] if tabs else [],
+            })
+            return True, new_links
 
         while queue:
             url = queue.popleft()
@@ -610,67 +976,56 @@ async def run():
                 continue
             visited.add(url)
 
-            # Build a filesystem-safe slug from the URL path, e.g.
-            # /apis/GettingStarted       -> GettingStarted
-            # /apis/GettingStarted/FAQ   -> GettingStarted_FAQ
-            path = urlparse(url).path
-            slug = path[len("/apis/"):] if path.startswith("/apis/") else path.strip("/")
-            slug = slug.strip("/").replace("/", "_") or "index"
-            print(f"\nProcessing: {slug}...")
-
             try:
-                await page.goto(url, timeout=60000)
-                await page.wait_for_load_state("networkidle")
-                await page.wait_for_timeout(2000)  # Grace period for rendering
-
-                markdown_text, tabs, new_links = await capture_all_tab_panels(
-                    page, url, slug
-                )
-                if not markdown_text:
-                    print(f"   warn: no content extracted for {slug}")
-                    continue
-
-                # Queue linked sub-pages discovered across all tab views
-                for link in new_links:
-                    if link not in visited:
-                        queue.append(link)
-
-                # Save Markdown file with header
-                md_filename = os.path.join(DOCS_DIR, f"{slug}.md")
-                tab_note = ""
-                if len(tabs) > 1:
-                    tab_note = (
-                        f"**Tabs captured:** "
-                        + ", ".join(t["label"] for t in tabs)
-                        + "\n\n"
-                    )
-                header = f"# {slug}\n**Source:** {url}\n\n{tab_note}---\n\n"
-
-                with open(md_filename, "w", encoding="utf-8") as f:
-                    f.write(header + markdown_text + "\n")
-
-                print(f"   Saved documentation: {slug}.md"
-                      + (f" ({len(tabs)} tabs)" if len(tabs) > 1 else ""))
-
-                # Add to index
-                index_data.append({
-                    "name": slug,
-                    "url": url,
-                    "local_path": f"docs/{slug}.md",
-                    "description": f"Documentation for {slug}",
-                    "tabs": [t["label"] for t in tabs] if tabs else [],
-                })
-
+                ok, new_links = await scrape_one(url)
+                if ok:
+                    for link in new_links:
+                        if link not in visited:
+                            queue.append(link)
+                else:
+                    failed.append(url)
             except Exception as e:
-                print(f"   Error processing {slug}: {e}")
+                print(f"   Error processing {url}: {e}")
+                failed.append(url)
+                await recover_page(page)
 
-        # Save index file
+            # Pace requests so the portal / WAF does not start rejecting us.
+            await page.wait_for_timeout(PAGE_PACING_MS)
+
+        # One retry pass for anything that failed during the main crawl.
+        if failed:
+            retry_list = list(dict.fromkeys(failed))
+            failed = []
+            print(f"\nRetrying {len(retry_list)} failed page(s)...")
+            for url in retry_list:
+                if any(item["url"] == url for item in index_data):
+                    continue
+                # Allow retry even though visited (content was never saved).
+                try:
+                    ok, new_links = await scrape_one(url)
+                    if ok:
+                        for link in new_links:
+                            if link not in visited:
+                                visited.add(link)
+                                # Don't expand retries into a full second crawl.
+                    else:
+                        failed.append(url)
+                except Exception as e:
+                    print(f"   Retry failed for {url}: {e}")
+                    failed.append(url)
+                    await recover_page(page)
+                await page.wait_for_timeout(PAGE_PACING_MS * 2)
+
         with open(os.path.join(OUTPUT_DIR, "data_index.json"), "w") as f:
             json.dump(index_data, f, indent=2)
 
-        print(f"\nScraping completed successfully.")
+        print(f"\nScraping completed.")
         print(f"Documentation stored in: {OUTPUT_DIR}/")
         print(f"Total pages processed: {len(index_data)}")
+        if failed:
+            print(f"Still failing ({len(failed)}):")
+            for u in failed:
+                print(f"  - {u}")
 
         await browser.close()
 
