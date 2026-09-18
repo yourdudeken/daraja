@@ -85,6 +85,7 @@ Desktop.ini
 .idea/
 specs/
 plans/
+daraja/
 *.suo
 *.ntvs*
 *.njsproj
