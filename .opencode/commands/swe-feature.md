@@ -10,7 +10,7 @@ $ARGUMENTS
 1. If large/greenfield, prefer `/swe-spec` (`swe-plan`) before coding.
 2. If ambiguous, load `acceptance-criteria`.
 3. Assign risk tier; explore (`@repo-explorer` if unfamiliar).
-4. Plan minimal changes (`@planner` if multi-file / ambiguous; use approved `plans/` if present).
+4. Validate requirements and plan with `@spec-plan`; use approved `plans/` if present.
 5. Implement with the right domain skill: `frontend-change` | `backend-change` | `fullstack-change` | `api-change` | `database-change` | `feature-implementation` | `build-from-spec`.
 6. Add/adjust tests via `@test-engineer` or `test-engineering`.
 7. Run `verification-loop`.

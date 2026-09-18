@@ -83,7 +83,7 @@ VERIFICATION:
 - Call out when `@architect` should advise before build.
 - On interrupt: write `plans/PROGRESS.md` and stop.
 
-## Relation to `@planner`
+## Relation to `@spec-plan`
 
-`@planner` = lightweight in-session plans for small/medium tasks (often no durable files).  
+`@spec-plan` = read-only validation of specs and plans at lifecycle handoffs.
 **You** = durable project-level `plans/` for the Spec→Plan→Build lifecycle.

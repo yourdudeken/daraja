@@ -9,7 +9,7 @@ swe: requirements + constraints + non-goals
     ↓
 @repo-explorer + repository-mapping (if needed)
     ↓
-@planner → structured plan (or swe plans directly if clear)
+@spec-plan → validate requirements and plan (or swe plans directly if clear)
     ↓
 [design ambiguity?] @architect
     ↓

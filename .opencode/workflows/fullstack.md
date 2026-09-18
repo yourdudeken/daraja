@@ -7,7 +7,7 @@ Request
   → @repo-explorer (if needed)
   → contract sketch (payload/errors/auth)
   → impact-analysis
-  → @planner (ordering)
+  → @spec-plan (spec/plan validation)
   → database-change (expand) if schema needed
   → api-change + backend-change + tests
   → frontend-change + tests

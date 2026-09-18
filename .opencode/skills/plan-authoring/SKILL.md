@@ -1,6 +1,6 @@
 ---
 name: plan-authoring
-description: Create or revise a full implementation plan as Markdown under plans/ from approved specs. Use in plan mode after specs are human-approved and before build mode. Do not use for lightweight in-session plans that do not need durable files (use @planner instead).
+description: Create or revise a full implementation plan as Markdown under plans/ from approved specs. Use in plan mode after specs are human-approved and before build mode. Validate the result with @spec-plan.
 license: MIT
 compatibility: opencode
 metadata:

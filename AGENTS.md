@@ -1,6 +1,6 @@
 # OpenCode SWE System
 
-This repository ships a production-oriented multi-agent system for OpenCode. The default primary agent is `swe` (build mode). Use `swe-plan` for Spec→Plan human-gated delivery.
+This repository ships a production-oriented multi-agent system for OpenCode. The default primary agent is `swe` (master orchestration). Use `swe-build` for implementation and `swe-plan` for Spec→Plan human-gated delivery.
 
 Quality bar: [docs/SWE-STANDARD.md](docs/SWE-STANDARD.md) (Definition of Done, risk tiers, change discipline).
 
@@ -19,12 +19,13 @@ Quality bar: [docs/SWE-STANDARD.md](docs/SWE-STANDARD.md) (Definition of Done, r
 
 | Agent | Mode | Role |
 |-------|------|------|
-| `swe` | primary | Build orchestrator — implements, verifies, DoD, delegates |
+| `swe` | primary | Master orchestrator — oversees the full SWE workflow |
+| `swe-build` | primary | Build implementer — implements, verifies, and reports evidence |
 | `swe-plan` | primary | Plan orchestrator — `specs/` → gate → `plans/` → gate (no app code) |
 | `spec-writer` | subagent | Full Markdown specs under `specs/` |
 | `plan-writer` | subagent | Full Markdown plans under `plans/` from approved specs |
 | `repo-explorer` | subagent | Repository mental model |
-| `planner` | subagent | Lightweight in-session implementation plans |
+| `spec-plan` | subagent | Validates specs and plans between lifecycle phases |
 | `debugger` | subagent | Reproduce → root cause → fix |
 | `test-engineer` | subagent | Tests that protect behavior |
 | `code-reviewer` | subagent | Adversarial review |
@@ -35,7 +36,7 @@ Quality bar: [docs/SWE-STANDARD.md](docs/SWE-STANDARD.md) (Definition of Done, r
 | `dependency-agent` | subagent | Package/API upgrades |
 | `documentation-agent` | subagent | Docs synced to behavior |
 
-Built-in OpenCode agents (`build`, `plan`, `explore`, …) remain available; prefer `swe-plan` → `swe` for Spec→Plan→Build.
+Built-in OpenCode agents (`build`, `plan`, `explore`, …) remain available; prefer `swe-plan` → `swe-build` for Spec→Plan→Build, with `swe` overseeing the workflow.
 
 ## Skills
 

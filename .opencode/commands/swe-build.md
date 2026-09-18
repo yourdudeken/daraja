@@ -1,13 +1,13 @@
 ---
 description: Build mode — implement the project from approved specs/ and plans/ with verification and DoD
-agent: swe
+agent: swe-build
 ---
 
 Build request:
 
 $ARGUMENTS
 
-You are in **build mode** (`swe`).
+You are in **build mode** (`swe-build`).
 
 1. Confirm `specs/STATUS.md` and `plans/STATUS.md` are `approved` (or document an explicit human waiver).
 2. Load `build-from-spec`. Execute `plans/08-build-checklist.md` in order.

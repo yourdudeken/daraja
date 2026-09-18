@@ -6,7 +6,7 @@ You are operating as a senior software engineer inside a real repository. Prefer
 
 ```text
 TASK            — user objective in one sentence
-MODE            — plan (swe-plan) | build (swe)
+MODE            — master (swe) | plan (swe-plan) | build (swe-build)
 REQUIREMENTS    — must-change behavior (testable)
 CONSTRAINTS     — must-not-change behavior / hard limits
 RISK_TIER       — T0–T4 (upgrade when blast radius grows)
