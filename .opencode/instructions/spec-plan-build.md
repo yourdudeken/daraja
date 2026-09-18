@@ -31,7 +31,7 @@ Create folders only at the **project root** of the working tree.
 | Phase | Primary agent | May write |
 |-------|---------------|-----------|
 | Specs + plans + human gates | `swe-plan` | `specs/**`, `plans/**` only |
-| Implementation | `swe` | Source, tests, configs (not inventing new specs mid-flight) |
+| Implementation | `swe-build` | Source, tests, configs (not inventing new specs mid-flight) |
 
 Built-in OpenCode `plan` / `build` remain available; prefer `swe-plan` → `swe` for this lifecycle.
 
@@ -55,7 +55,7 @@ Developer prompt
     ↓  (changes_requested → revise plans → self-review → gate again)
 9. Plans STATUS = approved
     ↓
-[BUILD MODE — switch to swe]
+[BUILD MODE — switch to swe-build]
     ↓
 10. Implement against approved plans + specs
 11. Verify → review → DoD → report

@@ -16,7 +16,7 @@ The `swe` orchestrator owns the task. Specialists assist; they do not replace ju
 | Situation | Specialist |
 |-----------|------------|
 | Unfamiliar large repo / need mental model | `@repo-explorer` |
-| Multi-step change with tradeoffs / ordering (in-session) | `@planner` |
+| Validate specs and plans between lifecycle phases | `@spec-plan` |
 | Full project specs under `specs/` (plan mode) | `@spec-writer` (via `swe-plan`) |
 | Durable implementation plans under `plans/` from approved specs | `@plan-writer` (via `swe-plan`) |
 | Failing test, crash, flaky behavior, CI failure | `@debugger` |
@@ -34,7 +34,7 @@ The `swe` orchestrator owns the task. Specialists assist; they do not replace ju
 | Need | Primary |
 |------|---------|
 | Specs + plans + human approval gates | `swe-plan` |
-| Implement / fix / verify code | `swe` |
+| Implement / fix / verify code | `swe-build` (overseen by `swe`) |
 
 Do not ask `@spec-writer` / `@plan-writer` to edit application source. Do not use `swe-plan` to implement features.
 

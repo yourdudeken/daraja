@@ -1,6 +1,6 @@
 # Spec → Plan → Build workflow
 
-Full lifecycle for greenfield projects and large features. Runs in **plan mode** (`swe-plan`) until both artifacts are human-approved, then **build mode** (`swe`).
+Full lifecycle for greenfield projects and large features. Runs in **plan mode** (`swe-plan`) until both artifacts are human-approved, then **build mode** (`swe-build`) under the master `swe` agent.
 
 ```text
 Developer prompt (/swe-spec or Tab → swe-plan)
@@ -23,7 +23,7 @@ HUMAN REVIEW GATE  ←── changes: ──┘
     ↓ approve
 plans/STATUS = approved
     ↓
-Handoff: Tab → swe  |  /swe-build
+Handoff: Tab → swe-build  |  /swe-build
     ↓
 build-from-spec + plans/08-build-checklist.md
     ↓
