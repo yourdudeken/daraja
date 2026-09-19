@@ -1,5 +1,7 @@
 # SIM Swap Date Query
 
+> **Status:** Verified against the sandbox in (Python, TypeScript) — the endpoint responds with a well-formed Daraja body. Note the sandbox returns `responseCode 404 / Not found` for test numbers (no subscriber data provisioned).
+
 Retrieves the last SIM swap date for a given customer phone number.
 
 ## Endpoint

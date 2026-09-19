@@ -1,5 +1,7 @@
 # Query Organization Info
 
+> **Status:** Verified against the sandbox in (Python, TypeScript).
+
 Retrieves organization information (short code, name, charge profile) for a given M-Pesa identifier.
 
 ## Endpoint
@@ -55,4 +57,5 @@ console.log(response.OrganizationName);
 
 - This is a synchronous request (no callback URLs needed).
 - The response is flat — there are no nested `orgInfo` or `responseObj` objects.
-- The Python client defaults to an empty `QueryOrgInfoRequest()` when called with no arguments.
+- Sandbox verification: `IdentifierType=4, Identifier=666677` returns `ResponseCode=4000` with the organization name and charge profile.
+- Both SDKs require `IdentifierType` and `Identifier` — there are no defaults.

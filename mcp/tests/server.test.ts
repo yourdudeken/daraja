@@ -31,7 +31,7 @@ describe("createServer", () => {
     const { client } = await connectClient({} as never);
 
     const result = await client.listTools();
-    expect(result.tools).toHaveLength(18);
+    expect(result.tools).toHaveLength(21);
     const stkPush = result.tools.find((t) => t.name === "stk_push")!;
     expect(stkPush.description).toBeDefined();
     expect(stkPush.inputSchema).toEqual(

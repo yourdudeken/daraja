@@ -11,6 +11,9 @@ import { accountBalanceTool } from "./account-balance.js";
 import { dynamicQRTool } from "./dynamic-qr.js";
 import { queryOrgInfoTool } from "./query-org-info.js";
 import { validatePhoneTool } from "./validate-phone.js";
+import { imsiTool } from "./imsi.js";
+import { swapTool } from "./swap.js";
+import { ageOnNetworkTool } from "./age-on-network.js";
 import { b2bExpressTool } from "./b2b-express.js";
 import { billManagerTool } from "./bill-manager.js";
 import { ratibaTool } from "./ratiba.js";
@@ -40,6 +43,9 @@ export function getAllTools(): Tool[] {
     dynamicQRTool,
     queryOrgInfoTool,
     validatePhoneTool,
+    imsiTool,
+    swapTool,
+    ageOnNetworkTool,
     b2bExpressTool,
     billManagerTool,
     ratibaTool,

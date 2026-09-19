@@ -1,6 +1,6 @@
 {
   "name": "daraja-mcp",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "private": true,
   "description": "Self-hosted MCP server for Safaricom M-Pesa Daraja API access",
   "type": "module",

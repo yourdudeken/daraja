@@ -23,6 +23,9 @@ function mockClient() {
     accountBalance: { query: vi.fn().mockResolvedValue({}) },
     dynamicQR: { generate: vi.fn().mockResolvedValue({}) },
     queryOrgInfo: { query: vi.fn().mockResolvedValue({}) },
+    imsi: { query: vi.fn().mockResolvedValue({}) },
+    swap: { query: vi.fn().mockResolvedValue({}) },
+    ageOnNetwork: { check: vi.fn().mockResolvedValue({}) },
     mobileNumberValidation: { validate: vi.fn().mockResolvedValue({}) },
     b2bExpress: { send: vi.fn().mockResolvedValue({}) },
     billManager: {
@@ -40,9 +43,9 @@ function mockClient() {
 }
 
 describe("tool registry", () => {
-  it("returns all 18 tools", () => {
+  it("returns all 21 tools", () => {
     const tools = getAllTools();
-    expect(tools).toHaveLength(18);
+    expect(tools).toHaveLength(21);
   });
 
   it("each tool has name, description, inputSchema, and handler", () => {
@@ -292,21 +295,51 @@ describe("dynamic_qr tool", () => {
 });
 
 describe("query_org_info tool", () => {
-  it("calls client.queryOrgInfo.query", async () => {
+  it("calls client.queryOrgInfo.query with identifier fields", async () => {
     const client = mockClient();
-    await findTool("query_org_info").handler({ shortCode: "600984" }, client);
+    await findTool("query_org_info").handler({ identifier: 666677, identifierType: 4 }, client);
     expect(client.queryOrgInfo.query).toHaveBeenCalledWith(
-      expect.objectContaining({ ShortCode: "600984" })
+      expect.objectContaining({ Identifier: 666677, IdentifierType: 4 })
     );
   });
 });
 
 describe("validate_phone tool", () => {
-  it("calls client.mobileNumberValidation.validate", async () => {
+  it("calls client.mobileNumberValidation.validate with KYC fields", async () => {
     const client = mockClient();
-    await findTool("validate_phone").handler({ phoneNumber: "254712345678" }, client);
+    await findTool("validate_phone").handler({ shortCode: "12345", phoneNumber: "254712345678", idType: "01", idNumber: "454353453" }, client);
     expect(client.mobileNumberValidation.validate).toHaveBeenCalledWith(
-      expect.objectContaining({ PhoneNumber: "254712345678" })
+      expect.objectContaining({ shortCode: "12345", msisdn: "254712345678", idType: "01", idNumber: "454353453" })
+    );
+  });
+});
+
+describe("imsi_lookup tool", () => {
+  it("calls client.imsi.query", async () => {
+    const client = mockClient();
+    await findTool("imsi_lookup").handler({ customerNumber: "254712345678" }, client);
+    expect(client.imsi.query).toHaveBeenCalledWith(
+      expect.objectContaining({ customerNumber: "254712345678" })
+    );
+  });
+});
+
+describe("sim_swap_check tool", () => {
+  it("calls client.swap.query", async () => {
+    const client = mockClient();
+    await findTool("sim_swap_check").handler({ customerNumber: "254712345678" }, client);
+    expect(client.swap.query).toHaveBeenCalledWith(
+      expect.objectContaining({ customerNumber: "254712345678" })
+    );
+  });
+});
+
+describe("age_on_network tool", () => {
+  it("calls client.ageOnNetwork.check", async () => {
+    const client = mockClient();
+    await findTool("age_on_network").handler({ customerNumber: "254712345678" }, client);
+    expect(client.ageOnNetwork.check).toHaveBeenCalledWith(
+      expect.objectContaining({ customerNumber: "254712345678" })
     );
   });
 });

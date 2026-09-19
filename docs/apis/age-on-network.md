@@ -1,5 +1,7 @@
 # Age on Network
 
+> **Status:** Implemented per the docs in (Python, TypeScript), but the sandbox returns HTTP `400` with `responseCode 404 / Not found` in the body for test numbers — no subscriber data is provisioned for sandbox apps. Request/response shapes match the docs exactly.
+
 Retrieves the registration date and duration a customer has been on the Safaricom network.
 
 ## Endpoint
@@ -46,3 +48,4 @@ console.log(response.msisdnRegistrationDate);
 - This is a synchronous POST request with no callback URLs.
 - The `msisdnRegistrationDate` indicates when the phone number was first registered on the Safaricom network, which can be used to determine the customer's tenure.
 - The response includes the `customerNumber` field echoed back from the request.
+- Sandbox behavior: the endpoint is reachable, but the sandbox has no subscriber data, so it answers HTTP `400` with `{ responseCode: "404", responseDesc: "Not found" }`. The Python SDK surfaces the body on `MpesaAPIError.raw_response`; the TypeScript SDK surfaces it on the axios error's `response.data`.

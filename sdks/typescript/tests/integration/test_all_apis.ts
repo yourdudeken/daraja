@@ -5,8 +5,10 @@ const ERRORS: Array<{ api: string; error: string; type: string }> = [];
 function logError(api: string, error: unknown) {
   const msg = error instanceof Error ? error.message : String(error);
   const type = error instanceof Error ? error.constructor.name : typeof error;
-  ERRORS.push({ api, error: msg, type });
-  console.log(`  [ERROR] ${api}: ${type}: ${msg}`);
+  const data = (error as { response?: { data?: unknown; status?: number } })?.response;
+  const body = data?.data !== undefined ? ` status=${data.status} body=${JSON.stringify(data.data).slice(0, 300)}` : "";
+  ERRORS.push({ api, error: msg + body, type });
+  console.log(`  [ERROR] ${api}: ${type}: ${msg}${body}`);
 }
 
 let sandboxBlocked = false;
@@ -359,8 +361,12 @@ async function test16QueryOrgInfo() {
   console.log("\n16. Query Org Info");
   const mpesa = new Mpesa(CONFIG);
   try {
-    const resp = await mpesa.queryOrgInfo.query();
+    const resp = await mpesa.queryOrgInfo.query({
+      IdentifierType: 4,
+      Identifier: 666677,
+    });
     console.log(`   ResponseCode: ${resp.ResponseCode}`);
+    console.log(`   OrganizationName: ${(resp as { OrganizationName?: string }).OrganizationName ?? ""}`);
   } catch (e) {
     logError("Query Org Info", e);
   }
@@ -402,6 +408,36 @@ async function test19Swap() {
     console.log(`   responseDesc: ${resp.responseDesc}`);
   } catch (e) {
     logError("Swap", e);
+  }
+}
+
+async function test28AgeOnNetwork() {
+  console.log("\n28. Age on Network");
+  const mpesa = new Mpesa(CONFIG);
+  try {
+    const resp = await mpesa.ageOnNetwork.check({ customerNumber: String(PHONE) });
+    console.log(`   responseCode: ${resp.responseCode}`);
+    console.log(`   msisdnRegistrationDate: ${resp.msisdnRegistrationDate}`);
+  } catch (e) {
+    logError("Age on Network", e);
+  }
+}
+
+async function test29MobileNumberValidation() {
+  console.log("\n29. Mobile Number Validation");
+  const mpesa = new Mpesa(CONFIG);
+  try {
+    const resp = await mpesa.mobileNumberValidation.validate({
+      requestRefID: `${Date.now()}`,
+      shortCode: String(SHORTCODE),
+      msisdn: String(PHONE),
+      idType: "01",
+      idNumber: "454353453",
+    });
+    console.log(`   responseCode: ${resp.responseCode}`);
+    console.log(`   status: ${resp.status}`);
+  } catch (e) {
+    logError("Mobile Number Validation", e);
   }
 }
 
@@ -628,6 +664,10 @@ async function main() {
   await test18IoT();
   await sleep(DELAY);
   await test19Swap();
+  await sleep(DELAY);
+  await test28AgeOnNetwork();
+  await sleep(DELAY);
+  await test29MobileNumberValidation();
   await sleep(DELAY);
   await test20BillManager();
   await sleep(DELAY);
