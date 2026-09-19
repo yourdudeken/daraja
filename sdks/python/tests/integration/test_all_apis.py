@@ -466,6 +466,10 @@ def test_18_iot():
         except Exception as e:
             log_error(api, e)
 
+    def _code(body, key):
+        header = body["header"]
+        return f"responseCode={header['responseCode']} {key}={body['body'].get(key)}"
+
     step(
         "IoT lifecycle",
         lambda: client.iot_service.query_life_cycle_status(
@@ -478,7 +482,7 @@ def test_18_iot():
         lambda: client.iot_service.query_customer_info(
             {"msisdn": msisdn, "vpnGroup": IOT_VPN_GROUP, "username": IOT_USERNAME}
         ),
-        lambda r: f"responseCode={r['header']['responseCode']} subscriberStatus={r['body'].get('subscriberStatus')}",
+        lambda r: _code(r, "subscriberStatus"),
     )
     step(
         "IoT activate",
@@ -510,7 +514,7 @@ def test_18_iot():
                 "operation": "suspend",
             }
         ),
-        lambda r: f"responseCode={r['header']['responseCode']} statusCode={r['body'].get('statusCode')}",
+        lambda r: _code(r, "statusCode"),
     )
     step(
         "IoT resume/restore",
@@ -523,7 +527,7 @@ def test_18_iot():
                 "operation": "resume",
             }
         ),
-        lambda r: f"responseCode={r['header']['responseCode']} statusCode={r['body'].get('statusCode')}",
+        lambda r: _code(r, "statusCode"),
     )
     step(
         "IoT trends",
@@ -572,7 +576,7 @@ def test_18_iot():
         lambda: client.iot_service.delete_message({"id": 999999999}),
         lambda r: f"responseCode={r['header']['responseCode']}",
     )
-    print("   IoT deleteThread: SKIPPED live (deletes ALL messages for a shared SIM; shaping covered by unit tests)")
+    print("   IoT deleteThread: SKIPPED live (shared SIM data; shaping in unit tests)")
     client.close()
 
 
