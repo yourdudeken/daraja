@@ -4,13 +4,15 @@ import type { Tool } from "./index.js";
 export const queryOrgInfoTool: Tool = {
   name: "query_org_info",
   description: "Query organization information by short code. Returns org name, shortcode, and charge profile. Synchronous.",
-  required: ["shortCode"],
+  required: ["identifier", "identifierType"],
   inputSchema: {
-    shortCode: { type: "string", description: "Organization's shortcode to look up" },
+    identifier: { type: "number", description: "The M-Pesa identifier (short code, till number, etc.)" },
+    identifierType: { type: "number", description: "Type of identifier: 4 for pay bill, 2 for buy goods till" },
   },
   handler: async (input, client) => {
     return client.queryOrgInfo.query({
-      ShortCode: input.shortCode as string,
+      IdentifierType: input.identifierType as number,
+      Identifier: input.identifier as number,
     } as never);
   },
 };

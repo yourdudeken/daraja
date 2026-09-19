@@ -1,5 +1,7 @@
 # Mobile Number Validation (KYC)
 
+> **Status:** Verified against the sandbox in (Python, TypeScript) — the endpoint responds with a well-formed Daraja body (`4001 / Details do not match` for non-matching test data, which is a legitimate validation-negative response).
+
 Validates a mobile phone number against a government-issued ID to verify the subscriber's identity.
 
 ## Endpoint
@@ -58,5 +60,5 @@ console.log(response.status);
 ## Notes
 
 - This is a synchronous POST request with no callback URLs.
-- `requestRefID` is optional — the SDK accepts empty strings and the API may generate one.
-- The `status` field in the response indicates whether the phone number matches the provided government ID.
+- `requestRefID` is optional — the SDK accepts empty strings and the API may generate one. In TypeScript the field itself is optional (`requestRefID?: string`).
+- The `status` field in the response indicates whether the phone number matches the provided government ID. A `4001 / Details do not match` response with `status: "false"` is a successful API round-trip (validation negative), not an SDK error.

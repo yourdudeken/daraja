@@ -12,14 +12,17 @@ ERRORS = []
 
 
 def log_error(api: str, error: Exception, detail: str = ""):
+    raw = getattr(error, "raw_response", "")
     entry = {
         "api": api,
         "error": str(error),
         "type": type(error).__name__,
-        "detail": detail,
+        "detail": detail or (str(raw)[:300] if raw else ""),
     }
     ERRORS.append(entry)
     print(f"  [ERROR] {api}: {type(error).__name__}: {error}")
+    if raw:
+        print(f"  [BODY] {str(raw)[:300]}")
 
 
 SANDBOX_BLOCKED = False
@@ -424,7 +427,8 @@ def test_17_imsi():
     client = Mpesa(CONFIG)
     try:
         resp = client.imsi_query({"customerNumber": str(PHONE)})
-        print(f"   responseCode: {resp.ResponseCode}")
+        print(f"   responseCode: {resp.responseCode}")
+        print(f"   responseDesc: {resp.responseDesc}")
     except Exception as e:
         log_error("IMSI", e)
     finally:
@@ -459,6 +463,42 @@ def test_19_swap():
         print(f"   responseDesc: {resp.responseDesc}")
     except Exception as e:
         log_error("Swap", e)
+    finally:
+        client.close()
+
+
+def test_28_age_on_network():
+    print("\n28. Age on Network")
+    client = Mpesa(CONFIG)
+    try:
+        resp = client.age_on_network({"customerNumber": str(PHONE)})
+        print(f"   responseCode: {resp.responseCode}")
+        print(f"   msisdnRegistrationDate: {resp.msisdnRegistrationDate}")
+    except Exception as e:
+        log_error("Age on Network", e)
+    finally:
+        client.close()
+
+
+def test_29_mobile_number_validation():
+    print("\n29. Mobile Number Validation")
+    import time
+
+    client = Mpesa(CONFIG)
+    try:
+        resp = client.mobile_number_validation(
+            {
+                "requestRefID": str(int(time.time() * 1000)),
+                "shortCode": str(SHORTCODE),
+                "msisdn": str(PHONE),
+                "idType": "01",
+                "idNumber": "454353453",
+            }
+        )
+        print(f"   responseCode: {resp.responseCode}")
+        print(f"   status: {resp.status}")
+    except Exception as e:
+        log_error("Mobile Number Validation", e)
     finally:
         client.close()
 
@@ -697,6 +737,8 @@ if __name__ == "__main__":
     _run_test(test_15_pull_transactions)
     _run_test(test_16_query_org_info)
     _run_test(test_17_imsi)
+    _run_test(test_28_age_on_network)
+    _run_test(test_29_mobile_number_validation)
     _run_test(test_18_iot)
     _run_test(test_19_swap)
     _run_test(test_20_bill_manager)

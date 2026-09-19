@@ -1,5 +1,7 @@
 # IMSI Lookup
 
+> **Status:** Implemented per the docs in (Python, TypeScript), but the sandbox returns HTTP `400` with `responseCode 404 / Not found` in the body for test numbers — no subscriber data is provisioned for sandbox apps. Request/response shapes match the docs exactly.
+
 Retrieves the IMSI (International Mobile Subscriber Identity) and related details for a given phone number.
 
 ## Endpoint
@@ -47,3 +49,5 @@ console.log(response.imsi);
 - This is a synchronous POST request with no callback URLs.
 - This uses the v1 IMSI endpoint (`/imsi/v1/checkATI`). For SIM swap date queries only, use the [Swap](./swap.md) API which uses the v2 endpoint (`/imsi/v2/checkATI`).
 - The response includes the `imsi` field with the full IMSI, plus `lastSwapDate` and `msisdnRegistrationDate` for additional subscriber context.
+- `imsi`, `lastSwapDate`, and `msisdnRegistrationDate` are optional in the SDKs: IMSI v2 responses omit the IMSI fields and IMSI v3 responses omit the date fields.
+- Sandbox behavior: the endpoint is reachable, but the sandbox has no subscriber data, so it answers HTTP `400` with `{ responseCode: "404", responseDesc: "Not found" }`. The Python SDK surfaces the body on `MpesaAPIError.raw_response`; the TypeScript SDK surfaces it on the axios error's `response.data`.

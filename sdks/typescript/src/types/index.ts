@@ -448,9 +448,9 @@ export interface IMSIResponse {
   requestRefID: string;
   responseCode: string;
   responseDesc: string;
-  imsi: string;
-  lastSwapDate: string;
-  msisdnRegistrationDate: string;
+  imsi?: string;
+  lastSwapDate?: string;
+  msisdnRegistrationDate?: string;
   customerNumber: string;
 }
 
@@ -1120,7 +1120,7 @@ export interface AgeOnNetworkResponse {
 // MOBILE NUMBER VALIDATION
 // ============================================================
 export interface MobileNumberValidationRequest {
-  requestRefID: string;
+  requestRefID?: string;
   shortCode: string;
   msisdn: string;
   idType: string;
