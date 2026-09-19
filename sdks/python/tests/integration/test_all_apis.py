@@ -435,23 +435,145 @@ def test_17_imsi():
         client.close()
 
 
+IOT_VPN_GROUP = os.environ.get("MPESA_IOT_VPN_GROUP", "1-555162310488_VPN")
+IOT_USERNAME = os.environ.get("MPESA_IOT_USERNAME", "darajasandbox@safaricom.co.ke")
+
+
 def test_18_iot():
     print("\n18. IoT SIM Management")
     client = Mpesa(CONFIG)
     try:
-        resp = client.iot_service.get_all_sims(
+        sims = client.iot_service.get_all_sims(
             {
-                "vpnGroup": ["test_vpn"],
+                "vpnGroup": [IOT_VPN_GROUP],
                 "startAtInde": "0",
-                "pageSize": "10",
-                "username": "test@safaricom.co.ke",
+                "pageSize": "3",
+                "username": IOT_USERNAME,
             }
         )
-        print(f"   Response: {str(resp)[:100]}")
+        print(f"   allSims responseCode: {sims['header']['responseCode']}")
+        msisdn = sims["body"]["Desc"][0]["msisdn"]
+        print(f"   probing msisdn: {msisdn}")
     except Exception as e:
-        log_error("IoT SIM Management", e)
-    finally:
+        log_error("IoT getAllSIMs", e)
         client.close()
+        return
+
+    def step(api, fn, label):
+        try:
+            resp = fn()
+            print(f"   {api}: {label(resp)}")
+        except Exception as e:
+            log_error(api, e)
+
+    step(
+        "IoT lifecycle",
+        lambda: client.iot_service.query_life_cycle_status(
+            {"msisdn": msisdn, "vpnGroup": IOT_VPN_GROUP, "username": IOT_USERNAME}
+        ),
+        lambda r: f"responseCode={r['header']['responseCode']} status={r['body'].get('status')}",
+    )
+    step(
+        "IoT customerInfo",
+        lambda: client.iot_service.query_customer_info(
+            {"msisdn": msisdn, "vpnGroup": IOT_VPN_GROUP, "username": IOT_USERNAME}
+        ),
+        lambda r: f"responseCode={r['header']['responseCode']} subscriberStatus={r['body'].get('subscriberStatus')}",
+    )
+    step(
+        "IoT activate",
+        lambda: client.iot_service.activate_sim(
+            {"msisdn": msisdn, "vpnGroup": IOT_VPN_GROUP, "username": IOT_USERNAME}
+        ),
+        lambda r: f"responseCode={r['header']['responseCode']} Desc={r['body'].get('Desc')}",
+    )
+    step(
+        "IoT rename",
+        lambda: client.iot_service.rename_asset(
+            {
+                "msisdn": msisdn,
+                "vpnGroup": IOT_VPN_GROUP,
+                "username": IOT_USERNAME,
+                "assetName": "probe-test-001",
+            }
+        ),
+        lambda r: f"responseCode={r['header']['responseCode']} result={r['body'].get('result')}",
+    )
+    step(
+        "IoT suspend",
+        lambda: client.iot_service.suspend_unsuspend(
+            {
+                "msisdn": msisdn,
+                "username": IOT_USERNAME,
+                "vpnGroup": IOT_VPN_GROUP,
+                "product": "20251029",
+                "operation": "suspend",
+            }
+        ),
+        lambda r: f"responseCode={r['header']['responseCode']} statusCode={r['body'].get('statusCode')}",
+    )
+    step(
+        "IoT resume/restore",
+        lambda: client.iot_service.suspend_unsuspend(
+            {
+                "msisdn": msisdn,
+                "username": IOT_USERNAME,
+                "vpnGroup": IOT_VPN_GROUP,
+                "product": "20251029",
+                "operation": "resume",
+            }
+        ),
+        lambda r: f"responseCode={r['header']['responseCode']} statusCode={r['body'].get('statusCode')}",
+    )
+    step(
+        "IoT trends",
+        lambda: client.iot_service.get_activation_trends(
+            {
+                "vpnGroup": IOT_VPN_GROUP,
+                "startDate": "20240221",
+                "stopDate": "20240421",
+                "username": IOT_USERNAME,
+            }
+        ),
+        lambda r: f"responseCode={r['header']['responseCode']}",
+    )
+    step(
+        "IoT search",
+        lambda: client.iot_service.search_messages({"searchValue": f"254{msisdn}"}),
+        lambda r: f"responseCode={r['header']['responseCode']}",
+    )
+    step(
+        "IoT filter",
+        lambda: client.iot_service.filter_messages(
+            {
+                "startDate": "02-05-2024 08:39:11",
+                "endDate": "02-05-2026 08:39:11",
+                "status": "1",
+            }
+        ),
+        lambda r: f"responseCode={r['header']['responseCode']}",
+    )
+    step(
+        "IoT getAllMessages",
+        lambda: client.iot_service.get_all_messages(
+            {"vpnGroup": IOT_VPN_GROUP, "pageNo": 1, "pageSize": 10}
+        ),
+        lambda r: f"responseCode={r['header']['responseCode']}",
+    )
+    step(
+        "IoT send",
+        lambda: client.iot_service.send_single_message(
+            {"msisdn": msisdn, "message": "HelloIoT-probe", "vpnGroup": IOT_VPN_GROUP}
+        ),
+        lambda r: f"responseCode={r['header']['responseCode']}",
+    )
+    step(
+        "IoT deleteMessage",
+        lambda: client.iot_service.delete_message({"id": 999999999}),
+        lambda r: f"responseCode={r['header']['responseCode']}",
+    )
+    print("   IoT deleteThread: SKIPPED live (deletes ALL messages for a shared SIM; shaping covered by unit tests)")
+    client.close()
 
 
 def test_19_swap():

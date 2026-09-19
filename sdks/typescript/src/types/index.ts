@@ -502,7 +502,8 @@ export interface IoTQueryLifeCycleRequest {
 export interface IoTQueryLifeCycleResponse {
   header: IoTHeader;
   body: {
-    desc: string;
+    desc?: string;
+    Desc?: string;
     status: string;
     statusCode: string;
   };
