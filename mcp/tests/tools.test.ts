@@ -26,6 +26,21 @@ function mockClient() {
     imsi: { query: vi.fn().mockResolvedValue({}) },
     swap: { query: vi.fn().mockResolvedValue({}) },
     ageOnNetwork: { check: vi.fn().mockResolvedValue({}) },
+    iot: {
+      getAllSIMs: vi.fn().mockResolvedValue({}),
+      queryLifeCycleStatus: vi.fn().mockResolvedValue({}),
+      queryCustomerInfo: vi.fn().mockResolvedValue({}),
+      activateSIM: vi.fn().mockResolvedValue({}),
+      getActivationTrends: vi.fn().mockResolvedValue({}),
+      renameAsset: vi.fn().mockResolvedValue({}),
+      suspendUnsuspend: vi.fn().mockResolvedValue({}),
+      searchMessages: vi.fn().mockResolvedValue({}),
+      filterMessages: vi.fn().mockResolvedValue({}),
+      deleteMessageThread: vi.fn().mockResolvedValue({}),
+      getAllMessages: vi.fn().mockResolvedValue({}),
+      sendSingleMessage: vi.fn().mockResolvedValue({}),
+      deleteMessage: vi.fn().mockResolvedValue({}),
+    },
     mobileNumberValidation: { validate: vi.fn().mockResolvedValue({}) },
     b2bExpress: { send: vi.fn().mockResolvedValue({}) },
     billManager: {
@@ -43,9 +58,9 @@ function mockClient() {
 }
 
 describe("tool registry", () => {
-  it("returns all 21 tools", () => {
+  it("returns all 22 tools", () => {
     const tools = getAllTools();
-    expect(tools).toHaveLength(21);
+    expect(tools).toHaveLength(22);
   });
 
   it("each tool has name, description, inputSchema, and handler", () => {
@@ -341,6 +356,40 @@ describe("age_on_network tool", () => {
     expect(client.ageOnNetwork.check).toHaveBeenCalledWith(
       expect.objectContaining({ customerNumber: "254712345678" })
     );
+  });
+});
+
+describe("iot_sim tool", () => {
+  const operations = [
+    ["all_sims", "getAllSIMs"],
+    ["lifecycle", "queryLifeCycleStatus"],
+    ["customer_info", "queryCustomerInfo"],
+    ["activate", "activateSIM"],
+    ["trends", "getActivationTrends"],
+    ["rename", "renameAsset"],
+    ["suspend", "suspendUnsuspend"],
+    ["search", "searchMessages"],
+    ["filter", "filterMessages"],
+    ["delete_thread", "deleteMessageThread"],
+    ["all_messages", "getAllMessages"],
+    ["send", "sendSingleMessage"],
+    ["delete_message", "deleteMessage"],
+  ] as const;
+
+  for (const [operation, method] of operations) {
+    it(`routes ${operation} to iot.${method}`, async () => {
+      const client = mockClient();
+      const data = { vpnGroup: ["g1"] };
+      await findTool("iot_sim").handler({ operation, data }, client);
+      expect(client.iot[method]).toHaveBeenCalledWith(data);
+    });
+  }
+
+  it("throws for unknown operation", async () => {
+    const client = mockClient();
+    await expect(
+      findTool("iot_sim").handler({ operation: "bogus", data: {} }, client)
+    ).rejects.toThrow("Unknown IoT operation: bogus");
   });
 });
 

@@ -14,6 +14,7 @@ import { validatePhoneTool } from "./validate-phone.js";
 import { imsiTool } from "./imsi.js";
 import { swapTool } from "./swap.js";
 import { ageOnNetworkTool } from "./age-on-network.js";
+import { iotSimTool } from "./iot-sim.js";
 import { b2bExpressTool } from "./b2b-express.js";
 import { billManagerTool } from "./bill-manager.js";
 import { ratibaTool } from "./ratiba.js";
@@ -46,6 +47,7 @@ export function getAllTools(): Tool[] {
     imsiTool,
     swapTool,
     ageOnNetworkTool,
+    iotSimTool,
     b2bExpressTool,
     billManagerTool,
     ratibaTool,

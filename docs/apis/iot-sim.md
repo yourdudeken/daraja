@@ -1,5 +1,7 @@
 # IoT SIM Management
 
+> **Status:** Partially verified against the sandbox in (Python, TypeScript) — list SIMs, lifecycle, customer info, activation, rename, and suspend/resume return `200` with well-formed bodies. Activation trends and send-message redirect (`302` to an IoT login page), search fails with a gateway `500`, and filter / get-all-messages / delete-message are rejected by sandbox account permissions. Request/response shapes match the docs exactly.
+
 Manage IoT SIM cards via the Safaricom SIM Portal — list SIMs, query lifecycle, activate, rename, suspend, and send messages.
 
 ## Endpoints
@@ -257,3 +259,7 @@ await mpesa.iot.sendSingleMessage({
 - The `startAtInde` field name is a typo in the upstream API — all SDKs preserve it as-is for compatibility.
 - The `manage()` method on the Python `IoTSIMService` and corresponding top-level `iot_manage()` on `Mpesa` use the legacy IoTSIMRequest/IoTSIMResponse models (separate from the portal sub-operations above).
 - Message operations return paginated results. Use `pageNo`/`pageSize` to navigate.
+- Sandbox test data (from the Daraja docs): `vpnGroup` `1-555162310488_VPN`, username `darajasandbox@safaricom.co.ke`. The doc's short msisdns (`0110100606`) do not work directly — use the full IoT subscriber msisdn (e.g. `300001823878`) returned by List All SIMs. Both SDK integration tests chain this automatically and accept overrides via `MPESA_IOT_VPN_GROUP` / `MPESA_IOT_USERNAME`.
+- The lifecycle response body uses capital-`D` `Desc` in the sandbox (the doc sample shows lowercase `desc`) — the TypeScript type accepts both.
+- Activation trends uses `stopDate` (not `endDate`) in the request body, matching the doc's request sample.
+- The suspend integration test immediately resumes the SIM to leave shared sandbox state unchanged; delete-thread is not exercised live (it wipes all messages for a SIM) — its shaping is covered by unit tests.

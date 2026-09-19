@@ -383,20 +383,49 @@ async function test17IMSI() {
   }
 }
 
+const IOT_VPN = process.env.MPESA_IOT_VPN_GROUP ?? "1-555162310488_VPN";
+const IOT_USER = process.env.MPESA_IOT_USERNAME ?? "darajasandbox@safaricom.co.ke";
+
 async function test18IoT() {
   console.log("\n18. IoT SIM Management");
   const mpesa = new Mpesa(CONFIG);
+  let msisdn = "";
   try {
-    const resp = await mpesa.iot.getAllSIMs({
-      vpnGroup: ["test_vpn"],
+    const sims = await mpesa.iot.getAllSIMs({
+      vpnGroup: [IOT_VPN],
       startAtInde: "0",
-      pageSize: "10",
-      username: "test@safaricom.co.ke",
+      pageSize: "3",
+      username: IOT_USER,
     });
-    console.log(`   Header responseCode: ${resp.header.responseCode}`);
+    console.log(`   allSims responseCode: ${sims.header.responseCode}`);
+    msisdn = sims.body.Desc[0]?.msisdn ?? "";
+    console.log(`   probing msisdn: ${msisdn}`);
   } catch (e) {
-    logError("IoT SIM Management", e);
+    logError("IoT getAllSIMs", e);
+    return;
   }
+  const step = async (api: string, fn: () => Promise<unknown>, label: (r: never) => string) => {
+    try {
+      const resp = await fn();
+      console.log(`   ${api}: ${label(resp as never)}`);
+      return resp;
+    } catch (e) {
+      logError(api, e);
+    }
+  };
+  await step("IoT lifecycle", () => mpesa.iot.queryLifeCycleStatus({ msisdn, vpnGroup: IOT_VPN, username: IOT_USER }), (r) => `responseCode=${r.header.responseCode} status=${r.body.status}`);
+  await step("IoT customerInfo", () => mpesa.iot.queryCustomerInfo({ msisdn, vpnGroup: IOT_VPN, username: IOT_USER }), (r) => `responseCode=${r.header.responseCode} subscriberStatus=${r.body.subscriberStatus}`);
+  await step("IoT activate", () => mpesa.iot.activateSIM({ msisdn, vpnGroup: IOT_VPN, username: IOT_USER }), (r) => `responseCode=${r.header.responseCode} Desc=${r.body.Desc}`);
+  await step("IoT rename", () => mpesa.iot.renameAsset({ msisdn, vpnGroup: IOT_VPN, username: IOT_USER, assetName: "probe-test-001" }), (r) => `responseCode=${r.header.responseCode} result=${r.body.result}`);
+  await step("IoT suspend", () => mpesa.iot.suspendUnsuspend({ msisdn, username: IOT_USER, vpnGroup: IOT_VPN, product: "20251029", operation: "suspend" }), (r) => `responseCode=${r.header.responseCode} statusCode=${r.body.statusCode}`);
+  await step("IoT resume/restore", () => mpesa.iot.suspendUnsuspend({ msisdn, username: IOT_USER, vpnGroup: IOT_VPN, product: "20251029", operation: "resume" }), (r) => `responseCode=${r.header.responseCode} statusCode=${r.body.statusCode}`);
+  await step("IoT trends", () => mpesa.iot.getActivationTrends({ vpnGroup: IOT_VPN, startDate: "20240221", stopDate: "20240421", username: IOT_USER }), (r) => `responseCode=${r.header.responseCode}`);
+  await step("IoT search", () => mpesa.iot.searchMessages({ searchValue: `254${msisdn}` }), (r) => `responseCode=${r.header.responseCode}`);
+  await step("IoT filter", () => mpesa.iot.filterMessages({ startDate: "02-05-2024 08:39:11", endDate: "02-05-2026 08:39:11", status: "1" }), (r) => `responseCode=${r.header.responseCode}`);
+  await step("IoT getAllMessages", () => mpesa.iot.getAllMessages({ vpnGroup: IOT_VPN, pageNo: 1, pageSize: 10 }), (r) => `responseCode=${r.header.responseCode}`);
+  await step("IoT send", () => mpesa.iot.sendSingleMessage({ msisdn, message: "HelloIoT-probe", vpnGroup: IOT_VPN }), (r) => `responseCode=${r.header.responseCode}`);
+  await step("IoT deleteMessage", () => mpesa.iot.deleteMessage({ id: 999999999 }), (r) => `responseCode=${r.header.responseCode}`);
+  console.log("   IoT deleteThread: SKIPPED live (deletes ALL messages for a shared SIM; shaping covered by unit tests)");
 }
 
 async function test19Swap() {
