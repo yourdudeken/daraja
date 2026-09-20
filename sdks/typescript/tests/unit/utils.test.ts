@@ -318,7 +318,11 @@ describe("RateLimiters", () => {
   });
 
   it("TokenBucketRateLimiter refills over time", async () => {
-    const limiter = new TokenBucketRateLimiter({ tokensPerSecond: 1000, burstSize: 1 });
+    // tokensPerSecond: 10 (a token refills every 100ms) so the two immediate
+    // tryAcquire calls are deterministic regardless of machine load — with
+    // tokensPerSecond: 1000 the bucket refills after ~1ms, which races with
+    // the second assertion on loaded CI runners.
+    const limiter = new TokenBucketRateLimiter({ tokensPerSecond: 10, burstSize: 1 });
     expect(limiter.tryAcquire()).toBe(true);
     expect(limiter.tryAcquire()).toBe(false);
     await new Promise((r) => setTimeout(r, 1100));
