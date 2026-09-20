@@ -83,9 +83,6 @@ Desktop.ini
 # === Editor / IDE ===
 .vscode/
 .idea/
-specs/
-plans/
-daraja/
 *.suo
 *.ntvs*
 *.njsproj
@@ -102,3 +99,13 @@ yarn.lock.cache
 .pnp.*
 *.orig
 *.rej
+
+# === daraja docs ===
+daraja/
+
+# === opencodeSWE ===
+.opencode/
+AGENTS.md
+opencode.json
+specs/
+plans/
