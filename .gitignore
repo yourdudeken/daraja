@@ -104,6 +104,7 @@ yarn.lock.cache
 daraja/
 
 # === opencodeSWE ===
+# https://github.com/yourdudeken/opencodeSWE
 .opencode/
 AGENTS.md
 opencode.jsonc
