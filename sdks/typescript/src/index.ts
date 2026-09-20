@@ -23,6 +23,7 @@ import {
   MobileCenterService,
   AgeOnNetworkService,
   MobileNumberValidationService,
+  B2CHakikishaService,
 } from "./services/index.js";
 import { WebhookManager } from "./webhooks/index.js";
 import type { MpesaConfig } from "./types/index.js";
@@ -51,6 +52,7 @@ export class Mpesa {
   public readonly mobileCenter: MobileCenterService;
   public readonly ageOnNetwork: AgeOnNetworkService;
   public readonly mobileNumberValidation: MobileNumberValidationService;
+  public readonly b2cHakikisha: B2CHakikishaService;
   public readonly webhooks: WebhookManager;
   public readonly client: MpesaApiClient;
 
@@ -79,6 +81,7 @@ export class Mpesa {
     this.mobileCenter = new MobileCenterService(this.client);
     this.ageOnNetwork = new AgeOnNetworkService(this.client);
     this.mobileNumberValidation = new MobileNumberValidationService(this.client);
+    this.b2cHakikisha = new B2CHakikishaService(this.client);
     this.webhooks = new WebhookManager({
       passkey: config.passkey,
     });

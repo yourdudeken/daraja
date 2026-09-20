@@ -21,3 +21,5 @@ export { TaxRemittanceService } from "./tax-remittance.js";
 export { MobileCenterService } from "./mobile-center.js";
 export { AgeOnNetworkService } from "./age-on-network.js";
 export { MobileNumberValidationService } from "./mobile-number-validation.js";
+export { B2CHakikishaService } from "./b2c-hakikisha.js";
+export { C2BHakikishaHandler } from "./c2b-hakikisha.js";

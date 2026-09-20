@@ -629,6 +629,75 @@ def test_29_mobile_number_validation():
         client.close()
 
 
+def test_30_b2c_hakikisha():
+    print("\n30. B2C Hakikisha")
+    client = Mpesa(CONFIG)
+    try:
+        resp = client.b2c_hakikisha(
+            {
+                "header": {},
+                "body": {"msisdn": str(PHONE), "shortcode": str(SHORTCODE)},
+            }
+        )
+        assert resp.header is not None, "Header should be present"
+        print(f"   status: {resp.header.status}")
+        print(f"   message: {resp.header.message}")
+        if resp.body is not None:
+            print(f"   body: {resp.body.model_dump()}")
+    except Exception as e:
+        if not check_blocked("B2C Hakikisha", e):
+            log_error("B2C Hakikisha", e)
+    finally:
+        client.close()
+
+
+def test_31_c2b_hakikisha_local():
+    print("\n31. C2B Hakikisha (local handler)")
+    from daraja import C2BHakikishaHandler
+
+    handler = C2BHakikishaHandler(
+        "partner-user",
+        "partner-pass",
+        resolve_account_name=lambda account_number, shortcode: (
+            "Money Market Account" if account_number == "66925336" else None
+        ),
+    )
+    token_payload, token_status = handler.token_endpoint(
+        "Basic cGFydG5lci11c2VyOnBhcnRuZXItcGFzcw=="
+    )
+    print(f"   token endpoint status: {token_status}")
+    assert token_status == 200, "Token endpoint should succeed"
+    token = token_payload["access_token"]
+    print(f"   token issued: {token[:8]}...")
+    assert handler.is_token_valid(token), "Issued token should be valid"
+
+    payload, status = handler.validation_endpoint(
+        f"Bearer {token}",
+        {
+            "requestId": "dcd1c2ab-7a26-4170-939d-9dc2e879b0e5",
+            "timestamp": "1728897681",
+            "accountNumber": "66925336",
+            "shortcode": "415010",
+        },
+    )
+    print(f"   validation endpoint status: {status}")
+    print(f"   accountName: {payload.get('accountName')}")
+    assert status == 200, "Valid account should resolve"
+    assert payload["accountName"] == "Money Market Account"
+
+    missing, missing_status = handler.validation_endpoint(
+        f"Bearer {token}",
+        {
+            "requestId": "dcd1c2ab-7a26-4170-939d-9dc2e879b0e5",
+            "timestamp": "1728897681",
+            "accountNumber": "00000000",
+            "shortcode": "415010",
+        },
+    )
+    print(f"   unknown account status: {missing_status}")
+    assert missing_status == 400, "Unknown account should be rejected"
+
+
 def test_20_bill_manager():
     print("\n20. Bill Manager")
     client = Mpesa(CONFIG)
@@ -865,6 +934,8 @@ if __name__ == "__main__":
     _run_test(test_17_imsi)
     _run_test(test_28_age_on_network)
     _run_test(test_29_mobile_number_validation)
+    _run_test(test_30_b2c_hakikisha)
+    _run_test(test_31_c2b_hakikisha_local)
     _run_test(test_18_iot)
     _run_test(test_19_swap)
     _run_test(test_20_bill_manager)

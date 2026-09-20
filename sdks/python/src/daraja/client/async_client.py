@@ -1,4 +1,5 @@
 import asyncio
+import time
 import uuid
 from typing import Any, cast
 from urllib.parse import urlencode
@@ -23,6 +24,8 @@ from daraja.models import (
     B2BExpressResponse,
     B2CAccountTopUpRequest,
     B2CAccountTopUpResponse,
+    B2CHakikishaRequest,
+    B2CHakikishaResponse,
     B2CRequest,
     B2CResponse,
     B2PochiRequest,
@@ -76,6 +79,7 @@ from daraja.models import (
     _get_logger,
 )
 from daraja.utils import create_tracer, generate_password, generate_timestamp, with_span
+from daraja.services import _validate_phone, _validate_shortcode
 from daraja.utils.circuit_breaker import (
     CircuitBreaker,
 )
@@ -647,6 +651,20 @@ class AsyncMpesa:
             request = MobileNumberValidationRequest(**request)
         result = await self._post("MOBILE_NUMBER_VALIDATION", request.model_dump())
         return MobileNumberValidationResponse(**result)
+
+    async def b2c_hakikisha(
+        self, request: B2CHakikishaRequest | dict[str, Any]
+    ) -> B2CHakikishaResponse:
+        if isinstance(request, dict):
+            request = B2CHakikishaRequest(**request)
+        if not request.header.requestID:
+            request.header.requestID = str(uuid.uuid4())
+        if not request.header.timestamp:
+            request.header.timestamp = str(int(time.time()))
+        _validate_phone(request.body.msisdn, "msisdn")
+        _validate_shortcode(request.body.shortcode, "shortcode")
+        result = await self._post("B2C_HAKIKISHA", request.model_dump())
+        return B2CHakikishaResponse(**result)
 
     async def rotate_credentials(self, consumer_key: str, consumer_secret: str) -> None:
         self._config.consumer_key = consumer_key

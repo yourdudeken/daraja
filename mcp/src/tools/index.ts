@@ -21,6 +21,8 @@ import { ratibaTool } from "./ratiba.js";
 import { taxRemittanceTool } from "./tax-remittance.js";
 import { generateTimestampTool } from "./generate-timestamp.js";
 import { healthTool } from "./health.js";
+import { b2cHakikishaTool } from "./b2c-hakikisha.js";
+import { c2bHakikishaTool } from "./c2b-hakikisha.js";
 
 export interface Tool {
   name: string;
@@ -54,5 +56,7 @@ export function getAllTools(): Tool[] {
     taxRemittanceTool,
     generateTimestampTool,
     healthTool,
+    b2cHakikishaTool,
+    c2bHakikishaTool,
   ];
 }

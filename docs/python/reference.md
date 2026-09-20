@@ -61,6 +61,7 @@ Note: Auto-fill of `SecurityCredential`/`Initiator` from config applies to the s
 | `swap(req)` | `SwapRequest` | `SwapResponse` |
 | `age_on_network(req)` | `AgeOnNetworkRequest` | `AgeOnNetworkResponse` |
 | `mobile_number_validation(req)` | `MobileNumberValidationRequest` | `MobileNumberValidationResponse` |
+| `b2c_hakikisha(req)` | `B2CHakikishaRequest` | `B2CHakikishaResponse` | Auto-fills `header.requestID` (UUID) + `header.timestamp` (Unix seconds); validates msisdn/shortcode |
 
 ### Bill Manager
 
@@ -130,6 +131,7 @@ mpesa.tax_remittance_service    # TaxRemittanceService
 mpesa.mobile_center_service     # MobileCenterService
 mpesa.age_on_network_service    # AgeOnNetworkService
 mpesa.mobile_number_validation_service # MobileNumberValidationService
+mpesa.b2c_hakikisha_service     # B2CHakikishaService
 mpesa.b2c_account_top_up_service # (returns B2BService)
 ```
 
@@ -137,7 +139,7 @@ mpesa.b2c_account_top_up_service # (returns B2BService)
 
 ## Service Classes
 
-Importable from `daraja.services`. All of the following are also exported from the `daraja` top-level, except `MobileCenterService`, `AgeOnNetworkService`, and `MobileNumberValidationService`, which are importable from `daraja.services` only:
+Importable from `daraja.services`. All of the following are also exported from the `daraja` top-level, except `MobileCenterService`, `AgeOnNetworkService`, `MobileNumberValidationService`, and `B2CHakikishaService`, which are importable from `daraja.services` only:
 
 ```
 STKPushService, C2BService, B2CService, B2BService, ReversalService,
@@ -145,8 +147,11 @@ TransactionStatusService, AccountBalanceService, DynamicQRService,
 BusinessGoodsService, QueryOrgInfoService, IMSIService, IoTSIMService,
 B2PochiService, LipaNaBongaService, PullTransactionsService, SwapService,
 BillManagerService, B2BExpressService, RatibaService, TaxRemittanceService,
-MobileCenterService, AgeOnNetworkService, MobileNumberValidationService
+MobileCenterService, AgeOnNetworkService, MobileNumberValidationService,
+B2CHakikishaService
 ```
+
+`C2BHakikishaHandler` (the receiver-side C2B Hakikisha handler) **is** exported from the `daraja` top-level, alongside `WebhookManager`.
 
 ### Service methods
 
@@ -177,6 +182,48 @@ Each service class wraps a group of operations. Instances are created internally
 | `MobileCenterService` | `fetch_offers(req)`, `purchase(req)`, `check_status(req)` |
 | `AgeOnNetworkService` | `query(req)` |
 | `MobileNumberValidationService` | `validate(req)` |
+| `B2CHakikishaService` | `validate(req)` (auto-fills `header.requestID`/`header.timestamp` when empty; validates msisdn/shortcode) |
+
+---
+
+## `C2BHakikishaHandler`
+
+Framework-agnostic receiver-side handler for the C2B Hakikisha API (Safaricom calls *your* endpoints). Importable from the `daraja` top-level. All methods return `(payload, status_code)` tuples; adapt them to your web framework.
+
+```python
+from daraja import C2BHakikishaHandler
+
+handler = C2BHakikishaHandler(
+    username="partner-user",
+    password="partner-pass",
+    resolve_account_name=lambda account_number, shortcode: (
+        "Money Market Account" if account_number == "66925336" else None
+    ),
+    token_ttl=3599,  # optional, default 3599 seconds
+)
+
+token_payload, token_status = handler.token_endpoint(
+    authorization_header, grant_type="client_credentials"
+)
+# -> ({"access_token": ..., "expires_in": 3599}, 200) | ({"error": ..., "errorMessage": ...}, 400|401)
+
+payload, status = handler.validation_endpoint(authorization_header, request_body)
+# -> ({"requestId": ..., "accountName": ..., ...}, 200) | ({"requestId": ..., "errorMessage": ...}, 400|401|422)
+
+assert handler.is_token_valid(token)  # constant-time, expires with token_ttl
+
+response = C2BHakikishaHandler.build_response(  # static
+    request_id="...", account_name="...", account_number="...", shortcode="...", timestamp=None
+)
+```
+
+| Method | Signature | Notes |
+|--------|-----------|-------|
+| `token_endpoint(authorization, grant_type=None)` | `-> (dict, int)` | Basic-auth token issuance; `401` on missing/invalid credentials, `400` on unsupported grant type |
+| `validation_endpoint(authorization, body)` | `-> (dict, int)` | Bearer-auth account-name resolution; `200`/`400`/`401`/`422` |
+| `is_token_valid(token)` | `-> bool` | Constant-time comparison (`secrets.compare_digest`); rejects expired tokens |
+| `resolve_account_name(account_number, shortcode)` | `-> str \| None` | Override (subclass or constructor callback) to integrate an account registry |
+| `build_response(...)` | `-> C2BHakikishaResponse` (static) | Constructs the success payload |
 
 ---
 

@@ -54,6 +54,7 @@ _ENDPOINT_KEYS = [
     "mobile_center_status",
     "age_on_network",
     "mobile_number_validation",
+    "b2c_hakikisha",
 ]
 
 ENDPOINTS: dict[str, str] = {
@@ -107,6 +108,7 @@ ENDPOINTS: dict[str, str] = {
     "MOBILE_CENTER_STATUS": "/v2/bundles/get/status",
     "AGE_ON_NETWORK": "/registration/lookup/v1/checkATI",
     "MOBILE_NUMBER_VALIDATION": "/v1/KYC-validation/validateID",
+    "B2C_HAKIKISHA": "/mpesa/b2c/hakikisha/v1/hakikisha",
 }
 
 Environment = Literal["sandbox", "production"]

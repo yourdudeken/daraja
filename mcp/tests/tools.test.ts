@@ -4,6 +4,17 @@ import { getAllTools, type Tool } from "../src/tools/index.js";
 vi.mock("daraja-sdk-ts", () => ({
   Mpesa: vi.fn().mockImplementation(() => ({})),
   generateTimestamp: vi.fn().mockReturnValue("20260909120000"),
+  C2BHakikishaHandler: {
+    buildResponse: vi.fn().mockImplementation(
+      (requestId: string, accountName: string, accountNumber: string, shortcode: string, timestamp?: string) => ({
+        requestId,
+        timestamp: timestamp ?? 1750000000,
+        accountName,
+        accountNumber,
+        shortcode,
+      }),
+    ),
+  },
 }));
 
 function findTool(name: string): Tool {
@@ -54,13 +65,14 @@ function mockClient() {
     },
     ratiba: { createStandingOrder: vi.fn().mockResolvedValue({}) },
     taxRemittance: { remit: vi.fn().mockResolvedValue({}) },
+    b2cHakikisha: { validate: vi.fn().mockResolvedValue({}) },
   } as never;
 }
 
 describe("tool registry", () => {
-  it("returns all 22 tools", () => {
+  it("returns all 24 tools", () => {
     const tools = getAllTools();
-    expect(tools).toHaveLength(22);
+    expect(tools).toHaveLength(24);
   });
 
   it("each tool has name, description, inputSchema, and handler", () => {
@@ -467,5 +479,42 @@ describe("generate_timestamp tool", () => {
   it("returns formatted timestamp", async () => {
     const result = await findTool("generate_timestamp").handler({} as never, {} as never);
     expect(result).toEqual({ timestamp: "20260909120000" });
+  });
+});
+
+describe("b2c_hakikisha tool", () => {
+  it("calls client.b2cHakikisha.validate with header/body shape", async () => {
+    const client = mockClient();
+    await findTool("b2c_hakikisha").handler(
+      { msisdn: "254712345678", shortcode: "123456" },
+      client
+    );
+    expect(client.b2cHakikisha.validate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        header: {},
+        body: { msisdn: "254712345678", shortcode: "123456" },
+      })
+    );
+  });
+});
+
+describe("c2b_hakikisha tool", () => {
+  it("builds a C2B Hakikisha validation response via buildResponse", async () => {
+    const result = await findTool("c2b_hakikisha").handler(
+      {
+        requestId: "dcd1c2ab-7a26-4170-939d-9dc2e879b0e5",
+        accountName: "Money Market Account",
+        accountNumber: "66925336",
+        shortcode: "415010",
+      },
+      {} as never
+    );
+    expect(result).toEqual({
+      requestId: "dcd1c2ab-7a26-4170-939d-9dc2e879b0e5",
+      timestamp: 1750000000,
+      accountName: "Money Market Account",
+      accountNumber: "66925336",
+      shortcode: "415010",
+    });
   });
 });

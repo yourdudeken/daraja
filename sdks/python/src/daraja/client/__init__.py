@@ -27,6 +27,8 @@ from daraja.models import (
     B2BExpressResponse,
     B2CAccountTopUpRequest,
     B2CAccountTopUpResponse,
+    B2CHakikishaRequest,
+    B2CHakikishaResponse,
     B2CRequest,
     B2CResponse,
     B2PochiRequest,
@@ -124,6 +126,7 @@ if TYPE_CHECKING:
         AgeOnNetworkService,
         B2BExpressService,
         B2BService,
+        B2CHakikishaService,
         B2CService,
         B2PochiService,
         BillManagerService,
@@ -837,6 +840,11 @@ class Mpesa:
         result = self._post("MOBILE_NUMBER_VALIDATION", request.model_dump())
         return MobileNumberValidationResponse(**result)
 
+    def b2c_hakikisha(
+        self, request: B2CHakikishaRequest | dict[str, Any]
+    ) -> B2CHakikishaResponse:
+        return self.b2c_hakikisha_service.validate(request)
+
     @property
     def b2pochi_service(self) -> B2PochiService:
 
@@ -903,6 +911,12 @@ class Mpesa:
         from daraja.services import MobileNumberValidationService
 
         return MobileNumberValidationService(self._post)
+
+    @property
+    def b2c_hakikisha_service(self) -> B2CHakikishaService:
+        from daraja.services import B2CHakikishaService
+
+        return B2CHakikishaService(self._post)
 
     @property
     def b2c_account_top_up_service(self) -> B2BService:

@@ -965,6 +965,64 @@ class MobileNumberValidationResponse(BaseModel):
     status: str = ""
 
 
+class B2CHakikishaRequestHeader(BaseModel):
+    requestID: str = ""
+    timestamp: str = ""
+
+
+class B2CHakikishaRequestBody(BaseModel):
+    msisdn: str
+    shortcode: str
+
+
+class B2CHakikishaRequest(BaseModel):
+    header: B2CHakikishaRequestHeader
+    body: B2CHakikishaRequestBody
+
+
+class B2CHakikishaResponseHeader(BaseModel):
+    requestID: str = ""
+    timestamp: str = ""
+    status: str = ""
+    message: str = ""
+
+
+class B2CHakikishaCustomerName(BaseModel):
+    firstName: str = ""
+    middleName: str = ""
+    lastName: str = ""
+
+
+class B2CHakikishaResponse(BaseModel):
+    header: B2CHakikishaResponseHeader | None = None
+    body: B2CHakikishaCustomerName | None = None
+
+
+class C2BHakikishaRequest(BaseModel):
+    requestId: str
+    timestamp: str
+    accountNumber: str
+    shortcode: str
+
+
+class C2BHakikishaResponse(BaseModel):
+    requestId: str
+    timestamp: str | int
+    accountName: str
+    accountNumber: str
+    shortcode: str
+
+
+class C2BHakikishaErrorResponse(BaseModel):
+    requestId: str
+    errorMessage: str
+
+
+class C2BHakikishaTokenResponse(BaseModel):
+    access_token: str
+    expires_in: int
+
+
 __all__ = [
     "MpesaConfig",
     "AccessTokenResponse",
@@ -1087,4 +1145,14 @@ __all__ = [
     "AgeOnNetworkResponse",
     "MobileNumberValidationRequest",
     "MobileNumberValidationResponse",
+    "B2CHakikishaRequestHeader",
+    "B2CHakikishaRequestBody",
+    "B2CHakikishaRequest",
+    "B2CHakikishaResponseHeader",
+    "B2CHakikishaCustomerName",
+    "B2CHakikishaResponse",
+    "C2BHakikishaRequest",
+    "C2BHakikishaResponse",
+    "C2BHakikishaErrorResponse",
+    "C2BHakikishaTokenResponse",
 ]
