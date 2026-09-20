@@ -106,6 +106,6 @@ daraja/
 # === opencodeSWE ===
 .opencode/
 AGENTS.md
-opencode.json
+opencode.jsonc
 specs/
 plans/
