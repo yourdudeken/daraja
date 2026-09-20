@@ -11,7 +11,7 @@ for free. It speaks MCP over **stdio** or **HTTP/SSE**.
 
 ## What it provides
 
-The server exposes a set of **tools** backed by the Daraja TypeScript SDK:
+The server exposes a set of **tools** backed by the Daraja TypeScript SDK (24 tools total):
 
 | Tool | TS SDK call | Description |
 | ---- | ----------- | ----------- |
@@ -25,12 +25,18 @@ The server exposes a set of **tools** backed by the Daraja TypeScript SDK:
 | `transaction_status` | `mpesa.transactionStatus.query()` | Query transaction status |
 | `account_balance` | `mpesa.accountBalance.query()` | Query account balance |
 | `dynamic_qr` | `mpesa.dynamicQR.generate()` | Generate dynamic QR code |
+| `query_org_info` | `mpesa.queryOrgInfo.query()` | Query organization info |
+| `validate_phone` | `mpesa.mobileNumberValidation.validate()` | Validate phone number (KYC) |
+| `imsi_lookup` | `mpesa.imsi.query()` | Look up IMSI for a phone number |
+| `sim_swap_check` | `mpesa.swap.query()` | Check SIM swap status |
+| `age_on_network` | `mpesa.ageOnNetwork.check()` | Look up SIM registration date |
+| `iot_sim` | `mpesa.iot.*()` | IoT SIM operations (13 sub-operations) |
 | `b2b_express` | `mpesa.b2bExpress.send()` | B2B Express USSD push |
 | `bill_manager` | `mpesa.billManager.*()` | Bill Manager operations |
 | `ratiba` | `mpesa.ratiba.createStandingOrder()` | Create standing orders |
 | `tax_remittance` | `mpesa.taxRemittance.remit()` | Remit tax to KRA |
-| `query_org_info` | `mpesa.queryOrgInfo.query()` | Query organization info |
-| `validate_phone` | `mpesa.mobileNumberValidation.validate()` | Validate phone number (KYC) |
+| `b2c_hakikisha` | `mpesa.b2cHakikisha.validate()` | Validate customer identity before a B2C payout |
+| `c2b_hakikisha` | `C2BHakikishaHandler.buildResponse()` | Build a C2B Hakikisha validation response payload |
 | `generate_timestamp` | `generateTimestamp()` | Generate M-Pesa timestamp |
 | `health_check` | - | Check SDK connection health |
 

@@ -1,4 +1,4 @@
-import { Mpesa, WebhookManager } from "daraja-sdk-ts";
+import { Mpesa, WebhookManager, C2BHakikishaHandler } from "daraja-sdk-ts";
 
 const ERRORS: Array<{ api: string; error: string; type: string }> = [];
 
@@ -470,6 +470,64 @@ async function test29MobileNumberValidation() {
   }
 }
 
+async function test30B2CHakikisha() {
+  console.log("\n30. B2C Hakikisha");
+  const mpesa = new Mpesa(CONFIG);
+  try {
+    const resp = await mpesa.b2cHakikisha.validate({
+      header: {},
+      body: { msisdn: String(PHONE), shortcode: String(SHORTCODE) },
+    });
+    console.log(`   status: ${resp.header.status}`);
+    console.log(`   message: ${resp.header.message}`);
+    console.log(`   body: ${JSON.stringify(resp.body)}`);
+  } catch (e) {
+    if (!checkBlocked("B2C Hakikisha", e)) {
+      logError("B2C Hakikisha", e);
+    }
+  }
+}
+
+function test31C2BHakikishaLocal() {
+  console.log("\n31. C2B Hakikisha (local handler)");
+  const handler = new C2BHakikishaHandler({
+    username: "partner-user",
+    password: "partner-pass",
+    resolveAccountName: (accountNumber) =>
+      accountNumber === "66925336" ? "Money Market Account" : null,
+  });
+  const [tokenPayload, tokenStatus] = handler.tokenEndpoint(
+    `Basic ${Buffer.from("partner-user:partner-pass").toString("base64")}`,
+  );
+  console.log(`   token endpoint status: ${tokenStatus}`);
+  if (tokenStatus !== 200) throw new Error("Token endpoint should succeed");
+  const token = tokenPayload.access_token;
+  console.log(`   token issued: ${token.slice(0, 8)}...`);
+  console.log(`   token valid: ${handler.isTokenValid(token)}`);
+  if (!handler.isTokenValid(token)) throw new Error("Issued token should be valid");
+
+  const [payload, status] = handler.validationEndpoint(`Bearer ${token}`, {
+    requestId: "dcd1c2ab-7a26-4170-939d-9dc2e879b0e5",
+    timestamp: "1728897681",
+    accountNumber: "66925336",
+    shortcode: "415010",
+  });
+  console.log(`   validation endpoint status: ${status}`);
+  console.log(`   accountName: ${payload.accountName}`);
+  if (status !== 200 || payload.accountName !== "Money Market Account") {
+    throw new Error("Valid account should resolve");
+  }
+
+  const [missing, missingStatus] = handler.validationEndpoint(`Bearer ${token}`, {
+    requestId: "dcd1c2ab-7a26-4170-939d-9dc2e879b0e5",
+    timestamp: "1728897681",
+    accountNumber: "00000000",
+    shortcode: "415010",
+  });
+  console.log(`   unknown account status: ${missingStatus}`);
+  if (missingStatus !== 400) throw new Error("Unknown account should be rejected");
+}
+
 async function test20BillManager() {
   console.log("\n20. Bill Manager");
   const mpesa = new Mpesa(CONFIG);
@@ -697,6 +755,10 @@ async function main() {
   await test28AgeOnNetwork();
   await sleep(DELAY);
   await test29MobileNumberValidation();
+  await sleep(DELAY);
+  await test30B2CHakikisha();
+  await sleep(DELAY);
+  test31C2BHakikishaLocal();
   await sleep(DELAY);
   await test20BillManager();
   await sleep(DELAY);

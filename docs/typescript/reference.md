@@ -10,7 +10,7 @@ import { Mpesa, type MpesaConfig } from "daraja-sdk-ts";
 
 ### `new Mpesa(config: MpesaConfig)`
 
-Creates an M-Pesa client. Exposes 23 service properties, `webhooks`, and `client`.
+Creates an M-Pesa client. Exposes 24 service properties, `webhooks`, and `client`.
 
 ---
 
@@ -42,6 +42,7 @@ mpesa.taxRemittance              // TaxRemittanceService
 mpesa.mobileCenter               // MobileCenterService
 mpesa.ageOnNetwork               // AgeOnNetworkService
 mpesa.mobileNumberValidation     // MobileNumberValidationService
+mpesa.b2cHakikisha               // B2CHakikishaService
 mpesa.webhooks                   // WebhookManager
 mpesa.client                     // MpesaApiClient
 ```
@@ -214,6 +215,56 @@ mpesa.ageOnNetwork.check(req)
 ```typescript
 mpesa.mobileNumberValidation.validate(req)
 ```
+
+### B2CHakikishaService
+
+```typescript
+mpesa.b2cHakikisha.validate(req)  // Validate customer identity before a B2C payout
+```
+
+Auto-fills `header.requestID` (UUID) and `header.timestamp` (Unix seconds) when
+empty; throws `ValidationError` when `body.msisdn` is not `2547XXXXXXXX` or
+`body.shortcode` is not 5–7 digits.
+
+### C2BHakikishaHandler
+
+Framework-agnostic receiver-side handler for the C2B Hakikisha API (Safaricom
+calls *your* endpoints). Top-level export from `daraja-sdk-ts`. All instance
+methods return `[payload, status]` tuples; adapt them to your web framework.
+
+```typescript
+import { C2BHakikishaHandler } from "daraja-sdk-ts";
+
+const handler = new C2BHakikishaHandler({
+  username: "partner-user",
+  password: "partner-pass",
+  resolveAccountName: (accountNumber, shortcode) =>
+    accountNumber === "66925336" ? "Money Market Account" : null,
+  tokenTtl: 3599, // optional, default 3599 seconds
+});
+
+// Token endpoint (Safaricom -> you): wire to POST /auth/v1/generate
+const [tokenPayload, tokenStatus] = handler.tokenEndpoint(authorizationHeader, "client_credentials");
+// -> { access_token, expires_in }, 200 | { error, errorMessage }, 400|401
+
+// Validation endpoint (Safaricom -> you): wire to POST /c2b_hakikisha/v1/notify
+const [payload, status] = handler.validationEndpoint(authorizationHeader, requestBody);
+// -> { requestId, accountName, ... }, 200 | { requestId, errorMessage }, 400|401|422
+
+handler.isTokenValid(token); // constant-time (timingSafeEqual), rejects expired tokens
+
+const response = C2BHakikishaHandler.buildResponse( // static
+  requestId, accountName, accountNumber, shortcode, timestamp?
+);
+```
+
+| Method | Signature | Notes |
+|--------|-----------|-------|
+| `tokenEndpoint(authorization, grantType?)` | `C2BTokenEndpointResult` | Basic-auth token issuance; `401` on missing/invalid credentials, `400` on unsupported grant type |
+| `validationEndpoint(authorization, body)` | `C2BValidationEndpointResult` | Bearer-auth account-name resolution; `200`/`400`/`401`/`422` |
+| `isTokenValid(token)` | `boolean` | Constant-time comparison (`timingSafeEqual`); rejects expired tokens |
+| `resolveAccountName(accountNumber, shortcode)` | `string \| null` | Override (constructor callback or subclass) to integrate an account registry |
+| `buildResponse(requestId, accountName, accountNumber, shortcode, timestamp?)` | `C2BHakikishaResponse` (static) | Constructs the success payload |
 
 ---
 
@@ -415,4 +466,20 @@ type ResponseType = "Completed" | "Cancelled";
 type C2BCommandID = "CustomerPayBillOnline" | "CustomerBuyGoodsOnline";
 type B2CCommandID = "SalaryPayment" | "BusinessPayment" | "PromotionPayment";
 type TrxCode = "BG" | "WA" | "PB" | "SM" | "SB";
+```
+
+Hakikisha types (from `daraja-sdk-ts`):
+
+```typescript
+// B2C Hakikisha (outbound)
+B2CHakikishaRequest        // { header: { requestID?, timestamp? }, body: { msisdn, shortcode } }
+B2CHakikishaResponse       // { header: { requestID, timestamp, status, message }, body: { firstName, middleName, lastName } }
+
+// C2B Hakikisha (receiver-side)
+C2BHakikishaRequest        // { requestId, timestamp, accountNumber, shortcode }
+C2BHakikishaResponse       // { requestId, timestamp, accountName, accountNumber, shortcode }
+C2BHakikishaErrorResponse  // { requestId, errorMessage }
+C2BHakikishaTokenResponse  // { access_token, expires_in }
+C2BTokenEndpointResult     // [payload, status] tuple: 200 | 400 | 401
+C2BValidationEndpointResult // [payload, status] tuple: 200 | 400 | 401 | 422
 ```

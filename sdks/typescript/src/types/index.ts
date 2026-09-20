@@ -1136,6 +1136,83 @@ export interface MobileNumberValidationResponse {
 }
 
 // ============================================================
+// B2C HAKIKISHA
+// ============================================================
+export interface B2CHakikishaRequestHeader {
+  requestID?: string;
+  timestamp?: string;
+}
+
+export interface B2CHakikishaRequestBody {
+  msisdn: string;
+  shortcode: string;
+}
+
+export interface B2CHakikishaRequest {
+  header: B2CHakikishaRequestHeader;
+  body: B2CHakikishaRequestBody;
+}
+
+export interface B2CHakikishaResponseHeader {
+  requestID: string;
+  timestamp: string;
+  status: string;
+  message: string;
+}
+
+export interface B2CHakikishaCustomerName {
+  firstName: string;
+  middleName: string;
+  lastName: string;
+}
+
+export interface B2CHakikishaResponse {
+  header: B2CHakikishaResponseHeader;
+  body: B2CHakikishaCustomerName;
+}
+
+// ============================================================
+// C2B HAKIKISHA (receiver-side)
+// ============================================================
+export interface C2BHakikishaRequest {
+  requestId: string;
+  timestamp: string;
+  accountNumber: string;
+  shortcode: string;
+}
+
+export interface C2BHakikishaResponse {
+  requestId: string;
+  timestamp: string | number;
+  accountName: string;
+  accountNumber: string;
+  shortcode: string;
+}
+
+export interface C2BHakikishaErrorResponse {
+  requestId: string;
+  errorMessage: string;
+}
+
+export interface C2BHakikishaTokenErrorResponse {
+  error: string;
+  errorMessage: string;
+}
+
+export interface C2BHakikishaTokenResponse {
+  access_token: string;
+  expires_in: number;
+}
+
+export type C2BTokenEndpointResult =
+  | [payload: C2BHakikishaTokenResponse, status: 200]
+  | [payload: C2BHakikishaTokenErrorResponse, status: 400 | 401];
+
+export type C2BValidationEndpointResult =
+  | [payload: C2BHakikishaResponse, status: 200]
+  | [payload: C2BHakikishaErrorResponse, status: 400 | 401 | 422];
+
+// ============================================================
 // RESULT CALLBACK
 // ============================================================
 export interface ResultParameterItem {

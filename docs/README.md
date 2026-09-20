@@ -31,6 +31,8 @@ Shared documentation for the Daraja SDKs (Python, TypeScript).
 - [Mpesa Ratiba](apis/mpesa-ratiba.md)  -- Standing orders / recurring payments
 - [Lipa Na Bonga](apis/lipa-na-bonga.md)  -- Convert Bonga points, redeem via paybill
 - [Pull Transactions](apis/pull-transaction.md)  -- Register & query pulled transactions
+- [B2C Hakikisha](apis/b2c-hakikisha.md)  -- Validate customer identity before a B2C payout
+- [C2B Hakikisha](apis/c2b-hakikisha.md)  -- Receiver-side account-name resolution for C2B payments
 
 ### Lookups & Validation
 

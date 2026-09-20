@@ -1,3 +1,7 @@
+import base64
+import secrets
+import time
+import uuid
 from collections.abc import Callable
 from typing import Any
 
@@ -13,6 +17,8 @@ from daraja.models import (
     B2BExpressResponse,
     B2CAccountTopUpRequest,
     B2CAccountTopUpResponse,
+    B2CHakikishaRequest,
+    B2CHakikishaResponse,
     B2CRequest,
     B2CResponse,
     B2PochiRequest,
@@ -32,6 +38,10 @@ from daraja.models import (
     C2BRegisterURLRequest,
     C2BResponse,
     C2BSimulateRequest,
+    C2BHakikishaErrorResponse,
+    C2BHakikishaRequest,
+    C2BHakikishaResponse,
+    C2BHakikishaTokenResponse,
     DynamicQRRequest,
     DynamicQRResponse,
     IMSIRequest,
@@ -759,6 +769,194 @@ class MobileNumberValidationService:
         return MobileNumberValidationResponse(**result)
 
 
+class B2CHakikishaService:
+    def __init__(self, post: PostFn) -> None:
+        self._post = post
+
+    def validate(
+        self, request: B2CHakikishaRequest | dict[str, Any]
+    ) -> B2CHakikishaResponse:
+        if isinstance(request, dict):
+            request = B2CHakikishaRequest(**request)
+        if not request.header.requestID:
+            request.header.requestID = str(uuid.uuid4())
+        if not request.header.timestamp:
+            request.header.timestamp = str(int(time.time()))
+        _validate_phone(request.body.msisdn, "msisdn")
+        _validate_shortcode(request.body.shortcode, "shortcode")
+        result = self._post("B2C_HAKIKISHA", request.model_dump())
+        return B2CHakikishaResponse(**result)
+
+
+class C2BHakikishaHandler:
+    """Framework-agnostic receiver-side handler for the C2B Hakikisha API.
+
+    Safaricom generates an access token using Basic Authentication against the
+    partner's token endpoint, then calls the partner's validation endpoint with
+    a Bearer token and ``{requestId, timestamp, accountNumber, shortcode}`` to
+    resolve the registered account name before a C2B payment completes.
+
+    This class implements that receiver contract without depending on any web
+    framework: ``token_endpoint`` and ``validation_endpoint`` return
+    ``(payload, status_code)`` tuples that callers can adapt to their own
+    routing layer. Subclass or pass a callback to ``resolve_account_name`` to
+    look up account names from the partner's registry.
+    """
+
+    def __init__(
+        self,
+        username: str,
+        password: str,
+        resolve_account_name: Callable[[str, str], str | None] | None = None,
+        token_ttl: int = 3599,
+    ) -> None:
+        self._username = username
+        self._password = password
+        self._resolve_account_name = resolve_account_name
+        self._token_ttl = token_ttl
+        self._token: str | None = None
+        self._token_expires_at: float = 0.0
+
+    # -- token endpoint ---------------------------------------------------
+
+    def _issue_token(self) -> str:
+        token = secrets.token_urlsafe(32)
+        self._token = token
+        self._token_expires_at = time.time() + self._token_ttl
+        return token
+
+    def token_endpoint(
+        self, authorization: str | None, grant_type: str | None = None
+    ) -> tuple[dict[str, Any], int]:
+        if grant_type and grant_type != "client_credentials":
+            return (
+                {"error": "unsupported_grant_type", "errorMessage": "Unsupported grant type."},
+                400,
+            )
+        if authorization is None or not authorization.startswith("Basic "):
+            return (
+                {
+                    "error": "unauthorized",
+                    "errorMessage": "Missing or malformed Authorization header. Expected Basic authentication.",
+                },
+                401,
+            )
+        try:
+            decoded = base64.b64decode(authorization[len("Basic "):], validate=True).decode("utf-8")
+            if ":" not in decoded:
+                raise ValueError("Malformed Basic credentials: missing ':' separator.")
+            username, _, password = decoded.partition(":")
+        except Exception:
+            return (
+                {"error": "unauthorized", "errorMessage": "Invalid Basic credentials."},
+                401,
+            )
+        if not secrets.compare_digest(username, self._username) or not secrets.compare_digest(
+            password, self._password
+        ):
+            return (
+                {"error": "unauthorized", "errorMessage": "Invalid credentials."},
+                401,
+            )
+        return (
+            {"access_token": self._issue_token(), "expires_in": self._token_ttl},
+            200,
+        )
+
+    def is_token_valid(self, token: str) -> bool:
+        if not token or self._token is None or time.time() >= self._token_expires_at:
+            return False
+        return secrets.compare_digest(self._token, token)
+
+    # -- validation endpoint ----------------------------------------------
+
+    def resolve_account_name(self, account_number: str, shortcode: str) -> str | None:
+        """Resolve the account name for an account number.
+
+        Override this method in a subclass or pass a callable to the
+        constructor. Returning ``None`` makes ``validation_endpoint`` answer
+        ``400 Invalid account number``.
+        """
+        if self._resolve_account_name is not None:
+            return self._resolve_account_name(account_number, shortcode)
+        return None
+
+    def validation_endpoint(
+        self, authorization: str | None, payload: dict[str, Any]
+    ) -> tuple[dict[str, Any], int]:
+        if not isinstance(payload, dict):
+            return (
+                {
+                    "requestId": "",
+                    "errorMessage": "Missing or malformed required fields in the request.",
+                },
+                422,
+            )
+        if authorization is None or not authorization.startswith("Bearer "):
+            return (
+                {
+                    "requestId": str(payload.get("requestId", "")),
+                    "errorMessage": "Missing or invalid access token.",
+                },
+                401,
+            )
+        if not self.is_token_valid(authorization[len("Bearer "):]):
+            return (
+                {
+                    "requestId": str(payload.get("requestId", "")),
+                    "errorMessage": "Invalid access token.",
+                },
+                401,
+            )
+        try:
+            request = C2BHakikishaRequest(**payload)
+        except Exception:
+            return (
+                {
+                    "requestId": str(payload.get("requestId", "")),
+                    "errorMessage": "Missing or malformed required fields in the request.",
+                },
+                422,
+            )
+        account_name = self.resolve_account_name(request.accountNumber, request.shortcode)
+        if not account_name:
+            return (
+                {
+                    "requestId": request.requestId,
+                    "errorMessage": "Invalid account number",
+                },
+                400,
+            )
+        return (
+            {
+                "requestId": request.requestId,
+                "timestamp": request.timestamp,
+                "accountName": account_name,
+                "accountNumber": request.accountNumber,
+                "shortcode": request.shortcode,
+            },
+            200,
+        )
+
+    @staticmethod
+    def build_response(
+        request_id: str,
+        account_name: str,
+        account_number: str,
+        shortcode: str,
+        timestamp: str | int | None = None,
+    ) -> C2BHakikishaResponse:
+        if timestamp is None:
+            timestamp = int(time.time())
+        return C2BHakikishaResponse(
+            requestId=request_id,
+            timestamp=timestamp,
+            accountName=account_name,
+            accountNumber=account_number,
+            shortcode=shortcode,
+        )
+
+
 __all__ = [
     "STKPushService",
     "C2BService",
@@ -783,4 +981,6 @@ __all__ = [
     "MobileCenterService",
     "AgeOnNetworkService",
     "MobileNumberValidationService",
+    "B2CHakikishaService",
+    "C2BHakikishaHandler",
 ]

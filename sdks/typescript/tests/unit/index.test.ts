@@ -24,6 +24,7 @@ import { TaxRemittanceService } from "../../src/services/tax-remittance.js";
 import { MobileCenterService } from "../../src/services/mobile-center.js";
 import { AgeOnNetworkService } from "../../src/services/age-on-network.js";
 import { MobileNumberValidationService } from "../../src/services/mobile-number-validation.js";
+import { B2CHakikishaService } from "../../src/services/b2c-hakikisha.js";
 import { WebhookManager } from "../../src/webhooks/index.js";
 
 describe("Mpesa facade", () => {
@@ -58,6 +59,7 @@ describe("Mpesa facade", () => {
     expect(mpesa.mobileCenter).toBeInstanceOf(MobileCenterService);
     expect(mpesa.ageOnNetwork).toBeInstanceOf(AgeOnNetworkService);
     expect(mpesa.mobileNumberValidation).toBeInstanceOf(MobileNumberValidationService);
+    expect(mpesa.b2cHakikisha).toBeInstanceOf(B2CHakikishaService);
     expect(mpesa.webhooks).toBeInstanceOf(WebhookManager);
   });
 });

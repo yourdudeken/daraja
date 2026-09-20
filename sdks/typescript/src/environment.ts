@@ -52,6 +52,7 @@ export const SANDBOX_ENDPOINTS = {
   MOBILE_CENTER_STATUS: "/v2/bundles/get/status",
   AGE_ON_NETWORK: "/registration/lookup/v1/checkATI",
   MOBILE_NUMBER_VALIDATION: "/v1/KYC-validation/validateID",
+  B2C_HAKIKISHA: "/mpesa/b2c/hakikisha/v1/hakikisha",
 } as const;
 
 export type MpesaEnvironment = "sandbox" | "production";

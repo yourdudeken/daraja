@@ -16,7 +16,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0",
-    "daraja-sdk-ts": "0.0.1",
+    "daraja-sdk-ts": "0.0.3",
     "express": "^4.21.0"
   },
   "devDependencies": {
