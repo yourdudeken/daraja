@@ -78,13 +78,38 @@ MCP client config:
 DARAJA_MCP_MODE=http MCP_PORT=3999 npm start
 ```
 
-Connect via SSE: `http://localhost:3999/sse`
+Connect via SSE: `http://localhost:3999/api/v1/sse`
+
+All endpoints live under the `/api/v1` prefix (SSE stream, JSON-RPC messages,
+health check).
 
 ### Via Docker
+
+The server is published to Docker Hub as
+[`yourdudeken/daraja-mcp`](https://hub.docker.com/r/yourdudeken/daraja-mcp) by
+the release workflow when the version in [`mcp/package.json`](../../mcp/package.json)
+changes (tags: `<version>` + `latest`). The image is built with `npm ci` from
+the committed lockfile and depends on the published `daraja-sdk-ts` package —
+the pinned version lives in `mcp/package.json`, so SDK updates are adopted
+deliberately, not coupled to SDK releases.
+
+```bash
+docker pull yourdudeken/daraja-mcp
+docker run -p 3999:3999 \
+  -e MPESA_CONSUMER_KEY=your_key \
+  -e MPESA_CONSUMER_SECRET=your_secret \
+  yourdudeken/daraja-mcp
+```
+
+Or build the current source in this repository:
 
 ```bash
 docker compose up mcp
 ```
+
+The MCP server binary itself is not published to npm — it runs from this
+repository or the Docker image. Its SDK dependency (`daraja-sdk-ts`) is
+installed from the npm registry by `npm install`/`npm ci`.
 
 ## Environment Variables
 
