@@ -68,26 +68,25 @@ All endpoints live under the `/api/v1` prefix:
 docker compose up mcp
 ```
 
-Repository development links the **local** `daraja-sdk-ts` source
-(`file:../sdks/typescript`), so SDK changes are picked up immediately. The
-published Docker image is different: it installs the **released**
-`daraja-sdk-ts` package from the npm registry, so the image is fully
-self-contained and does not depend on this repository's SDK source tree.
+The MCP depends on the **published** `daraja-sdk-ts` package from the npm
+registry — the exact version is pinned in
+[`package.json`](package.json) (and locked in `package-lock.json`), both
+locally and in the Docker image. SDK changes are adopted deliberately by
+bumping the pinned version in `mcp/package.json`, rather than coupling MCP
+development to the SDK source tree.
 
 The release workflow ([`.github/workflows/release.yml`](../../.github/workflows/release.yml))
 builds and pushes the image to Docker Hub whenever the version in
 [`package.json`](package.json) changes, tagging it `daraja-mcp:<version>` and
-`daraja-mcp:latest`. It requires the `DOCKERHUB_USERNAME` and
-`DOCKERHUB_TOKEN` secrets.
+`daraja-mcp:latest`. The image is built with `npm ci` from the committed
+lockfile, so it always contains the exact SDK version pinned there. It
+requires the `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` secrets.
 
-The npm SDK version baked into the image is resolved by the release workflow:
-either the SDK version published in the same run, or the latest version
-already on npm. For local image builds, the npm version is controlled with the
-`DARAJA_SDK_VERSION` build argument (default: latest published) and must be a
-version that exists on the npm registry — the image never uses the local SDK:
+For local image builds, the pinned (already published) SDK version is fetched
+from the npm registry — the image never uses the local SDK source:
 
 ```bash
-docker build --build-arg DARAJA_SDK_VERSION=0.0.3 -t daraja-mcp ./mcp
+docker build -t daraja-mcp ./mcp
 ```
 
 ## Environment Variables

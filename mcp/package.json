@@ -16,7 +16,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0",
-    "daraja-sdk-ts": "file:../sdks/typescript",
+    "daraja-sdk-ts": "0.0.4",
     "express": "^4.21.0"
   },
   "devDependencies": {
