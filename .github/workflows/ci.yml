@@ -62,6 +62,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: Build local SDK dependency
+        # MCP depends on the local TypeScript SDK via file:../sdks/typescript,
+        # whose dist/ is gitignored and generated on build.
+        working-directory: sdks/typescript
+        run: npm install && npm run build
       - run: npm install
       - run: npm run lint
       - run: npm run test:coverage

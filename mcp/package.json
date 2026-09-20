@@ -1,6 +1,6 @@
 {
   "name": "daraja-mcp",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "private": true,
   "description": "Self-hosted MCP server for Safaricom M-Pesa Daraja API access",
   "type": "module",
@@ -16,7 +16,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0",
-    "daraja-sdk-ts": "0.0.3",
+    "daraja-sdk-ts": "file:../sdks/typescript",
     "express": "^4.21.0"
   },
   "devDependencies": {

@@ -51,7 +51,9 @@ class TestB2CHakikisha:
     @respx.mock
     def test_validate_posts_expected_payload(self, client: Mpesa) -> None:
         _mock_auth(router=respx)
-        respx.post(f"{BASE_URL}/mpesa/b2c/hakikisha/v1/hakikisha").respond(200, json=_SAMPLE_RESPONSE)
+        respx.post(f"{BASE_URL}/mpesa/b2c/hakikisha/v1/hakikisha").respond(
+            200, json=_SAMPLE_RESPONSE
+        )
 
         result = client.b2c_hakikisha(_sample_request())
 
@@ -72,7 +74,9 @@ class TestB2CHakikisha:
     @respx.mock
     def test_validate_auto_generates_request_id_and_timestamp(self, client: Mpesa) -> None:
         _mock_auth(router=respx)
-        respx.post(f"{BASE_URL}/mpesa/b2c/hakikisha/v1/hakikisha").respond(200, json=_SAMPLE_RESPONSE)
+        respx.post(f"{BASE_URL}/mpesa/b2c/hakikisha/v1/hakikisha").respond(
+            200, json=_SAMPLE_RESPONSE
+        )
 
         request = B2CHakikishaRequest(
             header={}, body={"msisdn": "254722000000", "shortcode": "123456"}
@@ -87,7 +91,9 @@ class TestB2CHakikisha:
     @respx.mock
     def test_validate_keeps_provided_header_values(self, client: Mpesa) -> None:
         _mock_auth(router=respx)
-        respx.post(f"{BASE_URL}/mpesa/b2c/hakikisha/v1/hakikisha").respond(200, json=_SAMPLE_RESPONSE)
+        respx.post(f"{BASE_URL}/mpesa/b2c/hakikisha/v1/hakikisha").respond(
+            200, json=_SAMPLE_RESPONSE
+        )
 
         request = _sample_request()
         client.b2c_hakikisha(request)
@@ -118,7 +124,9 @@ class TestAsyncB2CHakikisha:
     @respx.mock
     def test_async_validate_posts_expected_payload(self) -> None:
         _mock_auth(router=respx)
-        respx.post(f"{BASE_URL}/mpesa/b2c/hakikisha/v1/hakikisha").respond(200, json=_SAMPLE_RESPONSE)
+        respx.post(f"{BASE_URL}/mpesa/b2c/hakikisha/v1/hakikisha").respond(
+            200, json=_SAMPLE_RESPONSE
+        )
 
         import asyncio
 
@@ -147,7 +155,9 @@ class TestAsyncB2CHakikisha:
     @respx.mock
     def test_async_auto_generates_request_id_and_timestamp(self) -> None:
         _mock_auth(router=respx)
-        respx.post(f"{BASE_URL}/mpesa/b2c/hakikisha/v1/hakikisha").respond(200, json=_SAMPLE_RESPONSE)
+        respx.post(f"{BASE_URL}/mpesa/b2c/hakikisha/v1/hakikisha").respond(
+            200, json=_SAMPLE_RESPONSE
+        )
 
         import asyncio
 

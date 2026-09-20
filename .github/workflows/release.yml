@@ -2,13 +2,21 @@ name: Release
 
 # Releases each SDK independently when a PR is merged to main.
 #
-# Each SDK owns its own version and release tag:
+# Each component owns its own version and release tag:
 #   TypeScript SDK -> typescript-vX.Y.Z  (npm)
 #   Python SDK     -> python-vX.Y.Z      (PyPI)
+#   MCP Server     -> mcp-vX.Y.Z        (Docker Hub)
 #
-# On push to main, the detect job compares each SDK's manifest version
-# against its latest tag and releases only the SDKs whose version changed.
-# workflow_dispatch allows forcing a release with explicit versions.
+# The MCP release builds a Docker image that depends on the *published*
+# daraja-sdk-ts package from the npm registry. The Docker publish job runs
+# after the TypeScript SDK publish so the image always resolves a released
+# SDK version (either the one published in this run, or the latest already
+# published when the SDK version did not change). Locally, the MCP links the
+# SDK source via file:../sdks/typescript instead.
+#
+# On push to main, the detect job compares each component's manifest version
+# against its latest tag and releases only the components whose version
+# changed. workflow_dispatch allows forcing a release with explicit versions.
 
 on:
   push:
@@ -21,6 +29,10 @@ on:
         type: string
       python_version:
         description: "Python SDK version (e.g. 0.0.2). Leave empty to use pyproject.toml."
+        required: false
+        type: string
+      mcp_version:
+        description: "MCP Server version (e.g. 0.0.1). Leave empty to use mcp/package.json."
         required: false
         type: string
 
@@ -41,6 +53,8 @@ jobs:
       typescript_release: ${{ steps.ts.outputs.release }}
       python_version: ${{ steps.py.outputs.version }}
       python_release: ${{ steps.py.outputs.release }}
+      mcp_version: ${{ steps.mcp.outputs.version }}
+      mcp_release: ${{ steps.mcp.outputs.release }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -72,6 +86,23 @@ jobs:
           else
             VERSION=$(grep -m1 '^version' sdks/python/pyproject.toml | sed 's/version = "\(.*\)"/\1/')
             LATEST=$(git tag -l 'python-v*' --sort=-v:refname | head -1 | sed 's/python-v//')
+            echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+            if [ -z "$LATEST" ] || [ "$VERSION" != "$LATEST" ]; then
+              echo "release=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "release=false" >> "$GITHUB_OUTPUT"
+            fi
+          fi
+
+      - name: Detect MCP Server
+        id: mcp
+        run: |
+          if [ -n "${{ github.event.inputs.mcp_version }}" ]; then
+            echo "version=${{ github.event.inputs.mcp_version }}" >> "$GITHUB_OUTPUT"
+            echo "release=true" >> "$GITHUB_OUTPUT"
+          else
+            VERSION=$(node -p "require('./mcp/package.json').version")
+            LATEST=$(git tag -l 'mcp-v*' --sort=-v:refname | head -1 | sed 's/mcp-v//')
             echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
             if [ -z "$LATEST" ] || [ "$VERSION" != "$LATEST" ]; then
               echo "release=true" >> "$GITHUB_OUTPUT"
@@ -154,4 +185,52 @@ jobs:
         with:
           tag_name: python-v${{ needs.detect.outputs.python_version }}
           name: Python SDK v${{ needs.detect.outputs.python_version }}
+          generate_release_notes: true
+
+  publish-docker:
+    name: Publish MCP Docker image
+    runs-on: ubuntu-latest
+    needs: [detect, publish-typescript]
+    if: needs.detect.outputs.mcp_release == 'true'
+    steps:
+      - uses: actions/checkout@v4
+
+      # The Docker image must depend on a daraja-sdk-ts version that is
+      # actually published to the npm registry. If the SDK is released in
+      # this run (publish-typescript runs first), use that version; otherwise
+      # fall back to whatever is already published.
+      - name: Resolve published SDK version
+        id: sdk
+        run: |
+          if [ "${{ needs.detect.outputs.typescript_release }}" == "true" ]; then
+            echo "version=${{ needs.detect.outputs.typescript_version }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "version=$(npm view daraja-sdk-ts version)" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: mcp/
+          push: true
+          build-args: |
+            DARAJA_SDK_VERSION=${{ steps.sdk.outputs.version }}
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/daraja-mcp:${{ needs.detect.outputs.mcp_version }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/daraja-mcp:latest
+
+      - name: Create tag and GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: mcp-v${{ needs.detect.outputs.mcp_version }}
+          name: MCP Server v${{ needs.detect.outputs.mcp_version }}
           generate_release_notes: true
