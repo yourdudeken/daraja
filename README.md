@@ -16,7 +16,7 @@ Daraja SDKs
 | --------- | -------- | ------------ |
 | TypeScript SDK | [npm — `daraja-sdk-ts`](https://www.npmjs.com/package/daraja-sdk-ts) | ![npm version](https://img.shields.io/npm/v/daraja-sdk-ts) |
 | Python SDK | [PyPI — `daraja-sdk-py`](https://pypi.org/project/daraja-sdk-py/) | ![PyPI version](https://img.shields.io/pypi/v/daraja-sdk-py) |
-| MCP Server | [Docker Hub — `yourdudeken/daraja-mcp`](https://hub.docker.com/r/yourdudeken/daraja-mcp) | ![Docker version](https://img.shields.io/docker/v/yourdudeken/daraja-mcp) ![Docker pulls](https://img.shields.io/docker/pulls/yourdudeken/daraja-mcp) |
+| MCP Server | [Docker Hub — `yourdudeken/daraja-mcp`](https://hub.docker.com/r/yourdudeken/daraja-mcp) | ![Docker version](https://img.shields.io/docker/v/yourdudeken/daraja-mcp) |
 
 Build and release status (GitHub Actions):
 
