@@ -52,6 +52,7 @@ HTTP/SSE. See [docs/mcp/](docs/mcp/) for full usage.
 
 - [Documentation](docs/README.md)
 - [Getting started](docs/getting-started/installation.md)
+- [Security policy](SECURITY.md)
 - [Examples](examples/)
 
 ## Repo layout
