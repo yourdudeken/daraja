@@ -48,6 +48,13 @@ tsconfig.tsbuildinfo
 .mcp/
 .mcp-data/
 
+# === Gateway ===
+gateway/
+.pytest_cache/
+*.egg-info/
+build/
+dist/
+
 # === Testing & tooling ===
 .nyc_output/
 .coverage
