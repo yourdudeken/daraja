@@ -57,8 +57,39 @@ export const SANDBOX_ENDPOINTS = {
 
 export type MpesaEnvironment = "sandbox" | "production";
 
+/** The permitted MPESA_ENVIRONMENT values (NFR-SEC-006). */
+export const VALID_ENVIRONMENTS = ["sandbox", "production"] as const;
+
+/**
+ * Validate a raw environment name against the allow-list.
+ *
+ * The previous code selected the base URL with `=== "sandbox"`, so every value
+ * that was not exactly the lowercase string — `production`, `Production`,
+ * `SANDBOX`, `sandbox ` (trailing space), `Sandbox` — fell through to the
+ * **production** base URL. A typo silently pointed a payments client at live
+ * Safaricom. Unknown values now fail loudly instead.
+ *
+ * Whitespace is rejected, not trimmed, matching gateway/src/gateway/config.py:15,74-76.
+ */
+export function parseEnvironment(raw: string): MpesaEnvironment {
+  if (!(VALID_ENVIRONMENTS as readonly string[]).includes(raw)) {
+    throw new Error(
+      `MPESA_ENVIRONMENT must be one of ${VALID_ENVIRONMENTS.join(", ")}, ` +
+        `got ${JSON.stringify(raw)}`,
+    );
+  }
+  return raw as MpesaEnvironment;
+}
+
 export function getBaseUrl(environment: MpesaEnvironment): string {
-  return environment === "sandbox" ? SANDBOX_BASE_URL : PRODUCTION_BASE_URL;
+  // Narrow explicitly rather than `=== "sandbox" ? sandbox : production`:
+  // the ternary had no third branch, so an unknown value meant production.
+  if (environment === "sandbox") return SANDBOX_BASE_URL;
+  if (environment === "production") return PRODUCTION_BASE_URL;
+  throw new Error(
+    `Unsupported MPESA_ENVIRONMENT: ${JSON.stringify(environment)}. ` +
+      `Expected one of: ${VALID_ENVIRONMENTS.join(", ")}`,
+  );
 }
 
 export function getEndpoints(
