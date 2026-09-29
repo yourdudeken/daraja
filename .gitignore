@@ -110,10 +110,11 @@ yarn.lock.cache
 # === daraja docs ===
 daraja/
 
-# === opencodeSWE ===
-# https://github.com/yourdudeken/opencodeSWE
+# === swe ===
+# https://github.com/yourdudeken/swe
 .opencode/
 AGENTS.md
 opencode.jsonc
 specs/
 plans/
+RISK.md
