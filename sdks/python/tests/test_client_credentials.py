@@ -135,6 +135,7 @@ class TestServiceAutoInject:
         with patch.object(client, "_post", return_value=_BIZ_RESPONSE) as mock_post:
             client.b2c(
                 {
+                    "OriginatorConversationID": "600997_Test_32et3241ed8yu",
                     "CommandID": "BusinessPayment",
                     "Amount": 100,
                     "PartyA": 600998,
@@ -163,6 +164,7 @@ class TestServiceAutoInject:
         with patch.object(client, "_post", return_value=_BIZ_RESPONSE) as mock_post:
             client.b2c(
                 {
+                    "OriginatorConversationID": "600997_Test_32et3241ed8yu",
                     "InitiatorName": "override_initiator",
                     "SecurityCredential": "override_sc",
                     "CommandID": "BusinessPayment",
@@ -321,6 +323,7 @@ class TestServiceAutoInject:
         with patch.object(client, "_post", return_value=_BIZ_RESPONSE) as mock_post:
             client.b2pochi(
                 {
+                    "OriginatorConversationID": "600997_Test_32et3241ed8yu",
                     "CommandID": "BusinessPayToPochi",
                     "Amount": 100,
                     "SenderIdentifier": 1,

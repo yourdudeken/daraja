@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, dev]
   pull_request:
 
 concurrency:
@@ -29,7 +29,11 @@ jobs:
       - name: Type check (mypy)
         run: mypy src/daraja
       - name: Test (coverage threshold enforced via pyproject.toml)
-        run: pytest tests/unit --cov=daraja -v
+        # WBS-002 / NFR-SC-002: collect the whole test tree, not just tests/unit.
+        # tests/integration/ is excluded at DIRECTORY level, not by skipping
+        # individual tests: it requires live MPESA sandbox credentials
+        # (tests/integration/test_suite.py reads MPESA_CONSUMER_KEY at import).
+        run: pytest tests --ignore=tests/integration --cov=daraja -v
       - name: Build
         run: pip install build && python -m build
 
