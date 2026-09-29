@@ -201,3 +201,107 @@ describe("G1-AUTH: unauthenticated access is rejected", () => {
     }
   });
 });
+
+// ---------------------------------------------------------------------------
+// SEC-MCP-004 / AC-041 — the positive half of the fix.
+//
+// This block is the reason the fix is provable. Every G1-AUTH test above would
+// pass unchanged against the BROKEN body parser, because an unauthenticated
+// request is rejected before the body is ever read. Only a test that drives a
+// real authenticated JSON-RPC message through a real session can tell the
+// working code from the broken code.
+// ---------------------------------------------------------------------------
+describe("SEC-MCP-004: an authenticated tool call succeeds", () => {
+  /** Open the SSE stream and read the sessionId the transport advertises. */
+  async function openSession(port: number): Promise<{ sessionId: string; close: () => void }> {
+    const controller = new AbortController();
+    const res = await fetch(`http://127.0.0.1:${port}/api/v1/sse`, {
+      headers: auth,
+      signal: controller.signal,
+    });
+    expect(res.status).toBe(200);
+
+    const reader = res.body!.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+    // The transport's first event is `endpoint`, carrying the session URL.
+    while (!buffer.includes("sessionId=")) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+    }
+    const match = /sessionId=([^"&\s]+)/.exec(buffer);
+    expect(match, `no sessionId in SSE stream, got: ${JSON.stringify(buffer)}`).not.toBeNull();
+
+    return {
+      sessionId: match![1],
+      close: () => {
+        controller.abort();
+        reader.cancel().catch(() => {});
+      },
+    };
+  }
+
+  it("accepts a JSON-RPC message on an authenticated session (not 400)", async () => {
+    const app = startHttpTransport(mockServerFactory, withToken());
+    const { server, port } = await listen(app);
+    const session = await openSession(port);
+    try {
+      const res = await fetch(
+        `http://127.0.0.1:${port}/api/v1/messages?sessionId=${session.sessionId}`,
+        {
+          method: "POST",
+          headers: { ...auth, "content-type": "application/json" },
+          body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tools/list" }),
+        },
+      );
+      // The broken code returned 400 here, on a drained request stream.
+      expect(res.status).toBe(202);
+    } finally {
+      session.close();
+      server.close();
+    }
+  });
+
+  it("rejects a malformed body with 4xx, never 5xx", async () => {
+    const app = startHttpTransport(mockServerFactory, withToken());
+    const { server, port } = await listen(app);
+    const session = await openSession(port);
+    try {
+      const res = await fetch(
+        `http://127.0.0.1:${port}/api/v1/messages?sessionId=${session.sessionId}`,
+        {
+          method: "POST",
+          headers: { ...auth, "content-type": "application/json" },
+          body: "{not json",
+        },
+      );
+      expect(res.status).toBeGreaterThanOrEqual(400);
+      expect(res.status).toBeLessThan(500);
+    } finally {
+      session.close();
+      server.close();
+    }
+  });
+
+  it("still rejects an unauthenticated message on a valid session", async () => {
+    // The fix must not become a bypass: a real session is not enough.
+    const app = startHttpTransport(mockServerFactory, withToken());
+    const { server, port } = await listen(app);
+    const session = await openSession(port);
+    try {
+      const res = await fetch(
+        `http://127.0.0.1:${port}/api/v1/messages?sessionId=${session.sessionId}`,
+        {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tools/list" }),
+        },
+      );
+      expect(res.status).toBe(401);
+    } finally {
+      session.close();
+      server.close();
+    }
+  });
+});

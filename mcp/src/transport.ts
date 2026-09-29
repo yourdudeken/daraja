@@ -62,7 +62,6 @@ export function startHttpTransport(
   options: TransportOptions
 ): express.Express {
   const app = express();
-  app.use(express.json());
 
   const transports = new Map<string, SSEServerTransport>();
   const auth = requireBearer(options.authToken);
@@ -91,7 +90,15 @@ export function startHttpTransport(
     await server.connect(transport);
   });
 
-  app.post(`${API_PREFIX}/messages`, auth, async (req, res) => {
+  // SEC-MCP-004 fix. The app-wide `express.json()` drained the request stream
+  // that the SDK's raw-body fallback reads, so every tool call 400'd on an
+  // already-drained stream. The parser is now scoped to this one route and the
+  // parsed body is passed through explicitly, so the SDK never has to fall back
+  // to reading the stream.
+  //
+  // `auth` stays first so an unauthenticated request is rejected before its
+  // body is parsed at all (NFR-SEC-004: reject before any handler body runs).
+  app.post(`${API_PREFIX}/messages`, auth, express.json(), async (req, res) => {
     const sessionId = req.query.sessionId as string;
     const transport = transports.get(sessionId);
 
@@ -100,7 +107,7 @@ export function startHttpTransport(
       return;
     }
 
-    await transport.handlePostMessage(req, res);
+    await transport.handlePostMessage(req, res, req.body);
   });
 
   // Unauthenticated by design (NFR-SEC-004): liveness and a session count,
