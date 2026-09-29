@@ -178,6 +178,14 @@ jobs:
       - run: npm run lint
       - run: npm test
       - run: npm run build
+      # NFR-SEC-018 / WBS-019 (AC-050). Required, and it runs BEFORE publish.
+      # src/utils/certificates.ts reads the .cer files unconditionally whenever
+      # initiatorPassword is set, so a tarball without them throws ENOENT at
+      # client construction for every consumer — after the package is already
+      # installed and cannot be fixed by a republish of the same version.
+      # Do NOT make this advisory.
+      - name: Certificates present in the packed tarball (NFR-SEC-018, AC-050)
+        run: bash scripts/check-tarball-certs.sh
       - name: Publish to npm
         run: npm publish
         env:
@@ -222,6 +230,13 @@ jobs:
         run: pip install -e ".[all]" pytest hypothesis respx && pytest tests/unit -v
       - name: Build
         run: pip install build && python -m build
+      # NFR-SEC-017 / WBS-018 (AC-049). Required, and it runs BEFORE publish.
+      # Inspects the built sdist's file list, not .gitignore and not the
+      # declared exclusions — those are the intent, not the outcome. A .env
+      # carries live M-Pesa credentials and cannot be recalled from PyPI
+      # mirrors once uploaded. Do NOT make this advisory.
+      - name: No .env in the sdist (NFR-SEC-017, AC-049)
+        run: bash scripts/check-sdist-no-secrets.sh
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:

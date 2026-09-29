@@ -36,6 +36,12 @@ jobs:
         run: pytest tests --ignore=tests/integration --cov=daraja -v
       - name: Build
         run: pip install build && python -m build
+      # NFR-SEC-017 / WBS-018 (AC-049). Required, and it inspects the BUILT
+      # sdist's file list — not .gitignore, and not the declared exclusions.
+      # A .env carries live M-Pesa credentials and an sdist goes to PyPI, so
+      # this fails the build rather than warning. Do NOT make this advisory.
+      - name: No .env in the sdist (NFR-SEC-017, AC-049)
+        run: bash scripts/check-sdist-no-secrets.sh
 
   typescript:
     name: TypeScript SDK
