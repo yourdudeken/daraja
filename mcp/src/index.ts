@@ -18,8 +18,14 @@ if (isDirectExecution || process.env.DARAJA_MCP_MODE) {
 
   if (mode === "http") {
     const port = parseInt(process.env.MCP_PORT || "3999", 10);
-    const host = process.env.MCP_HOST || "0.0.0.0";
-    startHttpTransport(() => createServer(client), { port, host });
+    // NFR-SEC-005 / gate G1: loopback by default. Exposing the transport
+    // beyond loopback is an explicit operator decision, and since WBS-011 it
+    // is additionally gated by the bearer token.
+    const host = process.env.MCP_HOST || "127.0.0.1";
+    // NFR-SEC-004: no shipped default. Absent token => every request is
+    // rejected (401) rather than served unauthenticated.
+    const authToken = process.env.MCP_AUTH_TOKEN;
+    startHttpTransport(() => createServer(client), { port, host, authToken });
   } else {
     console.error("Daraja MCP server running over stdio");
     const transport = new StdioServerTransport();

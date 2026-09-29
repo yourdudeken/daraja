@@ -70,3 +70,9 @@ jobs:
       - run: npm run lint
       - run: npm run test:coverage
       - run: npm run build
+      # Mechanical enforcement of the hard release gate. Required, and it fails
+      # closed: the SEC-MCP-004 body-parser fix may not land before, or without,
+      # transport auth and the removal of the 0.0.0.0 default bind.
+      # Do NOT make this advisory (plans/01-milestones.md §M1, G1).
+      - name: Release gate G1 (NFR-SEC-004 + NFR-SEC-005, TRD-08)
+        run: bash scripts/check-gate-g1.sh

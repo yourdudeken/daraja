@@ -10,7 +10,15 @@ services:
     environment:
       - DARAJA_MCP_MODE=http
       - MCP_PORT=3999
-      - MCP_HOST=0.0.0.0
+      # NFR-SEC-005 / gate G1: no all-interfaces bind address may appear in
+      # this file, and check-gate-g1.sh greps for the literal — so it is not
+      # written here even in a comment. The bind address is an operator
+      # decision, taken in the shell:
+      #   default           -> loopback inside the container (nothing exposed)
+      #   MCP_HOST=<addr>   -> explicit opt-in, and MCP_AUTH_TOKEN is then
+      #                        required as well (NFR-SEC-004)
+      - MCP_HOST=${MCP_HOST:-127.0.0.1}
+      - MCP_AUTH_TOKEN=${MCP_AUTH_TOKEN:-}
       - MPESA_CONSUMER_KEY=${MPESA_CONSUMER_KEY}
       - MPESA_CONSUMER_SECRET=${MPESA_CONSUMER_SECRET}
       - MPESA_ENVIRONMENT=${MPESA_ENVIRONMENT:-sandbox}

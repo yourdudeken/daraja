@@ -33,7 +33,11 @@ COPY --from=builder /app/node_modules/ ./node_modules/
 ENV NODE_ENV=production
 ENV DARAJA_MCP_MODE=http
 ENV MCP_PORT=3999
-ENV MCP_HOST=0.0.0.0
+# NFR-SEC-005 / gate G1: the image must not bake an all-interfaces bind into
+# itself. Loopback is the default; an operator that needs the container
+# reachable sets MCP_HOST explicitly at run time, and must set MCP_AUTH_TOKEN
+# as well (NFR-SEC-004).
+ENV MCP_HOST=127.0.0.1
 
 EXPOSE 3999
 
