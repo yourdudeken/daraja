@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import Literal, cast
 
 SANDBOX_BASE_URL = "https://sandbox.safaricom.co.ke"
 PRODUCTION_BASE_URL = "https://api.safaricom.co.ke"
@@ -113,9 +113,45 @@ ENDPOINTS: dict[str, str] = {
 
 Environment = Literal["sandbox", "production"]
 
+#: The permitted ``MPESA_ENVIRONMENT`` values (NFR-SEC-006).
+VALID_ENVIRONMENTS: tuple[str, ...] = ("sandbox", "production")
+
+
+def parse_environment(environment: str) -> Environment:
+    """Validate a raw environment name against the allow-list.
+
+    ``Literal`` is a static type, erased at runtime, so it constrains a type
+    checker and nothing else. ``MpesaConfig`` enforces it because that is a
+    pydantic model, but this function is public and directly importable, and
+    ``tests/integration/test_sandbox.py`` calls ``get_full_url`` with a raw
+    ``os.environ`` read. Anything that reached ``get_base_url`` unvalidated got
+    the **production** URL, because the old expression had no third branch.
+
+    Whitespace is rejected, not stripped, matching gateway/src/gateway/config.py
+    and the TypeScript SDK. A stray space in an env file is a configuration
+    mistake; silently normalising it hides the mistake.
+    """
+    if environment not in VALID_ENVIRONMENTS:
+        raise ValueError(
+            f"MPESA_ENVIRONMENT must be one of {list(VALID_ENVIRONMENTS)}, "
+            f"got {environment!r}"
+        )
+    return cast(Environment, environment)
+
 
 def get_base_url(environment: Environment) -> str:
-    return SANDBOX_BASE_URL if environment == "sandbox" else PRODUCTION_BASE_URL
+    # Narrow explicitly rather than a two-branch ternary. The ternary had no
+    # third branch, so an unrecognised value silently meant production. The
+    # parse is what makes that impossible now.
+    environment = parse_environment(environment)
+    if environment == "sandbox":
+        return SANDBOX_BASE_URL
+    if environment == "production":
+        return PRODUCTION_BASE_URL
+    # Unreachable: parse_environment admits only the two values above. Present
+    # so an added VALID_ENVIRONMENTS entry cannot reintroduce the silent
+    # production fallback.
+    raise ValueError(f"Unsupported MPESA_ENVIRONMENT: {environment!r}")
 
 
 def get_full_url(environment: Environment, endpoint_path: str) -> str:

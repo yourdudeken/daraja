@@ -64,14 +64,42 @@ if [ -z "$SDIST" ]; then
 fi
 
 LIST="$OUT_DIR/filelist.txt"
-tar tzf "$SDIST" > "$LIST"
+
+# Listing the archive is a step that can FAIL, and a failure here used to be
+# indistinguishable from success: the empty list produced "no hits", which
+# printed AC-049 OK and exited 0. A credential guard that reports OK having
+# checked nothing is worse than no guard, because it is trusted. So the listing
+# is checked three ways — the command's status, a non-empty result, and the
+# presence of the paths we know the build always produces.
+if ! tar tzf "$SDIST" > "$LIST" 2>"$OUT_DIR/tar.err"; then
+  red "AC-049: cannot evaluate — could not list ${SDIST}."
+  sed 's/^/    /' "$OUT_DIR/tar.err" 2>/dev/null | head -5
+  red "  Failing closed. An unlistable artefact cannot be cleared for publication."
+  exit 1
+fi
 
 printf 'sdist: %s\n' "$(basename "$SDIST")"
 printf 'entries: %s\n' "$(wc -l < "$LIST" | tr -d ' ')"
 
+# An empty or implausibly small listing means we did not really inspect the
+# artefact. The sdist always contains the project metadata and the package
+# itself, so their absence is proof the listing is not trustworthy.
+for required in "PKG-INFO" "pyproject.toml"; do
+  if ! grep -qF "$required" "$LIST"; then
+    red "AC-049: cannot evaluate — the file list contains no '${required}'."
+    red "  A real sdist always does. Failing closed rather than passing on a"
+    red "  truncated or unrecognised listing."
+    exit 1
+  fi
+done
+
 # Any path component that is exactly .env, or .env followed by a suffix
 # (.env.local, .env.production). Matched at any depth: a nested tests/.env is
 # just as fatal as one at the project root.
+#
+# grep's non-zero status here means "no match" (good) OR "could not read"
+# (bad). The list is already proven readable above, and the match set is
+# re-tested by the `if [ -n ... ]` test rather than by grep's exit code.
 HITS="$(grep -E '(^|/)\.env($|\.)' "$LIST" || true)"
 
 if [ -n "$HITS" ]; then
@@ -87,5 +115,12 @@ if [ -n "$HITS" ]; then
   exit 1
 fi
 
-green "AC-049 OK — no .env entry in $(basename "$SDIST")"
+ENTRIES="$(wc -l < "$LIST" | tr -d ' ')"
+if [ "$ENTRIES" -lt 5 ]; then
+  red "AC-049: cannot evaluate — only ${ENTRIES} entries in the file list."
+  red "  Failing closed. A real sdist has far more than this."
+  exit 1
+fi
+
+green "AC-049 OK — ${ENTRIES} entries inspected, no .env in $(basename "$SDIST")"
 exit 0

@@ -60,6 +60,13 @@ jobs:
       - run: npm run lint
       - run: npm run test:coverage
       - run: npm run build
+      # NFR-SEC-018 / WBS-019 (AC-050). Required, here as well as on the release
+      # path. The Python job got the equivalent sdist gate, so the asymmetry
+      # would otherwise be accidental. Without this, a PR that reverts the
+      # "files" entries merges green and is only discovered at publish time.
+      # Do NOT make this advisory.
+      - name: Certificates present in the packed tarball (NFR-SEC-018, AC-050)
+        run: bash scripts/check-tarball-certs.sh
 
   mcp:
     name: MCP Server

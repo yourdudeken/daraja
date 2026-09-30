@@ -57,7 +57,27 @@ printf 'tarball: %s\n' "$(basename "$TARBALL")"
 
 # --- 2. The file list must contain both certificates -------------------------
 LIST="$WORK/filelist.txt"
-tar tzf "$TARBALL" > "$LIST"
+# Guarded for the same reason as the sdist check: an unreadable archive yields an
+# empty list, and an empty list must never be able to read as "cleared".
+if ! tar tzf "$TARBALL" > "$LIST" 2>"$WORK/tar.err"; then
+  red "AC-050: cannot evaluate — could not list ${TARBALL}."
+  sed 's/^/    /' "$WORK/tar.err" 2>/dev/null | head -5
+  red "  Failing closed."
+  exit 1
+fi
+
+ENTRIES="$(wc -l < "$LIST" | tr -d ' ')"
+printf 'entries: %s\n' "$ENTRIES"
+if [ "$ENTRIES" -lt 3 ]; then
+  red "AC-050: cannot evaluate — only ${ENTRIES} entries in the file list. Failing closed."
+  exit 1
+fi
+# A packed package always contains its own manifest.
+if ! grep -qF "package/package.json" "$LIST"; then
+  red "AC-050: cannot evaluate — the file list contains no package/package.json."
+  red "  A real tarball always does. Failing closed."
+  exit 1
+fi
 
 missing=""
 for cert in $REQUIRED_CERTS; do

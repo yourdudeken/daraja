@@ -105,6 +105,10 @@ exclude = [
   "**/.mypy_cache",
   "/.ruff_cache",
   "**/.ruff_cache",
+  # Release tooling belongs to the repository, not to the installed
+  # distribution. The published sdist is what users download; shipping our own
+  # gate scripts inside it is noise at best and confusing at worst.
+  "/scripts",
 ]
 
 [tool.pytest.ini_options]
