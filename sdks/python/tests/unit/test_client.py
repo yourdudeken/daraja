@@ -2,6 +2,8 @@
 wrapper methods, service accessors, and lifecycle."""
 
 
+import logging
+
 import httpx
 import pytest
 import respx
@@ -14,7 +16,11 @@ from daraja.exceptions import (
     RateLimitError,
     TimeoutError,
 )
-from daraja.utils.idempotency import InMemoryIdempotencyStore
+from daraja.utils.idempotency import (
+    InMemoryIdempotencyStore,
+    caller_idempotency_key,
+    read_idempotency_cache_hit,
+)
 from daraja.utils.token_cache import InMemorySharedTokenCache
 
 BASE_URL = "https://sandbox.safaricom.co.ke"
@@ -247,8 +253,39 @@ class TestRequestPipeline:
         finally:
             client.close()
 
+    # ------------------------------------------------------------------
+    # WBS-032 — MANDATED REWRITE (TRD-12). The test this replaces is
+    # recorded here verbatim, because "these tests were asserting the bug"
+    # and "tests were updated" are different things and a reviewer must be
+    # able to tell which happened.
+    #
+    #   Historical (tests/unit/test_client.py:250-274, `test_idempotency_cache_hit`):
+    #
+    #       store = InMemoryIdempotencyStore()
+    #       client = make_client(enable_idempotency=True, idempotency_store=store)
+    #       client.stk_push(req)   # req has NO caller-supplied key
+    #       client.stk_push(req)
+    #       assert respx.calls.call_count == 2  # auth + one stk push
+    #
+    #   Why the old assertion was wrong: it asserted that a SECOND, byte-identical
+    #   `stk_push` with **no caller-supplied idempotency key** produces **no second
+    #   upstream request**. That is BUG-001 exactly. The old cache keyed on
+    #   `sha256(method:url:body)`, so it could not tell one payment from another:
+    #   two authorised payments with identical parameters collapsed into one, the
+    #   second merchant's `ConversationID` was silently the first one's, and no
+    #   error was raised because no HTTP request was ever made.
+    #   `FR-001` makes the default OFF and the key caller-supplied; `FR-002`
+    #   removes the header. So the correct count for that scenario is
+    #   **auth + two stk pushes = 3**, and that is what the first case below
+    #   asserts.
+    #
+    #   The historical assertion (`call_count == 2` for two identical keyless
+    #   calls) is NOT retained under any renaming. No case below asserts it.
+    # ------------------------------------------------------------------
+
     @respx.mock
-    def test_idempotency_cache_hit(self):
+    def test_two_identical_keyless_stk_pushes_both_go_upstream(self):
+        """The rewritten historical case: no caller key, so no dedup (AC-002)."""
         _mock_auth(respx)
         respx.post(f"{BASE_URL}/mpesa/stkpush/v1/processrequest").respond(200, json=_STK_RESPONSE)
         store = InMemoryIdempotencyStore()
@@ -266,9 +303,261 @@ class TestRequestPipeline:
                 "TransactionDesc": "desc",
             }
             client.stk_push(req)
-            # Second call should hit the idempotency cache (no new HTTP request)
             client.stk_push(req)
-            assert respx.calls.call_count == 2  # auth + one stk push
+            # auth + TWO stk pushes. Not 2.
+            assert respx.calls.call_count == 3
+            assert len(store) == 0, "a keyless request must not populate the cache"
+        finally:
+            client.close()
+            store.dispose()
+
+    @respx.mock
+    def test_two_payments_distinct_ocid_produce_two_upstream_calls(self, caplog):
+        """AC-001: identical bodies, distinct OriginatorConversationID."""
+        _mock_auth(respx)
+        stk = respx.post(f"{BASE_URL}/mpesa/b2c/v3/paymentrequest")
+        stk.side_effect = [
+            httpx.Response(
+                200,
+                json={
+                    "OriginatorConversationID": "oci-A",
+                    "ConversationID": "ci-A",
+                    "ResponseCode": "0",
+                    "ResponseDescription": "Accepted",
+                },
+            ),
+            httpx.Response(
+                200,
+                json={
+                    "OriginatorConversationID": "oci-B",
+                    "ConversationID": "ci-B",
+                    "ResponseCode": "0",
+                    "ResponseDescription": "Accepted",
+                },
+            ),
+        ]
+        store = InMemoryIdempotencyStore()
+        client = make_client(enable_idempotency=True, idempotency_store=store)
+        try:
+            base = {
+                "InitiatorName": "test-initiator",
+                "SecurityCredential": "test-cred",
+                "CommandID": "BusinessPayment",
+                "Amount": 100,
+                "PartyA": 600000,
+                "PartyB": 254708374149,
+                "Remarks": "salary",
+                "QueueTimeOutURL": "https://example.com/q",
+                "ResultURL": "https://example.com/r",
+            }
+            first = client.b2c({**base, "OriginatorConversationID": "oci-A"})
+            second = client.b2c({**base, "OriginatorConversationID": "oci-B"})
+            # Two upstream calls: auth + two b2c.
+            assert respx.calls.call_count == 3
+            assert first.ConversationID == "ci-A"
+            assert second.ConversationID == "ci-B"
+            assert first.ConversationID != second.ConversationID
+            # Neither served from cache.
+            assert read_idempotency_cache_hit(first) is None
+            assert read_idempotency_cache_hit(second) is None
+            assert "Idempotency cache hit" not in caplog.text
+        finally:
+            client.close()
+            store.dispose()
+
+    @respx.mock
+    def test_cache_is_off_by_default(self):
+        """AC-002 first half: the default must not serve from any cache."""
+        _mock_auth(respx)
+        respx.post(f"{BASE_URL}/mpesa/b2c/v3/paymentrequest").respond(200, json=_BIZ_RESPONSE)
+        client = make_client()  # no enable_idempotency at all
+        try:
+            assert client._idempotency_store is None, "default must build no store"
+            req = {
+                "OriginatorConversationID": "oci-same",
+                "InitiatorName": "test-initiator",
+                "SecurityCredential": "test-cred",
+                "CommandID": "BusinessPayment",
+                "Amount": 100,
+                "PartyA": 600000,
+                "PartyB": 254708374149,
+                "Remarks": "salary",
+                "QueueTimeOutURL": "https://example.com/q",
+                "ResultURL": "https://example.com/r",
+            }
+            client.b2c(req)
+            client.b2c(req)
+            assert respx.calls.call_count == 3  # auth + two b2c
+        finally:
+            client.close()
+
+    @respx.mock
+    def test_opt_in_caller_keyed_cache_hit_is_observable(self, caplog):
+        """AC-002 second half: opt-in + caller key -> hit, logged at INFO, on result."""
+        _mock_auth(respx)
+        respx.post(f"{BASE_URL}/mpesa/b2c/v3/paymentrequest").respond(200, json=_BIZ_RESPONSE)
+        store = InMemoryIdempotencyStore()
+        client = make_client(enable_idempotency=True, idempotency_store=store)
+        try:
+            req = {
+                "OriginatorConversationID": "oci-retry-me",
+                "InitiatorName": "test-initiator",
+                "SecurityCredential": "test-cred",
+                "CommandID": "BusinessPayment",
+                "Amount": 100,
+                "PartyA": 600000,
+                "PartyB": 254708374149,
+                "Remarks": "salary",
+                "QueueTimeOutURL": "https://example.com/q",
+                "ResultURL": "https://example.com/r",
+            }
+            with caplog.at_level(logging.INFO, logger="mpesa"):
+                fresh = client.b2c(req)
+                replay = client.b2c(req)
+
+            assert respx.calls.call_count == 2, "the replay must not reach Daraja"
+            assert read_idempotency_cache_hit(fresh) is None
+            hit = read_idempotency_cache_hit(replay)
+            assert hit is not None, "a replayed request must be distinguishable"
+            assert "oci-retry-me" in hit.key
+            assert hit.url.endswith("/mpesa/b2c/v3/paymentrequest")
+
+            # INFO with the key and the URL, not debug.
+            record = next(
+                (r for r in caplog.records if r.message == "Idempotency cache hit"), None
+            )
+            assert record is not None, "the hit must be logged"
+            assert record.levelno == logging.INFO
+            assert "oci-retry-me" in record.getMessage() + str(record.__dict__)
+        finally:
+            client.close()
+            store.dispose()
+
+    @respx.mock
+    def test_outbound_request_carries_no_x_idempotency_key_header(self):
+        """AC-003: the SDK sends no X-Idempotency-Key to any Daraja endpoint.
+
+        Driven over BOTH shapes deliberately:
+
+        * a **keyless** request (STK push, no OriginatorConversationID), and
+        * a **keyed** request (B2C, which has one).
+
+        The keyed case is the one that matters. An earlier version of this test
+        only used the keyless shape and passed while the header was being added
+        back in — the guard was `if key is not None`, so a keyless request never
+        exercised it. Asserting only the shape that cannot fail is not a guard.
+        """
+        _mock_auth(respx)
+        stk = respx.post(f"{BASE_URL}/mpesa/stkpush/v1/processrequest").respond(
+            200, json=_STK_RESPONSE
+        )
+        b2c = respx.post(f"{BASE_URL}/mpesa/b2c/v3/paymentrequest").respond(
+            200, json=_BIZ_RESPONSE
+        )
+        store = InMemoryIdempotencyStore()
+        client = make_client(enable_idempotency=True, idempotency_store=store)
+        try:
+            client.stk_push(
+                {
+                    "BusinessShortCode": 174379,
+                    "TransactionType": "CustomerPayBillOnline",
+                    "Amount": 1,
+                    "PartyA": 254708374149,
+                    "PartyB": 174379,
+                    "PhoneNumber": 254708374149,
+                    "CallBackURL": "https://example.com/cb",
+                    "AccountReference": "ref",
+                    "TransactionDesc": "desc",
+                }
+            )
+            client.b2c(
+                {
+                    "OriginatorConversationID": "oci-header-check",
+                    "InitiatorName": "test-initiator",
+                    "SecurityCredential": "test-cred",
+                    "CommandID": "BusinessPayment",
+                    "Amount": 100,
+                    "PartyA": 600000,
+                    "PartyB": 254708374149,
+                    "Remarks": "salary",
+                    "QueueTimeOutURL": "https://example.com/q",
+                    "ResultURL": "https://example.com/r",
+                }
+            )
+            sent = [c.request for c in stk.calls] + [c.request for c in b2c.calls]
+            assert len(sent) == 2, "the mock recorded an unexpected number of requests"
+            for req in sent:
+                assert "x-idempotency-key" not in {k.lower() for k in req.headers}, (
+                    f"X-Idempotency-Key reached the wire at {req.url}: "
+                    f"{dict(req.headers)}"
+                )
+            # The B2C request really did have a key to lose — otherwise this test
+            # would be asserting nothing.
+            assert caller_idempotency_key(
+                None, {"OriginatorConversationID": "oci-header-check"}
+            ) is not None
+        finally:
+            client.close()
+            store.dispose()
+
+    @respx.mock
+    def test_query_endpoint_results_are_never_cached(self, caplog):
+        """FR-001: ACCOUNT_BALANCE / TRANSACTION_STATUS / STK_QUERY hold markers only.
+
+        Driven through `_post` with an explicit key, because `AccountBalanceRequest`
+        carries no `OriginatorConversationID` — so without an explicit key there
+        would be nothing to test. The point is that even WITH a key, a query
+        endpoint's terminal response is never served from cache.
+        """
+        _mock_auth(respx)
+        bal = respx.post(f"{BASE_URL}/mpesa/accountbalance/v1/query")
+        store = InMemoryIdempotencyStore()
+        client = make_client(enable_idempotency=True, idempotency_store=store)
+        try:
+            payload = {"Initiator": "test-initiator", "CommandID": "AccountBalance"}
+            # The marker only exists WHILE the request is upstream, so it has to be
+            # observed from inside the served request, not after _post returns.
+            observed: list[bool] = []
+
+            def serve(request):
+                observed.append(store.is_in_flight("explicit:same-key"))
+                return httpx.Response(200, json=_BIZ_RESPONSE)
+
+            bal.side_effect = serve
+            with caplog.at_level(logging.INFO, logger="mpesa"):
+                client._post("ACCOUNT_BALANCE", payload, idempotency_key="same-key")
+                client._post("ACCOUNT_BALANCE", payload, idempotency_key="same-key")
+
+            assert observed == [True, True], "a marker must be held while in flight"
+
+            # Both went upstream — a query endpoint's body never varies, so a cached
+            # terminal response would be indistinguishable from a fresh answer.
+            assert bal.call_count == 2
+            assert respx.calls.call_count == 3
+            assert "Idempotency cache hit" not in caplog.text
+            # The marker is cleared once the request completes, successful or not.
+            assert len(store) == 0
+            assert not store.is_in_flight("explicit:same-key")
+        finally:
+            client.close()
+            store.dispose()
+
+    @respx.mock
+    def test_query_endpoint_marker_is_cleared_after_a_failure(self):
+        """A failed query must not leave the key pinned as in-flight forever."""
+        _mock_auth(respx)
+        respx.post(f"{BASE_URL}/mpesa/accountbalance/v1/query").respond(500, text="boom")
+        store = InMemoryIdempotencyStore()
+        client = make_client(enable_idempotency=True, idempotency_store=store)
+        try:
+            with pytest.raises(Exception):
+                client._post(
+                    "ACCOUNT_BALANCE",
+                    {"Initiator": "test-initiator", "CommandID": "AccountBalance"},
+                    idempotency_key="doomed",
+                )
+            assert len(store) == 0
+            assert not store.is_in_flight("explicit:doomed")
         finally:
             client.close()
             store.dispose()

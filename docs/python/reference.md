@@ -245,7 +245,7 @@ Pydantic model. All fields:
 | `retry_config` | `RetryConfig` | `RetryConfig()` | `max_retries=3`, `base_delay_ms=1000`, `max_delay_ms=30000` |
 | `circuit_breaker_config` | `dict \| None` | `None` | |
 | `rate_limiter_config` | `dict \| None` | `None` | |
-| `enable_idempotency` | `bool` | `True` | |
+| `enable_idempotency` | `bool` | `False` | Opt in to local duplicate suppression. Keyed only by a caller-supplied key or the caller's `OriginatorConversationID`, never by the request body. A hit is logged at INFO and exposed on the result via `read_idempotency_cache_hit()`. |
 | `logger` | `Logger \| None` | `None` | |
 | `tracer` | `Tracer \| None` | `None` | |
 | `idempotency_store` | `IdempotencyStore \| None` | `None` | |
@@ -369,7 +369,7 @@ From `daraja.utils`:
 | `create_tracer(logger)` | | Creates tracer instance |
 | `with_span(tracer, name, attrs)` | | Context manager for spans |
 
-Also exports: `StructuredLogger`, `Tracer`, `NoopTracer`, `Span`, `SpanContext`, `OpenTelemetryTracer`, `MetricsCollector`, `NoopMetricsCollector`, `PrometheusMetricsCollector`, `IdempotencyStore`, `InMemoryIdempotencyStore`, `generate_idempotency_key`, `SharedTokenCache`, `InMemorySharedTokenCache`, `RedisTokenCache`, `build_token_cache_key`.
+Also exports: `StructuredLogger`, `Tracer`, `NoopTracer`, `Span`, `SpanContext`, `OpenTelemetryTracer`, `MetricsCollector`, `NoopMetricsCollector`, `PrometheusMetricsCollector`, `IdempotencyStore`, `InMemoryIdempotencyStore`, `caller_idempotency_key`, `is_query_endpoint`, `mark_idempotency_cache_hit`, `read_idempotency_cache_hit`, `QUERY_ENDPOINTS`, `CACHE_HIT_ATTR`, `InFlightMarker`, `generate_idempotency_key` (deprecated — raises a `DeprecationWarning`; keys on request content, which is the defect), `SharedTokenCache`, `InMemorySharedTokenCache`, `RedisTokenCache`, `build_token_cache_key`.
 
 ---
 

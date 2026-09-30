@@ -6,7 +6,8 @@ export class B2CService {
   constructor(private readonly client: MpesaApiClient) {}
 
   async send(request: B2CRequest): Promise<B2CResponse> {
-    Validation.phoneNumber(request.PartyB, "PartyB");
+        Validation.originatorConversationId(request.OriginatorConversationID);
+Validation.phoneNumber(request.PartyB, "PartyB");
     Validation.amount(request.Amount, "Amount");
     const config = this.client.getConfig();
     const payload: B2CRequest = {

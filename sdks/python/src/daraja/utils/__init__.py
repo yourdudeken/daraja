@@ -86,9 +86,17 @@ def calculate_backoff(attempt: int, base_delay_ms: int = 1000, max_delay_ms: int
 from daraja.utils.batch import execute_batch, execute_batch_async
 from daraja.utils.certificates import get_cert_path
 from daraja.utils.idempotency import (
+    CACHE_HIT_ATTR,
+    QUERY_ENDPOINTS,
+    IdempotencyHit,
     IdempotencyStore,
+    InFlightMarker,
     InMemoryIdempotencyStore,
+    caller_idempotency_key,
     generate_idempotency_key,
+    is_query_endpoint,
+    mark_idempotency_cache_hit,
+    read_idempotency_cache_hit,
 )
 from daraja.utils.metrics import MetricsCollector, NoopMetricsCollector, PrometheusMetricsCollector
 from daraja.utils.structured_logger import StructuredLogger
@@ -131,9 +139,17 @@ __all__ = [
     "OpenTelemetryTracer",
     "create_tracer",
     "with_span",
+    "CACHE_HIT_ATTR",
+    "QUERY_ENDPOINTS",
+    "IdempotencyHit",
     "IdempotencyStore",
+    "InFlightMarker",
     "InMemoryIdempotencyStore",
+    "caller_idempotency_key",
     "generate_idempotency_key",
+    "is_query_endpoint",
+    "mark_idempotency_cache_hit",
+    "read_idempotency_cache_hit",
     "SharedTokenCache",
     "InMemorySharedTokenCache",
     "RedisTokenCache",

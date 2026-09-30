@@ -27,7 +27,7 @@ All two SDKs provide:
 - **Retry with exponential backoff + jitter** for transient failures.
 - **Circuit breaker** to fail fast when upstream is unhealthy.
 - **Endpoint rate limiting** across all request targets.
-- **Idempotency** to safely replay network-ambiguous requests.
+- **Optional duplicate suppression** to safely replay network-ambiguous requests. **Opt-in**, and keyed only by a caller-supplied idempotency key or the caller's `OriginatorConversationID` — never by the request body, and off by default.
 - **Webhooks** — typed request/response parsers and a manager for subscribing
   to STK, C2B, Result, B2B Express and more.
 - **Error taxonomy** — typed errors (`AuthenticationError`,

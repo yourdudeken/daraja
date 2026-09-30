@@ -1,7 +1,73 @@
 import logging
-from typing import Any, Literal, Protocol, runtime_checkable
+from typing import Annotated, Any, Literal, Protocol, runtime_checkable
 
-from pydantic import AliasChoices, BaseModel, ConfigDict, Field
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field, model_validator
+
+# FR-003 / AC-007 — `OriginatorConversationID` is the documented Daraja idempotency
+# key, and the single canonical statement of the rule lives here so every request
+# model that carries it says the same thing.
+#
+# Evidence: `AccountBalance.md:261` — Daraja rejects any request presenting an
+# `OriginatorConversationID` it has seen before, and performs that check FIRST,
+# ahead of the message-expiry check. `BusinessToCustomer.md:120` frames the same
+# field as the merchant's anti-disbursement control. `BusinessToCustomer.md:120`
+# and `AccountBalance.md:179` both make it caller-generated.
+#
+# The SDK never generates, defaults or auto-derives it: two authorised payments
+# with byte-identical bodies and different values are two distinct payments, and a
+# synthesised placeholder would silently merge them.
+ORIGINATOR_CONVERSATION_ID_DESCRIPTION = (
+    "The Daraja idempotency key. Daraja rejects any request presenting an "
+    "OriginatorConversationID it has seen before (errorCode 500.002.1001), and "
+    "checks it before the message-expiry check. Must be unique per LOGICAL "
+    "transaction - not per HTTP attempt (a retry of the same logical transaction "
+    "must reuse the same value), and never derived from the request body (two "
+    "distinct payments with identical bodies are still two distinct payments). "
+    "Reusing one value across two DIFFERENT payments is what causes Daraja to "
+    "reject the second. Caller-generated: this SDK never generates, defaults or "
+    "auto-derives it."
+)
+
+ORIGINATOR_CONVERSATION_ID_REQUIRED = (
+    "OriginatorConversationID is required — it is the Daraja idempotency key and "
+    "must be unique per logical transaction (not per HTTP attempt, and not derived "
+    "from the request body). A retry of the same logical transaction must reuse the "
+    "same value; reusing one value across two different payments makes Daraja "
+    "reject the second with errorCode 500.002.1001."
+)
+
+
+class _RequiresOriginatorConversationID(BaseModel):
+    """``FR-003`` / ``AC-007`` — require the key explicitly, and say why.
+
+    Two things are being enforced, and both are about *what the caller learns*:
+
+    * **Nothing is synthesised.** Pydantic's bare "Field required" names the field
+      but not the rule behind it, so a caller who omitted it is left guessing
+      whether a placeholder would do. ``FR-003`` requires the error to name the
+      field **and** the uniqueness rule; :data:`ORIGINATOR_CONVERSATION_ID_REQUIRED`
+      is that message.
+    * **A documented value is not rejected.** Only a missing or blank value is an
+      error. Any non-blank string the caller chose is accepted as given — the SDK
+      does not second-guess the caller's numbering scheme, because Daraja is the
+      authority on which values it has already seen.
+
+    Note this **does not** tighten validation (``BUG-003`` is inverted; ``FR-008`` /
+    ``FR-009`` mandate relaxation). The field was already required; only the
+    message changes.
+    """
+
+    @model_validator(mode="before")
+    @classmethod
+    def _check_originator_conversation_id(cls, data: Any) -> Any:
+        if not isinstance(data, dict):
+            return data
+        value = data.get("OriginatorConversationID")
+        if "OriginatorConversationID" not in data:
+            raise ValueError(ORIGINATOR_CONVERSATION_ID_REQUIRED)
+        if value is not None and isinstance(value, str) and not value.strip():
+            raise ValueError(ORIGINATOR_CONVERSATION_ID_REQUIRED)
+        return data
 
 
 @runtime_checkable
@@ -45,7 +111,12 @@ class MpesaConfig(BaseModel):
     retry_config: RetryConfig = RetryConfig()
     circuit_breaker_config: dict[str, Any] | None = None
     rate_limiter_config: dict[str, Any] | None = None
-    enable_idempotency: bool = True
+    # FR-001 / TRD-05 — default OFF. A local cache in front of a payment API that is
+    # on by default is a defect generator: it returns a stored response without an
+    # HTTP request, so no error is ever raised and the merchant's ConversationID is
+    # silently an earlier one's. Opting back in requires a caller-supplied key or
+    # the caller's OriginatorConversationID; the key is never derived from the body.
+    enable_idempotency: bool = False
     logger: Logger | None = None
     tracer: Any | None = None
     idempotency_store: Any | None = None
@@ -172,8 +243,20 @@ class C2BValidationResponse(BaseModel):
     ResultDesc: str
 
 
-class B2CRequest(BaseModel):
-    OriginatorConversationID: str
+class B2CRequest(_RequiresOriginatorConversationID):
+    """Business-to-customer / organisation-to-customer disbursement request.
+
+    ``OriginatorConversationID`` is **the Daraja idempotency key** — see
+    :attr:`OriginatorConversationID`.
+    """
+
+    OriginatorConversationID: Annotated[
+        str,
+        Field(
+            description=ORIGINATOR_CONVERSATION_ID_DESCRIPTION,
+            json_schema_extra={"x-daraja-idempotency-key": True},
+        ),
+    ]
     InitiatorName: str
     SecurityCredential: str
     CommandID: Literal["SalaryPayment", "BusinessPayment", "PromotionPayment"]
@@ -580,8 +663,20 @@ class IoTDeleteMessageResponse(BaseModel):
     body: dict[str, Any] | None = None
 
 
-class B2PochiRequest(BaseModel):
-    OriginatorConversationID: str
+class B2PochiRequest(_RequiresOriginatorConversationID):
+    """Business pay-to-pochi request.
+
+    ``OriginatorConversationID`` is **the Daraja idempotency key** — see
+    :attr:`OriginatorConversationID`.
+    """
+
+    OriginatorConversationID: Annotated[
+        str,
+        Field(
+            description=ORIGINATOR_CONVERSATION_ID_DESCRIPTION,
+            json_schema_extra={"x-daraja-idempotency-key": True},
+        ),
+    ]
     InitiatorName: str
     SecurityCredential: str
     CommandID: str = "BusinessPayToPochi"

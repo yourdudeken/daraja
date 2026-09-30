@@ -35,7 +35,23 @@ export interface MpesaConfig {
   logger?: Logger;
   rateLimiterConfig?: import("../utils/rate-limiter.js").RateLimiterConfig;
   circuitBreakerConfig?: import("../utils/circuit-breaker.js").CircuitBreakerConfig;
+  /**
+   * Opt in to the local duplicate-suppression cache. **Default `false`.**
+   *
+   * FR-001 / TRD-05: the cache is disabled by default and is keyed exclusively by
+   * caller-supplied data — an explicit idempotency key, or the caller's
+   * `OriginatorConversationID`. The request body is never hashed: two authorised
+   * payments with byte-identical bodies and different conversation IDs are two
+   * distinct payments, and a content-keyed cache returned the first payment's
+   * response for the second without making an HTTP request (BUG-001).
+   *
+   * A hit is logged at INFO with the key and URL and is readable off the returned
+   * object via `readIdempotencyCacheHit()`. Query endpoints
+   * (`ACCOUNT_BALANCE`, `TRANSACTION_STATUS`, `STK_QUERY`) never serve a cached
+   * result — their bodies legitimately never vary.
+   */
   enableIdempotency?: boolean;
+  /** A caller-supplied store. When provided, `enableIdempotency` is moot. */
   idempotencyStore?: IdempotencyStore;
   connectionPoolConfig?: ConnectionPoolConfig;
   tracer?: Tracer;
@@ -243,6 +259,17 @@ export interface C2BValidationResponse {
 export type B2CCommandID = "SalaryPayment" | "BusinessPayment" | "PromotionPayment";
 
 export interface B2CRequest {
+  /**
+   * The Daraja idempotency key. Daraja rejects any request presenting an
+   * OriginatorConversationID it has seen before (errorCode 500.002.1001), and
+   * checks it before the message-expiry check. Must be unique per LOGICAL
+   * transaction - not per HTTP attempt (a retry of the same logical transaction
+   * must reuse the same value), and never derived from the request body (two
+   * distinct payments with identical bodies are still two distinct payments).
+   * Reusing one value across two DIFFERENT payments is what causes Daraja to
+   * reject the second. Caller-generated: this SDK never generates, defaults or
+   * auto-derives it.
+   */
   OriginatorConversationID: string;
   InitiatorName?: string;
   SecurityCredential?: string;
@@ -706,6 +733,17 @@ export interface IoTDeleteMessageRequest {
 // B2Pochi
 // ============================================================
 export interface B2PochiRequest {
+  /**
+   * The Daraja idempotency key. Daraja rejects any request presenting an
+   * OriginatorConversationID it has seen before (errorCode 500.002.1001), and
+   * checks it before the message-expiry check. Must be unique per LOGICAL
+   * transaction - not per HTTP attempt (a retry of the same logical transaction
+   * must reuse the same value), and never derived from the request body (two
+   * distinct payments with identical bodies are still two distinct payments).
+   * Reusing one value across two DIFFERENT payments is what causes Daraja to
+   * reject the second. Caller-generated: this SDK never generates, defaults or
+   * auto-derives it.
+   */
   OriginatorConversationID: string;
   InitiatorName?: string;
   SecurityCredential?: string;
