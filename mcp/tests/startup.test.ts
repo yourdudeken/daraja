@@ -1,6 +1,6 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeAll } from "vitest";
 import { execFileSync, spawnSync } from "node:child_process";
-import { mkdtempSync, writeFileSync, rmSync } from "node:fs";
+import { existsSync, mkdtempSync, writeFileSync, rmSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -23,6 +23,27 @@ import { fileURLToPath } from "node:url";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const mcpDir = resolve(here, "..");
+const entrypoint = join(mcpDir, "dist", "index.js");
+
+// process.exit() is uncatchable from inside the process, so the exit code can
+// only be observed by running the real entrypoint as a child. That means the
+// compiled entrypoint, not the TypeScript source.
+//
+// CI runs `npm run test:coverage` BEFORE `npm run build`, so dist/ does not
+// exist on a clean checkout. This first version of the test assumed it did and
+// failed in CI with ERR_MODULE_NOT_FOUND while passing locally. The suite
+// therefore builds it if it is missing. It is not skipped when absent: skipping
+// would leave AC-040's startup half unverified in exactly the environment that
+// runs first.
+beforeAll(() => {
+  if (existsSync(entrypoint)) return;
+  execFileSync("npm", ["run", "build"], { cwd: mcpDir, stdio: "pipe" });
+  if (!existsSync(entrypoint)) {
+    throw new Error(
+      `build did not produce ${entrypoint}; the startup tests cannot run.`,
+    );
+  }
+}, 120_000);
 
 type Run = {
   /** null means the child was still running and had to be killed. */
@@ -47,7 +68,7 @@ function runEntrypoint(env: Record<string, string>, timeoutMs: number): Run {
         `  if (cb) { process.nextTick(cb, new Error("blocked")); return this; }`,
         `  throw new Error("blocked");`,
         `};`,
-        `await import(${JSON.stringify(join(mcpDir, "dist", "index.js"))});`,
+        `await import(${JSON.stringify(entrypoint)});`,
         `process.stderr.write("[netguard] REACHED END OF MODULE\\n");`,
       ].join("\n"),
     );
@@ -157,22 +178,13 @@ describe("startup fails closed on an invalid MPESA_ENVIRONMENT (AC-040)", () => 
 });
 
 describe("the dist build the tests exercise is current", () => {
-  it("dist/index.js exists and contains the ConfigError exit path", () => {
+  it("dist/index.js contains the ConfigError exit path", () => {
     // Guards against the suite silently testing a stale build: if someone
     // edits src/index.ts and forgets to rebuild, this fails loudly rather than
-    // letting the child-process test assert against old bytes.
-    const dist = join(mcpDir, "dist", "index.js");
-    let text: string;
-    try {
-      text = execFileSync(process.execPath, [
-        "-e",
-        `process.stdout.write(require("node:fs").readFileSync(${JSON.stringify(dist)}, "utf8"))`,
-      ]).toString();
-    } catch {
-      throw new Error(
-        `dist/index.js is missing. Run \`npm run build\` in mcp/ before the test suite.`,
-      );
-    }
+    // letting the child-process test assert against old bytes. The staleness
+    // this caught is real — a mutation to src/index.ts passed the whole suite
+    // until this check was added.
+    const text = readFileSync(entrypoint, "utf8");
     expect(text).toContain("ConfigError");
     expect(text).toContain("process.exit(1)");
   });
