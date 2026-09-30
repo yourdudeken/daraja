@@ -113,6 +113,41 @@ export function createConsoleLogger(name = "mpesa-sdk"): Logger {
 }
 
 export class Validation {
+  /**
+   * `FR-003` / `AC-007` — require `OriginatorConversationID` explicitly, and say why.
+   *
+   * The field is already required in the request types, so a TypeScript caller gets
+   * a compile error naming it. That error does *not* say what the field is for, and
+   * a caller who reaches for `as any`, a JSON payload, or plain JavaScript would
+   * otherwise send a synthesised placeholder. Daraja rejects any request presenting
+   * an `OriginatorConversationID` it has seen before (`AccountBalance.md:261`,
+   * errorCode `500.002.1001`), and checks it *before* the message-expiry check — so
+   * a wrong value is not a soft failure, it is a rejected payment.
+   *
+   * This **does not** reject a documented value: any non-blank string the caller
+   * chose is accepted as given, because Daraja is the authority on which values it
+   * has already seen and the SDK will not second-guess the caller's numbering. Nor
+   * does it tighten validation — `BUG-003` is inverted and `FR-008`/`FR-009`
+   * mandate relaxation; the field was always required, only the message is new.
+   *
+   * @param value the caller-supplied value.
+   * @param field the field name to quote in the error.
+   * @returns the value, trimmed.
+   * @throws {ValidationError} naming the field and the uniqueness rule.
+   */
+  static originatorConversationId(value: unknown, field = "OriginatorConversationID"): string {
+    if (typeof value !== "string" || value.trim().length === 0) {
+      throw new ValidationError(
+        `${field} is required — it is the Daraja idempotency key and must be unique ` +
+          `per logical transaction (not per HTTP attempt, and not derived from the ` +
+          `request body). A retry of the same logical transaction must reuse the same ` +
+          `value; reusing one value across two different payments makes Daraja reject ` +
+          `the second with errorCode 500.002.1001.`,
+      );
+    }
+    return value.trim();
+  }
+
   static requiredString(value: unknown, field: string): string {
     if (typeof value !== "string" || value.trim().length === 0) {
       throw new ValidationError(`${field} is required and must be a non-empty string`);
@@ -198,10 +233,18 @@ export {
   withSpan,
   withSpanSync,
 } from "./tracing.js";
-export type { IdempotencyStore } from "./idempotency.js";
+export type { IdempotencyHit, IdempotencyStore } from "./idempotency.js";
 export {
+  CACHE_HIT_KEY,
+  DEFAULT_TTL_MS,
+  IN_FLIGHT,
+  QUERY_ENDPOINT_PATHS,
   InMemoryIdempotencyStore,
+  callerIdempotencyKey,
   generateIdempotencyKey,
+  isQueryEndpointUrl,
+  markIdempotencyCacheHit,
+  readIdempotencyCacheHit,
 } from "./idempotency.js";
 export type { SharedTokenCache } from "./token-cache.js";
 export {

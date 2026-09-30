@@ -12,7 +12,7 @@ Disburses funds from a business account to a customer's M-Pesa wallet (e.g. sala
 
 | Field | Type | Required | Description |
 | --- | --- | --- | --- |
-| `OriginatorConversationID` | string | no | Unique ID for the conversation. Auto-generated if omitted. |
+| `OriginatorConversationID` | string | yes | **The Daraja idempotency key.** Must be unique per *logical* transaction — not per HTTP attempt (a retry of the same logical transaction reuses the same value), and never derived from the request body. Daraja rejects a value it has seen before (`500.002.1001`). Caller-generated: the SDK never generates, defaults or auto-derives it, and a request without one is rejected before it is sent. |
 | `InitiatorName` | string | auto | Username of the initiator. Auto-filled from SDK config if omitted. |
 | `SecurityCredential` | string | auto | Encrypted security credential. Auto-generated from `initiatorPassword` if omitted. |
 | `CommandID` | `"SalaryPayment"` \| `"BusinessPayment"` \| `"PromotionPayment"` | yes | Type of payment |

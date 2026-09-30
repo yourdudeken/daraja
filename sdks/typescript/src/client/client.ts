@@ -9,7 +9,14 @@ import { setupRetryInterceptor, mapAxiosError } from "../interceptors/retry.js";
 import { AuthenticationError } from "../errors/index.js";
 import { CircuitBreaker } from "../utils/circuit-breaker.js";
 import { TokenBucketRateLimiter, NoopRateLimiter, EndpointRateLimiterRouter } from "../utils/rate-limiter.js";
-import { IdempotencyStore, InMemoryIdempotencyStore, generateIdempotencyKey } from "../utils/idempotency.js";
+import {
+  DEFAULT_TTL_MS as IDEMPOTENCY_TTL_MS,
+  IdempotencyStore,
+  InMemoryIdempotencyStore,
+  callerIdempotencyKey,
+  isQueryEndpointUrl,
+  markIdempotencyCacheHit,
+} from "../utils/idempotency.js";
 import { SharedTokenCache, RedisTokenCache, buildTokenCacheKey } from "../utils/token-cache.js";
 
 const DEFAULT_TIMEOUT = 30000;
@@ -25,12 +32,20 @@ export class MpesaApiClient {
   private readonly endpoints: Record<string, string>;
   private readonly tracer: Tracer;
   private readonly idempotencyStore: IdempotencyStore | null;
+  private readonly idempotencyTtlMs: number;
   private readonly sharedTokenCache: SharedTokenCache | null;
 
   constructor(config: MpesaConfig) {
     this.logger = config.logger ?? noopLogger;
     this.tracer = config.tracer ?? createTracer(this.logger);
-    this.idempotencyStore = config.idempotencyStore ?? (config.enableIdempotency !== false ? new InMemoryIdempotencyStore() : null);
+    // FR-001 / TRD-05 — opt IN only. The previous expression was
+    // `config.enableIdempotency !== false`, which meant an *unset* flag turned
+    // the cache ON: the local cache was default-on, keyed by request content.
+    this.idempotencyStore =
+      config.idempotencyStore ?? (config.enableIdempotency === true ? new InMemoryIdempotencyStore() : null);
+    // FR-001 requires the store to be bounded; the cap lives in
+    // InMemoryIdempotencyStore. A caller-supplied store owns its own policy.
+    this.idempotencyTtlMs = IDEMPOTENCY_TTL_MS;
 
     if (config.sharedTokenCache) {
       this.sharedTokenCache = config.sharedTokenCache;
@@ -221,64 +236,120 @@ export class MpesaApiClient {
     return data.access_token;
   }
 
-  async request<T>(config: AxiosRequestConfig, operationName?: string): Promise<T> {
+  /**
+   * Issue one request.
+   *
+   * `idempotencyKey` is an **explicit caller-supplied** key for the local
+   * duplicate-suppression cache (FR-001). Pass `undefined` — the default — and the
+   * key is taken from the caller's `OriginatorConversationID` when the payload has
+   * one. Either way the key comes only from caller-supplied data; the request body
+   * is never hashed. `null` on both paths means no dedup.
+   *
+   * The outbound request carries **no** `X-Idempotency-Key` (FR-002): Daraja
+   * documents no such header — `grep -i idempotenc` over all 30 corpus documents
+   * returns 0 hits — so emitting it advertised a guarantee the platform does not
+   * make.
+   */
+  async request<T>(
+    config: AxiosRequestConfig,
+    operationName?: string,
+    idempotencyKey?: string,
+  ): Promise<T> {
     const spanName = `mpesa.http.${(config.method ?? "get").toLowerCase()}`;
 
-    const idempotencyKey = this.idempotencyStore && config.method?.toUpperCase() === "POST"
-      ? generateIdempotencyKey(config.method ?? "POST", config.url ?? "", config.data)
-      : null;
+    const store = this.idempotencyStore;
+    let key: string | null = null;
+    // A query endpoint's body legitimately never varies, so FR-001 forbids
+    // holding a terminal response for one: it gets in-flight markers only.
+    const cacheable = store !== null && !isQueryEndpointUrl(config.url);
+    const queryEndpoint = store !== null && isQueryEndpointUrl(config.url);
 
-    if (idempotencyKey) {
-      const cached = await this.idempotencyStore!.get(idempotencyKey);
-      if (cached !== null) {
-        this.logger.debug("Idempotency cache hit", { key: idempotencyKey, url: config.url });
-        return cached as T;
+    if (store && config.method?.toUpperCase() === "POST") {
+      key = callerIdempotencyKey(idempotencyKey, config.data);
+      if (key !== null) {
+        if (cacheable) {
+          const cached = await store.get(key);
+          if (cached !== null && cached !== undefined) {
+            // INFO, not debug: a replayed request must be visible at the level an
+            // operator actually runs, and the caller must be able to tell it from
+            // a fresh one (AC-002, TRD-05).
+            this.logger.info("Idempotency cache hit", { key, url: config.url });
+            // Shallow copy before marking. The cached object is shared by
+            // reference, so marking it in place would retroactively turn an
+            // *earlier, genuinely fresh* result into one that reads as cached —
+            // and mutating the replay's fields would corrupt what the next
+            // caller sees. The copy keeps each caller's result independent.
+            return markIdempotencyCacheHit(
+              { ...(cached as object) } as T,
+              { key, url: config.url ?? "" },
+            );
+          }
+        } else if (queryEndpoint) {
+          await store.markInFlight(key, this.idempotencyTtlMs);
+        }
       }
     }
 
-    return withSpan(this.tracer, spanName, async () => {
-      await this.rateLimiter.acquire(config.url);
+    try {
+      return await withSpan(this.tracer, spanName, async () => {
+        await this.rateLimiter.acquire(config.url);
 
-      return this.circuitBreaker.call<T>(async () => {
-        const token = await this.getAccessToken();
-        const headers: Record<string, string> = {
-          ...(config.headers as Record<string, string>),
-          Authorization: `Bearer ${token}`,
-        };
+        return this.circuitBreaker.call<T>(async () => {
+          const token = await this.getAccessToken();
+          const headers: Record<string, string> = {
+            ...(config.headers as Record<string, string>),
+            Authorization: `Bearer ${token}`,
+          };
+          // FR-002: no X-Idempotency-Key. It was the only header the SDK added
+          // that the corpus does not document, and it is removed outright — it is
+          // an outbound protocol behaviour, not a public API, so there is nothing
+          // to deprecate (TRD-04's exception).
 
-        if (idempotencyKey) {
-          headers["X-Idempotency-Key"] = idempotencyKey;
-        }
+          const mergedConfig: AxiosRequestConfig = {
+            ...config,
+            headers,
+          };
 
-        const mergedConfig: AxiosRequestConfig = {
-          ...config,
-          headers,
-        };
+          this.logger.debug("Sending request", {
+            method: config.method?.toUpperCase(),
+            url: config.url,
+          });
 
-        this.logger.debug("Sending request", {
-          method: config.method?.toUpperCase(),
-          url: config.url,
+          const response = await this.client.request<T>(mergedConfig);
+          const data = response.data;
+
+          if (key !== null && store) {
+            if (cacheable) {
+              // Shallow copy on the way in, for the same reason as the copy on the
+              // way out: the caller holds this exact object, and any field it
+              // mutates must not change what a later replay receives.
+              await store.set(key, { ...(data as object) }, this.idempotencyTtlMs);
+            } else {
+              // Query endpoints hold markers only, never results.
+              await store.clearInFlight(key);
+            }
+          }
+
+          return data;
         });
-
-        const response = await this.client.request<T>(mergedConfig);
-        const data = response.data;
-
-        if (idempotencyKey) {
-          await this.idempotencyStore!.set(idempotencyKey, data, 86400_000);
-        }
-
-        return data;
+      }, {
+        "http.method": (config.method ?? "GET").toUpperCase(),
+        "http.url": config.url ?? "",
+        "mpesa.operation": operationName ?? "",
+        "rpc.system": "mpesa",
       });
-    }, {
-      "http.method": (config.method ?? "GET").toUpperCase(),
-      "http.url": config.url ?? "",
-      "mpesa.operation": operationName ?? "",
-      "rpc.system": "mpesa",
-    });
+    } finally {
+      // A query endpoint's in-flight marker must not outlive the request,
+      // successful or not — otherwise one failed call would pin the key and every
+      // later identical query would report itself as still in flight.
+      if (queryEndpoint && key !== null && store) {
+        await store.clearInFlight(key);
+      }
+    }
   }
 
-  async post<T>(url: string, data?: unknown, operationName?: string): Promise<T> {
-    return this.request<T>({ method: "POST", url, data }, operationName);
+  async post<T>(url: string, data?: unknown, operationName?: string, idempotencyKey?: string): Promise<T> {
+    return this.request<T>({ method: "POST", url, data }, operationName, idempotencyKey);
   }
 
   async get<T>(url: string, params?: Record<string, unknown>, operationName?: string): Promise<T> {

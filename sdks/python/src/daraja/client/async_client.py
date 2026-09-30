@@ -1,7 +1,14 @@
 import asyncio
 import time
 import uuid
-from typing import Any, cast
+from typing import Any, TypeVar, cast
+
+from pydantic import BaseModel
+
+# Response models are wrapped by `_response`, which is generic so that the
+# out-of-band cache-hit marker can be attached without changing each
+# public method's declared return type.
+_ResponseT = TypeVar("_ResponseT", bound=BaseModel)
 from urllib.parse import urlencode
 
 import httpx
@@ -84,9 +91,15 @@ from daraja.utils.circuit_breaker import (
     CircuitBreaker,
 )
 from daraja.utils.idempotency import (
+    DEFAULT_TTL_MS as DEFAULT_IDEMPOTENCY_TTL_MS,
+    IdempotencyHit,
     IdempotencyStore,
     InMemoryIdempotencyStore,
-    generate_idempotency_key,
+    ResultDict,
+    caller_idempotency_key,
+    is_query_endpoint,
+    mark_idempotency_cache_hit,
+    read_idempotency_cache_hit,
 )
 from daraja.utils.rate_limiter import (
     EndpointRateLimiterRouter,
@@ -175,6 +188,9 @@ class AsyncMpesa:
             if config.enable_idempotency
             else None
         )
+        # FR-001 requires the store to be bounded; the cap lives in
+        # InMemoryIdempotencyStore. A caller-supplied store owns its own policy.
+        self._idempotency_ttl_ms = DEFAULT_IDEMPOTENCY_TTL_MS
 
         cb_cfg = config.circuit_breaker_config or {}
         self._circuit_breaker = CircuitBreaker(
@@ -247,19 +263,37 @@ class AsyncMpesa:
         url: str,
         json_data: dict[str, Any] | list[Any] | None = None,
         operation_name: str | None = None,
+        idempotency_key: str | None = None,
     ) -> dict[str, Any]:
+        """Issue one request. See :meth:`daraja.client.Mpesa._request`.
+
+        Identical semantics to the sync client: the key comes only from
+        caller-supplied data, a hit is logged at INFO and exposed on the result,
+        query endpoints hold in-flight markers only, and no ``X-Idempotency-Key``
+        reaches the wire (``FR-001`` · ``FR-002``).
+        """
         request_id = _generate_request_id()
 
-        idempotency_store = self._idempotency_store
-        idempotency_key: str | None = None
-        if idempotency_store is not None and method.upper() == "POST":
-            idempotency_key = generate_idempotency_key(method, url, json_data)
-            cached = idempotency_store.get(idempotency_key)
-            if cached is not None:
-                self._logger.debug(
-                    "Idempotency cache hit", extra={"key": idempotency_key, "url": url}
-                )
-                return cached
+        store = self._idempotency_store
+        key: str | None = None
+        cacheable = store is not None and not is_query_endpoint(operation_name)
+        query_endpoint = store is not None and is_query_endpoint(operation_name)
+
+        if store is not None and method.upper() == "POST":
+            key = caller_idempotency_key(idempotency_key, json_data)
+            if key is not None:
+                if cacheable:
+                    cached = store.get(key)
+                    if cached is not None:
+                        hit = IdempotencyHit(key=key, url=url)
+                        self._logger.info(
+                            "Idempotency cache hit",
+                            extra={"key": key, "url": url, "idempotency_key": key},
+                        )
+                        mark_idempotency_cache_hit(cached, hit)
+                        return cached
+                elif query_endpoint:
+                    store.mark_in_flight(key, self._idempotency_ttl_ms)
 
         while not self._rate_limiter.try_acquire(url):
             await asyncio.sleep(0.01)
@@ -279,8 +313,7 @@ class AsyncMpesa:
                         "Authorization": f"Bearer {token}",
                         "X-Request-ID": request_id,
                     }
-                    if idempotency_key:
-                        headers["X-Idempotency-Key"] = idempotency_key
+                    # FR-002: no X-Idempotency-Key on the wire. See the sync client.
                     response = await self._client.request(
                         method=method,
                         url=url,
@@ -325,9 +358,13 @@ class AsyncMpesa:
                         )
 
                     response.raise_for_status()
-                    json_result = cast(dict[str, Any], response.json())
-                    if idempotency_key and idempotency_store is not None:
-                        idempotency_store.set(idempotency_key, json_result, 86400_000)
+                    json_result = ResultDict(cast(dict[str, Any], response.json()))
+                    if key is not None and store is not None:
+                        if cacheable:
+                            store.set(key, json_result, self._idempotency_ttl_ms)
+                        else:
+                            # Query endpoints hold markers only, never results.
+                            store.clear_in_flight(key)
                     self._logger.debug(
                         "Request successful",
                         extra={
@@ -381,34 +418,58 @@ class AsyncMpesa:
             raise MpesaAPIError("Request failed after retries.", request_id=request_id)
 
         span_name = f"mpesa.http.{method.lower()}"
-        with with_span(
-            self._tracer,
-            span_name,
-            {
-                "http.method": method.upper(),
-                "http.url": url,
-                "mpesa.operation": operation_name or "",
-                "rpc.system": "mpesa",
-            },
-        ) as span:
-            result = await self._circuit_breaker.acall(do_request)
-            if isinstance(result, dict):
-                rc = result.get("ResponseCode", "")
-                if rc:
-                    span.set_attribute("mpesa.response_code", rc)
-            return result
+        try:
+            with with_span(
+                self._tracer,
+                span_name,
+                {
+                    "http.method": method.upper(),
+                    "http.url": url,
+                    "mpesa.operation": operation_name or "",
+                    "rpc.system": "mpesa",
+                },
+            ) as span:
+                result = await self._circuit_breaker.acall(do_request)
+                if isinstance(result, dict):
+                    rc = result.get("ResponseCode", "")
+                    if rc:
+                        span.set_attribute("mpesa.response_code", rc)
+                return result
+        finally:
+            # A query endpoint's in-flight marker must not outlive the request,
+            # successful or not. See the sync client.
+            if query_endpoint and key is not None and store is not None:
+                store.clear_in_flight(key)
+
+    def _response(self, model_cls: type[_ResponseT], result: dict[str, Any]) -> _ResponseT:
+        """Wrap a Daraja response body, carrying any cache-hit record.
+
+        See :meth:`daraja.client.Mpesa._response` — ``AC-002`` requires the hit to
+        be observable on the result, and ``WBS-056`` forbids declaring a field for
+        it, so it is attached out of band after model construction.
+        """
+        obj = model_cls(**result)
+        hit = read_idempotency_cache_hit(result)
+        if hit is not None:
+            mark_idempotency_cache_hit(obj, hit)
+        return obj
 
     async def _post(
-        self, endpoint_key: str, data: dict[str, Any] | list[Any]
+        self,
+        endpoint_key: str,
+        data: dict[str, Any] | list[Any],
+        idempotency_key: str | None = None,
     ) -> dict[str, Any]:
         url = get_full_url(self._config.environment, ENDPOINTS[endpoint_key])
-        return await self._request("POST", url, data)
+        # operation_name must be the endpoint key: it identifies the three query
+        # endpoints whose results must never be cached (FR-001).
+        return await self._request("POST", url, data, endpoint_key, idempotency_key)
 
     async def _get(self, endpoint_key: str, params: dict[str, Any]) -> dict[str, Any]:
         url = get_full_url(self._config.environment, ENDPOINTS[endpoint_key])
         if params:
             url = f"{url}?{urlencode(params)}"
-        return await self._request("GET", url)
+        return await self._request("GET", url, None, endpoint_key)
 
     async def stk_push(self, request: STKPushRequest | dict[str, Any]) -> STKPushResponse:
         if isinstance(request, dict):
@@ -420,7 +481,7 @@ class AsyncMpesa:
             )
             request.Timestamp = timestamp
         result = await self._post("STK_PUSH", request.model_dump())
-        return STKPushResponse(**result)
+        return self._response(STKPushResponse, result)
 
     async def stk_query(self, request: STKQueryRequest | dict[str, Any]) -> STKQueryResponse:
         if isinstance(request, dict):
@@ -432,7 +493,7 @@ class AsyncMpesa:
             )
             request.Timestamp = timestamp
         result = await self._post("STK_QUERY", request.model_dump())
-        return STKQueryResponse(**result)
+        return self._response(STKQueryResponse, result)
 
     async def c2b_register_url(
         self, request: C2BRegisterURLRequest | dict[str, Any]
@@ -440,25 +501,25 @@ class AsyncMpesa:
         if isinstance(request, dict):
             request = C2BRegisterURLRequest(**request)
         result = await self._post("C2B_REGISTER_URL", request.model_dump())
-        return C2BResponse(**result)
+        return self._response(C2BResponse, result)
 
     async def c2b_simulate(self, request: C2BSimulateRequest | dict[str, Any]) -> C2BResponse:
         if isinstance(request, dict):
             request = C2BSimulateRequest(**request)
         result = await self._post("C2B_SIMULATE", request.model_dump())
-        return C2BResponse(**result)
+        return self._response(C2BResponse, result)
 
     async def b2c(self, request: B2CRequest | dict[str, Any]) -> B2CResponse:
         if isinstance(request, dict):
             request = B2CRequest(**request)
         result = await self._post("B2C", request.model_dump())
-        return B2CResponse(**result)
+        return self._response(B2CResponse, result)
 
     async def reversal(self, request: ReversalRequest | dict[str, Any]) -> ReversalResponse:
         if isinstance(request, dict):
             request = ReversalRequest(**request)
         result = await self._post("REVERSAL", request.model_dump())
-        return ReversalResponse(**result)
+        return self._response(ReversalResponse, result)
 
     async def transaction_status(
         self, request: TransactionStatusRequest | dict[str, Any]
@@ -466,7 +527,7 @@ class AsyncMpesa:
         if isinstance(request, dict):
             request = TransactionStatusRequest(**request)
         result = await self._post("TRANSACTION_STATUS", request.model_dump())
-        return TransactionStatusResponse(**result)
+        return self._response(TransactionStatusResponse, result)
 
     async def account_balance(
         self, request: AccountBalanceRequest | dict[str, Any]
@@ -474,13 +535,13 @@ class AsyncMpesa:
         if isinstance(request, dict):
             request = AccountBalanceRequest(**request)
         result = await self._post("ACCOUNT_BALANCE", request.model_dump())
-        return AccountBalanceResponse(**result)
+        return self._response(AccountBalanceResponse, result)
 
     async def dynamic_qr(self, request: DynamicQRRequest | dict[str, Any]) -> DynamicQRResponse:
         if isinstance(request, dict):
             request = DynamicQRRequest(**request)
         result = await self._post("DYNAMIC_QR", request.model_dump())
-        return DynamicQRResponse(**result)
+        return self._response(DynamicQRResponse, result)
 
     async def business_buy_goods(
         self, request: BusinessBuyGoodsRequest | dict[str, Any]
@@ -495,7 +556,7 @@ class AsyncMpesa:
             if not request.Initiator and self._config.initiator_name:
                 request.Initiator = self._config.initiator_name
         result = await self._post("B2B", request.model_dump())
-        return BusinessGoodsResponse(**result)
+        return self._response(BusinessGoodsResponse, result)
 
     async def business_pay_bill(
         self, request: BusinessPayBillRequest | dict[str, Any]
@@ -510,7 +571,7 @@ class AsyncMpesa:
             if not request.Initiator and self._config.initiator_name:
                 request.Initiator = self._config.initiator_name
         result = await self._post("B2B", request.model_dump())
-        return BusinessGoodsResponse(**result)
+        return self._response(BusinessGoodsResponse, result)
 
     async def query_org_info(
         self, request: QueryOrgInfoRequest | dict[str, Any]
@@ -518,25 +579,25 @@ class AsyncMpesa:
         if isinstance(request, dict):
             request = QueryOrgInfoRequest(**request)
         result = await self._post("QUERY_ORG_INFO", request.model_dump())
-        return QueryOrgInfoResponse(**result)
+        return self._response(QueryOrgInfoResponse, result)
 
     async def imsi_query(self, request: IMSIRequest | dict[str, Any]) -> IMSIResponse:
         if isinstance(request, dict):
             request = IMSIRequest(**request)
         result = await self._post("IMSI", request.model_dump())
-        return IMSIResponse(**result)
+        return self._response(IMSIResponse, result)
 
     async def iot_manage(self, request: IoTSIMRequest | dict[str, Any]) -> IoTSIMResponse:
         if isinstance(request, dict):
             request = IoTSIMRequest(**request)
         result = await self._post("IOT_MANAGE", request.model_dump())
-        return IoTSIMResponse(**result)
+        return self._response(IoTSIMResponse, result)
 
     async def b2pochi(self, request: B2PochiRequest | dict[str, Any]) -> B2PochiResponse:
         if isinstance(request, dict):
             request = B2PochiRequest(**request)
         result = await self._post("B2POCHI", request.model_dump())
-        return B2PochiResponse(**result)
+        return self._response(B2PochiResponse, result)
 
     async def lipa_na_bonga_calculate(
         self, request: LipaNaBongaCalculateRequest | dict[str, Any]
@@ -544,7 +605,7 @@ class AsyncMpesa:
         if isinstance(request, dict):
             request = LipaNaBongaCalculateRequest(**request)
         result = await self._post("LIPA_NA_BONGA_CALCULATE", request.model_dump())
-        return LipaNaBongaCalculateResponse(**result)
+        return self._response(LipaNaBongaCalculateResponse, result)
 
     async def lipa_na_bonga_redeem(
         self, request: LipaNaBongaRedeemRequest | dict[str, Any]
@@ -552,7 +613,7 @@ class AsyncMpesa:
         if isinstance(request, dict):
             request = LipaNaBongaRedeemRequest(**request)
         result = await self._post("LIPA_NA_BONGA_REDEEM", request.model_dump())
-        return LipaNaBongaRedeemResponse(**result)
+        return self._response(LipaNaBongaRedeemResponse, result)
 
     async def pull_transactions_register(
         self, request: PullTransactionsRegisterRequest | dict[str, Any]
@@ -560,7 +621,7 @@ class AsyncMpesa:
         if isinstance(request, dict):
             request = PullTransactionsRegisterRequest(**request)
         result = await self._post("PULL_TRANSACTIONS_REGISTER", request.model_dump())
-        return PullTransactionsRegisterResponse(**result)
+        return self._response(PullTransactionsRegisterResponse, result)
 
     async def pull_transactions_query(
         self, request: PullTransactionsQueryRequest | dict[str, Any]
@@ -575,23 +636,23 @@ class AsyncMpesa:
         if isinstance(request, dict):
             request = SwapRequest(**request)
         result = await self._post("SWAP", request.model_dump())
-        return SwapResponse(**result)
+        return self._response(SwapResponse, result)
 
     async def bill_manager(self, request: dict[str, Any]) -> BillManagerResponse:
         result = await self._post("BILL_MANAGER", request)
-        return BillManagerResponse(**result)
+        return self._response(BillManagerResponse, result)
 
     async def b2b_express(self, request: B2BExpressRequest | dict[str, Any]) -> B2BExpressResponse:
         if isinstance(request, dict):
             request = B2BExpressRequest(**request)
         result = await self._post("B2B_EXPRESS", request.model_dump())
-        return B2BExpressResponse(**result)
+        return self._response(B2BExpressResponse, result)
 
     async def ratiba(self, request: RatibaRequest | dict[str, Any]) -> RatibaResponse:
         if isinstance(request, dict):
             request = RatibaRequest(**request)
         result = await self._post("RATIBA", request.model_dump())
-        return RatibaResponse(**result)
+        return self._response(RatibaResponse, result)
 
     async def tax_remittance(
         self, request: TaxRemittanceRequest | dict[str, Any]
@@ -599,7 +660,7 @@ class AsyncMpesa:
         if isinstance(request, dict):
             request = TaxRemittanceRequest(**request)
         result = await self._post("TAX_REMITTANCE", request.model_dump())
-        return TaxRemittanceResponse(**result)
+        return self._response(TaxRemittanceResponse, result)
 
     async def b2c_account_top_up(
         self, request: B2CAccountTopUpRequest | dict[str, Any]
@@ -607,7 +668,7 @@ class AsyncMpesa:
         if isinstance(request, dict):
             request = B2CAccountTopUpRequest(**request)
         result = await self._post("B2C_ACCOUNT_TOP_UP", request.model_dump())
-        return B2CAccountTopUpResponse(**result)
+        return self._response(B2CAccountTopUpResponse, result)
 
     async def mobile_center_fetch_offers(
         self, request: MobileCenterFetchOffersRequest | dict[str, Any]
@@ -623,7 +684,7 @@ class AsyncMpesa:
         if isinstance(request, dict):
             request = MobileCenterPurchaseRequest(**request)
         result = await self._post("MOBILE_CENTER_PURCHASE", request.model_dump())
-        return MobileCenterPurchaseResponse(**result)
+        return self._response(MobileCenterPurchaseResponse, result)
 
     async def mobile_center_status(
         self, request: MobileCenterStatusRequest | dict[str, Any]
@@ -642,7 +703,7 @@ class AsyncMpesa:
         if isinstance(request, dict):
             request = AgeOnNetworkRequest(**request)
         result = await self._post("AGE_ON_NETWORK", request.model_dump())
-        return AgeOnNetworkResponse(**result)
+        return self._response(AgeOnNetworkResponse, result)
 
     async def mobile_number_validation(
         self, request: MobileNumberValidationRequest | dict[str, Any]
@@ -650,7 +711,7 @@ class AsyncMpesa:
         if isinstance(request, dict):
             request = MobileNumberValidationRequest(**request)
         result = await self._post("MOBILE_NUMBER_VALIDATION", request.model_dump())
-        return MobileNumberValidationResponse(**result)
+        return self._response(MobileNumberValidationResponse, result)
 
     async def b2c_hakikisha(
         self, request: B2CHakikishaRequest | dict[str, Any]
@@ -664,7 +725,7 @@ class AsyncMpesa:
         _validate_phone(request.body.msisdn, "msisdn")
         _validate_shortcode(request.body.shortcode, "shortcode")
         result = await self._post("B2C_HAKIKISHA", request.model_dump())
-        return B2CHakikishaResponse(**result)
+        return self._response(B2CHakikishaResponse, result)
 
     async def rotate_credentials(self, consumer_key: str, consumer_secret: str) -> None:
         self._config.consumer_key = consumer_key

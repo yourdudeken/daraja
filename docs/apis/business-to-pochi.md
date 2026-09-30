@@ -12,6 +12,7 @@ Sends a payment from a business account to a Pochi La M-Pesa wallet (personal mi
 
 | Field | Type | Default | Description |
 | --- | --- | --- | --- |
+| `OriginatorConversationID` | string | — | **The Daraja idempotency key.** Must be unique per *logical* transaction — not per HTTP attempt (a retry of the same logical transaction reuses the same value), and never derived from the request body. Daraja rejects a value it has seen before (`500.002.1001`). Caller-generated: the SDK never generates, defaults or auto-derives it, and a request without one is rejected before it is sent. |
 | `InitiatorName` | string | — | Username of the initiator. Auto-filled from SDK config if omitted. |
 | `SecurityCredential` | string | — | Encrypted security credential. Auto-generated from `initiatorPassword` if omitted. |
 | `CommandID` | string | `"BusinessPayToPochi"` | Commands this is a Pochi payment |

@@ -185,7 +185,15 @@ The SDK tracks request rates and will surface a `RateLimitError` with the `retry
 
 ### Idempotency
 
-Enabled by default (`enable_idempotency=True`). Generates deterministic request IDs to prevent duplicate processing. Configure via `idempotency_store` (Python), or `idempotencyStore` (TS).
+**Disabled by default** (`enable_idempotency=False` / `enableIdempotency=false`). Opt in to suppress a duplicate locally.
+
+When enabled, the cache is keyed **exclusively by caller-supplied data** — an explicit idempotency key, or the caller's `OriginatorConversationID`. It is **never** keyed from the request body: two authorised payments with byte-identical bodies and different conversation IDs are two distinct payments, and a content-keyed cache returns the first payment's response for the second without ever making an HTTP request, so no error is raised and the merchant's `ConversationID` is silently the earlier one's.
+
+A cache hit is **observable**: it is logged at INFO with the key and URL, and it is readable on the returned object with `read_idempotency_cache_hit()` (Python) or `readIdempotencyCacheHit()` (TypeScript), so a replayed request is never indistinguishable from a fresh one.
+
+`ACCOUNT_BALANCE`, `TRANSACTION_STATUS` and `STK_QUERY` never serve a cached result — their bodies legitimately never vary, so a stored terminal response there would be indistinguishable from a fresh answer. The store holds in-flight markers for those instead.
+
+Configure the backend via `idempotency_store` (Python) or `idempotencyStore` (TS). The built-in store is bounded (1024 entries, LRU).
 
 ### Connection Pooling
 

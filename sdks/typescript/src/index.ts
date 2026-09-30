@@ -95,3 +95,14 @@ export * from "./errors/index.js";
 export * from "./webhooks/index.js";
 export * from "./middleware/index.js";
 export * from "./utils/index.js";
+// NFR-SEC-006: the environment allow-list is part of the public surface. A
+// consumer building a config from an untrusted env value needs the same
+// validation the client applies internally, and it is currently unreachable.
+export {
+  VALID_ENVIRONMENTS,
+  parseEnvironment,
+  getBaseUrl,
+  getEndpoints,
+  SANDBOX_BASE_URL,
+  PRODUCTION_BASE_URL,
+} from "./environment.js";

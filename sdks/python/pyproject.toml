@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "daraja-sdk-py"
-version = "0.0.4"
+version = "0.0.5"
 description = "Production-grade Python SDK for Safaricom M-Pesa Daraja API"
 readme = "README.md"
 license = { text = "MIT" }
@@ -74,6 +74,42 @@ dependencies = [
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/daraja"]
+
+# NFR-SEC-017 / WBS-018 (AC-049).
+#
+# A real `.env` was being packed into the sdist. Hatchling's VCS-based
+# exclusion reads the .gitignore *nearest the project root* — and
+# sdks/python/ has no .gitignore of its own, so the repository-root rules
+# (which do exclude `.env`) were never consulted. The result shipped live
+# MPESA_CONSUMER_KEY / CONSUMER_SECRET / PASSKEY / INITIATOR_PASSWORD to PyPI.
+#
+# These patterns are declared EXPLICITLY, on purpose. AC-049 requires the
+# exclusion to hold without `git check-ignore` behaving correctly: a VCS-ignore
+# dependency is exactly what failed here, and it would fail again for anyone who
+# builds from an exported tarball, a CI cache, or a shallow clone.
+[tool.hatch.build]
+exclude = [
+  # Never pack credentials. Matched at any depth, and with or without a suffix.
+  "/.env",
+  "/.env.*",
+  "**/.env",
+  "**/.env.*",
+  # Local test/typing artefacts picked up by a stray run.
+  "/.coverage",
+  "**/.coverage",
+  "/.hypothesis",
+  "**/.hypothesis",
+  "/.pytest_cache",
+  "**/.pytest_cache",
+  "/.mypy_cache",
+  "**/.mypy_cache",
+  "/.ruff_cache",
+  "**/.ruff_cache",
+  # Release tooling belongs to the repository, not to the installed
+  # distribution. The published sdist is what users download; shipping our own
+  # gate scripts inside it is noise at best and confusing at worst.
+  "/scripts",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -283,8 +283,8 @@ interface MpesaConfig {
   retryConfig?: RetryConfig;                 // { maxRetries, baseDelayMs, maxDelayMs }
   circuitBreakerConfig?: CircuitBreakerConfig;
   rateLimiterConfig?: RateLimiterConfig;
-  enableIdempotency?: boolean;
-  idempotencyStore?: IdempotencyStore;
+  enableIdempotency?: boolean;                 // default false — opt in
+  idempotencyStore?: IdempotencyStore;         // bounded, LRU, in-memory by default
   connectionPoolConfig?: ConnectionPoolConfig;
   logger?: Logger;
   logging?: LoggingHook;                     // onRequest, onResponse, onError hooks
@@ -384,7 +384,7 @@ From `daraja-sdk-ts`:
 | `noopLogger` | `Logger` | Silent logger |
 | `createConsoleLogger(name?)` | `(): Logger` | Console-based logger |
 
-Also exports: `Validation` class (static methods: `requiredString`, `requiredNumber`, `positiveNumber`, `optionalString`, `validUrl`, `phoneNumber`, `maxLength`, `oneOf`, `amount`), `StructuredLogger`, `StructuredLoggerConfig`, `LogLevel`, `getCertificate`, `MetricsCollector`, `MpesaMetrics`, `NoopMetricsCollector`, `PrometheusMetricsCollector`, `createMpesaMetrics`, `Tracer`, `TelemetrySpan`, `NoopTracer`, `NoopSpan`, `OpenTelemetryTracer`, `createTracer`, `withSpan`, `withSpanSync`, `IdempotencyStore`, `InMemoryIdempotencyStore`, `generateIdempotencyKey`, `SharedTokenCache`, `InMemorySharedTokenCache`, `RedisTokenCache`, `buildTokenCacheKey`.
+Also exports: `Validation` class (static methods: `requiredString`, `requiredNumber`, `positiveNumber`, `optionalString`, `validUrl`, `phoneNumber`, `maxLength`, `oneOf`, `amount`, `originatorConversationId`), `StructuredLogger`, `StructuredLoggerConfig`, `LogLevel`, `getCertificate`, `MetricsCollector`, `MpesaMetrics`, `NoopMetricsCollector`, `PrometheusMetricsCollector`, `createMpesaMetrics`, `Tracer`, `TelemetrySpan`, `NoopTracer`, `NoopSpan`, `OpenTelemetryTracer`, `createTracer`, `withSpan`, `withSpanSync`, `IdempotencyStore`, `InMemoryIdempotencyStore`, `callerIdempotencyKey`, `isQueryEndpointUrl`, `markIdempotencyCacheHit`, `readIdempotencyCacheHit`, `QUERY_ENDPOINT_PATHS`, `CACHE_HIT_KEY`, `generateIdempotencyKey` (deprecated), `SharedTokenCache`, `InMemorySharedTokenCache`, `RedisTokenCache`, `buildTokenCacheKey`.
 
 ---
 

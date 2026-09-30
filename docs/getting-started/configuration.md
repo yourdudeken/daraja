@@ -28,8 +28,8 @@ connection-pool subsystems:
 | `retryConfig` / `retry_config` | 3 retries, base 1000ms, max 30000ms | Exponential backoff + jitter |
 | `circuitBreakerConfig` / `circuit_breaker_config` | — | Fail fast when upstream is unhealthy |
 | `rateLimiterConfig` / `rate_limiter_config` | — | Per-endpoint rate limiting |
-| `enableIdempotency` / `enable_idempotency` | `true` | Replay-safe idempotent requests |
-| `idempotencyStore` / `idempotency_store` | in-memory | Persistent idempotency store backend |
+| `enableIdempotency` / `enable_idempotency` | `false` | Opt in to local duplicate suppression. **Off by default.** When enabled, the cache is keyed *only* by caller-supplied data — an explicit idempotency key or the caller's `OriginatorConversationID` — never by the request body. A hit is logged at INFO with the key and URL and is readable off the returned object. `ACCOUNT_BALANCE`, `TRANSACTION_STATUS` and `STK_QUERY` never serve a cached result. |
+| `idempotencyStore` / `idempotency_store` | in-memory (bounded, 1024 entries, LRU) | Custom idempotency store backend |
 | `connectionPoolConfig` / `connection_pool_config` | 50 max connections | Connection pool tuning |
 | `sharedTokenCache` / `shared_token_cache` | — | Share the OAuth token across instances |
 | `redisUrl` / `redis_url` (Python, TypeScript) | — | Redis connection URL for shared token cache |
