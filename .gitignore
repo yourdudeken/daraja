@@ -108,8 +108,5 @@ daraja/
 .opencode/
 AGENTS.md
 opencode.jsonc
-scripts/guard-lifecycle.sh
-scripts/validate.sh
 specs/
 plans/
-RISK.md
