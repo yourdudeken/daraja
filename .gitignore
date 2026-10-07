@@ -101,7 +101,7 @@ yarn.lock.cache
 *.rej
 
 # === daraja docs ===
-daraja/
+daraja-docs/
 
 # === swe ===
 # https://github.com/yourdudeken/swe
@@ -110,3 +110,4 @@ AGENTS.md
 opencode.jsonc
 specs/
 plans/
+RISK.md
