@@ -78,8 +78,8 @@ from daraja.models import (
     TransactionStatusResponse,
     _get_logger,
 )
-from daraja.utils import create_tracer, generate_password, generate_timestamp, with_span
 from daraja.services import _validate_phone, _validate_shortcode
+from daraja.utils import create_tracer, generate_password, generate_timestamp, with_span
 from daraja.utils.circuit_breaker import (
     CircuitBreaker,
 )
@@ -451,13 +451,13 @@ class AsyncMpesa:
     async def b2c(self, request: B2CRequest | dict[str, Any]) -> B2CResponse:
         if isinstance(request, dict):
             request.setdefault("SecurityCredential", self._config.security_credential)
-            request.setdefault("Initiator", self._config.initiator_name)
+            request.setdefault("InitiatorName", self._config.initiator_name)
             request = B2CRequest(**request)
         else:
             if not request.SecurityCredential and self._config.security_credential:
                 request.SecurityCredential = self._config.security_credential
-            if not request.Initiator and self._config.initiator_name:
-                request.Initiator = self._config.initiator_name
+            if not request.InitiatorName and self._config.initiator_name:
+                request.InitiatorName = self._config.initiator_name
         result = await self._post("B2C", request.model_dump())
         return B2CResponse(**result)
 

@@ -54,8 +54,11 @@ export function startHttpTransport(
   const transports = new Map<string, SSEServerTransport>();
 
   // --- auth middleware for MCP endpoints ---
-  app.use(`${API_PREFIX}/*`, (req, res, next) => {
-    if (req.method === "GET" && req.path === `${API_PREFIX}/health`) {
+  // Mounted at the API prefix, so req.path is relative (e.g. "/health").
+  // The health probe is intentionally public so orchestrators/load balancers
+  // can reach it without credentials.
+  app.use(API_PREFIX, (req, res, next) => {
+    if (req.method === "GET" && req.path === "/health") {
       return next();
     }
     if (!checkAuth(req, res, options)) {

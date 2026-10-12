@@ -58,7 +58,9 @@ export class EncryptedTokenStore {
     writeFileSync(this.filePath, JSON.stringify(stored), { mode: 0o600 });
     try {
       chmodSync(this.filePath, 0o600);
-    } catch {}
+    } catch {
+      /* ignore chmod failures on platforms/filesystems without POSIX permissions */
+    }
   }
 
   load(): { token: string; expiresAt: Date } | null {

@@ -75,13 +75,13 @@ describe("WebhookManager", () => {
     expect(handler).not.toHaveBeenCalled();
   });
 
-  it("handleEvent swallows handler errors", async () => {
+  it("handleEvent logs and rethrows handler errors", async () => {
     const manager = new WebhookManager();
     const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     manager.on("stk:callback", () => Promise.reject(new Error("handler failed")));
     await expect(
       manager.handleEvent({ type: "stk:callback", payload: stkCallbackPayload }),
-    ).resolves.toBeUndefined();
+    ).rejects.toThrow("handler failed");
     expect(errorSpy).toHaveBeenCalled();
     errorSpy.mockRestore();
   });
