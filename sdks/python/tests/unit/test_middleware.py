@@ -168,7 +168,7 @@ def test_fastapi_routes_b2b_result():
     from fastapi.testclient import TestClient
 
     app = FastAPI()
-    app.include_router(create_fastapi_router(manager))
+    app.include_router(create_fastapi_router(manager, verify_signature=False))
     client = TestClient(app)
 
     resp = client.post("/mpesa/webhook", json=b2b_result_body())
@@ -183,7 +183,7 @@ def test_fastapi_keeps_routing_b2c_result():
     from fastapi.testclient import TestClient
 
     app = FastAPI()
-    app.include_router(create_fastapi_router(manager))
+    app.include_router(create_fastapi_router(manager, verify_signature=False))
     client = TestClient(app)
 
     resp = client.post("/mpesa/webhook", json=b2c_result_body())
@@ -197,7 +197,7 @@ def test_flask_routes_b2b_result():
     from flask import Flask
 
     app = Flask(__name__)
-    app.register_blueprint(create_flask_blueprint(manager))
+    app.register_blueprint(create_flask_blueprint(manager, verify_signature=False))
 
     with app.test_client() as client:
         resp = client.post("/mpesa/webhook", json=b2b_result_body())
@@ -211,7 +211,7 @@ def test_flask_keeps_routing_b2c_result():
     from flask import Flask
 
     app = Flask(__name__)
-    app.register_blueprint(create_flask_blueprint(manager))
+    app.register_blueprint(create_flask_blueprint(manager, verify_signature=False))
 
     with app.test_client() as client:
         resp = client.post("/mpesa/webhook", json=b2c_result_body())
@@ -227,7 +227,7 @@ def test_django_routes_b2b_result():
         django_settings.configure()
 
     manager = RecordingManager()
-    view = create_django_view(manager)
+    view = create_django_view(manager, verify_signature=False)
 
     class FakeRequest:
         method = "POST"
@@ -249,7 +249,7 @@ def test_django_keeps_routing_b2c_result():
         django_settings.configure()
 
     manager = RecordingManager()
-    view = create_django_view(manager)
+    view = create_django_view(manager, verify_signature=False)
 
     class FakeRequest:
         method = "POST"
@@ -274,7 +274,7 @@ class TestDjangoMiddleware:
     def test_stk_callback_routing(self):
         self._configure_django()
         manager = RecordingManager()
-        view = create_django_view(manager)
+        view = create_django_view(manager, verify_signature=False)
 
         class FakeRequest:
             method = "POST"
@@ -290,7 +290,7 @@ class TestDjangoMiddleware:
     def test_account_balance_routing(self):
         self._configure_django()
         manager = RecordingManager()
-        view = create_django_view(manager)
+        view = create_django_view(manager, verify_signature=False)
 
         class FakeRequest:
             method = "POST"
@@ -305,7 +305,7 @@ class TestDjangoMiddleware:
     def test_transaction_status_routing(self):
         self._configure_django()
         manager = RecordingManager()
-        view = create_django_view(manager)
+        view = create_django_view(manager, verify_signature=False)
 
         class FakeRequest:
             method = "POST"
@@ -320,7 +320,7 @@ class TestDjangoMiddleware:
     def test_reversal_routing(self):
         self._configure_django()
         manager = RecordingManager()
-        view = create_django_view(manager)
+        view = create_django_view(manager, verify_signature=False)
 
         class FakeRequest:
             method = "POST"
@@ -335,7 +335,7 @@ class TestDjangoMiddleware:
     def test_c2b_confirmation_routing(self):
         self._configure_django()
         manager = RecordingManager()
-        view = create_django_view(manager)
+        view = create_django_view(manager, verify_signature=False)
 
         class FakeRequest:
             method = "POST"
@@ -350,7 +350,7 @@ class TestDjangoMiddleware:
     def test_c2b_validation_routing(self):
         self._configure_django()
         manager = RecordingManager()
-        view = create_django_view(manager)
+        view = create_django_view(manager, verify_signature=False)
 
         class FakeRequest:
             method = "POST"
@@ -365,7 +365,7 @@ class TestDjangoMiddleware:
     def test_invalid_json_returns_400(self):
         self._configure_django()
         manager = RecordingManager()
-        view = create_django_view(manager)
+        view = create_django_view(manager, verify_signature=False)
 
         class FakeRequest:
             method = "POST"
@@ -380,7 +380,7 @@ class TestDjangoMiddleware:
     def test_unknown_event_returns_400(self):
         self._configure_django()
         manager = RecordingManager()
-        view = create_django_view(manager)
+        view = create_django_view(manager, verify_signature=False)
 
         class FakeRequest:
             method = "POST"
@@ -485,7 +485,7 @@ class TestFlaskMiddleware:
 
         manager = RecordingManager()
         app = Flask(__name__)
-        app.register_blueprint(create_flask_blueprint(manager))
+        app.register_blueprint(create_flask_blueprint(manager, verify_signature=False))
 
         with app.test_client() as client:
             resp = client.post("/mpesa/webhook", json=_stk_body())
@@ -497,7 +497,7 @@ class TestFlaskMiddleware:
 
         manager = RecordingManager()
         app = Flask(__name__)
-        app.register_blueprint(create_flask_blueprint(manager))
+        app.register_blueprint(create_flask_blueprint(manager, verify_signature=False))
 
         with app.test_client() as client:
             resp = client.post("/mpesa/webhook", data="not-json", content_type="application/json")
@@ -508,7 +508,7 @@ class TestFlaskMiddleware:
 
         manager = RecordingManager()
         app = Flask(__name__)
-        app.register_blueprint(create_flask_blueprint(manager))
+        app.register_blueprint(create_flask_blueprint(manager, verify_signature=False))
 
         with app.test_client() as client:
             resp = client.post("/mpesa/webhook", json={"unrelated": True})

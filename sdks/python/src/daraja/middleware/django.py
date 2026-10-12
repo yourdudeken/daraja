@@ -7,7 +7,11 @@ if TYPE_CHECKING:
     from daraja import Mpesa
 
 
-def create_django_view(webhook_manager: WebhookManager, secret: str = "") -> Any:
+def create_django_view(
+    webhook_manager: WebhookManager,
+    secret: str | None = None,
+    verify_signature: bool = True,
+) -> Any:
     try:
         from django.http import HttpResponse, HttpResponseBadRequest, JsonResponse
         from django.views.decorators.csrf import csrf_exempt
@@ -25,12 +29,15 @@ def create_django_view(webhook_manager: WebhookManager, secret: str = "") -> Any
         except (ValueError, AttributeError):
             return HttpResponseBadRequest("Invalid JSON body")
 
-        if secret:
+        if verify_signature:
+            webhook_secret = secret or ""
+            if not webhook_secret:
+                return HttpResponse("Missing webhook secret", status=401)
             signature = request.headers.get("x-mpesa-signature", "")
             if not signature:
                 return HttpResponse("Missing signature", status=401)
             raw_body = request.body.decode("utf-8")
-            if not webhook_manager.verify_signature(raw_body, signature, secret):
+            if not webhook_manager.verify_signature(raw_body, signature, webhook_secret):
                 return HttpResponse("Invalid signature", status=401)
 
         if body.get("Body", {}).get("stkCallback"):

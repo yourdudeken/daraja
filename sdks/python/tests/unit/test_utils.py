@@ -80,7 +80,14 @@ class TestInMemorySharedTokenCache:
         assert cache.get("key-1") is None
 
     def test_build_token_cache_key(self):
-        assert build_token_cache_key("consumer-key") == "mpesa:token:consumer-key"
+        assert (
+            build_token_cache_key("consumer-key", "sandbox")
+            == "mpesa:token:sandbox:consumer-key"
+        )
+        assert (
+            build_token_cache_key("consumer-key", "production")
+            == "mpesa:token:production:consumer-key"
+        )
 
 
 class TestRedisTokenCache:

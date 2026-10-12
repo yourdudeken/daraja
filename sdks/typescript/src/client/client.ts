@@ -126,8 +126,8 @@ export class MpesaApiClient {
       this.logging?.onRequest?.({
         method: req.method?.toUpperCase() ?? "GET",
         url: req.url ?? "",
-        headers: req.headers as Record<string, string>,
-        body: req.data ? maskSensitiveData(req.data) : undefined,
+        headers: req.headers ? (maskSensitiveData(req.headers as Record<string, unknown>) as Record<string, string>) : (req.headers as Record<string, string>),
+        body: req.data ? maskSensitiveData(req.data as Record<string, unknown>) : undefined,
         timestamp: new Date(),
         requestId,
       });
@@ -144,7 +144,7 @@ export class MpesaApiClient {
         });
         this.logging?.onResponse?.({
           status: res.status,
-          body: res.data,
+          body: res.data ? (typeof res.data === "object" ? maskSensitiveData(res.data as Record<string, unknown>) : res.data) : res.data,
           durationMs: 0,
           timestamp: new Date(),
           requestId,
@@ -185,7 +185,7 @@ export class MpesaApiClient {
     }
 
     if (this.sharedTokenCache) {
-      const cacheKey = buildTokenCacheKey(this.config.consumerKey);
+      const cacheKey = buildTokenCacheKey(this.config.consumerKey, this.config.environment);
       const cached = await this.sharedTokenCache.get(cacheKey);
       if (cached) {
         this.tokenCache = { token: cached, expiresAt: new Date(Date.now() + 300000) };
@@ -210,7 +210,7 @@ export class MpesaApiClient {
     };
 
     if (this.sharedTokenCache) {
-      const cacheKey = buildTokenCacheKey(this.config.consumerKey);
+      const cacheKey = buildTokenCacheKey(this.config.consumerKey, this.config.environment);
       await this.sharedTokenCache.set(cacheKey, data.access_token, data.expires_in - 60);
     }
 
@@ -296,8 +296,16 @@ export class MpesaApiClient {
     return this.endpoints[name] ?? "";
   }
 
-  invalidateToken(): void {
+  async invalidateToken(): Promise<void> {
     this.tokenCache = null;
+    if (this.sharedTokenCache) {
+      try {
+        const cacheKey = buildTokenCacheKey(this.config.consumerKey, this.config.environment);
+        await this.sharedTokenCache.del?.(cacheKey);
+      } catch {
+        // ignore
+      }
+    }
   }
 
   async withTokenRefresh<T>(fn: () => Promise<T>): Promise<T> {
@@ -305,7 +313,7 @@ export class MpesaApiClient {
       return await fn();
     } catch (error) {
       if (error instanceof AuthenticationError) {
-        this.invalidateToken();
+        await this.invalidateToken();
         return await fn();
       }
       throw error;

@@ -35,13 +35,11 @@ from daraja.models import (
     BusinessBuyGoodsRequest,
     BusinessGoodsResponse,
     BusinessPayBillRequest,
+    C2BHakikishaRequest,
+    C2BHakikishaResponse,
     C2BRegisterURLRequest,
     C2BResponse,
     C2BSimulateRequest,
-    C2BHakikishaErrorResponse,
-    C2BHakikishaRequest,
-    C2BHakikishaResponse,
-    C2BHakikishaTokenResponse,
     DynamicQRRequest,
     DynamicQRResponse,
     IMSIRequest,
@@ -837,7 +835,10 @@ class C2BHakikishaHandler:
             return (
                 {
                     "error": "unauthorized",
-                    "errorMessage": "Missing or malformed Authorization header. Expected Basic authentication.",
+                    "errorMessage": (
+                        "Missing or malformed Authorization header. "
+                        "Expected Basic authentication."
+                    ),
                 },
                 401,
             )

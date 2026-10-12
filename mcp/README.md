@@ -49,10 +49,15 @@ MCP client config:
 ### HTTP/SSE Mode (remote access)
 
 ```bash
-DARAJA_MCP_MODE=http MCP_PORT=3999 npm start
+DARAJA_MCP_MODE=http MCP_PORT=3999 MCP_AUTH_TOKEN=change-me npm start
 ```
 
 Connect via SSE: `http://localhost:3999/api/v1/sse`
+
+Authentication is **required by default**. MCP clients must send the configured
+token as either `Authorization: Bearer <token>` or `X-API-Key: <token>` on every
+request. The `/api/v1/health` probe is intentionally public. To run without auth
+(not recommended outside local development), set `MCP_AUTH_REQUIRED=false`.
 
 All endpoints live under the `/api/v1` prefix:
 
@@ -103,7 +108,10 @@ docker build -t daraja-mcp ./mcp
 | `MPESA_TIMEOUT` | No | `30000` | Request timeout in ms |
 | `DARAJA_MCP_MODE` | No | `stdio` | `stdio` or `http` |
 | `MCP_PORT` | No | `3999` | HTTP port (http mode) |
-| `MCP_HOST` | No | `0.0.0.0` | HTTP bind host (http mode) |
+| `MCP_HOST` | No | `127.0.0.1` | HTTP bind host (http mode) |
+| `MCP_AUTH_REQUIRED` | No | `true` | Require auth on HTTP MCP endpoints |
+| `MCP_AUTH_TOKEN` | No | - | Bearer token / `X-API-Key` value (required when auth is enabled) |
+| `MCP_API_KEY` | No | - | Alias for `MCP_AUTH_TOKEN` |
 
 These map directly onto the TypeScript SDK's `MpesaConfig` (see
 [`mcp/src/config.ts`](src/config.ts)).

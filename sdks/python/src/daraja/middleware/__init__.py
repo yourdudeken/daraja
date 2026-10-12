@@ -19,8 +19,9 @@ __all__ = [
 
 def create_fastapi_router(
     webhook_manager: WebhookManager,
-    secret: str = "",
+    secret: str | None = None,
     mpesa_client: "Mpesa | None" = None,
+    verify_signature: bool = True,
 ) -> "APIRouter":
     try:
         from fastapi import APIRouter, HTTPException, Request
@@ -56,13 +57,16 @@ def create_fastapi_router(
     async def handle_webhook(request: Request) -> dict[str, Any]:
         body = await request.json()
 
-        if secret:
+        if verify_signature:
+            webhook_secret = secret or ""
+            if not webhook_secret:
+                raise HTTPException(status_code=401, detail="Missing webhook secret")
             signature = request.headers.get("x-mpesa-signature", "")
             if not signature:
                 raise HTTPException(status_code=401, detail="Missing signature")
             raw_body = await request.body()
             raw_body_str = raw_body.decode("utf-8")
-            if not webhook_manager.verify_signature(raw_body_str, signature, secret):
+            if not webhook_manager.verify_signature(raw_body_str, signature, webhook_secret):
                 raise HTTPException(status_code=401, detail="Invalid signature")
 
         if body.get("Body", {}).get("stkCallback"):

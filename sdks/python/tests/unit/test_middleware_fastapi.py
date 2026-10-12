@@ -28,11 +28,23 @@ def _sign(payload: dict, secret: str) -> str:
     return hmac.new(secret.encode(), raw, hashlib.sha256).hexdigest()
 
 
-def _make_app(manager=None, secret="", mpesa_client=None):
+def _make_app(manager=None, secret="", mpesa_client=None, verify_signature=None):
     from fastapi import FastAPI
 
+    if verify_signature is None:
+        # Routing tests pass no secret and must not have signature verification
+        # applied; signature tests pass a secret and expect verification.
+        verify_signature = bool(secret)
+
     app = FastAPI()
-    app.include_router(create_fastapi_router(manager or RecordingManager(), secret, mpesa_client))
+    app.include_router(
+        create_fastapi_router(
+            manager or RecordingManager(),
+            secret,
+            mpesa_client,
+            verify_signature=verify_signature,
+        )
+    )
     return app
 
 
@@ -265,6 +277,14 @@ class TestFastAPIRouter:
         with TestClient(app) as tc:
             resp = tc.post("/mpesa/webhook", json={"Something": "else"})
         assert resp.status_code == 400
+
+    def test_webhook_fails_closed_when_verification_enabled_without_secret(self):
+        manager = RecordingManager()
+        app = _make_app(manager, verify_signature=True)
+        with TestClient(app) as tc:
+            resp = tc.post("/mpesa/webhook", json=_stk_body())
+        assert resp.status_code == 401
+        assert not manager.emitted
 
     def test_webhook_missing_signature(self):
         app = _make_app(secret="s3cret")

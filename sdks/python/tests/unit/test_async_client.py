@@ -4,6 +4,7 @@ import pytest
 
 from daraja.client.async_client import AsyncMpesa
 from daraja.models import (
+    B2CRequest,
     BusinessPayBillRequest,
     MpesaConfig,
 )
@@ -186,6 +187,38 @@ async def test_async_b2c(monkeypatch):
         "Remarks": "salary", "QueueTimeOutURL": "https://e.com/to", "ResultURL": "https://e.com/r",
     })
     assert result.ResponseCode == "0"
+    await client.close()
+
+
+@pytest.mark.anyio
+async def test_async_b2c_injects_credentials_from_dict(monkeypatch):
+    client = AsyncMpesa(make_config())
+    captured = await capture_post(client, monkeypatch)
+    await client.b2c({
+        "OriginatorConversationID": "600997_Test_32et3241ed8yu",
+        "CommandID": "SalaryPayment", "Amount": 100,
+        "PartyA": 600984, "PartyB": 254708374149,
+        "Remarks": "salary", "QueueTimeOutURL": "https://e.com/to", "ResultURL": "https://e.com/r",
+    })
+    assert captured["data"]["InitiatorName"] == "test-initiator"
+    assert captured["data"]["SecurityCredential"] == "test-cred"
+    await client.close()
+
+
+@pytest.mark.anyio
+async def test_async_b2c_injects_credentials_when_model_omits(monkeypatch):
+    client = AsyncMpesa(make_config())
+    captured = await capture_post(client, monkeypatch)
+    request = B2CRequest(
+        OriginatorConversationID="600997_Test_32et3241ed8yu",
+        InitiatorName="", SecurityCredential="",
+        CommandID="SalaryPayment", Amount=100,
+        PartyA=600984, PartyB=254708374149,
+        Remarks="salary", QueueTimeOutURL="https://e.com/to", ResultURL="https://e.com/r",
+    )
+    await client.b2c(request)
+    assert captured["data"]["InitiatorName"] == "test-initiator"
+    assert captured["data"]["SecurityCredential"] == "test-cred"
     await client.close()
 
 
@@ -511,7 +544,7 @@ async def test_async_context_manager():
 @pytest.mark.anyio
 async def test_async_token_manager_shared_cache():
     cache = InMemorySharedTokenCache()
-    cache.set("mpesa:token:test-key", "cached-token", 300)
+    cache.set("mpesa:token:sandbox:test-key", "cached-token", 300)
     client = AsyncMpesa(make_config(shared_token_cache=cache))
     try:
         token = await client._token_manager.get_token()

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { mkdtempSync, writeFileSync, readFileSync, rmSync } from "node:fs";
+import { mkdtempSync, writeFileSync, existsSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
@@ -131,6 +131,12 @@ describe("InMemorySharedTokenCache", () => {
     expect(await cache.get("key-1")).toBeNull();
   });
 
+  it("deletes tokens", async () => {
+    await cache.set("key-1", "token-1", 60);
+    await cache.del("key-1");
+    expect(await cache.get("key-1")).toBeNull();
+  });
+
   it("dispose clears the cache", async () => {
     await cache.set("key-1", "token-1", 60);
     cache.dispose();
@@ -139,8 +145,13 @@ describe("InMemorySharedTokenCache", () => {
 });
 
 describe("RedisTokenCache", () => {
-  it("buildTokenCacheKey formats the key", () => {
-    expect(buildTokenCacheKey("consumer-key")).toBe("mpesa:token:consumer-key");
+  it("buildTokenCacheKey scopes the key by environment", () => {
+    expect(buildTokenCacheKey("consumer-key", "sandbox")).toBe(
+      "mpesa:token:sandbox:consumer-key",
+    );
+    expect(buildTokenCacheKey("consumer-key", "production")).toBe(
+      "mpesa:token:production:consumer-key",
+    );
   });
 
   it("returns null when redis is unavailable", async () => {
@@ -149,6 +160,7 @@ describe("RedisTokenCache", () => {
     await new Promise((r) => setTimeout(r, 50));
     expect(await cache.get("key")).toBeNull();
     await cache.set("key", "token", 60);
+    await cache.del("key");
     await cache.disconnect();
   });
 });
@@ -190,12 +202,13 @@ describe("EncryptedTokenStore", () => {
     expect(store.load()).toBeNull();
   });
 
-  it("clear empties the file", () => {
+  it("clear removes the persisted token file", () => {
     const filePath = join(dir, "token.json");
     const store = new EncryptedTokenStore({ filePath, encryptionKey: "secret-key" });
     store.save("my-token", new Date(Date.now() + 3600_000));
     store.clear();
-    expect(readFileSync(filePath, "utf8")).toBe("");
+    expect(existsSync(filePath)).toBe(false);
+    expect(store.load()).toBeNull();
   });
 
   it("clear does not throw when file missing", () => {

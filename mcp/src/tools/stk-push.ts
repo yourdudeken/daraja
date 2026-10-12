@@ -13,6 +13,11 @@ export const stkPushTool: Tool = {
     phoneNumber: { type: "string", description: "Customer phone number to receive STK prompt (format: 254XXXXXXXXX)" },
     accountReference: { type: "string", description: "Account reference (max 12 characters)" },
     transactionDesc: { type: "string", description: "Transaction description (max 13 characters)" },
+    callBackURL: { type: "string", description: "Callback URL (optional)" },
+    callbackURL: { type: "string", description: "Callback URL (optional, alternative)" },
+    CallbackURL: { type: "string", description: "Callback URL (optional, alternative)" },
+    transactionType: { type: "string", description: "Transaction type (e.g., CustomerBuyGoodsOnline, CustomerPayBillOnline)" },
+    TransactionType: { type: "string", description: "Transaction type (alternative casing)" },
   },
   handler: async (input, client) => {
     return client.stkPush.initiate({
@@ -23,8 +28,8 @@ export const stkPushTool: Tool = {
       PhoneNumber: input.phoneNumber as string,
       AccountReference: input.accountReference as string,
       TransactionDesc: input.transactionDesc as string,
-      CallBackURL: "",
-      TransactionType: "CustomerBuyGoodsOnline",
+      CallBackURL: (input.callBackURL || input.callbackURL || input.CallbackURL || "") as string,
+      TransactionType: (input.transactionType || input.TransactionType || "CustomerBuyGoodsOnline") as string,
     } as never);
   },
 };

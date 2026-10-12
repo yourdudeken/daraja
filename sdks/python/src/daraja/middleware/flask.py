@@ -8,7 +8,10 @@ if TYPE_CHECKING:
 
 
 def create_flask_blueprint(
-    webhook_manager: WebhookManager, secret: str = "", mpesa_client: "Mpesa | None" = None
+    webhook_manager: WebhookManager,
+    secret: str | None = None,
+    mpesa_client: "Mpesa | None" = None,
+    verify_signature: bool = True,
 ) -> Any:
     try:
         from flask import Blueprint, abort, jsonify, request
@@ -41,12 +44,15 @@ def create_flask_blueprint(
         if body is None:
             abort(400, description="Invalid JSON body")
 
-        if secret:
+        if verify_signature:
+            webhook_secret = secret or ""
+            if not webhook_secret:
+                abort(401, description="Missing webhook secret")
             signature = request.headers.get("x-mpesa-signature", "")
             if not signature:
                 abort(401, description="Missing signature")
             raw_body = request.get_data(as_text=True)
-            if not webhook_manager.verify_signature(raw_body, signature, secret):
+            if not webhook_manager.verify_signature(raw_body, signature, webhook_secret):
                 abort(401, description="Invalid signature")
 
         if body.get("Body", {}).get("stkCallback"):

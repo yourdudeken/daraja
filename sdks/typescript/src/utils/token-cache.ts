@@ -1,6 +1,7 @@
 export interface SharedTokenCache {
   get(key: string): Promise<string | null>;
   set(key: string, token: string, ttlSec: number): Promise<void>;
+  del?(key: string): Promise<void>;
 }
 
 export class InMemorySharedTokenCache implements SharedTokenCache {
@@ -23,6 +24,10 @@ export class InMemorySharedTokenCache implements SharedTokenCache {
 
   async set(key: string, token: string, ttlSec: number): Promise<void> {
     this.cache.set(key, { token, expiresAt: Date.now() + ttlSec * 1000 });
+  }
+
+  async del(key: string): Promise<void> {
+    this.cache.delete(key);
   }
 
   private cleanup(): void {
@@ -76,6 +81,14 @@ export class RedisTokenCache implements SharedTokenCache {
     } catch { /* ignore */ }
   }
 
+  async del(key: string): Promise<void> {
+    if (!this.client) await this.clientPromise;
+    if (!this.client) return;
+    try {
+      await this.client.del(key);
+    } catch { /* ignore */ }
+  }
+
   async disconnect(): Promise<void> {
     if (this.client) {
       try { await this.client.quit(); } catch { /* ignore */ }
@@ -83,6 +96,7 @@ export class RedisTokenCache implements SharedTokenCache {
   }
 }
 
-export function buildTokenCacheKey(consumerKey: string): string {
-  return `mpesa:token:${consumerKey}`;
+export function buildTokenCacheKey(consumerKey: string, environment?: string): string {
+  const env = environment || process.env.MPESA_ENVIRONMENT || "sandbox";
+  return `mpesa:token:${env}:${consumerKey}`;
 }

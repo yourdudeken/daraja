@@ -120,46 +120,72 @@ describe("Mock Server Tests (nock)", () => {
     expect(result.ResponseCode).toBe("0");
   });
 
-  it("should retry on server error and eventually succeed", async () => {
+  it("should retry idempotent requests on server error and eventually succeed", async () => {
     mockAuth("retry-token");
 
     nock(BASE)
-      .post("/mpesa/stkpush/v1/processrequest")
+      .get("/mpesa/stkpush/v1/query")
       .reply(500, { errorMessage: "Server Error" });
+    nock(BASE)
+      .get("/mpesa/stkpush/v1/query")
+      .reply(500, { errorMessage: "Server Error" });
+    nock(BASE)
+      .get("/mpesa/stkpush/v1/query")
+      .reply(200, {
+        ResponseCode: "0",
+        ResponseDescription: "Success",
+      });
+
+    const client = new MpesaApiClient({
+      consumerKey: "test-key",
+      consumerSecret: "test-secret",
+      environment: "sandbox",
+      passkey: "test-passkey",
+      retryConfig: { maxRetries: 2, baseDelayMs: 10, maxDelayMs: 50 },
+    } as MpesaConfig);
+
+    const result = await client.get<Record<string, unknown>>("/mpesa/stkpush/v1/query");
+
+    expect(result.ResponseCode).toBe("0");
+  });
+
+  it("should not retry non-idempotent (POST) requests", async () => {
+    mockAuth("no-retry-token");
+
     nock(BASE)
       .post("/mpesa/stkpush/v1/processrequest")
       .reply(500, { errorMessage: "Server Error" });
     nock(BASE)
       .post("/mpesa/stkpush/v1/processrequest")
       .reply(200, {
-        MerchantRequestID: "mri-retry",
-        CheckoutRequestID: "cri-retry",
         ResponseCode: "0",
         ResponseDescription: "Success",
-        CustomerMessage: "Success",
       });
 
-    const client = createClient();
-    const result = await client.post<Record<string, unknown>>(
-      "/mpesa/stkpush/v1/processrequest",
-      { Amount: 100, PhoneNumber: 254722111111 },
-    );
+    const client = new MpesaApiClient({
+      consumerKey: "test-key",
+      consumerSecret: "test-secret",
+      environment: "sandbox",
+      passkey: "test-passkey",
+      retryConfig: { maxRetries: 2, baseDelayMs: 10, maxDelayMs: 50 },
+    } as MpesaConfig);
 
-    expect(result.ResponseCode).toBe("0");
+    await expect(
+      client.post("/mpesa/stkpush/v1/processrequest", { Amount: 100 }),
+    ).rejects.toThrow();
+
+    // The remaining success interceptor must be unused: POST must not be retried.
+    expect(nock.pendingMocks()).toHaveLength(1);
   });
 
   it("should fail after max retries exceeded", async () => {
     mockAuth("max-retry-token");
 
-    nock(BASE)
-      .post("/mpesa/stkpush/v1/processrequest")
-      .reply(500, { errorMessage: "Server Error" });
-    nock(BASE)
-      .post("/mpesa/stkpush/v1/processrequest")
-      .reply(500, { errorMessage: "Server Error" });
-    nock(BASE)
-      .post("/mpesa/stkpush/v1/processrequest")
-      .reply(500, { errorMessage: "Server Error" });
+    for (let i = 0; i < 3; i++) {
+      nock(BASE)
+        .get("/mpesa/stkpush/v1/query")
+        .reply(500, { errorMessage: "Server Error" });
+    }
 
     const client = new MpesaApiClient({
       consumerKey: "test-key",
@@ -169,7 +195,7 @@ describe("Mock Server Tests (nock)", () => {
     } as MpesaConfig);
 
     await expect(
-      client.post("/mpesa/stkpush/v1/processrequest", { Amount: 100 }),
+      client.get("/mpesa/stkpush/v1/query"),
     ).rejects.toThrow();
 
   });

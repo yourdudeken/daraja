@@ -78,8 +78,8 @@ from daraja.models import (
     TransactionStatusResponse,
     _get_logger,
 )
-from daraja.utils import create_tracer, generate_password, generate_timestamp, with_span
 from daraja.services import _validate_phone, _validate_shortcode
+from daraja.utils import create_tracer, generate_password, generate_timestamp, with_span
 from daraja.utils.circuit_breaker import (
     CircuitBreaker,
 )
@@ -450,13 +450,27 @@ class AsyncMpesa:
 
     async def b2c(self, request: B2CRequest | dict[str, Any]) -> B2CResponse:
         if isinstance(request, dict):
+            request.setdefault("SecurityCredential", self._config.security_credential)
+            request.setdefault("InitiatorName", self._config.initiator_name)
             request = B2CRequest(**request)
+        else:
+            if not request.SecurityCredential and self._config.security_credential:
+                request.SecurityCredential = self._config.security_credential
+            if not request.InitiatorName and self._config.initiator_name:
+                request.InitiatorName = self._config.initiator_name
         result = await self._post("B2C", request.model_dump())
         return B2CResponse(**result)
 
     async def reversal(self, request: ReversalRequest | dict[str, Any]) -> ReversalResponse:
         if isinstance(request, dict):
+            request.setdefault("SecurityCredential", self._config.security_credential)
+            request.setdefault("Initiator", self._config.initiator_name)
             request = ReversalRequest(**request)
+        else:
+            if not request.SecurityCredential and self._config.security_credential:
+                request.SecurityCredential = self._config.security_credential
+            if not request.Initiator and self._config.initiator_name:
+                request.Initiator = self._config.initiator_name
         result = await self._post("REVERSAL", request.model_dump())
         return ReversalResponse(**result)
 
@@ -464,7 +478,14 @@ class AsyncMpesa:
         self, request: TransactionStatusRequest | dict[str, Any]
     ) -> TransactionStatusResponse:
         if isinstance(request, dict):
+            request.setdefault("SecurityCredential", self._config.security_credential)
+            request.setdefault("Initiator", self._config.initiator_name)
             request = TransactionStatusRequest(**request)
+        else:
+            if not request.SecurityCredential and self._config.security_credential:
+                request.SecurityCredential = self._config.security_credential
+            if not request.Initiator and self._config.initiator_name:
+                request.Initiator = self._config.initiator_name
         result = await self._post("TRANSACTION_STATUS", request.model_dump())
         return TransactionStatusResponse(**result)
 
@@ -472,7 +493,14 @@ class AsyncMpesa:
         self, request: AccountBalanceRequest | dict[str, Any]
     ) -> AccountBalanceResponse:
         if isinstance(request, dict):
+            request.setdefault("SecurityCredential", self._config.security_credential)
+            request.setdefault("Initiator", self._config.initiator_name)
             request = AccountBalanceRequest(**request)
+        else:
+            if not request.SecurityCredential and self._config.security_credential:
+                request.SecurityCredential = self._config.security_credential
+            if not request.Initiator and self._config.initiator_name:
+                request.Initiator = self._config.initiator_name
         result = await self._post("ACCOUNT_BALANCE", request.model_dump())
         return AccountBalanceResponse(**result)
 
@@ -605,7 +633,14 @@ class AsyncMpesa:
         self, request: B2CAccountTopUpRequest | dict[str, Any]
     ) -> B2CAccountTopUpResponse:
         if isinstance(request, dict):
+            request.setdefault("SecurityCredential", self._config.security_credential)
+            request.setdefault("Initiator", self._config.initiator_name)
             request = B2CAccountTopUpRequest(**request)
+        else:
+            if not request.SecurityCredential and self._config.security_credential:
+                request.SecurityCredential = self._config.security_credential
+            if not request.Initiator and self._config.initiator_name:
+                request.Initiator = self._config.initiator_name
         result = await self._post("B2C_ACCOUNT_TOP_UP", request.model_dump())
         return B2CAccountTopUpResponse(**result)
 

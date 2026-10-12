@@ -43,14 +43,15 @@ class TestWebhookManager:
         manager.emit("evt", {"x": 1})
         assert received == []
 
-    def test_handler_error_is_swallowed(self):
+    def test_handler_error_is_raised(self):
         manager = WebhookManager()
 
         def bad_handler(event_type, payload):
             raise RuntimeError("boom")
 
         manager.on("evt", bad_handler)
-        manager.emit("evt", {})  # should not raise
+        with pytest.raises(RuntimeError, match="boom"):
+            manager.emit("evt", {})
 
     def test_parse_stk_callback_success(self):
         manager = WebhookManager()

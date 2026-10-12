@@ -68,7 +68,7 @@ class TestTokenManager:
 
     def test_shared_cache_hit(self):
         cache = InMemorySharedTokenCache()
-        cache.set("mpesa:token:test-key", "cached-token", 300)
+        cache.set("mpesa:token:sandbox:test-key", "cached-token", 300)
         client = make_client(shared_token_cache=cache)
         try:
             assert client.get_access_token() == "cached-token"
