@@ -2,13 +2,14 @@ import { describe, it, expect, vi, afterEach } from "vitest";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { createServer } from "../src/server.js";
+import type { CreateServerOptions } from "../src/server.js";
 
 vi.mock("daraja-sdk-ts", () => ({
   Mpesa: vi.fn().mockImplementation(() => ({})),
 }));
 
-async function connectClient(mockClient: never) {
-  const server = createServer(mockClient);
+async function connectClient(mockClient: never, options?: CreateServerOptions) {
+  const server = createServer(mockClient, options);
   const client = new Client({ name: "test-client", version: "1.0.0" }, { capabilities: {} });
   const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
   await server.connect(serverTransport);
@@ -105,5 +106,99 @@ describe("createServer", () => {
 
     expect(result.isError).toBe(true);
     expect(result.content[0].text).toContain("string failure");
+  });
+
+  it("exposes only read-only tools in read-only mode", async () => {
+    const { client } = await connectClient({} as never, { policy: { readOnly: true } });
+
+    const listed = await client.listTools();
+    const names = listed.tools.map((t) => t.name);
+    expect(names).toContain("stk_query");
+    expect(names).toContain("health_check");
+    expect(names).not.toContain("stk_push");
+    expect(names).not.toContain("b2c_payment");
+    expect(names).not.toContain("reversal");
+
+    const call = await client.callTool({ name: "b2c_payment", arguments: {} });
+    expect(call.isError).toBe(true);
+    expect(call.content[0].text).toContain("Unknown tool");
+  });
+
+  it("restricts tools to the allowlist", async () => {
+    const { client } = await connectClient({} as never, {
+      policy: { readOnly: false, allowedTools: ["stk_query"] },
+    });
+
+    const listed = await client.listTools();
+    expect(listed.tools.map((t) => t.name)).toEqual(["stk_query"]);
+
+    const call = await client.callTool({ name: "stk_push", arguments: {} });
+    expect(call.isError).toBe(true);
+  });
+
+  it("emits a redacted audit entry for every tool call", async () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const mockClient = {
+      stkPush: {
+        initiate: vi.fn().mockResolvedValue({ CheckoutRequestID: "ws_CO_123" }),
+      },
+    } as never;
+    const { client } = await connectClient(mockClient);
+
+    await client.callTool({
+      name: "stk_push",
+      arguments: {
+        businessShortCode: 174379,
+        amount: 1000,
+        phoneNumber: "254712345678",
+        partyA: "600984",
+        partyB: "174379",
+      },
+    });
+
+    const audited = errorSpy.mock.calls
+      .map((call) => {
+        try {
+          return JSON.parse(String(call[0]));
+        } catch {
+          return null;
+        }
+      })
+      .find((entry) => entry && entry.event === "tool.call");
+    expect(audited).toBeTruthy();
+    expect(audited.tool).toBe("stk_push");
+    expect(audited.status).toBe("ok");
+    expect(audited.durationMs).toEqual(expect.any(Number));
+    expect(audited.args.phoneNumber).toContain("*");
+    expect(audited.args.phoneNumber).not.toBe("254712345678");
+
+    errorSpy.mockRestore();
+  });
+
+  it("emits an audit entry with the error for failed tool calls", async () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const mockClient = {
+      stkPush: {
+        initiate: vi.fn().mockRejectedValue(new Error("API failure")),
+      },
+    } as never;
+    const { client } = await connectClient(mockClient);
+
+    await client.callTool({ name: "stk_push", arguments: { amount: 1000 } });
+
+    const audited = errorSpy.mock.calls
+      .map((call) => {
+        try {
+          return JSON.parse(String(call[0]));
+        } catch {
+          return null;
+        }
+      })
+      .find((entry) => entry && entry.event === "tool.call");
+    expect(audited).toBeTruthy();
+    expect(audited.status).toBe("error");
+    expect(audited.error).toBe("API failure");
+
+    errorSpy.mockRestore();
   });
 });

@@ -13,6 +13,17 @@ export interface McpServerConfig {
   authRequired: boolean;
   authToken?: string;
   apiKey?: string;
+  /** Every configured credential (deduplicated). Sent as `Authorization: Bearer` or `X-API-Key`. */
+  tokens: string[];
+  /** Per-IP request limiting; undefined disables rate limiting. */
+  rateLimit?: { windowMs: number; max: number };
+}
+
+export interface ToolPolicy {
+  /** When true, only read-only tools are exposed to clients. */
+  readOnly: boolean;
+  /** When set, only the listed tools are exposed (intersected with readOnly). */
+  allowedTools?: string[];
 }
 
 export function loadConfig(): MpesaConfig {
@@ -59,6 +70,23 @@ export function loadMcpServerConfig(): McpServerConfig {
   const authRequired = process.env.MCP_AUTH_REQUIRED !== "false";
   const authToken = process.env.MCP_AUTH_TOKEN || process.env.MCP_API_KEY;
   const apiKey = process.env.MCP_API_KEY || process.env.MCP_AUTH_TOKEN;
+  const extraTokens = (process.env.MCP_AUTH_TOKENS ?? "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const tokens = [...new Set([authToken, apiKey, ...extraTokens].filter((t): t is string => Boolean(t)))];
+
+  // Fail fast instead of starting a server where every request returns 401.
+  if (authRequired && tokens.length === 0) {
+    throw new ConfigError(
+      "MCP_AUTH_REQUIRED is true (the default) but no credential is configured. " +
+        "Set MCP_AUTH_TOKEN, MCP_API_KEY, or MCP_AUTH_TOKENS — or set MCP_AUTH_REQUIRED=false " +
+        "for local development only (not recommended).",
+    );
+  }
+
+  const rateMax = parseInt(process.env.MCP_RATE_LIMIT_MAX || "300", 10);
+  const rateWindow = parseInt(process.env.MCP_RATE_LIMIT_WINDOW_MS || "60000", 10);
 
   return {
     port,
@@ -66,5 +94,16 @@ export function loadMcpServerConfig(): McpServerConfig {
     authRequired,
     authToken,
     apiKey,
+    tokens,
+    rateLimit: rateMax > 0 ? { windowMs: rateWindow, max: rateMax } : undefined,
   };
+}
+
+export function loadToolPolicy(): ToolPolicy {
+  const readOnly = process.env.MCP_READONLY_MODE === "true";
+  const allowed = (process.env.MCP_ALLOWED_TOOLS ?? "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  return { readOnly, allowedTools: allowed.length > 0 ? allowed : undefined };
 }

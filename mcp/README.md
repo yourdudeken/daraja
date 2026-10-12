@@ -54,10 +54,16 @@ DARAJA_MCP_MODE=http MCP_PORT=3999 MCP_AUTH_TOKEN=change-me npm start
 
 Connect via SSE: `http://localhost:3999/api/v1/sse`
 
-Authentication is **required by default**. MCP clients must send the configured
-token as either `Authorization: Bearer <token>` or `X-API-Key: <token>` on every
-request. The `/api/v1/health` probe is intentionally public. To run without auth
-(not recommended outside local development), set `MCP_AUTH_REQUIRED=false`.
+Authentication is **required by default**. MCP clients must send a configured
+credential as either `Authorization: Bearer <token>` or `X-API-Key: <token>` on
+every request. One or more credentials can be configured via `MCP_AUTH_TOKEN`,
+`MCP_API_KEY` (aliases), or `MCP_AUTH_TOKENS` (comma-separated list). When
+several credentials are configured, each SSE session is bound to the credential
+that created it: a different credential cannot post to that session
+(`403`). The server refuses to start when auth is required but no credential is
+configured — it never starts in a mode where every request would 401. The
+`/api/v1/health` probe is intentionally public. To run without auth (not
+recommended outside local development), set `MCP_AUTH_REQUIRED=false`.
 
 All endpoints live under the `/api/v1` prefix:
 
@@ -72,6 +78,12 @@ All endpoints live under the `/api/v1` prefix:
 ```bash
 docker compose up mcp
 ```
+
+The container binds `0.0.0.0` so the published port and platform networking
+(Render/Railway/Fly.io) can reach it — the Docker network is the trust
+boundary. The compose file publishes the port on the host's loopback interface
+(`127.0.0.1:3999`) by default; change it to `"${MCP_PORT:-3999}:3999"` to
+expose all host interfaces (keep `MCP_AUTH_REQUIRED=true` in that case).
 
 The MCP depends on the **published** `daraja-sdk-ts` package from the npm
 registry — the exact version is pinned in
@@ -108,13 +120,42 @@ docker build -t daraja-mcp ./mcp
 | `MPESA_TIMEOUT` | No | `30000` | Request timeout in ms |
 | `DARAJA_MCP_MODE` | No | `stdio` | `stdio` or `http` |
 | `MCP_PORT` | No | `3999` | HTTP port (http mode) |
-| `MCP_HOST` | No | `127.0.0.1` | HTTP bind host (http mode) |
+| `MCP_HOST` | No | `127.0.0.1` | HTTP bind host (http mode; container image sets `0.0.0.0`) |
 | `MCP_AUTH_REQUIRED` | No | `true` | Require auth on HTTP MCP endpoints |
-| `MCP_AUTH_TOKEN` | No | - | Bearer token / `X-API-Key` value (required when auth is enabled) |
+| `MCP_AUTH_TOKEN` | No | - | Credential accepted as `Bearer` token or `X-API-Key` |
 | `MCP_API_KEY` | No | - | Alias for `MCP_AUTH_TOKEN` |
+| `MCP_AUTH_TOKENS` | No | - | Comma-separated list of additional credentials |
+| `MCP_RATE_LIMIT_MAX` | No | `300` | Max requests per IP per window (`0` disables) |
+| `MCP_RATE_LIMIT_WINDOW_MS` | No | `60000` | Rate-limit window in ms |
+| `MCP_READONLY_MODE` | No | `false` | Expose only read-only tools (no payments/reversals/C2B registration) |
+| `MCP_ALLOWED_TOOLS` | No | - | Comma-separated tool allowlist (intersected with read-only mode) |
 
 These map directly onto the TypeScript SDK's `MpesaConfig` (see
 [`mcp/src/config.ts`](src/config.ts)).
+
+## Security
+
+- **Auth is fail-closed and fail-fast**: auth is required by default, the
+  server refuses to start without a credential, credentials are compared in
+  constant time, and unauthenticated requests are rejected before any JSON body
+  is parsed.
+- **Per-IP rate limiting** (`MCP_RATE_LIMIT_MAX` / `MCP_RATE_LIMIT_WINDOW_MS`)
+  protects the auth endpoints against brute force; the health probe is exempt
+  from auth (but not from rate limiting).
+- **Session binding**: when multiple credentials are configured, an SSE session
+  can only be driven by the credential that created it.
+- **Read-only mode / allowlist**: set `MCP_READONLY_MODE=true` to expose only
+  inspection tools (`stk_query`, `transaction_status`, `account_balance`,
+  `dynamic_qr`, `query_org_info`, `validate_phone`, `imsi_lookup`,
+  `sim_swap_check`, `age_on_network`, `generate_timestamp`, `health_check`,
+  `c2b_hakikisha`, `b2c_hakikisha`). `MCP_ALLOWED_TOOLS` restricts the surface
+  further. This is the recommended posture for AI agents, which are exposed to
+  prompt injection — a read-only agent cannot move money.
+- **Audit trail**: every tool call is written as one JSON line to stderr with
+  timestamps, status, duration, and call arguments. Secrets are fully redacted
+  and phone numbers are masked before anything is logged.
+- **TLS**: HTTP mode is plaintext; terminate TLS at your reverse proxy (the
+  Docker image is designed for that) when exposing it beyond localhost.
 
 ## Available Tools
 

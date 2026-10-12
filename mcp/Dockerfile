@@ -33,7 +33,11 @@ COPY --from=builder /app/node_modules/ ./node_modules/
 ENV NODE_ENV=production
 ENV DARAJA_MCP_MODE=http
 ENV MCP_PORT=3999
-ENV MCP_HOST=127.0.0.1
+# Bind all container interfaces: the Docker network / published port is the
+# trust boundary, and 127.0.0.1 inside the container would make the published
+# port unreachable from the host. Keep MCP_AUTH_REQUIRED=true (default) so the
+# exposed endpoint still requires a credential.
+ENV MCP_HOST=0.0.0.0
 ENV MCP_AUTH_REQUIRED=true
 
 # Create non-root user

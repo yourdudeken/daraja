@@ -6,13 +6,20 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "${MCP_PORT:-3999}:3999"
+      # Bind to loopback on the host by default: safe for local use, and a
+      # reverse proxy running on the same host can still reach it. Change to
+      # "${MCP_PORT:-3999}:3999" (all interfaces) to expose MCP_AUTH-required
+      # endpoints directly to the network.
+      - "127.0.0.1:${MCP_PORT:-3999}:3999"
     environment:
       - DARAJA_MCP_MODE=http
       - MCP_PORT=3999
-      - MCP_HOST=127.0.0.1
+      - MCP_HOST=0.0.0.0
       - MCP_AUTH_REQUIRED=${MCP_AUTH_REQUIRED:-true}
       - MCP_AUTH_TOKEN=${MCP_AUTH_TOKEN:-}
+      - MCP_AUTH_TOKENS=${MCP_AUTH_TOKENS:-}
+      - MCP_READONLY_MODE=${MCP_READONLY_MODE:-false}
+      - MCP_ALLOWED_TOOLS=${MCP_ALLOWED_TOOLS:-}
       - MPESA_CONSUMER_KEY=${MPESA_CONSUMER_KEY}
       - MPESA_CONSUMER_SECRET=${MPESA_CONSUMER_SECRET}
       - MPESA_ENVIRONMENT=${MPESA_ENVIRONMENT:-sandbox}

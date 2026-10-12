@@ -1,4 +1,5 @@
 import type { Mpesa } from "daraja-sdk-ts";
+import type { ToolPolicy } from "../config.js";
 import { stkPushTool } from "./stk-push.js";
 import { stkQueryTool } from "./stk-query.js";
 import { c2bRegisterTool } from "./c2b-register.js";
@@ -30,6 +31,39 @@ export interface Tool {
   inputSchema: Record<string, unknown>;
   required?: string[];
   handler: (input: Record<string, unknown>, client: Mpesa) => Promise<unknown>;
+}
+
+/**
+ * Tools that only read/inspect state and never initiate a payment, movement of
+ * money, configuration change, or message send. These are safe to expose in
+ * read-only mode. Everything else (STK push, B2C/B2B, reversal, C2B
+ * register/simulate, bill manager, Ratiba, tax remittance, IoT SIM actions)
+ * is deliberately excluded because it can move money, change callbacks, or
+ * send messages.
+ */
+export const READ_ONLY_TOOLS: ReadonlySet<string> = new Set([
+  "stk_query",
+  "transaction_status",
+  "account_balance",
+  "dynamic_qr",
+  "query_org_info",
+  "validate_phone",
+  "imsi_lookup",
+  "sim_swap_check",
+  "age_on_network",
+  "generate_timestamp",
+  "health_check",
+  "c2b_hakikisha",
+  "b2c_hakikisha",
+]);
+
+export function applyToolPolicy(tools: Tool[], policy: ToolPolicy | undefined): Tool[] {
+  if (!policy) return tools;
+  return tools.filter((tool) => {
+    if (policy.allowedTools && !policy.allowedTools.includes(tool.name)) return false;
+    if (policy.readOnly && !READ_ONLY_TOOLS.has(tool.name)) return false;
+    return true;
+  });
 }
 
 export function getAllTools(): Tool[] {
