@@ -1,5 +1,6 @@
 import type { Mpesa } from "daraja-sdk-ts";
 import type { Tool } from "./index.js";
+import { assertNonEmptyString, assertRecord } from "./validate.js";
 
 export const billManagerTool: Tool = {
   name: "bill_manager",
@@ -10,8 +11,8 @@ export const billManagerTool: Tool = {
     data: { type: "object", description: "Operation-specific payload. See docs/apis/bill-manager.md for required fields." },
   },
   handler: async (input, client) => {
-    const operation = input.operation as string;
-    const data = input.data as Record<string, unknown>;
+    const operation = assertNonEmptyString(input.operation, "operation");
+    const data = assertRecord(input.data, "data");
     switch (operation) {
       case "opt_in": return client.billManager.optIn(data as never);
       case "single_invoice": return client.billManager.sendSingleInvoice(data as never);

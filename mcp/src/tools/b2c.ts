@@ -1,5 +1,6 @@
 import type { Mpesa } from "daraja-sdk-ts";
 import type { Tool } from "./index.js";
+import { assertHttpUrl, assertMsisdn, assertNonEmptyString, assertNumber } from "./validate.js";
 
 export const b2cTool: Tool = {
   name: "b2c_payment",
@@ -17,12 +18,12 @@ export const b2cTool: Tool = {
   },
   handler: async (input, client) => {
     const req: Record<string, unknown> = {
-      Amount: input.amount as number,
-      PartyA: input.partyA as string,
-      PartyB: input.partyB as string,
-      Remarks: input.remarks as string,
-      QueueTimeOutURL: input.queueTimeOutURL as string,
-      ResultURL: input.resultURL as string,
+      Amount: assertNumber(input.amount, "amount", { min: 1 }),
+      PartyA: assertNonEmptyString(input.partyA, "partyA"),
+      PartyB: assertMsisdn(input.partyB, "partyB"),
+      Remarks: assertNonEmptyString(input.remarks, "remarks"),
+      QueueTimeOutURL: assertHttpUrl(input.queueTimeOutURL, "queueTimeOutURL"),
+      ResultURL: assertHttpUrl(input.resultURL, "resultURL"),
       CommandID: (input.commandID as string) || "BusinessPayment",
     };
     if (input.occasion) req.Occassion = input.occasion;

@@ -1,5 +1,6 @@
 import type { Mpesa } from "daraja-sdk-ts";
 import type { Tool } from "./index.js";
+import { assertHttpUrl, assertNonEmptyString, assertNumber } from "./validate.js";
 
 export const b2bTool: Tool = {
   name: "b2b_payment",
@@ -18,12 +19,12 @@ export const b2bTool: Tool = {
   handler: async (input, client) => {
     const commandID = (input.commandID as string) || "BusinessPayBill";
     const base = {
-      Amount: input.amount as number,
-      PartyA: input.partyA as string,
-      PartyB: input.partyB as string,
-      Remarks: input.remarks as string,
-      QueueTimeOutURL: input.queueTimeOutURL as string,
-      ResultURL: input.resultURL as string,
+      Amount: assertNumber(input.amount, "amount", { min: 1 }),
+      PartyA: assertNonEmptyString(input.partyA, "partyA"),
+      PartyB: assertNonEmptyString(input.partyB, "partyB"),
+      Remarks: assertNonEmptyString(input.remarks, "remarks"),
+      QueueTimeOutURL: assertHttpUrl(input.queueTimeOutURL, "queueTimeOutURL"),
+      ResultURL: assertHttpUrl(input.resultURL, "resultURL"),
     };
     if (commandID === "BusinessBuyGoods") {
       return client.businessGoods.buyGoods({ ...base, CommandID: "BusinessBuyGoods" } as never);

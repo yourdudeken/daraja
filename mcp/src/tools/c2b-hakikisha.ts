@@ -1,5 +1,6 @@
 import { C2BHakikishaHandler } from "daraja-sdk-ts";
 import type { Tool } from "./index.js";
+import { assertNonEmptyString } from "./validate.js";
 
 export const c2bHakikishaTool: Tool = {
   name: "c2b_hakikisha",
@@ -15,10 +16,10 @@ export const c2bHakikishaTool: Tool = {
   },
   handler: async (input) => {
     return C2BHakikishaHandler.buildResponse(
-      input.requestId as string,
-      input.accountName as string,
-      input.accountNumber as string,
-      input.shortcode as string,
+      assertNonEmptyString(input.requestId, "requestId"),
+      assertNonEmptyString(input.accountName, "accountName"),
+      assertNonEmptyString(input.accountNumber, "accountNumber"),
+      assertNonEmptyString(input.shortcode, "shortcode"),
       input.timestamp as string | undefined,
     );
   },

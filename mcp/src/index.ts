@@ -18,26 +18,30 @@ if (isDirectExecution || process.env.DARAJA_MCP_MODE) {
   const config = loadConfig();
   const client = new Mpesa(config);
   const policy = loadToolPolicy();
+  const environment = config.environment;
 
   if (mode === "http") {
     // Throws ConfigError when auth is required but no credential is set,
     // instead of starting a server that 401s every request.
     const mcpConfig = loadMcpServerConfig();
-    startHttpTransport(() => createServer(client, { policy }), {
+    startHttpTransport(() => createServer(client, { policy, environment }), {
       port: mcpConfig.port,
       host: mcpConfig.host,
       authRequired: mcpConfig.authRequired,
       tokens: mcpConfig.tokens,
       rateLimit: mcpConfig.rateLimit,
+      maxSessions: mcpConfig.maxSessions,
+      sessionIdleTimeoutMs: mcpConfig.sessionIdleTimeoutMs,
+      trustProxy: mcpConfig.trustProxy,
     });
   } else {
     console.error("Daraja MCP server running over stdio");
     const transport = new StdioServerTransport();
-    const server = createServer(client, { policy });
+    const server = createServer(client, { policy, environment });
     await server.connect(transport);
   }
 }
 
 export { createServer } from "./server.js";
 export { loadConfig } from "./config.js";
-export { startHttpTransport } from "./transport.js";
+export { createHttpTransport, startHttpTransport } from "./transport.js";

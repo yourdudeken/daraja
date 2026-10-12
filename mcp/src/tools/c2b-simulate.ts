@@ -1,9 +1,10 @@
 import type { Mpesa } from "daraja-sdk-ts";
 import type { Tool } from "./index.js";
+import { assertMsisdn, assertNonEmptyString, assertNumber } from "./validate.js";
 
 export const c2bSimulateTool: Tool = {
   name: "c2b_simulate",
-  description: "Simulate a C2B (Customer to Business) payment in sandbox environment. Only works in sandbox mode.",
+  description: "Simulate a C2B (Customer to Business) payment in sandbox environment. Only available in sandbox mode.",
   required: ["shortCode", "amount", "phoneNumber"],
   inputSchema: {
     shortCode: { type: "string", description: "Organization's shortcode or till number" },
@@ -14,9 +15,9 @@ export const c2bSimulateTool: Tool = {
   },
   handler: async (input, client) => {
     const req: Record<string, unknown> = {
-      ShortCode: input.shortCode as string,
-      Amount: input.amount as number,
-      PhoneNumber: input.phoneNumber as string,
+      ShortCode: assertNonEmptyString(input.shortCode, "shortCode"),
+      Amount: assertNumber(input.amount, "amount", { min: 1 }),
+      PhoneNumber: assertMsisdn(input.phoneNumber, "phoneNumber"),
       CommandID: (input.commandID as string) || "CustomerPaybillOnline",
     };
     if (input.accountNumber) req.AccountNumber = input.accountNumber;

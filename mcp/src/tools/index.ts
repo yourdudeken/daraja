@@ -20,8 +20,6 @@ import { b2bExpressTool } from "./b2b-express.js";
 import { billManagerTool } from "./bill-manager.js";
 import { ratibaTool } from "./ratiba.js";
 import { taxRemittanceTool } from "./tax-remittance.js";
-import { generateTimestampTool } from "./generate-timestamp.js";
-import { healthTool } from "./health.js";
 import { b2cHakikishaTool } from "./b2c-hakikisha.js";
 import { c2bHakikishaTool } from "./c2b-hakikisha.js";
 
@@ -51,17 +49,28 @@ export const READ_ONLY_TOOLS: ReadonlySet<string> = new Set([
   "imsi_lookup",
   "sim_swap_check",
   "age_on_network",
-  "generate_timestamp",
-  "health_check",
   "c2b_hakikisha",
   "b2c_hakikisha",
 ]);
 
-export function applyToolPolicy(tools: Tool[], policy: ToolPolicy | undefined): Tool[] {
-  if (!policy) return tools;
+/** Tools that are only meaningful against the M-Pesa sandbox. */
+export const SANDBOX_ONLY_TOOLS: ReadonlySet<string> = new Set(["c2b_simulate"]);
+
+export function applyToolPolicy(
+  tools: Tool[],
+  policy: ToolPolicy | undefined,
+  environment?: string,
+): Tool[] {
+  // Mirror the SDK, which uses the sandbox host only when environment === "sandbox".
+  // Any other *explicitly set* value (including mixed-case production aliases)
+  // is treated as production, so the gating can never fail open.
+  const production = environment !== undefined && environment !== "sandbox";
   return tools.filter((tool) => {
-    if (policy.allowedTools && !policy.allowedTools.includes(tool.name)) return false;
-    if (policy.readOnly && !READ_ONLY_TOOLS.has(tool.name)) return false;
+    // Sandbox-only helpers are not registered against production, regardless
+    // of any allowlist.
+    if (production && SANDBOX_ONLY_TOOLS.has(tool.name)) return false;
+    if (policy?.allowedTools && !policy.allowedTools.includes(tool.name)) return false;
+    if (policy?.readOnly && !READ_ONLY_TOOLS.has(tool.name)) return false;
     return true;
   });
 }
@@ -88,8 +97,6 @@ export function getAllTools(): Tool[] {
     billManagerTool,
     ratibaTool,
     taxRemittanceTool,
-    generateTimestampTool,
-    healthTool,
     b2cHakikishaTool,
     c2bHakikishaTool,
   ];

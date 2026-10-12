@@ -1,5 +1,6 @@
 import type { Mpesa } from "daraja-sdk-ts";
 import type { Tool } from "./index.js";
+import { assertNonEmptyString, assertNumber } from "./validate.js";
 
 export const stkQueryTool: Tool = {
   name: "stk_query",
@@ -11,8 +12,8 @@ export const stkQueryTool: Tool = {
   },
   handler: async (input, client) => {
     return client.stkPush.query({
-      CheckoutRequestID: input.checkoutRequestID as string,
-      BusinessShortCode: input.businessShortCode as number,
+      CheckoutRequestID: assertNonEmptyString(input.checkoutRequestID, "checkoutRequestID"),
+      BusinessShortCode: assertNumber(input.businessShortCode, "businessShortCode", { min: 1 }),
     } as never);
   },
 };

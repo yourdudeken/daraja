@@ -1,5 +1,6 @@
 import type { Mpesa } from "daraja-sdk-ts";
 import type { Tool } from "./index.js";
+import { assertHttpUrl, assertNonEmptyString } from "./validate.js";
 
 export const accountBalanceTool: Tool = {
   name: "account_balance",
@@ -12,9 +13,9 @@ export const accountBalanceTool: Tool = {
   },
   handler: async (input, client) => {
     return client.accountBalance.query({
-      ShortCode: input.shortCode as string,
-      ResultURL: input.resultURL as string,
-      QueueTimeOutURL: input.queueTimeOutURL as string,
+      ShortCode: assertNonEmptyString(input.shortCode, "shortCode"),
+      ResultURL: assertHttpUrl(input.resultURL, "resultURL"),
+      QueueTimeOutURL: assertHttpUrl(input.queueTimeOutURL, "queueTimeOutURL"),
     } as never);
   },
 };

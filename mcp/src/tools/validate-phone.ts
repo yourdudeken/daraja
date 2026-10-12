@@ -1,5 +1,6 @@
 import type { Mpesa } from "daraja-sdk-ts";
 import type { Tool } from "./index.js";
+import { assertMsisdn, assertNonEmptyString } from "./validate.js";
 
 export const validatePhoneTool: Tool = {
   name: "validate_phone",
@@ -15,10 +16,10 @@ export const validatePhoneTool: Tool = {
   handler: async (input, client) => {
     return client.mobileNumberValidation.validate({
       requestRefID: (input.requestRefID as string) || "",
-      shortCode: input.shortCode as string,
-      msisdn: input.phoneNumber as string,
-      idType: input.idType as string,
-      idNumber: input.idNumber as string,
+      shortCode: assertNonEmptyString(input.shortCode, "shortCode"),
+      msisdn: assertMsisdn(input.phoneNumber, "phoneNumber"),
+      idType: assertNonEmptyString(input.idType, "idType"),
+      idNumber: assertNonEmptyString(input.idNumber, "idNumber"),
     } as never);
   },
 };

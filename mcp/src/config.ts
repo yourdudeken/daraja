@@ -17,6 +17,57 @@ export interface McpServerConfig {
   tokens: string[];
   /** Per-IP request limiting; undefined disables rate limiting. */
   rateLimit?: { windowMs: number; max: number };
+  /** Maximum number of concurrent MCP sessions; 0 disables the cap. */
+  maxSessions: number;
+  /** Idle time (ms) after which a session is evicted and its transport closed; 0 disables. */
+  sessionIdleTimeoutMs: number;
+  /** Express `trust proxy` setting; undefined leaves it unset. */
+  trustProxy?: boolean | number | string;
+}
+
+const TRUST_PROXY_KEYWORDS = new Set(["loopback", "linklocal", "uniquelocal"]);
+
+/** An Express `trust proxy` entry: a keyword, or an IP/CIDR subnet. Loose but
+ *  rejects obvious junk (e.g. "-1", "yes", "nope"). */
+function isValidTrustProxyEntry(entry: string): boolean {
+  if (TRUST_PROXY_KEYWORDS.has(entry)) return true;
+  return /^[0-9a-fA-F:.]+(\/\d{1,3})?$/.test(entry);
+}
+
+/**
+ * Parse `MCP_TRUST_PROXY`.
+ *
+ * Accepted: `"false"`, a non-negative integer hop count, or a comma-separated
+ * list of Express keywords / IPs / CIDR subnets (e.g. `"loopback"`,
+ * `"10.0.0.0/8"`). `"true"` is deliberately rejected: it makes Express trust
+ * the left-most, client-supplied `X-Forwarded-For` value, so any caller can
+ * rotate `req.ip` and defeat the per-IP rate limiter that fronts the
+ * money-moving tool endpoints. Configure a hop count or the proxy address
+ * instead.
+ */
+function parseTrustProxy(value: string | undefined): false | number | string | undefined {
+  if (value === undefined || value.trim() === "") return undefined;
+  const v = value.trim();
+  if (v === "false") return false;
+  if (v === "true") {
+    throw new ConfigError(
+      "MCP_TRUST_PROXY=true is unsafe: it trusts client-supplied X-Forwarded-For and " +
+        "therefore defeats per-IP rate limiting. Set the number of proxy hops " +
+        "(e.g. MCP_TRUST_PROXY=1) or a specific address/subnet instead.",
+    );
+  }
+  if (/^\d+$/.test(v)) return parseInt(v, 10);
+  const entries = v.split(",").map((s) => s.trim()).filter(Boolean);
+  if (entries.length > 0 && entries.every(isValidTrustProxyEntry)) return v;
+  throw new ConfigError(
+    `MCP_TRUST_PROXY value "${v}" is invalid. Use "false", a non-negative hop count, ` +
+      `or an address/keyword such as "loopback" or "10.0.0.0/8".`,
+  );
+}
+
+function parseNonNegativeInt(value: string | undefined, fallback: number): number {
+  const parsed = parseInt(value ?? "", 10);
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback;
 }
 
 export interface ToolPolicy {
@@ -37,7 +88,14 @@ export function loadConfig(): MpesaConfig {
     throw new ConfigError("MPESA_CONSUMER_SECRET environment variable is required");
   }
 
-  const environment = (process.env.MPESA_ENVIRONMENT as "sandbox" | "production") || "sandbox";
+  // Normalize the way the SDK resolves its base URL: only "sandbox" (case- and
+  // whitespace-insensitive) selects the sandbox host; an unset/empty value
+  // defaults to sandbox, and every other value is production. Without this,
+  // e.g. MPESA_ENVIRONMENT=Production would point the SDK at the live host
+  // while the tool policy still believed it was sandbox.
+  const rawEnvironment = (process.env.MPESA_ENVIRONMENT ?? "").trim().toLowerCase();
+  const environment: "sandbox" | "production" =
+    rawEnvironment === "" || rawEnvironment === "sandbox" ? "sandbox" : "production";
 
   const config: MpesaConfig = {
     consumerKey,
@@ -88,6 +146,13 @@ export function loadMcpServerConfig(): McpServerConfig {
   const rateMax = parseInt(process.env.MCP_RATE_LIMIT_MAX || "300", 10);
   const rateWindow = parseInt(process.env.MCP_RATE_LIMIT_WINDOW_MS || "60000", 10);
 
+  const maxSessions = parseNonNegativeInt(process.env.MCP_MAX_SESSIONS, 100);
+  const sessionIdleTimeoutMs = parseNonNegativeInt(
+    process.env.MCP_SESSION_IDLE_TIMEOUT_MS,
+    30 * 60_000,
+  );
+  const trustProxy = parseTrustProxy(process.env.MCP_TRUST_PROXY);
+
   return {
     port,
     host,
@@ -96,6 +161,9 @@ export function loadMcpServerConfig(): McpServerConfig {
     apiKey,
     tokens,
     rateLimit: rateMax > 0 ? { windowMs: rateWindow, max: rateMax } : undefined,
+    maxSessions,
+    sessionIdleTimeoutMs,
+    trustProxy,
   };
 }
 

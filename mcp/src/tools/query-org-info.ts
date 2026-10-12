@@ -1,5 +1,6 @@
 import type { Mpesa } from "daraja-sdk-ts";
 import type { Tool } from "./index.js";
+import { assertNumber } from "./validate.js";
 
 export const queryOrgInfoTool: Tool = {
   name: "query_org_info",
@@ -11,8 +12,8 @@ export const queryOrgInfoTool: Tool = {
   },
   handler: async (input, client) => {
     return client.queryOrgInfo.query({
-      IdentifierType: input.identifierType as number,
-      Identifier: input.identifier as number,
+      IdentifierType: assertNumber(input.identifierType, "identifierType", { min: 0 }),
+      Identifier: assertNumber(input.identifier, "identifier", { min: 1 }),
     } as never);
   },
 };

@@ -1,5 +1,8 @@
 import type { Mpesa } from "daraja-sdk-ts";
 import type { Tool } from "./index.js";
+import { assertEnum, assertNonEmptyString, assertNumber } from "./validate.js";
+
+const TRX_CODES = ["BG", "WA", "PB", "SM", "SB"] as const;
 
 export const dynamicQRTool: Tool = {
   name: "dynamic_qr",
@@ -15,11 +18,11 @@ export const dynamicQRTool: Tool = {
   },
   handler: async (input, client) => {
     return client.dynamicQR.generate({
-      MerchantName: input.merchantName as string,
-      RefNo: input.refNo as string,
-      Amount: input.amount as number,
-      TrxCode: input.trxCode as "BG" | "WA" | "PB" | "SM" | "SB",
-      CPI: input.cpi as string,
+      MerchantName: assertNonEmptyString(input.merchantName, "merchantName"),
+      RefNo: assertNonEmptyString(input.refNo, "refNo"),
+      Amount: assertNumber(input.amount, "amount", { min: 1 }),
+      TrxCode: assertEnum(input.trxCode, "trxCode", TRX_CODES),
+      CPI: assertNonEmptyString(input.cpi, "cpi"),
       Size: (input.size as string) || "300",
     } as never);
   },
