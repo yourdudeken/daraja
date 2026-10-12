@@ -4,15 +4,22 @@ import {
   ListToolsRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
 import type { Mpesa } from "daraja-sdk-ts";
-import { getAllTools, type Tool } from "./tools/index.js";
+import type { ToolPolicy } from "./config.js";
+import { logToolCall } from "./audit.js";
+import { applyToolPolicy, getAllTools, type Tool } from "./tools/index.js";
 
-export function createServer(client: Mpesa): Server {
+export interface CreateServerOptions {
+  /** Restrict which tools are exposed (read-only mode / allowlist). */
+  policy?: ToolPolicy;
+}
+
+export function createServer(client: Mpesa, options: CreateServerOptions = {}): Server {
   const server = new Server(
     { name: "daraja", version: "0.1.0" },
     { capabilities: { tools: {} } }
   );
 
-  const tools: Tool[] = getAllTools();
+  const tools: Tool[] = applyToolPolicy(getAllTools(), options.policy);
   const toolMap = new Map(tools.map((t) => [t.name, t]));
 
   server.setRequestHandler(ListToolsRequestSchema, async () => ({
@@ -38,13 +45,28 @@ export function createServer(client: Mpesa): Server {
       };
     }
 
+    const callArgs = args ?? {};
+    const startedAt = Date.now();
     try {
-      const result = await tool.handler(args ?? {}, client);
+      const result = await tool.handler(callArgs, client);
+      logToolCall({
+        tool: name,
+        args: callArgs,
+        status: "ok",
+        durationMs: Date.now() - startedAt,
+      });
       return {
         content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
       };
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
+      logToolCall({
+        tool: name,
+        args: callArgs,
+        status: "error",
+        durationMs: Date.now() - startedAt,
+        error: message,
+      });
       return {
         content: [{ type: "text", text: `Error: ${message}` }],
         isError: true,

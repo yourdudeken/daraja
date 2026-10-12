@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { getAllTools, type Tool } from "../src/tools/index.js";
+import { getAllTools, applyToolPolicy, type Tool } from "../src/tools/index.js";
 
 vi.mock("daraja-sdk-ts", () => ({
   Mpesa: vi.fn().mockImplementation(() => ({})),
@@ -89,6 +89,49 @@ describe("tool registry", () => {
     const tools = getAllTools();
     const names = tools.map((t) => t.name);
     expect(new Set(names).size).toBe(names.length);
+  });
+});
+
+describe("tool policy", () => {
+  it("read-only mode filters down to the safe subset", () => {
+    const tools = applyToolPolicy(getAllTools(), { readOnly: true });
+    const names = tools.map((t) => t.name);
+    expect(names).toContain("stk_query");
+    expect(names).toContain("transaction_status");
+    expect(names).toContain("health_check");
+    // Money-moving / side-effect tools must never appear in read-only mode.
+    expect(names).not.toContain("stk_push");
+    expect(names).not.toContain("b2c_payment");
+    expect(names).not.toContain("b2b_payment");
+    expect(names).not.toContain("reversal");
+    expect(names).not.toContain("c2b_register_url");
+    expect(names).not.toContain("c2b_simulate");
+    expect(names).not.toContain("b2b_express");
+    expect(names).not.toContain("bill_manager");
+    expect(names).not.toContain("ratiba");
+    expect(names).not.toContain("tax_remittance");
+    expect(names).not.toContain("iot_sim");
+  });
+
+  it("allowlist intersects with read-only mode", () => {
+    const tools = applyToolPolicy(getAllTools(), {
+      readOnly: true,
+      allowedTools: ["stk_query", "b2c_payment"],
+    });
+    expect(tools.map((t) => t.name)).toEqual(["stk_query"]);
+  });
+
+  it("allowlist alone restricts to the listed tools", () => {
+    const tools = applyToolPolicy(getAllTools(), {
+      readOnly: false,
+      allowedTools: ["health_check"],
+    });
+    expect(tools.map((t) => t.name)).toEqual(["health_check"]);
+  });
+
+  it("returns tools untouched when no policy is given", () => {
+    const tools = applyToolPolicy(getAllTools(), undefined);
+    expect(tools).toHaveLength(24);
   });
 });
 

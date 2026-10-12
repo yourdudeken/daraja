@@ -28,6 +28,14 @@ const ENV_KEYS = [
   "DARAJA_MCP_MODE",
   "MCP_PORT",
   "MCP_HOST",
+  "MCP_AUTH_REQUIRED",
+  "MCP_AUTH_TOKEN",
+  "MCP_API_KEY",
+  "MCP_AUTH_TOKENS",
+  "MCP_RATE_LIMIT_MAX",
+  "MCP_RATE_LIMIT_WINDOW_MS",
+  "MCP_READONLY_MODE",
+  "MCP_ALLOWED_TOOLS",
 ];
 
 describe("index entry point", () => {
@@ -68,8 +76,37 @@ describe("index entry point", () => {
     process.env.DARAJA_MCP_MODE = "http";
     process.env.MCP_PORT = "0";
     process.env.MCP_HOST = "127.0.0.1";
+    process.env.MCP_AUTH_TOKEN = "test-token";
 
     await import("../src/index.js");
     expect(transportInstances).toHaveLength(0);
+  });
+
+  it("starts in http mode without credentials when auth is disabled", async () => {
+    process.env.MPESA_CONSUMER_KEY = "key";
+    process.env.MPESA_CONSUMER_SECRET = "secret";
+    process.env.DARAJA_MCP_MODE = "http";
+    process.env.MCP_PORT = "0";
+    process.env.MCP_HOST = "127.0.0.1";
+    process.env.MCP_AUTH_REQUIRED = "false";
+    delete process.env.MCP_AUTH_TOKEN;
+    delete process.env.MCP_API_KEY;
+    delete process.env.MCP_AUTH_TOKENS;
+
+    await import("../src/index.js");
+    expect(transportInstances).toHaveLength(0);
+  });
+
+  it("fails fast in http mode when auth is required without a credential", async () => {
+    process.env.MPESA_CONSUMER_KEY = "key";
+    process.env.MPESA_CONSUMER_SECRET = "secret";
+    process.env.DARAJA_MCP_MODE = "http";
+    process.env.MCP_PORT = "0";
+    process.env.MCP_HOST = "127.0.0.1";
+    delete process.env.MCP_AUTH_TOKEN;
+    delete process.env.MCP_API_KEY;
+    delete process.env.MCP_AUTH_TOKENS;
+
+    await expect(import("../src/index.js")).rejects.toThrow(/MCP_AUTH_TOKEN/);
   });
 });

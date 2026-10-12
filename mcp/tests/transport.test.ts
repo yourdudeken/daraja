@@ -171,4 +171,92 @@ describe("startHttpTransport", () => {
       server.close();
     }
   });
+
+  it("supports multiple credentials and binds sessions to their creator", async () => {
+    const app = startHttpTransport(mockServerFactory, {
+      port: 0,
+      host: "127.0.0.1",
+      authRequired: true,
+      tokens: ["token-a", "token-b"],
+    });
+    const { server, port } = await listen(app);
+    try {
+      // Open the SSE stream with token-a and read the sessionId from the
+      // initial endpoint event.
+      const sse = await fetch(`http://127.0.0.1:${port}/api/v1/sse`, {
+        headers: { authorization: "Bearer token-a" },
+      });
+      expect(sse.status).toBe(200);
+      const reader = sse.body!.getReader();
+      const { value } = await reader.read();
+      const text = new TextDecoder().decode(value);
+      const match = text.match(/sessionId=([^\s"'\\]+)/);
+      expect(match).toBeTruthy();
+      const sessionId = match![1];
+
+      const messagesUrl = `http://127.0.0.1:${port}/api/v1/messages?sessionId=${sessionId}`;
+      const body = JSON.stringify({ jsonrpc: "2.0", id: 1, method: "ping" });
+
+      const otherCredential = await fetch(messagesUrl, {
+        method: "POST",
+        headers: { authorization: "Bearer token-b", "content-type": "application/json" },
+        body,
+      });
+      expect(otherCredential.status).toBe(403);
+
+      const sameCredential = await fetch(messagesUrl, {
+        method: "POST",
+        headers: { authorization: "Bearer token-a", "content-type": "application/json" },
+        body,
+      });
+      expect(sameCredential.status).not.toBe(401);
+      expect(sameCredential.status).not.toBe(403);
+
+      await reader.cancel();
+    } finally {
+      server.close();
+    }
+  });
+
+  it("rejects unauthenticated requests before parsing the JSON body", async () => {
+    const app = startHttpTransport(mockServerFactory, {
+      port: 0,
+      host: "127.0.0.1",
+      ...AUTH_OPTIONS,
+    });
+    const { server, port } = await listen(app);
+    try {
+      const res = await fetch(
+        `http://127.0.0.1:${port}/api/v1/messages?sessionId=x`,
+        {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: "this is not json {{{",
+        },
+      );
+      // Auth runs before body parsing, so a malformed body must not produce a
+      // 400 — the request is rejected with 401 before the parser sees it.
+      expect(res.status).toBe(401);
+    } finally {
+      server.close();
+    }
+  });
+
+  it("rate limits requests per IP when configured", async () => {
+    const app = startHttpTransport(mockServerFactory, {
+      port: 0,
+      host: "127.0.0.1",
+      ...AUTH_OPTIONS,
+      rateLimit: { windowMs: 60_000, max: 2 },
+    });
+    const { server, port } = await listen(app);
+    try {
+      const url = `http://127.0.0.1:${port}/api/v1/health`;
+      expect((await fetch(url)).status).toBe(200);
+      expect((await fetch(url)).status).toBe(200);
+      expect((await fetch(url)).status).toBe(429);
+    } finally {
+      server.close();
+    }
+  });
 });
