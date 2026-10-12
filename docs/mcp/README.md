@@ -7,11 +7,11 @@ server — it does not serve or index the documentation corpus.
 The server is **built on the Daraja TypeScript SDK** (`daraja-sdk-ts`): every
 tool is a thin wrapper around a typed SDK service method, so the MCP server
 inherits the SDK's authentication, retries, rate limiting, and error taxonomy
-for free. It speaks MCP over **stdio** or **HTTP/SSE**.
+for free. It speaks MCP over **stdio** or **Streamable HTTP**.
 
 ## What it provides
 
-The server exposes a set of **tools** backed by the Daraja TypeScript SDK (24 tools total):
+The server exposes a set of **tools** backed by the Daraja TypeScript SDK (22 tools total):
 
 | Tool | TS SDK call | Description |
 | ---- | ----------- | ----------- |
@@ -37,8 +37,6 @@ The server exposes a set of **tools** backed by the Daraja TypeScript SDK (24 to
 | `tax_remittance` | `mpesa.taxRemittance.remit()` | Remit tax to KRA |
 | `b2c_hakikisha` | `mpesa.b2cHakikisha.validate()` | Validate customer identity before a B2C payout |
 | `c2b_hakikisha` | `C2BHakikishaHandler.buildResponse()` | Build a C2B Hakikisha validation response payload |
-| `generate_timestamp` | `generateTimestamp()` | Generate M-Pesa timestamp |
-| `health_check` | - | Check SDK connection health |
 
 ## Installation
 
@@ -72,16 +70,27 @@ MCP client config:
 }
 ```
 
-### HTTP/SSE mode (remote access)
+### HTTP mode (remote access)
 
 ```bash
-DARAJA_MCP_MODE=http MCP_PORT=3999 npm start
+DARAJA_MCP_MODE=http MCP_PORT=3999 MCP_AUTH_TOKEN=change-me npm start
 ```
 
-Connect via SSE: `http://localhost:3999/api/v1/sse`
+Connect via Streamable HTTP: `http://localhost:3999/api/v1/mcp`
 
-All endpoints live under the `/api/v1` prefix (SSE stream, JSON-RPC messages,
-health check).
+Authentication is **required by default** (fail-closed): clients send a
+credential as `Authorization: Bearer <token>` or `X-API-Key: <token>`, and the
+server refuses to start if auth is required but no credential is configured.
+The `/api/v1/health` probe is public.
+
+All endpoints live under the `/api/v1` prefix:
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/v1/mcp` | POST | JSON-RPC requests; returns JSON or a streamed SSE response |
+| `/api/v1/mcp` | GET | Server-to-client SSE stream for a session (`Mcp-Session-Id`) |
+| `/api/v1/mcp` | DELETE | Terminate a session (`Mcp-Session-Id`) |
+| `/api/v1/health` | GET | Health check (`{ status, activeSessions }`) — public |
 
 ### Via Docker
 
@@ -126,6 +135,17 @@ installed from the npm registry by `npm install`/`npm ci`.
 | `DARAJA_MCP_MODE` | No | `stdio` | `stdio` or `http` |
 | `MCP_PORT` | No | `3999` | HTTP port (http mode) |
 | `MCP_HOST` | No | `0.0.0.0` | HTTP bind host (http mode) |
+| `MCP_AUTH_REQUIRED` | No | `true` | Require auth on HTTP MCP endpoints |
+| `MCP_AUTH_TOKEN` | No | - | Credential accepted as `Bearer` token or `X-API-Key` |
+| `MCP_API_KEY` | No | - | Alias for `MCP_AUTH_TOKEN` |
+| `MCP_AUTH_TOKENS` | No | - | Comma-separated list of additional credentials |
+| `MCP_RATE_LIMIT_MAX` | No | `300` | Max requests per IP per window (`0` disables) |
+| `MCP_RATE_LIMIT_WINDOW_MS` | No | `60000` | Rate-limit window in ms |
+| `MCP_MAX_SESSIONS` | No | `100` | Max concurrent MCP sessions (`0` disables the cap) |
+| `MCP_SESSION_IDLE_TIMEOUT_MS` | No | `1800000` | Close a session after this idle time in ms (`0` disables) |
+| `MCP_TRUST_PROXY` | No | - | Reverse-proxy trust: hop count or address/keyword (`true` is rejected as unsafe) |
+| `MCP_READONLY_MODE` | No | `false` | Expose only read-only tools |
+| `MCP_ALLOWED_TOOLS` | No | - | Comma-separated tool allowlist |
 
 These map directly onto the TypeScript SDK's `MpesaConfig` (see
 [`mcp/src/config.ts`](../../mcp/src/config.ts)).

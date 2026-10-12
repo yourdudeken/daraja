@@ -3,7 +3,6 @@ import { getAllTools, applyToolPolicy, type Tool } from "../src/tools/index.js";
 
 vi.mock("daraja-sdk-ts", () => ({
   Mpesa: vi.fn().mockImplementation(() => ({})),
-  generateTimestamp: vi.fn().mockReturnValue("20260909120000"),
   C2BHakikishaHandler: {
     buildResponse: vi.fn().mockImplementation(
       (requestId: string, accountName: string, accountNumber: string, shortcode: string, timestamp?: string) => ({
@@ -70,9 +69,15 @@ function mockClient() {
 }
 
 describe("tool registry", () => {
-  it("returns all 24 tools", () => {
+  it("returns all 22 tools", () => {
     const tools = getAllTools();
-    expect(tools).toHaveLength(24);
+    expect(tools).toHaveLength(22);
+  });
+
+  it("no longer bundles the trimmed low-value tools", () => {
+    const names = getAllTools().map((t) => t.name);
+    expect(names).not.toContain("health_check");
+    expect(names).not.toContain("generate_timestamp");
   });
 
   it("each tool has name, description, inputSchema, and handler", () => {
@@ -98,7 +103,7 @@ describe("tool policy", () => {
     const names = tools.map((t) => t.name);
     expect(names).toContain("stk_query");
     expect(names).toContain("transaction_status");
-    expect(names).toContain("health_check");
+    expect(names).toContain("c2b_hakikisha");
     // Money-moving / side-effect tools must never appear in read-only mode.
     expect(names).not.toContain("stk_push");
     expect(names).not.toContain("b2c_payment");
@@ -124,14 +129,39 @@ describe("tool policy", () => {
   it("allowlist alone restricts to the listed tools", () => {
     const tools = applyToolPolicy(getAllTools(), {
       readOnly: false,
-      allowedTools: ["health_check"],
+      allowedTools: ["query_org_info"],
     });
-    expect(tools.map((t) => t.name)).toEqual(["health_check"]);
+    expect(tools.map((t) => t.name)).toEqual(["query_org_info"]);
   });
 
   it("returns tools untouched when no policy is given", () => {
     const tools = applyToolPolicy(getAllTools(), undefined);
-    expect(tools).toHaveLength(24);
+    expect(tools).toHaveLength(22);
+  });
+
+  it("hides sandbox-only tools in production, regardless of allowlist", () => {
+    const names = applyToolPolicy(getAllTools(), undefined, "production").map((t) => t.name);
+    expect(names).not.toContain("c2b_simulate");
+    expect(names).toContain("stk_push");
+
+    const allowlisted = applyToolPolicy(
+      getAllTools(),
+      { readOnly: false, allowedTools: ["c2b_simulate", "stk_push"] },
+      "production",
+    ).map((t) => t.name);
+    expect(allowlisted).toEqual(["stk_push"]);
+  });
+
+  it("keeps sandbox-only tools in the sandbox environment", () => {
+    const names = applyToolPolicy(getAllTools(), undefined, "sandbox").map((t) => t.name);
+    expect(names).toContain("c2b_simulate");
+  });
+
+  it("treats any non-sandbox environment value as production", () => {
+    for (const env of ["prod", "Production", "PRODUCTION", "live"]) {
+      const names = applyToolPolicy(getAllTools(), undefined, env).map((t) => t.name);
+      expect(names).not.toContain("c2b_simulate");
+    }
   });
 });
 
@@ -304,15 +334,13 @@ describe("reversal tool", () => {
 });
 
 describe("transaction_status tool", () => {
-  it("calls client.transactionStatus.query with defaults", async () => {
-    const client = mockClient();
-    await findTool("transaction_status").handler(
-      { resultURL: "https://example.com/r", queueTimeOutURL: "https://example.com/t" },
-      client
-    );
-    expect(client.transactionStatus.query).toHaveBeenCalledWith(
-      expect.objectContaining({ TransactionID: "", OriginalConversationID: "", Remarks: "Transaction status query" })
-    );
+  it("requires a transaction id or original conversation id", async () => {
+    await expect(
+      findTool("transaction_status").handler(
+        { resultURL: "https://example.com/r", queueTimeOutURL: "https://example.com/t" },
+        mockClient()
+      )
+    ).rejects.toThrow("transactionID or originalConversationID is required");
   });
 
   it("passes transaction id and remarks", async () => {
@@ -511,20 +539,6 @@ describe("tax_remittance tool", () => {
   });
 });
 
-describe("health_check tool", () => {
-  it("returns healthy status", async () => {
-    const result = await findTool("health_check").handler({} as never, {} as never);
-    expect(result).toEqual(expect.objectContaining({ status: "healthy" }));
-  });
-});
-
-describe("generate_timestamp tool", () => {
-  it("returns formatted timestamp", async () => {
-    const result = await findTool("generate_timestamp").handler({} as never, {} as never);
-    expect(result).toEqual({ timestamp: "20260909120000" });
-  });
-});
-
 describe("b2c_hakikisha tool", () => {
   it("calls client.b2cHakikisha.validate with header/body shape", async () => {
     const client = mockClient();
@@ -559,5 +573,73 @@ describe("c2b_hakikisha tool", () => {
       accountNumber: "66925336",
       shortcode: "415010",
     });
+  });
+});
+
+describe("input validation", () => {
+  it("rejects an out-of-range stk_push amount", async () => {
+    await expect(
+      findTool("stk_push").handler(
+        { businessShortCode: 174379, amount: 250001, partyA: "254712345678", partyB: "174379", phoneNumber: "254712345678" },
+        mockClient()
+      )
+    ).rejects.toThrow("amount must be <= 250000");
+  });
+
+  it("rejects a non-numeric stk_push amount", async () => {
+    await expect(
+      findTool("stk_push").handler(
+        { businessShortCode: 174379, amount: "lots", partyA: "254712345678", partyB: "174379", phoneNumber: "254712345678" },
+        mockClient()
+      )
+    ).rejects.toThrow("amount must be a number");
+  });
+
+  it("rejects a non-Kenyan MSISDN", async () => {
+    await expect(
+      findTool("b2c_payment").handler(
+        { amount: 10, partyA: "600984", partyB: "0712345678", remarks: "r", queueTimeOutURL: "https://example.com/t", resultURL: "https://example.com/r" },
+        mockClient()
+      )
+    ).rejects.toThrow("partyB must be a Kenyan phone number");
+  });
+
+  it("rejects a non-http callback URL", async () => {
+    await expect(
+      findTool("account_balance").handler(
+        { shortCode: "600984", resultURL: "ftp://example.com/r", queueTimeOutURL: "https://example.com/t" },
+        mockClient()
+      )
+    ).rejects.toThrow("resultURL must be a valid http(s) URL");
+  });
+
+  it("rejects an unknown dynamic_qr transaction code", async () => {
+    await expect(
+      findTool("dynamic_qr").handler(
+        { merchantName: "Shop", refNo: "REF", amount: 100, trxCode: "ZZ", cpi: "600984" },
+        mockClient()
+      )
+    ).rejects.toThrow("trxCode must be one of");
+  });
+
+  it("requires a JSON object payload for ratiba", async () => {
+    await expect(
+      findTool("ratiba").handler({ data: "not-an-object" }, mockClient())
+    ).rejects.toThrow("data must be an object");
+  });
+
+  it("requires the operation for bill_manager", async () => {
+    await expect(
+      findTool("bill_manager").handler({ operation: "  ", data: {} }, mockClient())
+    ).rejects.toThrow("operation is required");
+  });
+
+  it("coerces a well-formed numeric string amount", async () => {
+    const mockInitiate = vi.fn().mockResolvedValue({});
+    await findTool("stk_push").handler(
+      { businessShortCode: 174379, amount: "100", partyA: "254712345678", partyB: "174379", phoneNumber: "254712345678" },
+      { stkPush: { initiate: mockInitiate } } as never
+    );
+    expect(mockInitiate).toHaveBeenCalledWith(expect.objectContaining({ Amount: 100 }));
   });
 });

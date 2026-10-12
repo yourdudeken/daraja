@@ -1,5 +1,6 @@
 import type { Mpesa } from "daraja-sdk-ts";
 import type { Tool } from "./index.js";
+import { assertNonEmptyString } from "./validate.js";
 
 export const iotSimTool: Tool = {
   name: "iot_sim",
@@ -10,7 +11,7 @@ export const iotSimTool: Tool = {
     data: { type: "object", description: "Operation-specific payload. See docs/apis/iot-sim.md for required fields." },
   },
   handler: async (input, client) => {
-    const operation = input.operation as string;
+    const operation = assertNonEmptyString(input.operation, "operation");
     const data = input.data as never;
     switch (operation) {
       case "all_sims": return client.iot.getAllSIMs(data);

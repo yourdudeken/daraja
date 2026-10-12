@@ -1,5 +1,6 @@
 import type { Mpesa } from "daraja-sdk-ts";
 import type { Tool } from "./index.js";
+import { assertMsisdn } from "./validate.js";
 
 export const ageOnNetworkTool: Tool = {
   name: "age_on_network",
@@ -10,7 +11,7 @@ export const ageOnNetworkTool: Tool = {
   },
   handler: async (input, client) => {
     return client.ageOnNetwork.check({
-      customerNumber: input.customerNumber as string,
+      customerNumber: assertMsisdn(input.customerNumber, "customerNumber"),
     } as never);
   },
 };

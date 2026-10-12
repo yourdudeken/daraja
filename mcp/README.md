@@ -11,7 +11,7 @@ Self-hosted Model Context Protocol server for Safaricom M-Pesa Daraja API access
 This MCP server is **built on the Daraja TypeScript SDK** (`daraja-sdk-ts`). Every
 tool is a thin wrapper around a typed SDK service method — the server does not
 re-implement any M-Pesa logic. It exposes M-Pesa operations as MCP tools that AI
-agents can call over **stdio** or **HTTP/SSE**.
+agents can call over **stdio** or **Streamable HTTP**.
 
 All HTTP endpoints are versioned under `/api/v1`.
 
@@ -46,20 +46,20 @@ MCP client config:
 }
 ```
 
-### HTTP/SSE Mode (remote access)
+### HTTP Mode (remote access)
 
 ```bash
 DARAJA_MCP_MODE=http MCP_PORT=3999 MCP_AUTH_TOKEN=change-me npm start
 ```
 
-Connect via SSE: `http://localhost:3999/api/v1/sse`
+Connect via Streamable HTTP: `http://localhost:3999/api/v1/mcp`
 
 Authentication is **required by default**. MCP clients must send a configured
 credential as either `Authorization: Bearer <token>` or `X-API-Key: <token>` on
 every request. One or more credentials can be configured via `MCP_AUTH_TOKEN`,
 `MCP_API_KEY` (aliases), or `MCP_AUTH_TOKENS` (comma-separated list). When
-several credentials are configured, each SSE session is bound to the credential
-that created it: a different credential cannot post to that session
+several credentials are configured, each MCP session is bound to the credential
+that created it: a different credential cannot drive that session
 (`403`). The server refuses to start when auth is required but no credential is
 configured — it never starts in a mode where every request would 401. The
 `/api/v1/health` probe is intentionally public. To run without auth (not
@@ -69,9 +69,15 @@ All endpoints live under the `/api/v1` prefix:
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|
-| `/api/v1/sse` | GET | SSE stream — MCP client connects here |
-| `/api/v1/messages` | POST | Send JSON-RPC messages (query param `sessionId`) |
-| `/api/v1/health` | GET | Health check (`{ status, activeSessions }`) |
+| `/api/v1/mcp` | POST | JSON-RPC requests; returns JSON or a streamed SSE response |
+| `/api/v1/mcp` | GET | Server-to-client SSE stream for a session (`Mcp-Session-Id`) |
+| `/api/v1/mcp` | DELETE | Terminate a session (`Mcp-Session-Id`) |
+| `/api/v1/health` | GET | Health check (`{ status, activeSessions }`) — public |
+
+The transport follows the MCP **Streamable HTTP** spec: a client `POST`s an
+`initialize` request, receives an `Mcp-Session-Id` response header, and echoes
+that header on every subsequent request. The previously deprecated SSE
+transport (`/api/v1/sse` + `/api/v1/messages`) has been **removed**.
 
 ### Docker
 
@@ -127,6 +133,9 @@ docker build -t daraja-mcp ./mcp
 | `MCP_AUTH_TOKENS` | No | - | Comma-separated list of additional credentials |
 | `MCP_RATE_LIMIT_MAX` | No | `300` | Max requests per IP per window (`0` disables) |
 | `MCP_RATE_LIMIT_WINDOW_MS` | No | `60000` | Rate-limit window in ms |
+| `MCP_MAX_SESSIONS` | No | `100` | Max concurrent MCP sessions (`0` disables the cap) |
+| `MCP_SESSION_IDLE_TIMEOUT_MS` | No | `1800000` | Close/evict a session after this idle time in ms (`0` disables) |
+| `MCP_TRUST_PROXY` | No | - | Reverse-proxy trust: a hop count or address/keyword (e.g. `1`, `loopback`, `10.0.0.0/8`); `true` is rejected as unsafe |
 | `MCP_READONLY_MODE` | No | `false` | Expose only read-only tools (no payments/reversals/C2B registration) |
 | `MCP_ALLOWED_TOOLS` | No | - | Comma-separated tool allowlist (intersected with read-only mode) |
 
@@ -142,20 +151,36 @@ These map directly onto the TypeScript SDK's `MpesaConfig` (see
 - **Per-IP rate limiting** (`MCP_RATE_LIMIT_MAX` / `MCP_RATE_LIMIT_WINDOW_MS`)
   protects the auth endpoints against brute force; the health probe is exempt
   from auth (but not from rate limiting).
-- **Session binding**: when multiple credentials are configured, an SSE session
+- **Session binding**: when multiple credentials are configured, a MCP session
   can only be driven by the credential that created it.
+- **Bounded sessions**: `MCP_MAX_SESSIONS` caps concurrent sessions (rejecting
+  new ones with `503`), and `MCP_SESSION_IDLE_TIMEOUT_MS` evicts and closes
+  sessions that go idle — so half-open or abandoned streams cannot exhaust
+  memory.
+- **Sandbox-only tools**: `c2b_simulate` is not registered when
+  `MPESA_ENVIRONMENT=production`, even if it is allowlisted.
+- **Input validation**: handlers validate amounts (e.g. STK Push `1–250000`),
+  Kenyan MSISDNs (`254XXXXXXXXX`), and callback URLs before calling the SDK;
+  invalid input fails fast as a tool error instead of reaching the M-Pesa API.
 - **Read-only mode / allowlist**: set `MCP_READONLY_MODE=true` to expose only
   inspection tools (`stk_query`, `transaction_status`, `account_balance`,
   `dynamic_qr`, `query_org_info`, `validate_phone`, `imsi_lookup`,
-  `sim_swap_check`, `age_on_network`, `generate_timestamp`, `health_check`,
-  `c2b_hakikisha`, `b2c_hakikisha`). `MCP_ALLOWED_TOOLS` restricts the surface
+  `sim_swap_check`, `age_on_network`, `c2b_hakikisha`, `b2c_hakikisha`).
+  `MCP_ALLOWED_TOOLS` restricts the surface
   further. This is the recommended posture for AI agents, which are exposed to
   prompt injection — a read-only agent cannot move money.
 - **Audit trail**: every tool call is written as one JSON line to stderr with
   timestamps, status, duration, and call arguments. Secrets are fully redacted
-  and phone numbers are masked before anything is logged.
+  and phone numbers are masked before anything is logged. Every HTTP request is
+  also logged as a structured `http.request` line (method, path, status,
+  duration).
 - **TLS**: HTTP mode is plaintext; terminate TLS at your reverse proxy (the
-  Docker image is designed for that) when exposing it beyond localhost.
+  Docker image is designed for that) when exposing it beyond localhost. If the
+  server runs behind a proxy, set `MCP_TRUST_PROXY` to the number of proxy hops
+  (e.g. `1`) or the proxy address so client IPs (used for rate limiting) are
+  resolved correctly. `MCP_TRUST_PROXY=true` is rejected: trusting
+  client-supplied `X-Forwarded-For` would let anyone bypass per-IP rate
+  limiting.
 
 ## Available Tools
 
@@ -166,7 +191,7 @@ Each tool wraps the corresponding `daraja-sdk-ts` service method:
 | `stk_push` | `mpesa.stkPush.initiate()` | Initiate STK Push payment |
 | `stk_query` | `mpesa.stkPush.query()` | Query STK Push result |
 | `c2b_register_url` | `mpesa.c2b.registerURL()` | Register C2B callback URLs |
-| `c2b_simulate` | `mpesa.c2b.simulate()` | Simulate C2B payment (sandbox) |
+| `c2b_simulate` | `mpesa.c2b.simulate()` | Simulate C2B payment (sandbox only) |
 | `b2c_payment` | `mpesa.b2c.send()` | Business to Customer payment |
 | `b2b_payment` | `mpesa.businessGoods.buyGoods()` / `payBill()` | Business to Business payment |
 | `reversal` | `mpesa.reversal.reverse()` | Reverse a transaction |
@@ -179,8 +204,12 @@ Each tool wraps the corresponding `daraja-sdk-ts` service method:
 | `tax_remittance` | `mpesa.taxRemittance.remit()` | Remit tax to KRA |
 | `query_org_info` | `mpesa.queryOrgInfo.query()` | Query organization info |
 | `validate_phone` | `mpesa.mobileNumberValidation.validate()` | Validate phone number (KYC) |
-| `generate_timestamp` | `generateTimestamp()` | Generate M-Pesa timestamp |
-| `health_check` | - | Check SDK connection health |
+| `imsi_lookup` | `mpesa.imsi.query()` | Look up IMSI for a phone number |
+| `sim_swap_check` | `mpesa.swap.query()` | Check SIM swap status |
+| `age_on_network` | `mpesa.ageOnNetwork.check()` | Look up SIM registration date |
+| `iot_sim` | `mpesa.iot.*()` | IoT SIM operations (13 sub-operations) |
+| `b2c_hakikisha` | `mpesa.b2cHakikisha.validate()` | Validate customer identity before a B2C payout |
+| `c2b_hakikisha` | `C2BHakikishaHandler.buildResponse()` | Build a C2B Hakikisha validation response payload |
 
 Tool implementations live in [`mcp/src/tools/`](src/tools/). Each tool declares
 its own `inputSchema` and `required` fields, which the MCP server exposes to

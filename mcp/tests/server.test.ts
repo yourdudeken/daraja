@@ -32,7 +32,7 @@ describe("createServer", () => {
     const { client } = await connectClient({} as never);
 
     const result = await client.listTools();
-    expect(result.tools).toHaveLength(24);
+    expect(result.tools).toHaveLength(22);
     const stkPush = result.tools.find((t) => t.name === "stk_push")!;
     expect(stkPush.description).toBeDefined();
     expect(stkPush.inputSchema).toEqual(
@@ -84,7 +84,13 @@ describe("createServer", () => {
 
     const result = await client.callTool({
       name: "stk_push",
-      arguments: { businessShortCode: 174379, amount: 1000 },
+      arguments: {
+        businessShortCode: 174379,
+        amount: 1000,
+        partyA: "254712345678",
+        partyB: "174379",
+        phoneNumber: "254712345678",
+      },
     });
 
     expect(result.isError).toBe(true);
@@ -101,7 +107,13 @@ describe("createServer", () => {
 
     const result = await client.callTool({
       name: "stk_push",
-      arguments: { businessShortCode: 174379, amount: 1000 },
+      arguments: {
+        businessShortCode: 174379,
+        amount: 1000,
+        partyA: "254712345678",
+        partyB: "174379",
+        phoneNumber: "254712345678",
+      },
     });
 
     expect(result.isError).toBe(true);
@@ -114,7 +126,7 @@ describe("createServer", () => {
     const listed = await client.listTools();
     const names = listed.tools.map((t) => t.name);
     expect(names).toContain("stk_query");
-    expect(names).toContain("health_check");
+    expect(names).toContain("c2b_hakikisha");
     expect(names).not.toContain("stk_push");
     expect(names).not.toContain("b2c_payment");
     expect(names).not.toContain("reversal");
@@ -122,6 +134,31 @@ describe("createServer", () => {
     const call = await client.callTool({ name: "b2c_payment", arguments: {} });
     expect(call.isError).toBe(true);
     expect(call.content[0].text).toContain("Unknown tool");
+  });
+
+  it("hides sandbox-only tools in production", async () => {
+    const { client } = await connectClient({} as never, { environment: "production" });
+
+    const listed = await client.listTools();
+    const names = listed.tools.map((t) => t.name);
+    expect(names).not.toContain("c2b_simulate");
+    expect(names).toContain("stk_push");
+
+    const call = await client.callTool({ name: "c2b_simulate", arguments: {} });
+    expect(call.isError).toBe(true);
+    expect(call.content[0].text).toContain("Unknown tool");
+  });
+
+  it("surfaces input-validation failures as tool errors", async () => {
+    const { client } = await connectClient({} as never);
+
+    const result = await client.callTool({
+      name: "stk_push",
+      arguments: { businessShortCode: 174379, amount: -5, partyA: "254712345678", partyB: "174379", phoneNumber: "0712345678" },
+    });
+
+    expect(result.isError).toBe(true);
+    expect(result.content[0].text).toContain("amount must be >= 1");
   });
 
   it("restricts tools to the allowlist", async () => {
@@ -184,7 +221,16 @@ describe("createServer", () => {
     } as never;
     const { client } = await connectClient(mockClient);
 
-    await client.callTool({ name: "stk_push", arguments: { amount: 1000 } });
+    await client.callTool({
+      name: "stk_push",
+      arguments: {
+        businessShortCode: 174379,
+        amount: 1000,
+        partyA: "254712345678",
+        partyB: "174379",
+        phoneNumber: "254712345678",
+      },
+    });
 
     const audited = errorSpy.mock.calls
       .map((call) => {

@@ -1,5 +1,6 @@
 import type { Mpesa } from "daraja-sdk-ts";
 import type { Tool } from "./index.js";
+import { assertHttpUrl, assertNonEmptyString } from "./validate.js";
 
 export const c2bRegisterTool: Tool = {
   name: "c2b_register_url",
@@ -13,9 +14,9 @@ export const c2bRegisterTool: Tool = {
   },
   handler: async (input, client) => {
     return client.c2b.registerURL({
-      ShortCode: input.shortCode as string,
-      ValidationURL: input.validationURL as string,
-      ConfirmationURL: input.confirmationURL as string,
+      ShortCode: assertNonEmptyString(input.shortCode, "shortCode"),
+      ValidationURL: assertHttpUrl(input.validationURL, "validationURL"),
+      ConfirmationURL: assertHttpUrl(input.confirmationURL, "confirmationURL"),
       ResponseType: (input.responseType as string) || "Completed",
     } as never);
   },

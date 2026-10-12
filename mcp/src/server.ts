@@ -11,15 +11,17 @@ import { applyToolPolicy, getAllTools, type Tool } from "./tools/index.js";
 export interface CreateServerOptions {
   /** Restrict which tools are exposed (read-only mode / allowlist). */
   policy?: ToolPolicy;
+  /** M-Pesa environment; sandbox-only tools (e.g. c2b_simulate) are hidden in production. */
+  environment?: string;
 }
 
 export function createServer(client: Mpesa, options: CreateServerOptions = {}): Server {
   const server = new Server(
-    { name: "daraja", version: "0.1.0" },
+    { name: "daraja", version: "0.0.5" },
     { capabilities: { tools: {} } }
   );
 
-  const tools: Tool[] = applyToolPolicy(getAllTools(), options.policy);
+  const tools: Tool[] = applyToolPolicy(getAllTools(), options.policy, options.environment);
   const toolMap = new Map(tools.map((t) => [t.name, t]));
 
   server.setRequestHandler(ListToolsRequestSchema, async () => ({

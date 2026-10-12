@@ -46,7 +46,7 @@ docker run -p 3999:3999 \
 
 The MCP server depends on the published `daraja-sdk-ts` package (the exact
 version is pinned in `mcp/package.json`); it self-hosts over stdio or
-HTTP/SSE. See [docs/mcp/](docs/mcp/) for full usage.
+Streamable HTTP. See [docs/mcp/](docs/mcp/) for full usage.
 
 ## Quick links
 
@@ -61,7 +61,7 @@ HTTP/SSE. See [docs/mcp/](docs/mcp/) for full usage.
 | ---- | ----------- |
 | `sdks/python` | Python SDK (`daraja-sdk-py` on PyPI) |
 | `sdks/typescript` | TypeScript SDK (`daraja-sdk-ts` on npm) |
-| `mcp/` | MCP server (Docker Hub image, stdio/HTTP/SSE) |
+| `mcp/` | MCP server (Docker Hub image, stdio/Streamable HTTP) |
 | `docs/` | Shared documentation |
 | `examples/` | Cross-language examples |
 

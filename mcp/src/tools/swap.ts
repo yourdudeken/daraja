@@ -1,5 +1,6 @@
 import type { Mpesa } from "daraja-sdk-ts";
 import type { Tool } from "./index.js";
+import { assertMsisdn } from "./validate.js";
 
 export const swapTool: Tool = {
   name: "sim_swap_check",
@@ -10,7 +11,7 @@ export const swapTool: Tool = {
   },
   handler: async (input, client) => {
     return client.swap.query({
-      customerNumber: input.customerNumber as string,
+      customerNumber: assertMsisdn(input.customerNumber, "customerNumber"),
     } as never);
   },
 };

@@ -4,6 +4,17 @@ vi.mock("daraja-sdk-ts", () => ({
   Mpesa: class {},
 }));
 
+// Mock the transport module: index.ts must wire options into startHttpTransport
+// without this suite binding a real port / registering process signal handlers.
+const transportMock = vi.hoisted(() => ({
+  startHttpTransport: vi.fn(() => ({})),
+  createHttpTransport: vi.fn(() => ({})),
+}));
+vi.mock("../src/transport.js", () => ({
+  startHttpTransport: transportMock.startHttpTransport,
+  createHttpTransport: transportMock.createHttpTransport,
+}));
+
 const transportInstances: Array<{ start: ReturnType<typeof vi.fn> }> = [];
 vi.mock("@modelcontextprotocol/sdk/server/stdio.js", () => ({
   StdioServerTransport: class {
@@ -34,6 +45,9 @@ const ENV_KEYS = [
   "MCP_AUTH_TOKENS",
   "MCP_RATE_LIMIT_MAX",
   "MCP_RATE_LIMIT_WINDOW_MS",
+  "MCP_MAX_SESSIONS",
+  "MCP_SESSION_IDLE_TIMEOUT_MS",
+  "MCP_TRUST_PROXY",
   "MCP_READONLY_MODE",
   "MCP_ALLOWED_TOOLS",
 ];
@@ -46,6 +60,7 @@ describe("index entry point", () => {
       delete process.env[key];
     }
     transportInstances.length = 0;
+    transportMock.startHttpTransport.mockClear();
   });
 
   afterEach(() => {
@@ -53,11 +68,12 @@ describe("index entry point", () => {
     vi.resetModules();
   });
 
-  it("exports createServer, loadConfig, and startHttpTransport", async () => {
+  it("exports createServer, loadConfig, createHttpTransport, and startHttpTransport", async () => {
     const mod = await import("../src/index.js");
     expect(typeof mod.createServer).toBe("function");
     expect(typeof mod.loadConfig).toBe("function");
     expect(typeof mod.startHttpTransport).toBe("function");
+    expect(typeof mod.createHttpTransport).toBe("function");
   });
 
   it("starts in stdio mode when DARAJA_MCP_MODE=stdio", async () => {
@@ -68,18 +84,38 @@ describe("index entry point", () => {
     await import("../src/index.js");
     expect(transportInstances).toHaveLength(1);
     expect(transportInstances[0].start).toHaveBeenCalled();
+    expect(transportMock.startHttpTransport).not.toHaveBeenCalled();
   });
 
-  it("starts in http mode when DARAJA_MCP_MODE=http", async () => {
+  it("starts in http mode and wires the transport options", async () => {
     process.env.MPESA_CONSUMER_KEY = "key";
     process.env.MPESA_CONSUMER_SECRET = "secret";
+    process.env.MPESA_ENVIRONMENT = "production";
     process.env.DARAJA_MCP_MODE = "http";
     process.env.MCP_PORT = "0";
     process.env.MCP_HOST = "127.0.0.1";
     process.env.MCP_AUTH_TOKEN = "test-token";
+    process.env.MCP_MAX_SESSIONS = "7";
+    process.env.MCP_SESSION_IDLE_TIMEOUT_MS = "2000";
+    process.env.MCP_TRUST_PROXY = "1";
 
     await import("../src/index.js");
     expect(transportInstances).toHaveLength(0);
+    expect(transportMock.startHttpTransport).toHaveBeenCalledTimes(1);
+
+    const [factory, options] = transportMock.startHttpTransport.mock.calls[0] as [Function, Record<string, unknown>];
+    expect(typeof factory).toBe("function");
+    expect(options).toEqual(
+      expect.objectContaining({
+        port: 0,
+        host: "127.0.0.1",
+        authRequired: true,
+        tokens: ["test-token"],
+        maxSessions: 7,
+        sessionIdleTimeoutMs: 2000,
+        trustProxy: 1,
+      }),
+    );
   });
 
   it("starts in http mode without credentials when auth is disabled", async () => {
@@ -95,6 +131,7 @@ describe("index entry point", () => {
 
     await import("../src/index.js");
     expect(transportInstances).toHaveLength(0);
+    expect(transportMock.startHttpTransport).toHaveBeenCalledTimes(1);
   });
 
   it("fails fast in http mode when auth is required without a credential", async () => {
@@ -108,5 +145,6 @@ describe("index entry point", () => {
     delete process.env.MCP_AUTH_TOKENS;
 
     await expect(import("../src/index.js")).rejects.toThrow(/MCP_AUTH_TOKEN/);
+    expect(transportMock.startHttpTransport).not.toHaveBeenCalled();
   });
 });

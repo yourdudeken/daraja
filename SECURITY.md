@@ -74,7 +74,7 @@ Out of scope (report to the respective owners):
 - **Sandbox by default**: `MPESA_ENVIRONMENT` defaults to `sandbox`. Only set
   it to `production` with genuine credentials.
 - The MCP server is **self-hosted** — protect the host: run it on a trusted
-  network, restrict access to the HTTP/SSE endpoints, and use a reverse proxy
+  network, restrict access to the HTTP endpoints, and use a reverse proxy
   with TLS for anything exposed beyond localhost.
 - If you believe a leaked credential was used, rotate it in the Safaricom
   developer portal before anything else.

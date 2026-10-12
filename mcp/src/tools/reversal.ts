@@ -1,5 +1,6 @@
 import type { Mpesa } from "daraja-sdk-ts";
 import type { Tool } from "./index.js";
+import { assertHttpUrl, assertNonEmptyString, assertNumber } from "./validate.js";
 
 export const reversalTool: Tool = {
   name: "reversal",
@@ -15,12 +16,12 @@ export const reversalTool: Tool = {
   },
   handler: async (input, client) => {
     return client.reversal.reverse({
-      TransactionID: input.transactionID as string,
-      Amount: input.amount as number,
-      ReceiverParty: input.receiverParty as string,
-      ResultURL: input.resultURL as string,
-      QueueTimeOutURL: input.queueTimeOutURL as string,
-      Remarks: input.remarks as string,
+      TransactionID: assertNonEmptyString(input.transactionID, "transactionID"),
+      Amount: assertNumber(input.amount, "amount", { min: 1 }),
+      ReceiverParty: assertNonEmptyString(input.receiverParty, "receiverParty"),
+      ResultURL: assertHttpUrl(input.resultURL, "resultURL"),
+      QueueTimeOutURL: assertHttpUrl(input.queueTimeOutURL, "queueTimeOutURL"),
+      Remarks: assertNonEmptyString(input.remarks, "remarks"),
     } as never);
   },
 };

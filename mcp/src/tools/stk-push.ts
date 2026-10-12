@@ -1,5 +1,6 @@
 import type { Mpesa } from "daraja-sdk-ts";
 import type { Tool } from "./index.js";
+import { assertMsisdn, assertNonEmptyString, assertNumber } from "./validate.js";
 
 export const stkPushTool: Tool = {
   name: "stk_push",
@@ -13,22 +14,23 @@ export const stkPushTool: Tool = {
     phoneNumber: { type: "string", description: "Customer phone number to receive STK prompt (format: 254XXXXXXXXX)" },
     accountReference: { type: "string", description: "Account reference (max 12 characters)" },
     transactionDesc: { type: "string", description: "Transaction description (max 13 characters)" },
-    callBackURL: { type: "string", description: "Callback URL (optional)" },
-    callbackURL: { type: "string", description: "Callback URL (optional, alternative)" },
-    CallbackURL: { type: "string", description: "Callback URL (optional, alternative)" },
+    callbackURL: { type: "string", description: "Callback URL (optional)" },
     transactionType: { type: "string", description: "Transaction type (e.g., CustomerBuyGoodsOnline, CustomerPayBillOnline)" },
-    TransactionType: { type: "string", description: "Transaction type (alternative casing)" },
   },
   handler: async (input, client) => {
+    const amount = assertNumber(input.amount, "amount", { min: 1, max: 250000 });
+    const phoneNumber = assertMsisdn(input.phoneNumber, "phoneNumber");
     return client.stkPush.initiate({
-      BusinessShortCode: input.businessShortCode as number,
-      Amount: input.amount as number,
-      PartyA: input.partyA as string,
-      PartyB: input.partyB as string,
-      PhoneNumber: input.phoneNumber as string,
+      BusinessShortCode: assertNumber(input.businessShortCode, "businessShortCode", { min: 1 }),
+      Amount: amount,
+      PartyA: assertNonEmptyString(input.partyA, "partyA"),
+      PartyB: assertNonEmptyString(input.partyB, "partyB"),
+      PhoneNumber: phoneNumber,
       AccountReference: input.accountReference as string,
       TransactionDesc: input.transactionDesc as string,
-      CallBackURL: (input.callBackURL || input.callbackURL || input.CallbackURL || "") as string,
+      // `callbackURL` is the canonical field; the legacy casings are still
+      // accepted for backward compatibility.
+      CallBackURL: (input.callbackURL || input.callBackURL || input.CallbackURL || "") as string,
       TransactionType: (input.transactionType || input.TransactionType || "CustomerBuyGoodsOnline") as string,
     } as never);
   },

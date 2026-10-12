@@ -1,5 +1,6 @@
 import type { Mpesa } from "daraja-sdk-ts";
 import type { Tool } from "./index.js";
+import { assertHttpUrl, assertNonEmptyString, assertNumber } from "./validate.js";
 
 export const taxRemittanceTool: Tool = {
   name: "tax_remittance",
@@ -14,11 +15,11 @@ export const taxRemittanceTool: Tool = {
   },
   handler: async (input, client) => {
     return client.taxRemittance.remit({
-      Amount: input.amount as number,
-      PartyA: input.partyA as string,
-      Remarks: input.remarks as string,
-      ResultURL: input.resultURL as string,
-      QueueTimeOutURL: input.queueTimeOutURL as string,
+      Amount: assertNumber(input.amount, "amount", { min: 1 }),
+      PartyA: assertNonEmptyString(input.partyA, "partyA"),
+      Remarks: assertNonEmptyString(input.remarks, "remarks"),
+      ResultURL: assertHttpUrl(input.resultURL, "resultURL"),
+      QueueTimeOutURL: assertHttpUrl(input.queueTimeOutURL, "queueTimeOutURL"),
       CommandID: "PayTaxToKRA",
       PartyB: "572572",
     } as never);

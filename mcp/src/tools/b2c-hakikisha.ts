@@ -1,5 +1,6 @@
 import type { Mpesa } from "daraja-sdk-ts";
 import type { Tool } from "./index.js";
+import { assertMsisdn, assertNonEmptyString } from "./validate.js";
 
 export const b2cHakikishaTool: Tool = {
   name: "b2c_hakikisha",
@@ -14,8 +15,8 @@ export const b2cHakikishaTool: Tool = {
     return client.b2cHakikisha.validate({
       header: {}, // requestID and timestamp are auto-generated
       body: {
-        msisdn: input.msisdn as string,
-        shortcode: input.shortcode as string,
+        msisdn: assertMsisdn(input.msisdn, "msisdn"),
+        shortcode: assertNonEmptyString(input.shortcode, "shortcode"),
       },
     } as never);
   },
