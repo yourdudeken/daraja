@@ -1,4 +1,4 @@
-import { publicEncrypt, X509Certificate } from "node:crypto";
+import { publicEncrypt, X509Certificate, constants } from "node:crypto";
 import type { Logger } from "../types/index.js";
 import { ValidationError } from "../errors/index.js";
 export { StructuredLogger } from "./structured-logger.js";
@@ -30,7 +30,10 @@ export function generateSecurityCredential(
 ): string {
   const cert = new X509Certificate(certificate);
   const base64Password = Buffer.from(password).toString("base64");
-  const encrypted = publicEncrypt(cert.publicKey, Buffer.from(base64Password));
+  const encrypted = publicEncrypt(
+    { key: cert.publicKey, padding: constants.RSA_PKCS1_PADDING },
+    Buffer.from(base64Password)
+  );
   return encrypted.toString("base64");
 }
 
@@ -39,21 +42,60 @@ export function maskSensitiveData(data: Record<string, unknown>): Record<string,
     "consumerKey",
     "consumerSecret",
     "Password",
+    "password",
+    "passkey",
+    "security_credential",
+    "securityCredential",
     "SecurityCredential",
     "InitiatorPassword",
-    "passkey",
-    "securityCredential",
     "initiatorPassword",
+    "access_token",
+    "accessToken",
+    "bearer",
+    "authorization",
+    "Authorization",
+    "x-api-key",
   ];
-  const masked = { ...data };
+
+  const maskValue = (value: unknown): unknown => {
+    if (value && typeof value === "object" && !Array.isArray(value)) {
+      return maskSensitiveData(value as Record<string, unknown>);
+    }
+    if (Array.isArray(value)) {
+      return value.map((v) => maskValue(v));
+    }
+    return value;
+  };
+
+  if (!data || typeof data !== "object") {
+    return data as Record<string, unknown>;
+  }
+  const masked: Record<string, unknown> = { ...data };
   for (const key of sensitiveKeys) {
     if (key in masked) {
-      const val = String(masked[key]);
-      if (val.length > 4) {
-        masked[key] = `${val.slice(0, 4)}****`;
+      const val = masked[key];
+      if (typeof val === "string") {
+        if (val.length > 4) {
+          masked[key] = `${val.slice(0, 4)}****`;
+        } else {
+          masked[key] = "****";
+        }
       } else {
-        masked[key] = "****";
+        masked[key] = "[REDACTED]";
       }
+    }
+  }
+  for (const k of Object.keys(masked)) {
+    const lower = k.toLowerCase();
+    if (lower.includes("token") || lower.includes("secret") || lower.includes("pass") || lower.includes("auth")) {
+      const val = masked[k];
+      if (typeof val === "string") {
+        masked[k] = val.length > 4 ? `${val.slice(0, 4)}****` : "****";
+      } else {
+        masked[k] = "[REDACTED]";
+      }
+    } else if (masked[k] && typeof masked[k] === "object") {
+      masked[k] = maskValue(masked[k]);
     }
   }
   return masked;

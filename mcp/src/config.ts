@@ -7,6 +7,14 @@ export class ConfigError extends Error {
   }
 }
 
+export interface McpServerConfig {
+  port: number;
+  host: string;
+  authRequired: boolean;
+  authToken?: string;
+  apiKey?: string;
+}
+
 export function loadConfig(): MpesaConfig {
   const consumerKey = process.env.MPESA_CONSUMER_KEY;
   const consumerSecret = process.env.MPESA_CONSUMER_SECRET;
@@ -43,4 +51,20 @@ export function loadConfig(): MpesaConfig {
   }
 
   return config;
+}
+
+export function loadMcpServerConfig(): McpServerConfig {
+  const port = parseInt(process.env.MCP_PORT || "3999", 10);
+  const host = process.env.MCP_HOST || "127.0.0.1";
+  const authRequired = process.env.MCP_AUTH_REQUIRED !== "false";
+  const authToken = process.env.MCP_AUTH_TOKEN || process.env.MCP_API_KEY;
+  const apiKey = process.env.MCP_API_KEY || process.env.MCP_AUTH_TOKEN;
+
+  return {
+    port,
+    host,
+    authRequired,
+    authToken,
+    apiKey,
+  };
 }

@@ -100,5 +100,5 @@ class RedisTokenCache:
                 pass
 
 
-def build_token_cache_key(consumer_key: str) -> str:
-    return f"mpesa:token:{consumer_key}"
+def build_token_cache_key(consumer_key: str, environment: str = "sandbox") -> str:
+    return f"mpesa:token:{environment}:{consumer_key}"

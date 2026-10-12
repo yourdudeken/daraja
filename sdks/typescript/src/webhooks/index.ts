@@ -53,10 +53,16 @@ export class WebhookManager {
       handlers.map((handler) => handler(event)),
     );
 
+    const errors: unknown[] = [];
     for (const result of results) {
       if (result.status === "rejected") {
         console.error(`[mpesa-sdk] Webhook handler error:`, result.reason);
+        errors.push(result.reason);
       }
+    }
+    if (errors.length > 0) {
+      const first = errors[0];
+      throw first instanceof Error ? first : new Error(String(first));
     }
   }
 

@@ -33,7 +33,14 @@ COPY --from=builder /app/node_modules/ ./node_modules/
 ENV NODE_ENV=production
 ENV DARAJA_MCP_MODE=http
 ENV MCP_PORT=3999
-ENV MCP_HOST=0.0.0.0
+ENV MCP_HOST=127.0.0.1
+ENV MCP_AUTH_REQUIRED=true
+
+# Create non-root user
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+RUN chown -R appuser:appgroup /app
+
+USER appuser
 
 EXPOSE 3999
 

@@ -43,9 +43,12 @@ export function setupRetryInterceptor(
         return Promise.reject(error);
       }
 
+      const method = (config.method || "").toUpperCase();
+      const isIdempotent = method === "GET" || method === "HEAD" || method === "OPTIONS";
       const shouldRetry =
-        RETRYABLE_STATUS_CODES.has(error.response?.status ?? 0) ||
-        RETRYABLE_ERROR_CODES.has(error.code ?? "");
+        (RETRYABLE_STATUS_CODES.has(error.response?.status ?? 0) ||
+          RETRYABLE_ERROR_CODES.has(error.code ?? "")) &&
+        isIdempotent;
 
       if (!shouldRetry) {
         return Promise.reject(error);

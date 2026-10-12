@@ -1,4 +1,6 @@
 import { defineConfig } from "tsup";
+import { copyFileSync, mkdirSync, existsSync, readdirSync } from "fs";
+import { join } from "path";
 
 export default defineConfig({
   entry: {
@@ -16,4 +18,20 @@ export default defineConfig({
   treeshake: true,
   minify: false,
   tsconfig: "./tsconfig.json",
+  onSuccess: async () => {
+    try {
+      const certsDir = join("src", "certificates");
+      const outCertsDir = join("dist", "certificates");
+      if (existsSync(certsDir)) {
+        mkdirSync(outCertsDir, { recursive: true });
+        for (const f of readdirSync(certsDir)) {
+          if (f.endsWith(".cer")) {
+            copyFileSync(join(certsDir, f), join(outCertsDir, f));
+          }
+        }
+      }
+    } catch (e) {
+      // ignore
+    }
+  },
 });

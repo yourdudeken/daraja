@@ -110,4 +110,6 @@ AGENTS.md
 opencode.jsonc
 specs/
 plans/
-RISK.md
+
+audit/
+READ_ONLY_AUDIT.md

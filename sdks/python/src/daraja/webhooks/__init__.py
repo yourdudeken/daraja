@@ -29,6 +29,7 @@ class WebhookManager:
         if not handlers:
             self._logger.debug("No handlers registered for event", extra={"event": event_type})
             return
+        errors = []
         for handler in handlers:
             try:
                 handler(event_type, payload)
@@ -37,6 +38,10 @@ class WebhookManager:
                     "Webhook handler error",
                     extra={"event": event_type, "error": str(e)},
                 )
+                errors.append(e)
+        if errors:
+            # Re-raise first error so retry/DLQ can act
+            raise errors[0]
 
     def parse_stk_callback(self, body: dict[str, Any]) -> dict[str, Any]:
         payload = STKCallbackPayload(**body)

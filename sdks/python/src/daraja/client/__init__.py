@@ -175,7 +175,7 @@ class _TokenManager:
             return self._token
 
         if self._shared_cache is not None:
-            cache_key = build_token_cache_key(self._config.consumer_key)
+            cache_key = build_token_cache_key(self._config.consumer_key, self._config.environment)
             cached = self._shared_cache.get(cache_key)
             if cached is not None:
                 self._token = cached
@@ -196,7 +196,7 @@ class _TokenManager:
         self._expires_at = time.time() + token_data.expires_in - 60
 
         if self._shared_cache is not None:
-            cache_key = build_token_cache_key(self._config.consumer_key)
+            cache_key = build_token_cache_key(self._config.consumer_key, self._config.environment)
             self._shared_cache.set(cache_key, self._token, token_data.expires_in - 60)
 
         self._logger.debug("Access token acquired", extra={"expires_in": token_data.expires_in})

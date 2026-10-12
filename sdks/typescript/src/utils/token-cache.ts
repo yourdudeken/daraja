@@ -83,6 +83,7 @@ export class RedisTokenCache implements SharedTokenCache {
   }
 }
 
-export function buildTokenCacheKey(consumerKey: string): string {
-  return `mpesa:token:${consumerKey}`;
+export function buildTokenCacheKey(consumerKey: string, environment?: string): string {
+  const env = environment || process.env.MPESA_ENVIRONMENT || "sandbox";
+  return `mpesa:token:${env}:${consumerKey}`;
 }

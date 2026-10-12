@@ -9,6 +9,39 @@ const API_PREFIX = `/api/${API_VERSION}`;
 export interface TransportOptions {
   port: number;
   host?: string;
+  authRequired?: boolean;
+  authToken?: string;
+  apiKey?: string;
+}
+
+function checkAuth(req: express.Request, res: express.Response, options: TransportOptions): boolean {
+  const required = options.authRequired !== false;
+  const token = options.authToken || options.apiKey;
+
+  if (!required) {
+    return true;
+  }
+
+  if (!token) {
+    res.status(401).json({ error: "Unauthorized: missing auth token" });
+    return false;
+  }
+
+  const authHeader = req.headers.authorization;
+  const apiKeyHeader = req.headers["x-api-key"];
+
+  if (authHeader) {
+    const value = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : authHeader;
+    if (value === token) {
+      return true;
+    }
+  }
+  if (apiKeyHeader && String(apiKeyHeader) === token) {
+    return true;
+  }
+
+  res.status(401).json({ error: "Unauthorized: invalid auth token" });
+  return false;
 }
 
 export function startHttpTransport(
@@ -19,6 +52,17 @@ export function startHttpTransport(
   app.use(express.json());
 
   const transports = new Map<string, SSEServerTransport>();
+
+  // --- auth middleware for MCP endpoints ---
+  app.use(`${API_PREFIX}/*`, (req, res, next) => {
+    if (req.method === "GET" && req.path === `${API_PREFIX}/health`) {
+      return next();
+    }
+    if (!checkAuth(req, res, options)) {
+      return;
+    }
+    next();
+  });
 
   // --- versioned routes ------------------------------------------------
   app.get(`${API_PREFIX}/sse`, async (_req, res) => {
@@ -53,7 +97,7 @@ export function startHttpTransport(
   });
 
   // --- start -----------------------------------------------------------
-  const { port, host = "0.0.0.0" } = options;
+  const { port, host = "127.0.0.1" } = options;
   app.listen(port, host, () => {
     console.error(`Daraja MCP server listening on http://${host}:${port}`);
     console.error(`  SSE endpoint: http://${host}:${port}${API_PREFIX}/sse`);

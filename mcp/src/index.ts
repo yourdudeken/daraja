@@ -10,6 +10,8 @@ const isDirectExecution =
     process.argv[1].endsWith("index.js") ||
     process.argv[1].endsWith("daraja-mcp"));
 
+import { loadMcpServerConfig } from "./config.js";
+
 if (isDirectExecution || process.env.DARAJA_MCP_MODE) {
   const mode = process.env.DARAJA_MCP_MODE || "stdio";
 
@@ -17,9 +19,14 @@ if (isDirectExecution || process.env.DARAJA_MCP_MODE) {
   const client = new Mpesa(config);
 
   if (mode === "http") {
-    const port = parseInt(process.env.MCP_PORT || "3999", 10);
-    const host = process.env.MCP_HOST || "0.0.0.0";
-    startHttpTransport(() => createServer(client), { port, host });
+    const mcpConfig = loadMcpServerConfig();
+    startHttpTransport(() => createServer(client), {
+      port: mcpConfig.port,
+      host: mcpConfig.host,
+      authRequired: mcpConfig.authRequired,
+      authToken: mcpConfig.authToken,
+      apiKey: mcpConfig.apiKey,
+    });
   } else {
     console.error("Daraja MCP server running over stdio");
     const transport = new StdioServerTransport();
