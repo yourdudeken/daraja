@@ -27,7 +27,7 @@ on:
         required: false
         type: string
       python_version:
-        description: "Python SDK version (e.g. 0.0.2). Leave empty to use pyproject.toml."
+        description: "Python SDK version (e.g. 0.0.2). Leave empty to use src/daraja/_version.py."
         required: false
         type: string
       mcp_version:
@@ -83,7 +83,7 @@ jobs:
             echo "version=${{ github.event.inputs.python_version }}" >> "$GITHUB_OUTPUT"
             echo "release=true" >> "$GITHUB_OUTPUT"
           else
-            VERSION=$(grep -m1 '^version' sdks/python/pyproject.toml | sed 's/version = "\(.*\)"/\1/')
+            VERSION=$(grep -m1 '^__version__' sdks/python/src/daraja/_version.py | sed 's/__version__ = "\(.*\)"/\1/')
             LATEST=$(git tag -l 'python-v*' --sort=-v:refname | head -1 | sed 's/python-v//')
             echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
             if [ -z "$LATEST" ] || [ "$VERSION" != "$LATEST" ]; then
@@ -159,9 +159,9 @@ jobs:
           python - "${{ needs.detect.outputs.python_version }}" <<'EOF'
           import re, sys, pathlib
           v = sys.argv[1]
-          p = pathlib.Path("pyproject.toml")
+          p = pathlib.Path("src/daraja/_version.py")
           t = p.read_text()
-          t = re.sub(r'version\s*=\s*"[^"]+"', f'version = "{v}"', t, count=1)
+          t = re.sub(r'__version__\s*=\s*"[^"]+"', f'__version__ = "{v}"', t, count=1)
           p.write_text(t)
           EOF
       - name: Test

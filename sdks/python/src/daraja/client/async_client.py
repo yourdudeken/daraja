@@ -458,7 +458,7 @@ class AsyncMpesa:
                 request.SecurityCredential = self._config.security_credential
             if not request.InitiatorName and self._config.initiator_name:
                 request.InitiatorName = self._config.initiator_name
-        result = await self._post("B2C", request.model_dump())
+        result = await self._post("B2C", request.model_dump(exclude_none=True))
         return B2CResponse(**result)
 
     async def reversal(self, request: ReversalRequest | dict[str, Any]) -> ReversalResponse:
@@ -563,7 +563,7 @@ class AsyncMpesa:
     async def b2pochi(self, request: B2PochiRequest | dict[str, Any]) -> B2PochiResponse:
         if isinstance(request, dict):
             request = B2PochiRequest(**request)
-        result = await self._post("B2POCHI", request.model_dump())
+        result = await self._post("B2POCHI", request.model_dump(exclude_none=True))
         return B2PochiResponse(**result)
 
     async def lipa_na_bonga_calculate(

@@ -2,9 +2,12 @@
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
+[tool.hatch.version]
+path = "src/daraja/_version.py"
+
 [project]
 name = "daraja-sdk-py"
-version = "1.0.1"
+dynamic = ["version"]
 description = "Production-grade Python SDK for Safaricom M-Pesa Daraja API"
 readme = "README.md"
 license = { text = "MIT" }
@@ -46,8 +49,8 @@ all = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/yourdudeken/mpesa-sdk"
-Repository = "https://github.com/yourdudeken/mpesa-sdk"
+Homepage = "https://github.com/yourdudeken/daraja"
+Repository = "https://github.com/yourdudeken/daraja"
 
 [project.scripts]
 daraja = "daraja.cli:main"

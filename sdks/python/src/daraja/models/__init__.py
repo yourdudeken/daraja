@@ -173,7 +173,7 @@ class C2BValidationResponse(BaseModel):
 
 
 class B2CRequest(BaseModel):
-    OriginatorConversationID: str
+    OriginatorConversationID: str | None = None
     InitiatorName: str
     SecurityCredential: str
     CommandID: Literal["SalaryPayment", "BusinessPayment", "PromotionPayment"]
@@ -581,7 +581,7 @@ class IoTDeleteMessageResponse(BaseModel):
 
 
 class B2PochiRequest(BaseModel):
-    OriginatorConversationID: str
+    OriginatorConversationID: str | None = None
     InitiatorName: str
     SecurityCredential: str
     CommandID: str = "BusinessPayToPochi"

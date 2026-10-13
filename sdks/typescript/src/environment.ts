@@ -1,4 +1,8 @@
-export const VERSION = "0.2.0" as const;
+/**
+ * SDK version — injected at build time from `package.json` (see `tsup.config.ts`
+ * and `vitest.config.ts`). `package.json` is the single source of truth.
+ */
+export const VERSION: string = __SDK_VERSION__;
 
 export const SANDBOX_BASE_URL = "https://sandbox.safaricom.co.ke" as const;
 export const PRODUCTION_BASE_URL = "https://api.safaricom.co.ke" as const;

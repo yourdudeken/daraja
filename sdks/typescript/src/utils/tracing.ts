@@ -1,4 +1,5 @@
 import { trace, type Attributes, Span as OTelSpan, SpanStatusCode } from "@opentelemetry/api";
+import { VERSION } from "../environment.js";
 import type { Logger, TelemetrySpan, Tracer } from "../types/index.js";
 
 export class NoopSpan implements TelemetrySpan {
@@ -46,7 +47,7 @@ class OTelTelemetrySpan implements TelemetrySpan {
 export class OpenTelemetryTracer implements Tracer {
   private readonly tracer: ReturnType<typeof trace.getTracer>;
 
-  constructor(name = "mpesa-sdk", version = "0.2.0") {
+  constructor(name = "mpesa-sdk", version: string = VERSION) {
     this.tracer = trace.getTracer(name, version);
   }
 

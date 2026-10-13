@@ -12,6 +12,7 @@ import time
 from typing import Any
 
 from daraja import Mpesa
+from daraja._version import __version__
 from daraja.models import (
     AccountBalanceRequest,
     MpesaConfig,
@@ -20,7 +21,7 @@ from daraja.models import (
     TransactionStatusRequest,
 )
 
-VERSION = "0.0.1"
+VERSION = __version__
 
 
 def _client(args: argparse.Namespace) -> Mpesa:

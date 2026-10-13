@@ -7,6 +7,7 @@ import type { Mpesa } from "daraja-sdk-ts";
 import type { ToolPolicy } from "./config.js";
 import { logToolCall } from "./audit.js";
 import { applyToolPolicy, getAllTools, type Tool } from "./tools/index.js";
+import { VERSION } from "./version.js";
 
 export interface CreateServerOptions {
   /** Restrict which tools are exposed (read-only mode / allowlist). */
@@ -17,7 +18,7 @@ export interface CreateServerOptions {
 
 export function createServer(client: Mpesa, options: CreateServerOptions = {}): Server {
   const server = new Server(
-    { name: "daraja", version: "0.0.5" },
+    { name: "daraja", version: VERSION },
     { capabilities: { tools: {} } }
   );
 

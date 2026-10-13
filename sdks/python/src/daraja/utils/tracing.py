@@ -4,6 +4,8 @@ from opentelemetry import trace
 from opentelemetry.trace import Span as OTelSpan
 from opentelemetry.trace import StatusCode
 
+from daraja._version import __version__
+
 
 class Span:
     def set_attribute(self, key: str, value: Any) -> None:
@@ -75,8 +77,8 @@ class OTelSpanWrapper(Span):
 
 
 class OpenTelemetryTracer(Tracer):
-    def __init__(self, name: str = "mpesa-sdk", version: str = "0.2.0") -> None:
-        self._tracer = trace.get_tracer(name, version)
+    def __init__(self, name: str = "mpesa-sdk", version: str | None = None) -> None:
+        self._tracer = trace.get_tracer(name, version or __version__)
 
     def start_span(self, name: str, attributes: dict[str, Any] | None = None) -> Span:
         span = self._tracer.start_span(name, attributes=attributes)

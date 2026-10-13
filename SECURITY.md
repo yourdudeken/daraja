@@ -11,15 +11,20 @@ Security issues are taken seriously and handled confidentially.
 
 ## Supported versions
 
-| Component | Registry | Supported |
-| --------- | -------- | --------- |
-| `daraja-sdk-ts` (TypeScript SDK) | [npm](https://www.npmjs.com/package/daraja-sdk-ts) | Latest release |
-| `daraja-sdk-py` (Python SDK) | [PyPI](https://pypi.org/project/daraja-sdk-py/) | Latest release |
-| `daraja-mcp` (MCP server) | [Docker Hub](https://hub.docker.com/r/yourdudeken/daraja-mcp) | Latest release |
+Only the **latest published release** of each component is supported and
+receives security fixes:
 
-Only the most recent release of each component receives security fixes.
-Older releases are fixed by shipping a new version — upgrade to stay
-protected. Pre-1.0 releases (`0.0.x`) receive fixes in the newest release.
+| Component | Registry | Current supported version |
+| --------- | -------- | ------------------------- |
+| `daraja-sdk-ts` (TypeScript SDK) | [npm](https://www.npmjs.com/package/daraja-sdk-ts) | `1.0.1` |
+| `daraja-sdk-py` (Python SDK) | [PyPI](https://pypi.org/project/daraja-sdk-py/) | `1.0.1` |
+| `daraja-mcp` (MCP server) | [Docker Hub](https://hub.docker.com/r/yourdudeken/daraja-mcp) | `1.0.0` |
+
+The support window for every component is **the latest release only** — there is
+no back-port or long-term-support branch. When a fix is needed on an older
+version, a new release is published and consumers upgrade to it. If you are on
+an earlier version than the one listed above, upgrade before reporting an issue.
+
 
 ## Reporting a vulnerability
 
@@ -32,7 +37,7 @@ privately via GitHub's Security Advisories:
 
 ### What to include
 
-- **Component and version** affected (e.g. `daraja-sdk-ts` 0.0.4, `daraja-mcp` 0.0.1)
+- **Component and version** affected (e.g. `daraja-sdk-ts` 1.0.1, `daraja-sdk-py` 1.0.1, `daraja-mcp` 1.0.0)
 - **Impact** — what an attacker can do and under which conditions
 - **Reproduction steps** (or a minimal proof of concept)
 - Whether the issue affects **sandbox** or **production** usage
