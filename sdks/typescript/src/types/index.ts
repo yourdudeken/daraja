@@ -243,7 +243,7 @@ export interface C2BValidationResponse {
 export type B2CCommandID = "SalaryPayment" | "BusinessPayment" | "PromotionPayment";
 
 export interface B2CRequest {
-  OriginatorConversationID: string;
+  OriginatorConversationID?: string;
   InitiatorName?: string;
   SecurityCredential?: string;
   CommandID: B2CCommandID;
@@ -706,7 +706,7 @@ export interface IoTDeleteMessageRequest {
 // B2Pochi
 // ============================================================
 export interface B2PochiRequest {
-  OriginatorConversationID: string;
+  OriginatorConversationID?: string;
   InitiatorName?: string;
   SecurityCredential?: string;
   CommandID: string;

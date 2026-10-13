@@ -8,8 +8,12 @@ to one SDK does not bump the others.
 | SDK | Version lives in | Registry |
 |-----|------------------|----------|
 | TypeScript | `sdks/typescript/package.json` → `version` | npm (`daraja-sdk-ts`) |
-| Python | `sdks/python/pyproject.toml` → `version` | PyPI (`daraja-sdk-py`) |
+| Python | `sdks/python/src/daraja/_version.py` → `__version__` (declared to the build via `[tool.hatch.version]` in `pyproject.toml`) | PyPI (`daraja-sdk-py`) |
+| MCP server | `mcp/package.json` → `version` | Docker Hub (`yourdudeken/daraja-mcp`) |
 
+Each version is single-sourced: TypeScript injects `package.json.version` at
+build time (see `tsup.config.ts`), and Python reads `_version.py` both at runtime
+and from the build backend. Never duplicate a version string in source or docs.
 
 ## Release tags
 
@@ -32,7 +36,8 @@ to the repository as a whole.
 
 ## How releases happen
 
-1. **Bump the version** in the SDK's manifest (`package.json` or `pyproject.toml`) as part of your PR.
+1. **Bump the version** in the SDK's version source (`sdks/typescript/package.json`,
+   `sdks/python/src/daraja/_version.py`, or `mcp/package.json`) as part of your PR.
 2. **Merge the PR to `main`.** The `Release` workflow
    (`.github/workflows/release.yml`) runs automatically on push to `main`.
 3. The workflow compares each SDK's manifest version against its latest tag and
@@ -65,5 +70,7 @@ versions (leave a field empty to use the manifest version):
 
 ## First release
 
-All three SDKs start at `0.0.1`. With no tags present, the first merge to
-`main` (or a manual dispatch) releases all three at `0.0.1`.
+When a manifest has no corresponding tag yet, the first merge to `main` (or a
+manual dispatch) releases that SDK at its current manifest version. The three
+SDKs are currently at `daraja-sdk-ts` 1.0.1, `daraja-sdk-py` 1.0.1, and
+`daraja-mcp` 1.0.0.

@@ -1,6 +1,7 @@
 import { defineConfig } from "tsup";
 import { copyFileSync, mkdirSync, existsSync, readdirSync } from "fs";
 import { join } from "path";
+import pkg from "./package.json" with { type: "json" };
 
 export default defineConfig({
   entry: {
@@ -18,6 +19,8 @@ export default defineConfig({
   treeshake: true,
   minify: false,
   tsconfig: "./tsconfig.json",
+  // Single-source the SDK version from package.json at build time.
+  define: { __SDK_VERSION__: JSON.stringify(pkg.version) },
   onSuccess: async () => {
     try {
       const certsDir = join("src", "certificates");

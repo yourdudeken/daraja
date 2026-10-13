@@ -4,6 +4,11 @@
   "private": true,
   "description": "Self-hosted MCP server for Safaricom M-Pesa Daraja API access",
   "type": "module",
+  "homepage": "https://github.com/yourdudeken/daraja",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yourdudeken/daraja.git"
+  },
   "scripts": {
     "build": "tsc",
     "clean": "rm -rf dist",

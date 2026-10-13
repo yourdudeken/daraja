@@ -259,4 +259,6 @@ __all__ = [
     "TaxRemittanceService",
 ]
 
-__version__ = "0.2.0"
+from daraja._version import __version__ as __version__
+
+__all__.append("__version__")

@@ -13,10 +13,10 @@
     "b2b",
     "c2b"
   ],
-  "homepage": "https://github.com/yourdudeken/daraja-sdk#readme",
+  "homepage": "https://github.com/yourdudeken/daraja#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/yourdudeken/daraja-sdk.git"
+    "url": "git+https://github.com/yourdudeken/daraja.git"
   },
   "license": "MIT",
   "author": "M-Pesa SDK Team",

@@ -512,7 +512,7 @@ class Mpesa:
                 request.SecurityCredential = self._config.security_credential
             if not request.InitiatorName and self._config.initiator_name:
                 request.InitiatorName = self._config.initiator_name
-        result = self._post("B2C", request.model_dump())
+        result = self._post("B2C", request.model_dump(exclude_none=True))
         return B2CResponse(**result)
 
     def reversal(self, request: ReversalRequest | dict[str, Any]) -> ReversalResponse:
@@ -712,7 +712,7 @@ class Mpesa:
                 request.SecurityCredential = self._config.security_credential
             if not request.InitiatorName and self._config.initiator_name:
                 request.InitiatorName = self._config.initiator_name
-        result = self._post("B2POCHI", request.model_dump())
+        result = self._post("B2POCHI", request.model_dump(exclude_none=True))
         return B2PochiResponse(**result)
 
     def lipa_na_bonga_calculate(
