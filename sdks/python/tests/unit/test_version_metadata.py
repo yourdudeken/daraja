@@ -37,15 +37,38 @@ def test_runtime_version_matches_installed_distribution() -> None:
     assert daraja.__version__ == installed
 
 
-def test_pyproject_derives_version_from_single_source() -> None:
+def test_runtime_version_matches_pyproject() -> None:
+    # pyproject.toml [project].version is the single source of truth.
+    assert daraja.__version__ == _project_table()["version"]
+
+
+def test_pyproject_holds_the_version_statically() -> None:
     project = _project_table()
-    # The version must not be duplicated statically in [project].
-    assert "version" not in project
-    assert project["dynamic"] == ["version"]
+    # No dynamic indirection: the version is declared right in [project].
+    assert "dynamic" not in project
+    assert isinstance(project["version"], str)
 
     with PYPROJECT.open("rb") as fh:
-        hatch = tomllib.load(fh)["tool"]["hatch"]["version"]
-    assert hatch["path"] == "src/daraja/_version.py"
+        parsed = tomllib.load(fh)
+    # ...and there is no second version table pointing at another file.
+    assert "version" not in parsed.get("tool", {}).get("hatch", {})
+
+
+def test_version_literal_is_not_duplicated_in_code() -> None:
+    # The module resolves the version; it must not hardcode the same string.
+    literal = _project_table()["version"]
+    source = Path(_version.__file__).read_text(encoding="utf-8")
+    assert literal not in source
+
+
+def test_version_degrades_gracefully_without_a_source(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(_version, "_SOURCE_PYPROJECT", Path("/nonexistent/pyproject.toml"))
+    monkeypatch.setattr(_version, "_DISTRIBUTION", "daraja-not-really-installed")
+    assert _version._from_pyproject() is None
+    assert _version._from_installed_distribution() is None
+    assert _version._resolve_version() == "0.0.0+unknown"
 
 
 def test_pyproject_uses_canonical_repository_url() -> None:
