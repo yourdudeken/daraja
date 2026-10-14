@@ -1,4 +1,4 @@
-"""FR-02 / FR-03 — version single-sourcing and canonical repository URL (M0)."""
+"""Version single-sourcing and canonical repository URL."""
 
 from __future__ import annotations
 

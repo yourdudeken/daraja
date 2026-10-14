@@ -177,11 +177,8 @@ class TestPersistentWebhookRetryQueue:
 class TestHealthEndpoint:
     def test_healthy_when_token_ok(self):
         class FakeClient:
-            class TokenManager:
-                def get_token(self):
-                    return "token"
-
-            _token_manager = TokenManager()
+            def check_token(self) -> bool:
+                return True
 
         health = create_health_endpoint(FakeClient())  # type: ignore[arg-type]
         result = health()
@@ -192,11 +189,8 @@ class TestHealthEndpoint:
 
     def test_degraded_when_token_fails(self):
         class FakeClient:
-            class TokenManager:
-                def get_token(self):
-                    raise RuntimeError("no token")
-
-            _token_manager = TokenManager()
+            def check_token(self) -> bool:
+                return False
 
         health = create_health_endpoint(FakeClient())  # type: ignore[arg-type]
         result = health()

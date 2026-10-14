@@ -1,0 +1,130 @@
+{
+  "$comment": "Shared redaction parity fixture. Consumed by sdks/python/tests/unit/test_redaction.py and mcp/tests/audit.test.ts. Both the Python redactor (sdks/python/src/daraja/utils/redaction.py) and the TypeScript redactor (mcp/src/audit.ts) must produce `expected` from `input`.",
+  "cases": [
+    {
+      "name": "secret key redacts nested object subtree",
+      "input": { "securityCredential": { "value": "topsecret" } },
+      "expected": { "securityCredential": "[REDACTED]" }
+    },
+    {
+      "name": "secret key redacts array subtree",
+      "input": { "tokens": [{ "value": "topsecret" }] },
+      "expected": { "tokens": "[REDACTED]" }
+    },
+    {
+      "name": "secret key redacts numeric value",
+      "input": { "token": 123456 },
+      "expected": { "token": "[REDACTED]" }
+    },
+    {
+      "name": "secret key redacts string value",
+      "input": { "consumerSecret": "abc" },
+      "expected": { "consumerSecret": "[REDACTED]" }
+    },
+    {
+      "name": "secret key wins over MSISDN shape",
+      "input": { "token": "254712345678" },
+      "expected": { "token": "[REDACTED]" }
+    },
+    {
+      "name": "secret key redacts deeply nested subtree",
+      "input": { "consumer": { "a": { "b": ["x"] } } },
+      "expected": { "consumer": "[REDACTED]" }
+    },
+    {
+      "name": "secret leaf nested under benign keys",
+      "input": { "data": { "token": "t", "remarks": "ok" } },
+      "expected": { "data": { "token": "[REDACTED]", "remarks": "ok" } }
+    },
+    {
+      "name": "secret leaf inside array of objects",
+      "input": { "items": [{ "consumerSecret": "s" }, { "amount": 100 }] },
+      "expected": { "items": [{ "consumerSecret": "[REDACTED]" }, { "amount": 100 }] }
+    },
+    {
+      "name": "msisdn under PII key is masked",
+      "input": { "phoneNumber": "254712345678" },
+      "expected": { "phoneNumber": "2547******78" }
+    },
+    {
+      "name": "numeric under PII key is redacted",
+      "input": { "phoneNumber": 254712345678 },
+      "expected": { "phoneNumber": "[REDACTED]" }
+    },
+    {
+      "name": "boolean under PII key is redacted",
+      "input": { "customerFlag": true },
+      "expected": { "customerFlag": "[REDACTED]" }
+    },
+    {
+      "name": "non-msisdn PII string is redacted",
+      "input": { "idNumber": "12345678" },
+      "expected": { "idNumber": "[REDACTED]" }
+    },
+    {
+      "name": "benign values untouched",
+      "input": { "amount": 1000, "remarks": "hello" },
+      "expected": { "amount": 1000, "remarks": "hello" }
+    },
+    {
+      "name": "inline secret pair in error string is scrubbed",
+      "input": { "error": "auth failed token=abc123 for user" },
+      "expected": { "error": "auth failed token=[REDACTED] for user" }
+    },
+    {
+      "name": "inline secret pair with colon is scrubbed",
+      "input": { "error": "secret: s3cr3t" },
+      "expected": { "error": "secret=[REDACTED]" }
+    },
+    {
+      "name": "embedded msisdn in free text is masked",
+      "input": { "remarks": "callback from 254712345678 handled" },
+      "expected": { "remarks": "callback from 2547******78 handled" }
+    },
+    {
+      "name": "empty object",
+      "input": {},
+      "expected": {}
+    },
+    {
+      "name": "top-level array with secret object and msisdn string",
+      "input": [{ "token": "x" }, "254712345678"],
+      "expected": [{ "token": "[REDACTED]" }, "2547******78"]
+    },
+    {
+      "name": "hyphenated api-key object key is a secret",
+      "input": { "x-api-key": "HEADERSECRET" },
+      "expected": { "x-api-key": "[REDACTED]" }
+    },
+    {
+      "name": "bearer credential in error string is scrubbed",
+      "input": { "error": "auth error Bearer abc.def ghi" },
+      "expected": { "error": "auth error Bearer [REDACTED] ghi" }
+    },
+    {
+      "name": "authorization bearer pair in error string is scrubbed",
+      "input": { "error": "Authorization: Bearer eyJhbGci.abc" },
+      "expected": { "error": "Authorization=[REDACTED] [REDACTED]" }
+    },
+    {
+      "name": "inline secret pair with colon in error string is scrubbed",
+      "input": { "error": "consumerSecret: s3cr3t" },
+      "expected": { "error": "consumerSecret=[REDACTED]" }
+    },
+    {
+      "name": "quoted JSON token in error string is scrubbed",
+      "input": { "error": "{\"access_token\":\"tok-abc123\"}" },
+      "expected": { "error": "{\"access_token=[REDACTED]\"}" }
+    },
+    {
+      "name": "msisdn with trailing newline is masked (not treated as end of input)",
+      "input": { "remarks": "254712345678\n" },
+      "expected": { "remarks": "2547******78\n" }
+    },
+    {
+      "name": "non-ascii digits are not an msisdn (ascii-only match, no divergence)",
+      "input": { "remarks": "254٧٧٧٧٧٧٧٧٧" },
+      "expected": { "remarks": "254٧٧٧٧٧٧٧٧٧" }
+    }
+  ]
+}

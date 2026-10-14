@@ -1,7 +1,7 @@
 import { defineConfig } from "tsup";
-import { copyFileSync, mkdirSync, existsSync, readdirSync } from "fs";
 import { join } from "path";
 import pkg from "./package.json" with { type: "json" };
+import { copyCertificates } from "./scripts/copy-certificates.js";
 
 export default defineConfig({
   entry: {
@@ -21,20 +21,10 @@ export default defineConfig({
   tsconfig: "./tsconfig.json",
   // Single-source the SDK version from package.json at build time.
   define: { __SDK_VERSION__: JSON.stringify(pkg.version) },
+  // Copy the bundled certificates next to the output. A failure here would
+  // publish a package whose `initiatorPassword` path throws ENOENT at runtime,
+  // so errors are NOT swallowed: the build must fail.
   onSuccess: async () => {
-    try {
-      const certsDir = join("src", "certificates");
-      const outCertsDir = join("dist", "certificates");
-      if (existsSync(certsDir)) {
-        mkdirSync(outCertsDir, { recursive: true });
-        for (const f of readdirSync(certsDir)) {
-          if (f.endsWith(".cer")) {
-            copyFileSync(join(certsDir, f), join(outCertsDir, f));
-          }
-        }
-      }
-    } catch (e) {
-      // ignore
-    }
+    copyCertificates(join("src", "certificates"), join("dist", "certificates"));
   },
 });

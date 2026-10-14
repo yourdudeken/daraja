@@ -4,6 +4,8 @@ import sys
 from datetime import UTC, datetime
 from typing import Any
 
+from daraja.utils.redaction import redact
+
 
 class StructuredLogHandler(logging.Handler):
     def __init__(self, stream: Any = None, pretty: bool = False) -> None:
@@ -15,13 +17,15 @@ class StructuredLogHandler(logging.Handler):
         entry = {
             "timestamp": datetime.fromtimestamp(record.created, tz=UTC).isoformat(),
             "level": record.levelname,
-            "message": record.getMessage(),
+            "message": redact(record.getMessage()),
             "service": "mpesa-sdk",
             "logger": record.name,
         }
 
         if hasattr(record, "extra_fields") and record.extra_fields:
-            entry["metadata"] = record.extra_fields
+            # Redaction is subtree-aware: a secret key removes its whole subtree
+            # regardless of type, matching the TypeScript/MCP policy.
+            entry["metadata"] = redact(record.extra_fields)
 
         if self.pretty:
             line = json.dumps(entry, indent=2, default=str)

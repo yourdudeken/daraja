@@ -9,7 +9,7 @@ const repoRoot = resolve(here, "../../../..");
 const read = (relPath: string): string => readFileSync(resolve(repoRoot, relPath), "utf8");
 const CANONICAL = "https://github.com/yourdudeken/daraja";
 
-describe("FR-02 single-sourced version", () => {
+describe("single-sourced version", () => {
   it("TypeScript VERSION matches package.json", () => {
     const pkg = JSON.parse(read("sdks/typescript/package.json")) as { version: string };
     expect(VERSION).toBe(pkg.version);
@@ -20,7 +20,7 @@ describe("FR-02 single-sourced version", () => {
     expect(pkg.version).toMatch(/^\d+\.\d+\.\d+/);
   });
 
-  it("SECURITY.md supported versions match the manifests (FR-82)", () => {
+  it("SECURITY.md supported versions match the manifests", () => {
     const security = read("SECURITY.md");
     const tsVersion = (JSON.parse(read("sdks/typescript/package.json")) as { version: string })
       .version;
@@ -41,7 +41,7 @@ describe("FR-02 single-sourced version", () => {
   });
 });
 
-describe("FR-03 canonical repository URL", () => {
+describe("canonical repository URL", () => {
   it("TypeScript manifest points at the canonical repository", () => {
     const pkg = JSON.parse(read("sdks/typescript/package.json")) as {
       homepage: string;

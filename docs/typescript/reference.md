@@ -401,7 +401,7 @@ app.use(createExpressMiddleware({
   path: "/mpesa/webhook",       // optional
   healthPath: "/mpesa/health",  // optional
   verifySignature: true,        // optional
-  secret: "SHARED_SECRET",      // required when verifySignature is true
+  secret: "SHARED_SECRET",      // required whenever verification is on
   mpesaClient,                  // optional; enables GET /health
 }));
 
@@ -416,6 +416,54 @@ fastify.register(createFastifyPlugin({
 ```
 
 When `mpesaClient` is provided, a `GET <healthPath>` (default `/mpesa/health`) endpoint returns health JSON (checks token acquisition). Both middleware parse callbacks and route them to the `webhookManager` (`handleEvent`).
+
+### Webhook signature verification
+
+Signature verification is **on** when any of the following is true, and **never
+silently skipped**:
+
+- `verifySignature: true` is passed to the middleware;
+- the `webhookManager` was constructed with `{ verifySignature: true }` (its
+  configured secret is used automatically, so a fully-configured manager cannot
+  be bypassed by default middleware options);
+- a `secret` is passed to the middleware.
+
+If verification is on but no secret is available (neither on the options nor on
+the manager), construction **throws**. Pass `verifySignature: false` to
+explicitly opt out.
+
+Verification is computed over the **raw request bytes**. Express and Fastify do
+not expose them by default: without a `rawBody`, every webhook is rejected with
+`401 Raw request body unavailable for signature verification`. Capture the raw
+body when wiring the JSON parser:
+
+```typescript
+// Express
+app.use(
+  express.json({
+    verify: (req, _res, buf) => {
+      (req as any).rawBody = buf.toString("utf8");
+    },
+  }),
+);
+
+// Fastify
+fastify.addContentTypeParser(
+  "application/json",
+  { parseAs: "string" },
+  (req, body, done) => {
+    (req as any).rawBody = body as string;
+    done(null, JSON.parse(body as string));
+  },
+);
+```
+
+> **Migration note:** the middleware previously fell back to
+> `JSON.stringify(req.body)` when `rawBody` was absent. That re-serialization
+> cannot reproduce the provider's signature, so it has been removed in favour of
+> failing closed. If your webhooks previously verified successfully without a
+> raw body, add the capture hook above.
+
 
 ---
 

@@ -10,9 +10,37 @@ WebhookHandler = Callable[[str, Any], None]
 
 
 class WebhookManager:
-    def __init__(self, logger: Logger | None = None) -> None:
+    def __init__(
+        self,
+        logger: Logger | None = None,
+        secret: str | None = None,
+        verify_signature: bool = False,
+    ) -> None:
+        # Fail closed: enabling verification without a secret used to silently
+        # perform no verification at all. Refuse to construct.
+        if verify_signature and not secret:
+            raise ValueError(
+                "verify_signature=True requires a secret; refusing to start with "
+                "signature verification silently disabled."
+            )
         self._handlers: dict[str, list[WebhookHandler]] = {}
+        self._secret = secret
+        self._verify_signature = verify_signature
         self._logger = _get_logger(logger)
+
+    @property
+    def verification_enabled(self) -> bool:
+        """Whether signature verification is enabled for this manager."""
+        return self._verify_signature
+
+    @property
+    def has_secret(self) -> bool:
+        """Whether a verification secret is configured on this manager.
+
+        The middleware consults this so a fully-configured manager is never
+        silently bypassed; the secret value itself is never exposed.
+        """
+        return bool(self._secret)
 
     def on(self, event_type: str, handler: WebhookHandler) -> None:
         if event_type not in self._handlers:
@@ -72,11 +100,37 @@ class WebhookManager:
             return {"ResultCode": "0", "ResultDesc": "Accepted"}
         return {"ResultCode": "C2B00011", "ResultDesc": "Rejected"}
 
-    def verify_signature(self, payload: str, signature: str, secret: str) -> bool:
+    def verify_signature(
+        self, payload: str, signature: str | None = None, secret: str | None = None
+    ) -> bool:
+        effective = secret or self._secret
+        if not effective or not signature:
+            return False
         expected = hmac.new(
-            secret.encode(), payload.encode(), hashlib.sha256
+            effective.encode(), payload.encode(), hashlib.sha256
         ).hexdigest()
-        return hmac.compare_digest(expected, signature)
+        # Fail closed on any malformed header: ``compare_digest`` raises
+        # ``TypeError`` for non-ASCII input (e.g. a latin-1 decoded header),
+        # which must be a 401 rather than a 500.
+        try:
+            return hmac.compare_digest(expected, signature)
+        except TypeError:
+            return False
+
+    def verify_raw_body(
+        self,
+        raw_body: str | None,
+        signature: str | None,
+        secret: str | None = None,
+    ) -> bool:
+        """Verify a signature over the **raw** request bytes.
+
+        Fails closed: if the raw body or signature is unavailable (or the
+        secret is missing) the request is rejected rather than re-serialized.
+        """
+        if not raw_body or not signature:
+            return False
+        return self.verify_signature(raw_body, signature, secret)
 
 
 from daraja.webhooks.persistent_queue import PersistentDeliveryRecord, PersistentWebhookRetryQueue

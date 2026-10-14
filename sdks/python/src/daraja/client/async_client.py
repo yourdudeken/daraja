@@ -79,7 +79,14 @@ from daraja.models import (
     _get_logger,
 )
 from daraja.services import _validate_phone, _validate_shortcode
-from daraja.utils import create_tracer, generate_password, generate_timestamp, with_span
+from daraja.utils import (
+    calculate_backoff,
+    create_tracer,
+    generate_password,
+    generate_timestamp,
+    scrub_secrets,
+    with_span,
+)
 from daraja.utils.circuit_breaker import (
     CircuitBreaker,
 )
@@ -292,7 +299,11 @@ class AsyncMpesa:
                         response.status_code in RETRYABLE_STATUS_CODES
                         and attempt < self._config.retry_config.max_retries
                     ):
-                        delay = min(2**attempt * 1.0, 30.0)
+                        delay = calculate_backoff(
+                            attempt,
+                            self._config.retry_config.base_delay_ms,
+                            self._config.retry_config.max_delay_ms,
+                        )
                         self._logger.warning(
                             "Retryable status code, backing off",
                             extra={
@@ -342,7 +353,11 @@ class AsyncMpesa:
                 except httpx.TimeoutException as e:
                     last_error = TimeoutError("Request timed out.", cause=e, request_id=request_id)
                     if attempt < self._config.retry_config.max_retries:
-                        delay = min(2**attempt * 1.0, 30.0)
+                        delay = calculate_backoff(
+                            attempt,
+                            self._config.retry_config.base_delay_ms,
+                            self._config.retry_config.max_delay_ms,
+                        )
                         await asyncio.sleep(delay)
                         continue
                     raise last_error
@@ -352,7 +367,11 @@ class AsyncMpesa:
                         "Connection failed.", cause=e, request_id=request_id
                     )
                     if attempt < self._config.retry_config.max_retries:
-                        delay = min(2**attempt * 1.0, 30.0)
+                        delay = calculate_backoff(
+                            attempt,
+                            self._config.retry_config.base_delay_ms,
+                            self._config.retry_config.max_delay_ms,
+                        )
                         await asyncio.sleep(delay)
                         continue
                     raise last_error
@@ -706,6 +725,27 @@ class AsyncMpesa:
         self._config.consumer_secret = consumer_secret
         self._token_manager.invalidate()
         self._logger.info("Credentials rotated")
+
+    async def get_access_token(self) -> str:
+        """Fetch (and cache) an OAuth access token from the API."""
+        return await self._token_manager.get_token()
+
+    async def check_token(self) -> bool:
+        """Health probe: True if an access token can be obtained, else False.
+
+        Never raises — used by health endpoints to report status.
+        """
+        try:
+            await self._token_manager.get_token()
+            return True
+        except Exception as exc:  # noqa: BLE001 - health probes must not raise
+            # Log the exception type and a scrubbed message: the raw
+            # message can embed credentials or request details.
+            self._logger.warning(
+                "Token check failed",
+                extra={"error_type": type(exc).__name__, "error": scrub_secrets(str(exc))},
+            )
+            return False
 
     async def close(self) -> None:
         await self._client.aclose()

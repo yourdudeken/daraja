@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { createHmac } from "node:crypto";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -159,6 +160,36 @@ describe("WebhookManager", () => {
 
   it("createWebhookManager creates a manager", () => {
     expect(createWebhookManager({ passkey: "pk" })).toBeInstanceOf(WebhookManager);
+  });
+
+  it("throws when verification is enabled without a secret", () => {
+    // Previously this silently performed no verification.
+    expect(() => new WebhookManager({ verifySignature: true })).toThrow(/secret/);
+    expect(() => createWebhookManager({ verifySignature: true })).toThrow(/secret/);
+  });
+
+  it("enables verification when a secret is provided", () => {
+    const manager = new WebhookManager({ secret: "s", verifySignature: true });
+    expect(manager.isVerificationEnabled).toBe(true);
+    expect(new WebhookManager().isVerificationEnabled).toBe(false);
+  });
+
+  it("verifyRawBody fails closed when the raw body is unavailable", () => {
+    const manager = new WebhookManager({ secret: "s", verifySignature: true });
+    const signature = createHmac("sha256", "s").update(JSON.stringify({ a: 1 })).digest("hex");
+    expect(manager.verifyRawBody(JSON.stringify({ a: 1 }), signature)).toBe(true);
+    // Never fall back to re-serialization when raw bytes are missing.
+    expect(manager.verifyRawBody(undefined, signature)).toBe(false);
+    expect(manager.verifyRawBody("", signature)).toBe(false);
+    expect(manager.verifyRawBody(JSON.stringify({ a: 1 }), undefined)).toBe(false);
+    expect(manager.verifyRawBody(JSON.stringify({ a: 1 }), "")).toBe(false);
+  });
+
+  it("verifyRawBody rejects tampered content and missing secrets", () => {
+    const manager = new WebhookManager({ secret: "s", verifySignature: true });
+    const signature = createHmac("sha256", "s").update("original").digest("hex");
+    expect(manager.verifyRawBody("tampered", signature)).toBe(false);
+    expect(new WebhookManager().verifyRawBody("original", signature, "")).toBe(false);
   });
 });
 

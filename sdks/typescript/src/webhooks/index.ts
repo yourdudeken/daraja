@@ -27,11 +27,45 @@ export type WebhookEvent =
 
 export type WebhookHandler = (event: WebhookEvent) => unknown | Promise<unknown>;
 
+export interface WebhookManagerOptions {
+  /** STK Push passkey (kept for backwards compatibility; not used for verification). */
+  passkey?: string;
+  /** Shared secret used to verify incoming webhook signatures. */
+  secret?: string;
+  /** Enable HMAC verification. Requires {@link WebhookManagerOptions.secret}. */
+  verifySignature?: boolean;
+}
+
 export class WebhookManager {
   private handlers = new Map<string, WebhookHandler[]>();
+  private readonly secret?: string;
+  private readonly verificationEnabled: boolean;
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  constructor(_options?: { passkey?: string }) { }
+  constructor(options?: WebhookManagerOptions) {
+    this.secret = options?.secret;
+    this.verificationEnabled = options?.verifySignature ?? false;
+    // Fail closed: enabling verification without a secret previously produced
+    // no verification at all and no warning. Refuse to construct.
+    if (this.verificationEnabled && !this.secret) {
+      throw new Error(
+        "WebhookManager: verifySignature requires a secret; refusing to start with signature verification silently disabled.",
+      );
+    }
+  }
+
+  /** Whether signature verification is enabled for this manager. */
+  get isVerificationEnabled(): boolean {
+    return this.verificationEnabled;
+  }
+
+  /**
+   * Whether a verification secret is configured on this manager. The middleware
+   * consults this so a fully-configured manager is never silently bypassed; the
+   * secret value itself is never exposed.
+   */
+  get hasSecret(): boolean {
+    return this.secret !== undefined;
+  }
 
   on(event: WebhookEvent["type"], handler: WebhookHandler): void {
     const existing = this.handlers.get(event) ?? [];
@@ -107,11 +141,26 @@ export class WebhookManager {
       return false;
     }
   }
+
+  /**
+   * Verify a signature over the **raw** request bytes.
+   *
+   * Fails closed: if the raw body (or signature/secret) is unavailable we reject
+   * rather than re-serializing the parsed body, which would not reproduce the
+   * provider's signature.
+   */
+  verifyRawBody(
+    rawBody: string | undefined | null,
+    signature: string | undefined | null,
+    secret?: string,
+  ): boolean {
+    const effectiveSecret = secret ?? this.secret;
+    if (!rawBody || !signature || !effectiveSecret) return false;
+    return this.verifySignature(rawBody, signature, effectiveSecret);
+  }
 }
 
-export function createWebhookManager(options?: {
-  passkey?: string;
-}): WebhookManager {
+export function createWebhookManager(options?: WebhookManagerOptions): WebhookManager {
   return new WebhookManager(options);
 }
 
