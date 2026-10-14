@@ -428,6 +428,19 @@ describe("StructuredLogger", () => {
     spy.mockRestore();
   });
 
+  it("child respects parent's minimum level", () => {
+    const debugSpy = vi.spyOn(console, "debug").mockImplementation(() => {});
+    const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+    const logger = new StructuredLogger({ minLevel: "INFO" });
+    const child = logger.child("child");
+    child.debug("debug message");
+    child.info("info message");
+    expect(debugSpy).not.toHaveBeenCalled();
+    expect(logSpy).toHaveBeenCalledWith(expect.stringContaining("info message"));
+    debugSpy.mockRestore();
+    logSpy.mockRestore();
+  });
+
   it("prettyPrint formats with indentation", () => {
     const spy = vi.spyOn(console, "log").mockImplementation(() => {});
     const logger = new StructuredLogger({ prettyPrint: true });
