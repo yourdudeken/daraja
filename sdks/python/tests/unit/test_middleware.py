@@ -444,11 +444,8 @@ class TestDjangoMiddleware:
         self._configure_django()
 
         class FakeClient:
-            class TokenManager:
-                def get_token(self):
-                    return "token"
-
-            _token_manager = TokenManager()
+            def check_token(self):
+                return True
 
         view = create_django_health_view(FakeClient())  # type: ignore[arg-type]
 
@@ -463,11 +460,8 @@ class TestDjangoMiddleware:
         self._configure_django()
 
         class FakeClient:
-            class TokenManager:
-                def get_token(self):
-                    raise RuntimeError("no token")
-
-            _token_manager = TokenManager()
+            def check_token(self):
+                return False
 
         view = create_django_health_view(FakeClient())  # type: ignore[arg-type]
 
@@ -548,15 +542,14 @@ class TestFlaskMiddleware:
         from flask import Flask
 
         class FakeClient:
-            class TokenManager:
-                def get_token(self):
-                    return "token"
-
-            _token_manager = TokenManager()
+            def check_token(self):
+                return True
 
         manager = RecordingManager()
         app = Flask(__name__)
-        app.register_blueprint(create_flask_blueprint(manager, mpesa_client=FakeClient()))  # type: ignore[arg-type]
+        app.register_blueprint(
+            create_flask_blueprint(manager, mpesa_client=FakeClient(), verify_signature=False)  # type: ignore[arg-type]
+        )
 
         with app.test_client() as client:
             resp = client.get("/mpesa/health")
@@ -567,15 +560,14 @@ class TestFlaskMiddleware:
         from flask import Flask
 
         class FakeClient:
-            class TokenManager:
-                def get_token(self):
-                    raise RuntimeError("no token")
-
-            _token_manager = TokenManager()
+            def check_token(self):
+                return False
 
         manager = RecordingManager()
         app = Flask(__name__)
-        app.register_blueprint(create_flask_blueprint(manager, mpesa_client=FakeClient()))  # type: ignore[arg-type]
+        app.register_blueprint(
+            create_flask_blueprint(manager, mpesa_client=FakeClient(), verify_signature=False)  # type: ignore[arg-type]
+        )
 
         with app.test_client() as client:
             resp = client.get("/mpesa/health")

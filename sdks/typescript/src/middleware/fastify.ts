@@ -16,6 +16,22 @@ export function createFastifyPlugin(
 ): (fastify: any) => Promise<void> {
   const healthPath = options.healthPath ?? "/mpesa/health";
 
+  // Verification is on when requested explicitly, when the manager is
+  // verification-enabled, when the manager holds a secret, or when a secret is
+  // supplied. It is NEVER silently skipped: requesting it without an effective
+  // secret fails at construction. A configured manager is honoured so a secret
+  // that only lives on the manager can never be bypassed by default options.
+  const managerConfigured =
+    options.webhookManager.isVerificationEnabled || options.webhookManager.hasSecret;
+  const verify =
+    options.verifySignature ?? (managerConfigured || options.secret !== undefined);
+  const hasEffectiveSecret = options.secret !== undefined || options.webhookManager.hasSecret;
+  if (verify && !hasEffectiveSecret) {
+    throw new Error(
+      "createFastifyPlugin: signature verification requires a secret; refusing to start with verification silently disabled. Pass verifySignature: false to explicitly disable it.",
+    );
+  }
+
   return async (fastify: any) => {
     const path = options.path ?? "/mpesa/webhook";
 
@@ -44,13 +60,19 @@ export function createFastifyPlugin(
     fastify.post(path, async (request: any, reply: any) => {
       const body = request.body;
 
-      if (options.verifySignature && options.secret) {
-        const signature = request.headers["x-mpesa-signature"] as string;
+      if (verify) {
+        const signature = request.headers["x-mpesa-signature"] as string | undefined;
         if (!signature) {
           return reply.status(401).send({ error: "Missing signature" });
         }
-        const rawBody = request.rawBody ?? JSON.stringify(body);
-        if (!options.webhookManager.verifySignature(rawBody, signature, options.secret)) {
+        // Fail closed: verify over the raw bytes only.
+        const rawBody = typeof request.rawBody === "string" ? request.rawBody : undefined;
+        if (!rawBody) {
+          return reply
+            .status(401)
+            .send({ error: "Raw request body unavailable for signature verification" });
+        }
+        if (!options.webhookManager.verifyRawBody(rawBody, signature, options.secret)) {
           return reply.status(401).send({ error: "Invalid signature" });
         }
       }

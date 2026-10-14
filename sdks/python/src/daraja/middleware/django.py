@@ -10,7 +10,7 @@ if TYPE_CHECKING:
 def create_django_view(
     webhook_manager: WebhookManager,
     secret: str | None = None,
-    verify_signature: bool = True,
+    verify_signature: bool | None = None,
 ) -> Any:
     try:
         from django.http import HttpResponse, HttpResponseBadRequest, JsonResponse
@@ -18,6 +18,17 @@ def create_django_view(
         from django.views.decorators.http import require_POST
     except ImportError:
         raise ImportError("django is required. Install with: pip install daraja-sdk-py[django]")
+
+    # Secure by default: verification is on unless explicitly disabled. The
+    # secret may come from the manager, so a fully-configured manager is never
+    # silently bypassed.
+    verify = True if verify_signature is None else verify_signature
+    if verify and not (secret or webhook_manager.has_secret):
+        raise ValueError(
+            "verify_signature requires a secret; refusing to start with signature "
+            "verification silently disabled. Pass verify_signature=False to "
+            "explicitly disable verification."
+        )
 
     @csrf_exempt  # type: ignore[untyped-decorator]
     @require_POST  # type: ignore[untyped-decorator]
@@ -29,15 +40,13 @@ def create_django_view(
         except (ValueError, AttributeError):
             return HttpResponseBadRequest("Invalid JSON body")
 
-        if verify_signature:
-            webhook_secret = secret or ""
-            if not webhook_secret:
-                return HttpResponse("Missing webhook secret", status=401)
+        if verify:
             signature = request.headers.get("x-mpesa-signature", "")
             if not signature:
                 return HttpResponse("Missing signature", status=401)
             raw_body = request.body.decode("utf-8")
-            if not webhook_manager.verify_signature(raw_body, signature, webhook_secret):
+            # Fail closed: verify over the raw bytes.
+            if not webhook_manager.verify_raw_body(raw_body, signature, secret):
                 return HttpResponse("Invalid signature", status=401)
 
         if body.get("Body", {}).get("stkCallback"):
@@ -88,11 +97,14 @@ def create_django_health_view(mpesa_client: "Mpesa") -> Any:
     start = time.time()
 
     def health(request: Any) -> Any:
-        try:
-            mpesa_client._token_manager.get_token()
-            token_ok = True
-        except Exception:
+        import inspect
+        probe = mpesa_client.check_token()
+        if inspect.isawaitable(probe):
+            # An AsyncMpesa cannot be probed from a sync Django view.
+            probe.close()
             token_ok = False
+        else:
+            token_ok = bool(probe)
         status = "healthy" if token_ok else "degraded"
         return JsonResponse({
             "status": status,

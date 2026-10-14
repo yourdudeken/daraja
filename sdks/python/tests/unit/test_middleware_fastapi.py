@@ -280,10 +280,10 @@ class TestFastAPIRouter:
 
     def test_webhook_fails_closed_when_verification_enabled_without_secret(self):
         manager = RecordingManager()
-        app = _make_app(manager, verify_signature=True)
-        with TestClient(app) as tc:
-            resp = tc.post("/mpesa/webhook", json=_stk_body())
-        assert resp.status_code == 401
+        # Enabling verification without a secret must fail at construction,
+        # not silently serve unverified traffic.
+        with pytest.raises(ValueError, match="requires a secret"):
+            _make_app(manager, verify_signature=True)
         assert not manager.emitted
 
     def test_webhook_missing_signature(self):

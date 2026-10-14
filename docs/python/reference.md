@@ -295,14 +295,23 @@ From `daraja.webhooks`:
 ```python
 from daraja.webhooks import WebhookManager
 
-manager = WebhookManager(logger=None)
+manager = WebhookManager(logger=None, secret=SHARED_SECRET, verify_signature=True)
 manager.on("stk:callback", handler)   # handler(event_type, payload)
 manager.off("stk:callback", handler)
 manager.emit("stk:callback", payload)
 manager.parse_stk_callback(body)      # -> dict
 manager.parse_c2b_validation_response(accept=True)  # -> dict
-manager.verify_signature(payload, signature, secret) # -> bool
+manager.verify_signature(payload, signature, secret=None) # -> bool
+manager.verify_raw_body(raw_body, signature, secret=None) # -> bool
+manager.has_secret                    # -> bool (secret configured, value never exposed)
+manager.verification_enabled          # -> bool
 ```
+
+`verify_signature(payload, signature, secret=None)` and
+`verify_raw_body(raw_body, signature, secret=None)` use the explicitly supplied
+`secret`, falling back to the manager's own `secret`. Both **fail closed**: a
+missing signature, missing secret, or missing raw body returns `False` (they
+never re-serialize a parsed body).
 
 Also exports: `WebhookHandler` (type alias), `WebhookRetryQueue`, `DeliveryRecord`, `PersistentWebhookRetryQueue`, `PersistentDeliveryRecord`.
 
@@ -319,11 +328,30 @@ from daraja.health import create_health_endpoint
 
 | Function | Notes |
 |----------|-------|
-| `create_fastapi_router(webhook_manager, secret="", mpesa_client=None)` | FastAPI `APIRouter`. Exposes `POST /mpesa/webhook` (validates `x-mpesa-signature` when `secret` is set, routes to the manager) and `GET /mpesa/health` when `mpesa_client` is provided. Requires `fastapi` extra. |
+| `create_fastapi_router(webhook_manager, secret=None, mpesa_client=None, verify_signature=None)` | FastAPI `APIRouter`. Exposes `POST /mpesa/webhook` and `GET /mpesa/health` when `mpesa_client` is provided. Requires `fastapi` extra. |
 | `create_flask_blueprint(...)` | Flask blueprint with webhook + health routes |
 | `create_django_view(...)` | Django webhook view callable |
 | `create_django_health_view(...)` | Django health view callable |
 | `create_health_endpoint(mpesa_client)` | Returns a health endpoint callable |
+
+### Webhook signature verification
+
+Verification is **on** unless explicitly disabled (`verify_signature=False`), and
+it is **never silently skipped**:
+
+- the effective secret is the `secret` argument, falling back to the secret
+  configured on `webhook_manager`;
+- if verification is on and no secret is available, the factory **raises
+  `ValueError`** at construction time rather than serving unverified traffic;
+- signatures are verified over the **raw request body**, never a
+  re-serialized body. A request whose body cannot be read or parsed is rejected.
+
+> **Migration note:** previously `create_fastapi_router`/`create_flask_blueprint`/
+> `create_django_view` defaulted to `verify_signature=True` and returned `401`
+> for every webhook when no secret was configured — the app started but silently
+> handled nothing. That misconfiguration now fails fast at construction. Pass
+> `verify_signature=False` if you intentionally run without signature
+> verification (not recommended in production).
 
 ---
 

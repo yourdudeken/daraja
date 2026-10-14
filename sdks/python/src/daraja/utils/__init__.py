@@ -91,6 +91,7 @@ from daraja.utils.idempotency import (
     generate_idempotency_key,
 )
 from daraja.utils.metrics import MetricsCollector, NoopMetricsCollector, PrometheusMetricsCollector
+from daraja.utils.redaction import redact, scrub_secrets
 from daraja.utils.structured_logger import StructuredLogger
 from daraja.utils.token_cache import (
     InMemorySharedTokenCache,
@@ -119,6 +120,8 @@ __all__ = [
     "validate_shortcode",
     "validate_amount",
     "calculate_backoff",
+    "redact",
+    "scrub_secrets",
     "execute_batch",
     "execute_batch_async",
     "MetricsCollector",

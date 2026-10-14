@@ -1,5 +1,24 @@
 import { describe, it, expect, vi } from "vitest";
-import { redact, logToolCall } from "../src/audit.js";
+import { readFileSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+import { redact, logToolCall, scrubSecrets } from "../src/audit.js";
+
+const HERE = dirname(fileURLToPath(import.meta.url));
+const REDACTION_FIXTURE = resolve(
+  HERE,
+  "../../sdks/python/tests/fixtures/redaction_cases.json",
+);
+
+interface RedactionCase {
+  name: string;
+  input: unknown;
+  expected: unknown;
+}
+
+const redactionCases: RedactionCase[] = JSON.parse(
+  readFileSync(REDACTION_FIXTURE, "utf-8"),
+).cases;
 
 describe("audit redaction", () => {
   it("fully redacts secret-like values by key", () => {
@@ -66,5 +85,37 @@ describe("logToolCall", () => {
     expect(parsed.status).toBe("error");
     expect(parsed.error).toBe("boom");
     spy.mockRestore();
+  });
+
+  it("scrubs inline secrets in the error message", () => {
+    const spy = vi.spyOn(console, "error").mockImplementation(() => {});
+    logToolCall({
+      tool: "stk_push",
+      args: {},
+      status: "error",
+      durationMs: 3,
+      error: "callback failed token=leaked123",
+    });
+
+    const parsed = JSON.parse(String(spy.mock.calls[0][0]));
+    expect(parsed.error).toBe("callback failed token=[REDACTED]");
+    spy.mockRestore();
+  });
+});
+
+describe("redaction parity with the Python redactor", () => {
+  it.each(redactionCases)("$name", ({ input, expected }) => {
+    expect(redact(input)).toEqual(expected);
+  });
+
+  it("redacts the whole subtree of a secret key, not just string leaves", () => {
+    expect(redact({ securityCredential: { nested: { deep: ["value"] } } })).toEqual({
+      securityCredential: "[REDACTED]",
+    });
+  });
+
+  it("scrubs inline secrets and masks embedded MSISDNs", () => {
+    expect(scrubSecrets("token=abc123 failed")).toBe("token=[REDACTED] failed");
+    expect(scrubSecrets("from 254712345678")).toBe("from 2547******78");
   });
 });

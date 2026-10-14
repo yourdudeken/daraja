@@ -1,3 +1,4 @@
+import json
 from typing import TYPE_CHECKING, Any
 
 from daraja.middleware.django import create_django_health_view, create_django_view
@@ -21,7 +22,7 @@ def create_fastapi_router(
     webhook_manager: WebhookManager,
     secret: str | None = None,
     mpesa_client: "Mpesa | None" = None,
-    verify_signature: bool = True,
+    verify_signature: bool | None = None,
 ) -> "APIRouter":
     try:
         from fastapi import APIRouter, HTTPException, Request
@@ -31,17 +32,28 @@ def create_fastapi_router(
 
     from daraja import __version__
 
+    # Secure by default: verification is on unless explicitly disabled. The
+    # secret may come from the manager, so a fully-configured manager is never
+    # silently bypassed.
+    verify = True if verify_signature is None else verify_signature
+    if verify and not (secret or webhook_manager.has_secret):
+        raise ValueError(
+            "verify_signature requires a secret; refusing to start with signature "
+            "verification silently disabled. Pass verify_signature=False to "
+            "explicitly disable verification."
+        )
+
     router = APIRouter()
 
     if mpesa_client:
         @router.get("/mpesa/health")
         async def health() -> Any:
+            import inspect
             import time
-            try:
-                mpesa_client._token_manager.get_token()
-                token_ok = True
-            except Exception:
-                token_ok = False
+            # Await the token probe when the client is async (AsyncMpesa);
+            # a sync Mpesa returns a bool directly.
+            probe = mpesa_client.check_token()
+            token_ok = bool(await probe) if inspect.isawaitable(probe) else bool(probe)
             status = "healthy" if token_ok else "degraded"
             return JSONResponse(
                 content={
@@ -55,18 +67,23 @@ def create_fastapi_router(
 
     @router.post("/mpesa/webhook")
     async def handle_webhook(request: Request) -> dict[str, Any]:
-        body = await request.json()
+        raw_body = await request.body()
+        try:
+            body = json.loads(raw_body) if raw_body else None
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid JSON body")
+        if body is None:
+            raise HTTPException(status_code=400, detail="Invalid JSON body")
 
-        if verify_signature:
-            webhook_secret = secret or ""
-            if not webhook_secret:
-                raise HTTPException(status_code=401, detail="Missing webhook secret")
+        if verify:
             signature = request.headers.get("x-mpesa-signature", "")
             if not signature:
                 raise HTTPException(status_code=401, detail="Missing signature")
-            raw_body = await request.body()
-            raw_body_str = raw_body.decode("utf-8")
-            if not webhook_manager.verify_signature(raw_body_str, signature, webhook_secret):
+            # Fail closed: verify over the raw bytes; an empty/absent body is
+            # rejected rather than re-serialized.
+            if not webhook_manager.verify_raw_body(
+                raw_body.decode("utf-8"), signature, secret
+            ):
                 raise HTTPException(status_code=401, detail="Invalid signature")
 
         if body.get("Body", {}).get("stkCallback"):

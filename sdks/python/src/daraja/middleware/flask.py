@@ -11,24 +11,38 @@ def create_flask_blueprint(
     webhook_manager: WebhookManager,
     secret: str | None = None,
     mpesa_client: "Mpesa | None" = None,
-    verify_signature: bool = True,
+    verify_signature: bool | None = None,
 ) -> Any:
     try:
         from flask import Blueprint, abort, jsonify, request
     except ImportError:
         raise ImportError("flask is required. Install with: pip install daraja-sdk-py[flask]")
 
+    # Secure by default: verification is on unless explicitly disabled. The
+    # secret may come from the manager, so a fully-configured manager is never
+    # silently bypassed.
+    verify = True if verify_signature is None else verify_signature
+    if verify and not (secret or webhook_manager.has_secret):
+        raise ValueError(
+            "verify_signature requires a secret; refusing to start with signature "
+            "verification silently disabled. Pass verify_signature=False to "
+            "explicitly disable verification."
+        )
+
     bp = Blueprint("mpesa", __name__, url_prefix="/mpesa")
 
     if mpesa_client:
         @bp.route("/health", methods=["GET"])
         def health() -> Any:
+            import inspect
             import time
-            try:
-                mpesa_client._token_manager.get_token()
-                token_ok = True
-            except Exception:
+            probe = mpesa_client.check_token()
+            if inspect.isawaitable(probe):
+                # An AsyncMpesa cannot be probed from a sync Flask view.
+                probe.close()
                 token_ok = False
+            else:
+                token_ok = bool(probe)
             status = "healthy" if token_ok else "degraded"
             resp = {
                 "status": status,
@@ -40,19 +54,17 @@ def create_flask_blueprint(
 
     @bp.route("/webhook", methods=["POST"])
     def handle_webhook() -> Any:
+        raw_body = request.get_data(as_text=True)
         body = request.get_json(silent=True)
         if body is None:
             abort(400, description="Invalid JSON body")
 
-        if verify_signature:
-            webhook_secret = secret or ""
-            if not webhook_secret:
-                abort(401, description="Missing webhook secret")
+        if verify:
             signature = request.headers.get("x-mpesa-signature", "")
             if not signature:
                 abort(401, description="Missing signature")
-            raw_body = request.get_data(as_text=True)
-            if not webhook_manager.verify_signature(raw_body, signature, webhook_secret):
+            # Fail closed: verify over the raw bytes.
+            if not webhook_manager.verify_raw_body(raw_body, signature, secret):
                 abort(401, description="Invalid signature")
 
         if body.get("Body", {}).get("stkCallback"):

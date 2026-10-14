@@ -11,12 +11,12 @@ const pkg = JSON.parse(readFileSync(resolve(here, "../package.json"), "utf8")) a
   repository: { url: string };
 };
 
-describe("MCP version (FR-02)", () => {
+describe("MCP version", () => {
   it("reports the package.json version — the only MCP version source", () => {
     expect(VERSION).toBe(pkg.version);
   });
 
-  it("declares the canonical repository URL (FR-03)", () => {
+  it("declares the canonical repository URL", () => {
     expect(pkg.repository.url).toContain("github.com/yourdudeken/daraja");
     expect(pkg.homepage).toContain("github.com/yourdudeken/daraja");
   });

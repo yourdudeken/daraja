@@ -17,6 +17,22 @@ export function createExpressMiddleware(
   const webhookPath = options.path ?? "/mpesa/webhook";
   const healthPath = options.healthPath ?? "/mpesa/health";
 
+  // Verification is on when requested explicitly, when the manager is
+  // verification-enabled, when the manager holds a secret, or when a secret is
+  // supplied. It is NEVER silently skipped: requesting it without an effective
+  // secret fails at construction. A configured manager is honoured so a secret
+  // that only lives on the manager can never be bypassed by default options.
+  const managerConfigured =
+    options.webhookManager.isVerificationEnabled || options.webhookManager.hasSecret;
+  const verify =
+    options.verifySignature ?? (managerConfigured || options.secret !== undefined);
+  const hasEffectiveSecret = options.secret !== undefined || options.webhookManager.hasSecret;
+  if (verify && !hasEffectiveSecret) {
+    throw new Error(
+      "createExpressMiddleware: signature verification requires a secret; refusing to start with verification silently disabled. Pass verifySignature: false to explicitly disable it.",
+    );
+  }
+
   return async (req: any, res: any, next: any): Promise<void> => {
     if (options.mpesaClient && req.method === "GET" && req.path === healthPath) {
       let tokenOk = false;
@@ -48,14 +64,21 @@ export function createExpressMiddleware(
     }
 
     try {
-      if (options.verifySignature && options.secret) {
-        const signature = req.headers["x-mpesa-signature"] as string;
+      if (verify) {
+        const signature = req.headers["x-mpesa-signature"] as string | undefined;
         if (!signature) {
           res.status(401).json({ error: "Missing signature" });
           return;
         }
-        const rawBody = req.rawBody ?? JSON.stringify(req.body);
-        if (!options.webhookManager.verifySignature(rawBody, signature, options.secret)) {
+        // Fail closed: verify over the raw bytes only. Falling back to
+        // JSON.stringify(req.body) would not reproduce the provider's signature
+        // and silently weakens verification.
+        const rawBody = typeof req.rawBody === "string" ? req.rawBody : undefined;
+        if (!rawBody) {
+          res.status(401).json({ error: "Raw request body unavailable for signature verification" });
+          return;
+        }
+        if (!options.webhookManager.verifyRawBody(rawBody, signature, options.secret)) {
           res.status(401).json({ error: "Invalid signature" });
           return;
         }
