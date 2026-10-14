@@ -8,12 +8,16 @@ to one SDK does not bump the others.
 | SDK | Version lives in | Registry |
 |-----|------------------|----------|
 | TypeScript | `sdks/typescript/package.json` → `version` | npm (`daraja-sdk-ts`) |
-| Python | `sdks/python/src/daraja/_version.py` → `__version__` (declared to the build via `[tool.hatch.version]` in `pyproject.toml`) | PyPI (`daraja-sdk-py`) |
+| Python | `sdks/python/pyproject.toml` → `[project]` `version` | PyPI (`daraja-sdk-py`) |
 | MCP server | `mcp/package.json` → `version` | Docker Hub (`yourdudeken/daraja-mcp`) |
 
-Each version is single-sourced: TypeScript injects `package.json.version` at
-build time (see `tsup.config.ts`), and Python reads `_version.py` both at runtime
-and from the build backend. Never duplicate a version string in source or docs.
+Each version is single-sourced in that artifact's own manifest: TypeScript
+injects `package.json.version` at build time (see `tsup.config.ts`), the MCP
+server reads its `package.json` at runtime, and Python resolves
+`pyproject.toml`'s `[project].version` at runtime (see
+`sdks/python/src/daraja/_version.py`) — which is also what the build backend
+records as distribution metadata. Never duplicate a version string in source or
+docs.
 
 ## Release tags
 
@@ -36,8 +40,11 @@ to the repository as a whole.
 
 ## How releases happen
 
-1. **Bump the version** in the SDK's version source (`sdks/typescript/package.json`,
-   `sdks/python/src/daraja/_version.py`, or `mcp/package.json`) as part of your PR.
+1. **Bump the version** in the SDK's version source
+   (`sdks/typescript/package.json`, `sdks/python/pyproject.toml`, or
+   `mcp/package.json`) as part of your PR. For Python, reinstalling the editable
+   environment (`pip install -e .`) after a bump refreshes the distribution
+   metadata; the version test will flag any drift if you forget.
 2. **Merge the PR to `main`.** The `Release` workflow
    (`.github/workflows/release.yml`) runs automatically on push to `main`.
 3. The workflow compares each SDK's manifest version against its latest tag and

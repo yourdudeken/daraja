@@ -25,9 +25,7 @@ describe("single-sourced version", () => {
     const tsVersion = (JSON.parse(read("sdks/typescript/package.json")) as { version: string })
       .version;
     const mcpVersion = (JSON.parse(read("mcp/package.json")) as { version: string }).version;
-    const pyVersion = /__version__ = "([^"]+)"/.exec(
-      read("sdks/python/src/daraja/_version.py"),
-    )?.[1];
+    const pyVersion = /^version = "([^"]+)"/m.exec(read("sdks/python/pyproject.toml"))?.[1];
     expect(pyVersion).toBeTruthy();
 
     const row = (name: string): string =>

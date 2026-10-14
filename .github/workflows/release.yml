@@ -23,11 +23,11 @@ on:
   workflow_dispatch:
     inputs:
       typescript_version:
-        description: "TypeScript SDK version (e.g. 0.0.2). Leave empty to use package.json."
+        description: "TypeScript SDK version (e.g. 0.0.2). Leave empty to use sdks/typescript/package.json."
         required: false
         type: string
       python_version:
-        description: "Python SDK version (e.g. 0.0.2). Leave empty to use src/daraja/_version.py."
+        description: "Python SDK version (e.g. 0.0.2). Leave empty to use sdks/python/pyproject.toml."
         required: false
         type: string
       mcp_version:
@@ -59,6 +59,10 @@ jobs:
         with:
           fetch-depth: 0
 
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
       - name: Detect TypeScript SDK
         id: ts
         run: |
@@ -83,7 +87,7 @@ jobs:
             echo "version=${{ github.event.inputs.python_version }}" >> "$GITHUB_OUTPUT"
             echo "release=true" >> "$GITHUB_OUTPUT"
           else
-            VERSION=$(grep -m1 '^__version__' sdks/python/src/daraja/_version.py | sed 's/__version__ = "\(.*\)"/\1/')
+            VERSION=$(python3 -c "import pathlib, tomllib; print(tomllib.loads(pathlib.Path('sdks/python/pyproject.toml').read_text(encoding='utf-8'))['project']['version'])")
             LATEST=$(git tag -l 'python-v*' --sort=-v:refname | head -1 | sed 's/python-v//')
             echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
             if [ -z "$LATEST" ] || [ "$VERSION" != "$LATEST" ]; then
@@ -159,10 +163,12 @@ jobs:
           python - "${{ needs.detect.outputs.python_version }}" <<'EOF'
           import re, sys, pathlib
           v = sys.argv[1]
-          p = pathlib.Path("src/daraja/_version.py")
-          t = p.read_text()
-          t = re.sub(r'__version__\s*=\s*"[^"]+"', f'__version__ = "{v}"', t, count=1)
-          p.write_text(t)
+          p = pathlib.Path("pyproject.toml")
+          t = p.read_text(encoding="utf-8")
+          t, n = re.subn(r'(?m)^version = "[^"]+"', f'version = "{v}"', t, count=1)
+          if n != 1:
+              raise SystemExit("could not locate [project].version in pyproject.toml")
+          p.write_text(t, encoding="utf-8")
           EOF
       - name: Test
         run: pip install -e ".[all]" pytest hypothesis respx && pytest tests/unit -v
