@@ -84,10 +84,15 @@ export class EndpointRateLimiterRouter implements RateLimiter {
   private resolve(endpoint?: string): TokenBucketRateLimiter {
     if (!endpoint) return this.defaultLimiter;
     const key = normalizeEndpointKey(endpoint);
-    const match = this.endpointLimiters.get(key);
-    if (match) return match;
+    const keyPath = endpointPath(key);
+    const exact = this.endpointLimiters.get(key) ?? this.endpointLimiters.get(keyPath);
+    if (exact) return exact;
     for (const [pattern, limiter] of this.endpointLimiters) {
-      if (key.startsWith(pattern)) return limiter;
+      // A host-qualified pattern matches that origin only; an absolute path
+      // pattern ("/mpesa/stkpush") matches the endpoint path on any host.
+      if (key.startsWith(pattern) || keyPath.startsWith(pattern)) {
+        return limiter;
+      }
     }
     return this.defaultLimiter;
   }
@@ -109,6 +114,31 @@ export class EndpointRateLimiterRouter implements RateLimiter {
   }
 }
 
+/**
+ * Normalize an endpoint (full URL or path) into a comparable key.
+ *
+ * The scheme, query string, fragment, and trailing slashes are removed, so
+ * `https://api.safaricom.co.ke/mpesa/` and `api.safaricom.co.ke/mpesa` compare
+ * equal. A leading `/` is preserved to keep paths distinguishable from hosts.
+ */
 export function normalizeEndpointKey(key: string): string {
-  return key.toLowerCase().replace(/^https?:\/\//, "").replace(/\/+$/, "");
+  return key
+    .trim()
+    .toLowerCase()
+    .replace(/^[a-z][a-z0-9+.-]*:\/\//, "")
+    .replace(/[?#].*$/, "")
+    .replace(/\/+$/, "");
+}
+
+/**
+ * The path portion of a normalized endpoint key.
+ *
+ * Absolute paths (`/mpesa/stkpush`) are returned unchanged; host-qualified keys
+ * (`api.safaricom.co.ke/mpesa/stkpush`) lose their origin so overrides can match
+ * endpoint paths regardless of the environment host.
+ */
+function endpointPath(normalized: string): string {
+  if (normalized.startsWith("/")) return normalized;
+  const slash = normalized.indexOf("/");
+  return slash === -1 ? "" : normalized.slice(slash);
 }

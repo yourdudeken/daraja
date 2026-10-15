@@ -371,6 +371,26 @@ describe("RateLimiters", () => {
     expect(router.tryAcquire("/other")).toBe(false);
   });
 
+  it("EndpointRateLimiterRouter matches full URLs to path overrides", () => {
+    const router = new EndpointRateLimiterRouter({
+      tokensPerSecond: 1,
+      burstSize: 1,
+      endpointOverrides: {
+        "/mpesa/stkpush": { tokensPerSecond: 10, burstSize: 10 },
+      },
+    });
+    // The override matches regardless of the environment host in the URL.
+    expect(
+      router.tryAcquire("https://api.safaricom.co.ke/mpesa/stkpush/v1/processrequest"),
+    ).toBe(true);
+    expect(
+      router.tryAcquire("https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest"),
+    ).toBe(true);
+    // Unmatched endpoints still fall through to the (small) default bucket.
+    expect(router.tryAcquire("https://api.safaricom.co.ke/other")).toBe(true);
+    expect(router.tryAcquire("https://api.safaricom.co.ke/other")).toBe(false);
+  });
+
   it("normalizeEndpointKey normalizes URLs", () => {
     expect(normalizeEndpointKey("https://api.safaricom.co.ke/mpesa/")).toBe(
       "api.safaricom.co.ke/mpesa",

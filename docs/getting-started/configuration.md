@@ -54,6 +54,19 @@ backoff envelope. These values are applied by every SDK (`base_delay_ms` /
   `OPTIONS`) are retried. `POST` is **not** retried, so a payment can never be
   blindly re-sent. Do not configure `maxRetries` expecting POST retries.
 
+### Rate-limiter endpoint overrides
+
+`endpoint_overrides` / `endpointOverrides` selects a dedicated token bucket for
+matching requests. Keys are compared against the request URL after
+normalization (scheme, query string, fragment, and trailing slash removed):
+
+- an **absolute-path** key such as `/mpesa/stkpush` matches that path on any
+  host, so the sandbox and production URLs share the override;
+- a **host-qualified** key such as `api.safaricom.co.ke/mpesa/stkpush` matches
+  only that origin.
+
+Requests that match no override use the top-level rate-limiter bucket.
+
 
 ## Language specifics
 
