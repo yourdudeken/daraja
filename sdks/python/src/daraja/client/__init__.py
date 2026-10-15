@@ -120,6 +120,8 @@ from daraja.utils.token_cache import (
     RedisTokenCache,
     SharedTokenCache,
     build_token_cache_key,
+    purge_shared_entry,
+    read_shared_entry,
 )
 from daraja.utils.tracing import Tracer as Tracer
 
@@ -197,11 +199,13 @@ class _TokenManager:
                 cache_key = build_token_cache_key(
                     self._config.consumer_key, self._config.environment
                 )
-                cached = self._shared_cache.get(cache_key)
-                if cached is not None:
-                    self._token = cached
-                    self._expires_at = time.time() + 300
-                    return cached
+                entry = read_shared_entry(self._shared_cache, cache_key)
+                # Only a hit that is still inside its own lifetime counts: the
+                # shared entry reports when it expires, so a nearly-spent token
+                # is refetched instead of being served for another assumed 5 min.
+                if entry is not None and time.time() < entry[1]:
+                    self._token, self._expires_at = entry
+                    return self._token
 
             self._logger.debug("Fetching new access token")
 
@@ -230,10 +234,19 @@ class _TokenManager:
     def invalidate(self) -> None:
         # Blocks until any in-flight fetch releases the lock; the fetch then
         # completes and this clears the result, so the caller's token is never
-        # installed after invalidation.
+        # installed after invalidation. The shared copy is dropped under the same
+        # lock, so a concurrent get_token() cannot read the discarded token back
+        # out of the cache.
         with self._lock:
             self._token = None
             self._expires_at = 0.0
+            if self._shared_cache is not None:
+                purge_shared_entry(
+                    self._shared_cache,
+                    build_token_cache_key(
+                        self._config.consumer_key, self._config.environment
+                    ),
+                )
         self._logger.warning("Access token invalidated")
 
 

@@ -35,9 +35,12 @@ from daraja.utils.rate_limiter import (
 )
 from daraja.utils.structured_logger import StructuredLogger, StructuredLogHandler
 from daraja.utils.token_cache import (
+    SHARED_TOKEN_CACHE_FALLBACK_TTL_SEC,
     InMemorySharedTokenCache,
     RedisTokenCache,
     build_token_cache_key,
+    purge_shared_entry,
+    read_shared_entry,
 )
 from daraja.utils.token_store import EncryptedTokenStore
 from daraja.utils.tracing import (
@@ -79,6 +82,39 @@ class TestInMemorySharedTokenCache:
         cache.dispose()
         assert cache.get("key-1") is None
 
+    def test_get_entry_reports_remaining_lifetime(self):
+        cache = InMemorySharedTokenCache()
+        try:
+            cache.set("key-1", "token-1", 60)
+            entry = cache.get_entry("key-1")
+            assert entry is not None
+            token, expires_at = entry
+            assert token == "token-1"
+            # Only the true remaining lifetime, not an assumed five minutes.
+            assert 55.0 < expires_at - time.time() <= 60.0
+        finally:
+            cache.dispose()
+
+    def test_get_entry_none_for_missing_and_expired(self):
+        cache = InMemorySharedTokenCache()
+        try:
+            assert cache.get_entry("missing") is None
+            cache.set("key-1", "token-1", -1)
+            assert cache.get_entry("key-1") is None
+            assert "key-1" not in cache._cache
+        finally:
+            cache.dispose()
+
+    def test_delete_removes_entry(self):
+        cache = InMemorySharedTokenCache()
+        try:
+            cache.set("key-1", "token-1", 60)
+            cache.delete("key-1")
+            assert cache.get("key-1") is None
+            cache.delete("key-1")  # deleting a missing key is a no-op
+        finally:
+            cache.dispose()
+
     def test_build_token_cache_key(self):
         assert (
             build_token_cache_key("consumer-key", "sandbox")
@@ -94,7 +130,9 @@ class TestRedisTokenCache:
     def test_unavailable_redis_returns_none(self):
         cache = RedisTokenCache("redis://localhost:1")
         assert cache.get("key") is None
+        assert cache.get_entry("key") is None
         cache.set("key", "token", 60)  # should not raise
+        cache.delete("key")  # should not raise
         cache.close()
 
     def test_with_client_get_set_close(self, monkeypatch):
@@ -127,12 +165,68 @@ class TestRedisTokenCache:
         cache.close()
         assert fake.closed
 
+    def test_get_entry_uses_redis_ttl(self, monkeypatch):
+        class FakeRedis:
+            def __init__(self, ttl):
+                self.store = {}
+                self.ttl_value = ttl
+
+            def ping(self):
+                return True
+
+            def get(self, key):
+                return self.store.get(key)
+
+            def ttl(self, key):
+                return self.ttl_value
+
+            def delete(self, key):
+                self.store.pop(key, None)
+
+            def setex(self, key, ttl, value):
+                self.store[key] = value
+
+            def close(self):
+                pass
+
+        fake = FakeRedis(120)
+        monkeypatch.setattr("redis.Redis.from_url", lambda *a, **k: fake)
+        cache = RedisTokenCache("redis://localhost:6379")
+        cache.set("k1", "tok1", 300)
+
+        entry = cache.get_entry("k1")
+        assert entry is not None
+        token, expires_at = entry
+        assert token == "tok1"
+        assert 115.0 < expires_at - time.time() <= 120.0
+
+        # A TTL the SDK cannot interpret (no expiry, or about to expire) says
+        # nothing about the token's remaining life, so it is a miss.
+        fake.ttl_value = -1
+        assert cache.get_entry("k1") is None
+        fake.ttl_value = 0
+        assert cache.get_entry("k1") is None
+
+        # Missing keys report nothing.
+        fake.ttl_value = -2
+        assert cache.get_entry("absent") is None
+
+        cache.delete("k1")
+        assert cache.get("k1") is None
+        cache.close()
+
     def test_client_errors_swallowed(self, monkeypatch):
         class FailingRedis:
             def ping(self):
                 return True
 
             def get(self, key):
+                raise RuntimeError("boom")
+
+            def ttl(self, key):
+                raise RuntimeError("boom")
+
+            def delete(self, key):
                 raise RuntimeError("boom")
 
             def setex(self, key, ttl, value):
@@ -144,8 +238,75 @@ class TestRedisTokenCache:
         monkeypatch.setattr("redis.Redis.from_url", lambda *a, **k: FailingRedis())
         cache = RedisTokenCache("redis://localhost:6379")
         assert cache.get("k") is None
+        assert cache.get_entry("k") is None
         cache.set("k", "t", 60)  # should not raise
+        cache.delete("k")  # should not raise
         cache.close()  # should not raise
+
+
+class TestSharedEntryHelpers:
+    def test_read_shared_entry_prefers_get_entry(self):
+        class CacheWithEntry:
+            def get(self, key):
+                raise AssertionError("get() must not be used when get_entry() exists")
+
+            def get_entry(self, key):
+                return ("tok", 123.0)
+
+            def set(self, key, token, ttl_sec):
+                pass
+
+        assert read_shared_entry(CacheWithEntry(), "k") == ("tok", 123.0)
+
+    def test_read_shared_entry_falls_back_to_floor(self):
+        class GetOnly:
+            def get(self, key):
+                return "tok" if key == "k" else None
+
+            def set(self, key, token, ttl_sec):
+                pass
+
+        entry = read_shared_entry(GetOnly(), "k")
+        assert entry is not None
+        token, expires_at = entry
+        assert token == "tok"
+        assert 55.0 < expires_at - time.time() <= SHARED_TOKEN_CACHE_FALLBACK_TTL_SEC
+        assert read_shared_entry(GetOnly(), "missing") is None
+
+    def test_purge_shared_entry_best_effort(self):
+        deleted: list[str] = []
+
+        class Deletable:
+            def get(self, key):
+                return None
+
+            def set(self, key, token, ttl_sec):
+                pass
+
+            def delete(self, key):
+                deleted.append(key)
+
+        class GetSetOnly:
+            def get(self, key):
+                return None
+
+            def set(self, key, token, ttl_sec):
+                pass
+
+        class Exploding:
+            def get(self, key):
+                return None
+
+            def set(self, key, token, ttl_sec):
+                pass
+
+            def delete(self, key):
+                raise RuntimeError("boom")
+
+        purge_shared_entry(Deletable(), "k")  # type: ignore[arg-type]
+        assert deleted == ["k"]
+        purge_shared_entry(GetSetOnly(), "k")  # type: ignore[arg-type]
+        purge_shared_entry(Exploding(), "k")  # type: ignore[arg-type]  # must not raise
 
 
 class TestInMemorySharedTokenCacheExpiry:

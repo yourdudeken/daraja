@@ -78,6 +78,21 @@ configured, the access token is stored in Redis and shared across client
 instances and processes. All SDKs also accept a custom `sharedTokenCache` /
 `shared_token_cache` / `SharedTokenCache` implementation.
 
+A shared-cache hit is trusted only for the token's own remaining lifetime: the
+cache is read together with the entry's expiry, so a nearly expired token is
+refreshed instead of being served until an assumed ceiling. Custom caches can
+expose the same information and be honored fully:
+
+| Capability | TypeScript | Python |
+| --- | --- | --- |
+| Token only (trusted for at most 60 s) | `get` / `set` | `get` / `set` |
+| Report the entry's expiry | `getEntry` | `get_entry` |
+| Drop an entry on `invalidateToken()` / `invalidate()` | `del` | `delete` |
+
+Keep in mind that entries are cached with a 60-second safety margin ahead of the
+token, so a live entry always has at least 60 seconds left to use — the fallback
+window assumed when a cache cannot report its own expiry.
+
 ## Security best practice
 
 - Keep `consumer_secret` and `initiator_password` out of source control and use

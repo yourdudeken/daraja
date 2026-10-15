@@ -79,6 +79,75 @@ class TestTokenManager:
             client.close()
             cache.dispose()
 
+    def test_shared_cache_hit_respects_entry_expiry(self):
+        """A hit carries its own remaining lifetime, not an assumed 5 minutes."""
+        cache = InMemorySharedTokenCache()
+        cache.set("mpesa:token:sandbox:test-key", "cached-token", 0.05)
+        client = make_client(shared_token_cache=cache)
+        try:
+            assert client.get_access_token() == "cached-token"
+            time.sleep(0.1)
+            with respx.mock:
+                _mock_auth(respx)
+                assert client.get_access_token() == "test-token"
+        finally:
+            client.close()
+            cache.dispose()
+
+    def test_expired_shared_cache_entry_is_not_served(self):
+        class ExpiredEntryCache:
+            def get(self, key):
+                return "stale-token"
+
+            def get_entry(self, key):
+                return "stale-token", time.time() - 1
+
+            def set(self, key, token, ttl_sec):
+                pass
+
+        client = make_client(shared_token_cache=ExpiredEntryCache())
+        try:
+            with respx.mock:
+                _mock_auth(respx)
+                assert client.get_access_token() == "test-token"
+        finally:
+            client.close()
+
+    def test_shared_cache_without_get_entry_still_honored(self):
+        """Caches implementing only get() are trusted for the guaranteed floor."""
+
+        class GetSetOnlyCache:
+            def __init__(self):
+                self.token = "cached-token"
+
+            def get(self, key):
+                return self.token
+
+            def set(self, key, token, ttl_sec):
+                self.token = token
+
+        client = make_client(shared_token_cache=GetSetOnlyCache())
+        try:
+            assert client.get_access_token() == "cached-token"
+        finally:
+            client.close()
+
+    def test_invalidate_purges_shared_cache(self):
+        cache = InMemorySharedTokenCache()
+        cache.set("mpesa:token:sandbox:test-key", "cached-token", 300)
+        client = make_client(shared_token_cache=cache)
+        try:
+            assert client.get_access_token() == "cached-token"
+            client._token_manager.invalidate()
+            # The discarded token must not come back out of the shared cache.
+            assert cache.get("mpesa:token:sandbox:test-key") is None
+            with respx.mock:
+                _mock_auth(respx, "fresh-token")
+                assert client.get_access_token() == "fresh-token"
+        finally:
+            client.close()
+            cache.dispose()
+
     def test_invalidate(self):
         client = make_client()
         with respx.mock:

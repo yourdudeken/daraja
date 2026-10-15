@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { MpesaApiClient } from "../../src/client/client.js";
 import type { MpesaConfig } from "../../src/types/index.js";
+import type { SharedTokenCache } from "../../src/utils/token-cache.js";
 
 const mockAxiosInstance = {
   interceptors: {
@@ -307,5 +308,94 @@ describe("MpesaApiClient with mocks", () => {
     const id = generateRequestId();
     expect(id).toMatch(/^mpesa-/);
     expect(id.length).toBeGreaterThan(10);
+  });
+
+  it("should propagate the shared-cache entry's remaining lifetime", async () => {
+    let sharedEntry: { token: string; expiresAt: number } | null = {
+      token: "shared-token",
+      expiresAt: Date.now() + 30,
+    };
+    const sharedTokenCache: SharedTokenCache = {
+      get: async () => sharedEntry?.token ?? null,
+      getEntry: async () => sharedEntry,
+      set: async () => undefined,
+    };
+    const client = new MpesaApiClient({
+      consumerKey: "test-key",
+      consumerSecret: "test-secret",
+      environment: "sandbox",
+      passkey: "test-passkey",
+      sharedTokenCache,
+    });
+
+    await expect(client.getAccessToken()).resolves.toBe("shared-token");
+    expect(mockAxiosInstance.get).not.toHaveBeenCalled();
+
+    // The entry is nearly spent, so the next acquisition must refetch instead of
+    // serving it for another assumed five minutes.
+    sharedEntry = null;
+    await new Promise((r) => setTimeout(r, 40));
+    mockAxiosInstance.get.mockResolvedValueOnce({
+      data: { access_token: "fresh-token", expires_in: 3600 },
+    });
+
+    await expect(client.getAccessToken()).resolves.toBe("fresh-token");
+    expect(mockAxiosInstance.get).toHaveBeenCalledTimes(1);
+  });
+
+  it("should ignore an already-expired shared-cache entry", async () => {
+    const sharedTokenCache: SharedTokenCache = {
+      get: async () => "stale-token",
+      getEntry: async () => ({ token: "stale-token", expiresAt: Date.now() - 1000 }),
+      set: async () => undefined,
+    };
+    const client = new MpesaApiClient({
+      consumerKey: "test-key",
+      consumerSecret: "test-secret",
+      environment: "sandbox",
+      passkey: "test-passkey",
+      sharedTokenCache,
+    });
+
+    mockAxiosInstance.get.mockResolvedValueOnce({
+      data: { access_token: "fresh-token", expires_in: 3600 },
+    });
+
+    await expect(client.getAccessToken()).resolves.toBe("fresh-token");
+    expect(mockAxiosInstance.get).toHaveBeenCalledTimes(1);
+  });
+
+  it("should trust a cache that can only get tokens for the guaranteed floor", async () => {
+    vi.useFakeTimers();
+    try {
+      let sharedToken: string | null = "shared-token";
+      const sharedTokenCache: SharedTokenCache = {
+        get: async () => sharedToken,
+        set: async () => undefined,
+      };
+      const client = new MpesaApiClient({
+        consumerKey: "test-key",
+        consumerSecret: "test-secret",
+        environment: "sandbox",
+        passkey: "test-passkey",
+        sharedTokenCache,
+      });
+
+      await expect(client.getAccessToken()).resolves.toBe("shared-token");
+      expect(mockAxiosInstance.get).not.toHaveBeenCalled();
+
+      // A cache that cannot report expiry is trusted for the 60 s floor only, so
+      // past it the token is read (or refetched) again instead of being served
+      // for another assumed five minutes.
+      vi.setSystemTime(Date.now() + 61_000);
+      sharedToken = null;
+      mockAxiosInstance.get.mockResolvedValueOnce({
+        data: { access_token: "fresh-token", expires_in: 3600 },
+      });
+      await expect(client.getAccessToken()).resolves.toBe("fresh-token");
+      expect(mockAxiosInstance.get).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

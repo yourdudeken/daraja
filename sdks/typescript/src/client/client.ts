@@ -10,9 +10,32 @@ import { AuthenticationError } from "../errors/index.js";
 import { CircuitBreaker } from "../utils/circuit-breaker.js";
 import { TokenBucketRateLimiter, NoopRateLimiter, EndpointRateLimiterRouter } from "../utils/rate-limiter.js";
 import { IdempotencyStore, InMemoryIdempotencyStore, generateIdempotencyKey } from "../utils/idempotency.js";
-import { SharedTokenCache, RedisTokenCache, buildTokenCacheKey } from "../utils/token-cache.js";
+import {
+  type SharedTokenCache,
+  type SharedTokenCacheEntry,
+  RedisTokenCache,
+  buildTokenCacheKey,
+  SHARED_TOKEN_CACHE_FALLBACK_TTL_MS,
+} from "../utils/token-cache.js";
 
 const DEFAULT_TIMEOUT = 30000;
+
+/**
+ * Reads a shared-cache hit as `(token, expiry)`. Caches that cannot report
+ * their own expiry still write entries with a 60 s margin ahead of the token, so
+ * such a hit is trusted for exactly that guaranteed floor.
+ */
+async function readSharedTokenEntry(
+  cache: SharedTokenCache,
+  key: string,
+): Promise<SharedTokenCacheEntry | null> {
+  if (cache.getEntry) {
+    return cache.getEntry(key);
+  }
+  const token = await cache.get(key);
+  if (token === null) return null;
+  return { token, expiresAt: Date.now() + SHARED_TOKEN_CACHE_FALLBACK_TTL_MS };
+}
 
 export class MpesaApiClient {
   private readonly client: AxiosInstance;
@@ -210,10 +233,13 @@ export class MpesaApiClient {
   private async fetchAccessToken(generation: number): Promise<string> {
     if (this.sharedTokenCache) {
       const cacheKey = buildTokenCacheKey(this.config.consumerKey, this.config.environment);
-      const cached = await this.sharedTokenCache.get(cacheKey);
-      if (cached && generation === this.tokenGeneration) {
-        this.tokenCache = { token: cached, expiresAt: new Date(Date.now() + 300000) };
-        return cached;
+      const entry = await readSharedTokenEntry(this.sharedTokenCache, cacheKey);
+      // Only a hit that is still within its own lifetime counts: a shared entry
+      // reports when it expires, so a nearly-spent token is refetched instead of
+      // being served for another assumed five minutes.
+      if (entry && entry.expiresAt > Date.now() && generation === this.tokenGeneration) {
+        this.tokenCache = { token: entry.token, expiresAt: new Date(entry.expiresAt) };
+        return entry.token;
       }
     }
 

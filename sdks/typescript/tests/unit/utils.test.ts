@@ -131,6 +131,27 @@ describe("InMemorySharedTokenCache", () => {
     expect(await cache.get("key-1")).toBeNull();
   });
 
+  it("getEntry reports the remaining lifetime", async () => {
+    await cache.set("key-1", "token-1", 60);
+    const entry = await cache.getEntry("key-1");
+    expect(entry?.token).toBe("token-1");
+    const remainingMs = (entry?.expiresAt ?? 0) - Date.now();
+    expect(remainingMs).toBeGreaterThan(55_000);
+    expect(remainingMs).toBeLessThanOrEqual(60_000);
+  });
+
+  it("getEntry returns null for missing and expired keys", async () => {
+    expect(await cache.getEntry("missing")).toBeNull();
+    await cache.set("key-1", "token-1", 0);
+    expect(await cache.getEntry("key-1")).toBeNull();
+  });
+
+  it("del removes an entry reported by getEntry", async () => {
+    await cache.set("key-1", "token-1", 60);
+    await cache.del("key-1");
+    expect(await cache.getEntry("key-1")).toBeNull();
+  });
+
   it("deletes tokens", async () => {
     await cache.set("key-1", "token-1", 60);
     await cache.del("key-1");
@@ -159,9 +180,35 @@ describe("RedisTokenCache", () => {
     // Wait for init to fail
     await new Promise((r) => setTimeout(r, 50));
     expect(await cache.get("key")).toBeNull();
+    expect(await cache.getEntry("key")).toBeNull();
     await cache.set("key", "token", 60);
     await cache.del("key");
     await cache.disconnect();
+  });
+
+  it("getEntry reports the entry's remaining lifetime from the Redis TTL", async () => {
+    const cache = new RedisTokenCache("redis://localhost:1");
+    // The `redis` peer dependency is not installed in tests, so hand the cache a
+    // stand-in that answers GET/TTL and check the conversion (seconds → ms).
+    let ttl = 90;
+    const fake = {
+      get: async (key: string) => `token:${key}`,
+      ttl: async () => ttl,
+    };
+    (cache as unknown as { client: typeof fake }).client = fake;
+
+    const entry = await cache.getEntry("k");
+    expect(entry?.token).toBe("token:k");
+    const remainingMs = (entry?.expiresAt ?? 0) - Date.now();
+    expect(remainingMs).toBeGreaterThan(85_000);
+    expect(remainingMs).toBeLessThanOrEqual(90_000);
+
+    // A non-positive TTL (-1 no expiry, -2 gone) leaves the lifetime unknown, so
+    // the caller must not be handed a guessed window: report a miss.
+    ttl = -1;
+    expect(await cache.getEntry("k")).toBeNull();
+    ttl = -2;
+    expect(await cache.getEntry("k")).toBeNull();
   });
 });
 

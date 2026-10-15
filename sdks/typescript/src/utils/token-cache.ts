@@ -1,5 +1,29 @@
+/**
+ * A cached token together with the instant it must no longer be used. Entries
+ * are written with `ttlSec = tokenLifetime - SHARED_TOKEN_CACHE_FALLBACK_TTL_MS`,
+ * so a live entry always has at least that margin left.
+ */
+export interface SharedTokenCacheEntry {
+  token: string;
+  /** Epoch milliseconds after which the entry must be treated as absent. */
+  expiresAt: number;
+}
+
+/**
+ * Lifetime assumed for a cache hit when the cache cannot report its own expiry
+ * (it does not implement {@link SharedTokenCache.getEntry}). Because entries are
+ * written with a 60 s margin ahead of the token, a live entry proves the token
+ * is still good for at least this long.
+ */
+export const SHARED_TOKEN_CACHE_FALLBACK_TTL_MS = 60_000;
+
 export interface SharedTokenCache {
   get(key: string): Promise<string | null>;
+  /**
+   * Optional richer read: like `get`, but also reports when the entry expires,
+   * so a hit propagates the true remaining lifetime instead of an assumed one.
+   */
+  getEntry?(key: string): Promise<SharedTokenCacheEntry | null>;
   set(key: string, token: string, ttlSec: number): Promise<void>;
   del?(key: string): Promise<void>;
 }
@@ -13,13 +37,17 @@ export class InMemorySharedTokenCache implements SharedTokenCache {
   }
 
   async get(key: string): Promise<string | null> {
+    return (await this.getEntry(key))?.token ?? null;
+  }
+
+  async getEntry(key: string): Promise<SharedTokenCacheEntry | null> {
     const entry = this.cache.get(key);
     if (!entry) return null;
     if (Date.now() >= entry.expiresAt) {
       this.cache.delete(key);
       return null;
     }
-    return entry.token;
+    return { token: entry.token, expiresAt: entry.expiresAt };
   }
 
   async set(key: string, token: string, ttlSec: number): Promise<void> {
@@ -68,6 +96,23 @@ export class RedisTokenCache implements SharedTokenCache {
     if (!this.client) return null;
     try {
       return await this.client.get(key);
+    } catch {
+      return null;
+    }
+  }
+
+  async getEntry(key: string): Promise<SharedTokenCacheEntry | null> {
+    if (!this.client) await this.clientPromise;
+    if (!this.client) return null;
+    try {
+      const token = await this.client.get(key);
+      if (token === null) return null;
+      const ttl = await this.client.ttl(key);
+      // A non-positive TTL (-1 no expiry, -2 gone, 0 about to expire) says
+      // nothing about how long a foreign writer's value stays usable, so do not
+      // guess: report a miss and let the caller refetch.
+      if (ttl <= 0) return null;
+      return { token, expiresAt: Date.now() + ttl * 1000 };
     } catch {
       return null;
     }
