@@ -396,6 +396,70 @@ describe("RateLimiters", () => {
       "api.safaricom.co.ke/mpesa",
     );
   });
+
+  it("EndpointRateLimiterRouter scopes host-qualified overrides to their origin", () => {
+    const router = new EndpointRateLimiterRouter({
+      tokensPerSecond: 1,
+      burstSize: 1,
+      endpointOverrides: {
+        "api.safaricom.co.ke/mpesa/stkpush": { tokensPerSecond: 10, burstSize: 10 },
+      },
+    });
+    // Same origin: the override's larger bucket applies.
+    expect(
+      router.tryAcquire("https://api.safaricom.co.ke/mpesa/stkpush/v1/processrequest"),
+    ).toBe(true);
+    expect(
+      router.tryAcquire("https://api.safaricom.co.ke/mpesa/stkpush/v1/processrequest"),
+    ).toBe(true);
+    // Same path on a different origin: falls through to the default bucket.
+    expect(
+      router.tryAcquire("https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest"),
+    ).toBe(true);
+    expect(
+      router.tryAcquire("https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest"),
+    ).toBe(false);
+  });
+
+  it("EndpointRateLimiterRouter matches on segment boundaries, not raw prefixes", () => {
+    const router = new EndpointRateLimiterRouter({
+      tokensPerSecond: 1,
+      burstSize: 1,
+      endpointOverrides: {
+        "/mpesa/stkpush": { tokensPerSecond: 10, burstSize: 10 },
+      },
+    });
+    // The sibling STK Push Query endpoint must not inherit the STK Push override.
+    expect(router.tryAcquire("https://api.safaricom.co.ke/mpesa/stkpushquery/v1/query")).toBe(
+      true,
+    );
+    expect(router.tryAcquire("https://api.safaricom.co.ke/mpesa/stkpushquery/v1/query")).toBe(
+      false,
+    );
+    // The STK Push path itself still uses the override's larger bucket.
+    expect(router.tryAcquire("https://api.safaricom.co.ke/mpesa/stkpush/v1/processrequest")).toBe(
+      true,
+    );
+    expect(router.tryAcquire("https://api.safaricom.co.ke/mpesa/stkpush/v1/processrequest")).toBe(
+      true,
+    );
+  });
+
+  it("EndpointRateLimiterRouter prefers the most specific override", () => {
+    const router = new EndpointRateLimiterRouter({
+      tokensPerSecond: 1,
+      burstSize: 1,
+      endpointOverrides: {
+        "/mpesa": { tokensPerSecond: 10, burstSize: 10 },
+        "/mpesa/stkpush": { tokensPerSecond: 10, burstSize: 2 },
+      },
+    });
+    // "/mpesa/stkpush" (burst 2) wins over the broader "/mpesa" (burst 10),
+    // independent of declaration order.
+    expect(router.tryAcquire("/mpesa/stkpush/v1/processrequest")).toBe(true);
+    expect(router.tryAcquire("/mpesa/stkpush/v1/processrequest")).toBe(true);
+    expect(router.tryAcquire("/mpesa/stkpush/v1/processrequest")).toBe(false);
+  });
 });
 
 describe("StructuredLogger", () => {

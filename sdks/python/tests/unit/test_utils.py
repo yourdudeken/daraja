@@ -287,6 +287,40 @@ class TestEndpointRateLimiterRouter:
         assert router.try_acquire(sandbox_url) is True
         assert router.try_acquire(sandbox_url) is False
 
+    def test_matches_on_segment_boundaries_not_raw_prefixes(self):
+        config = RateLimiterConfig(
+            tokens_per_second=1,
+            burst_size=1,
+            endpoint_overrides={
+                "/mpesa/stkpush": {"tokens_per_second": 10, "burst_size": 10},
+            },
+        )
+        router = EndpointRateLimiterRouter(config)
+        # The sibling STK Push Query endpoint must not inherit the STK Push override.
+        query_url = "https://api.safaricom.co.ke/mpesa/stkpushquery/v1/query"
+        assert router.try_acquire(query_url) is True
+        assert router.try_acquire(query_url) is False
+        # The STK Push path itself still uses the override's larger bucket.
+        push_url = "https://api.safaricom.co.ke/mpesa/stkpush/v1/processrequest"
+        assert router.try_acquire(push_url) is True
+        assert router.try_acquire(push_url) is True
+
+    def test_prefers_the_most_specific_override(self):
+        config = RateLimiterConfig(
+            tokens_per_second=1,
+            burst_size=1,
+            endpoint_overrides={
+                "/mpesa": {"tokens_per_second": 10, "burst_size": 10},
+                "/mpesa/stkpush": {"tokens_per_second": 10, "burst_size": 2},
+            },
+        )
+        router = EndpointRateLimiterRouter(config)
+        # "/mpesa/stkpush" (burst 2) wins over the broader "/mpesa" (burst 10),
+        # independent of declaration order.
+        assert router.try_acquire("/mpesa/stkpush/v1/processrequest") is True
+        assert router.try_acquire("/mpesa/stkpush/v1/processrequest") is True
+        assert router.try_acquire("/mpesa/stkpush/v1/processrequest") is False
+
 
 class TestMetrics:
     def test_base_collector_noop(self):
