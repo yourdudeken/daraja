@@ -65,6 +65,152 @@ describe("MpesaApiClient with mocks", () => {
     expect(mockAxiosInstance.get).toHaveBeenCalledTimes(1);
   });
 
+  it("should coalesce concurrent token requests into a single fetch", async () => {
+    const client = createTestClient();
+
+    // Keep the fetch open so every caller arrives while it is in flight.
+    mockAxiosInstance.get.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          setTimeout(
+            () => resolve({ data: { access_token: "single-flight-token", expires_in: 3600 } }),
+            20,
+          );
+        }),
+    );
+
+    const tokens = await Promise.all(
+      Array.from({ length: 5 }, () => client.getAccessToken()),
+    );
+
+    expect(tokens).toEqual(Array(5).fill("single-flight-token"));
+    expect(mockAxiosInstance.get).toHaveBeenCalledTimes(1);
+  });
+
+  it("should clear the in-flight fetch after a failed token request", async () => {
+    const client = createTestClient();
+
+    mockAxiosInstance.get.mockRejectedValueOnce(new Error("token endpoint down"));
+    await expect(client.getAccessToken()).rejects.toThrow("token endpoint down");
+
+    // The failed flight must not be replayed to the next caller: the client
+    // recovers with a fresh attempt instead of caching the rejection.
+    mockAxiosInstance.get.mockResolvedValueOnce({
+      data: { access_token: "recovered-token", expires_in: 3600 },
+    });
+    await expect(client.getAccessToken()).resolves.toBe("recovered-token");
+    expect(mockAxiosInstance.get).toHaveBeenCalledTimes(2);
+  });
+
+  it("should keep a newer in-flight fetch when an invalidated one settles", async () => {
+    const client = createTestClient();
+
+    const deferred: Array<{
+      resolve: (value: unknown) => void;
+      reject: (reason: unknown) => void;
+    }> = [];
+    mockAxiosInstance.get.mockImplementation(
+      () =>
+        new Promise((resolve, reject) => {
+          deferred.push({ resolve, reject });
+        }),
+    );
+
+    const first = client.getAccessToken();
+    await client.invalidateToken();
+    const second = client.getAccessToken();
+    expect(mockAxiosInstance.get).toHaveBeenCalledTimes(2);
+
+    // The superseded flight settles while the newer one is still in flight; it
+    // must not clear the newer flight's slot.
+    deferred[0].reject(new Error("superseded"));
+    await expect(first).rejects.toThrow("superseded");
+
+    const third = client.getAccessToken();
+    expect(mockAxiosInstance.get).toHaveBeenCalledTimes(2);
+
+    deferred[1].resolve({ data: { access_token: "fresh-token", expires_in: 3600 } });
+    await expect(second).resolves.toBe("fresh-token");
+    await expect(third).resolves.toBe("fresh-token");
+    expect(mockAxiosInstance.get).toHaveBeenCalledTimes(2);
+  });
+
+  it("should remove a superseded token from the shared cache", async () => {
+    const store = new Map<string, string>();
+    let signalWriteStarted: () => void = () => {};
+    const writeStarted = new Promise<void>((resolve) => {
+      signalWriteStarted = resolve;
+    });
+    let releaseWrite: () => void = () => {};
+    const writeGate = new Promise<void>((resolve) => {
+      releaseWrite = resolve;
+    });
+
+    const sharedTokenCache = {
+      get: vi.fn(async (key: string) => store.get(key) ?? null),
+      set: vi.fn(async (key: string, token: string) => {
+        signalWriteStarted();
+        await writeGate;
+        store.set(key, token);
+      }),
+      del: vi.fn(async (key: string) => {
+        store.delete(key);
+      }),
+    };
+
+    const client = new MpesaApiClient({
+      consumerKey: "test-key",
+      consumerSecret: "test-secret",
+      environment: "sandbox",
+      sharedTokenCache,
+    });
+
+    mockAxiosInstance.get.mockResolvedValueOnce({
+      data: { access_token: "stale-token", expires_in: 3600 },
+    });
+
+    const first = client.getAccessToken();
+    await writeStarted;
+    // Invalidate while the shared-cache write is still in flight: its delete
+    // lands first, then the write lands and must be undone.
+    await client.invalidateToken();
+    releaseWrite();
+    await expect(first).resolves.toBe("stale-token");
+
+    expect(sharedTokenCache.del).toHaveBeenCalled();
+    expect(store.size).toBe(0);
+
+    // A later caller must therefore not be served the superseded token.
+    mockAxiosInstance.get.mockResolvedValueOnce({
+      data: { access_token: "fresh-token", expires_in: 3600 },
+    });
+    await expect(client.getAccessToken()).resolves.toBe("fresh-token");
+  });
+
+  it("should not install a token fetched before invalidateToken", async () => {
+    const client = createTestClient();
+
+    const deferred: Array<(value: unknown) => void> = [];
+    mockAxiosInstance.get.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          deferred.push(resolve);
+        }),
+    );
+
+    const first = client.getAccessToken();
+    await client.invalidateToken();
+
+    deferred[0]({ data: { access_token: "stale-token", expires_in: 3600 } });
+    await expect(first).resolves.toBe("stale-token");
+
+    // The stale token must not be cached: the next caller fetches again.
+    const second = client.getAccessToken();
+    expect(mockAxiosInstance.get).toHaveBeenCalledTimes(2);
+    deferred[1]({ data: { access_token: "fresh-token", expires_in: 3600 } });
+    await expect(second).resolves.toBe("fresh-token");
+  });
+
   it("should make a POST request with auth token", async () => {
     const client = createTestClient();
 

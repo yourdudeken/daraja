@@ -18,6 +18,13 @@ export class MpesaApiClient {
   private readonly client: AxiosInstance;
   private readonly config: ResolvedConfig;
   private tokenCache: TokenCache | null = null;
+  /** In-flight token fetch shared by concurrent callers; null when settled. */
+  private tokenInFlight: Promise<string> | null = null;
+  /**
+   * Bumped by `invalidateToken()`; a fetch started under an older generation
+   * has been superseded and must not install its token.
+   */
+  private tokenGeneration = 0;
   private readonly logging?: LoggingHook;
   private readonly logger: Logger;
   private readonly circuitBreaker: CircuitBreaker;
@@ -184,10 +191,27 @@ export class MpesaApiClient {
       return this.tokenCache.token;
     }
 
+    // Single-flight: concurrent callers (cold start, post-expiry) share one
+    // in-flight fetch instead of stampeding the OAuth endpoint.
+    const inFlight = this.tokenInFlight;
+    if (inFlight) return inFlight;
+
+    const flight = this.fetchAccessToken(this.tokenGeneration);
+    this.tokenInFlight = flight;
+    // Only the current flight may clear the slot: a flight superseded by
+    // invalidateToken() must not discard the newer one that replaced it.
+    const settled = (): void => {
+      if (this.tokenInFlight === flight) this.tokenInFlight = null;
+    };
+    void flight.then(settled, settled);
+    return flight;
+  }
+
+  private async fetchAccessToken(generation: number): Promise<string> {
     if (this.sharedTokenCache) {
       const cacheKey = buildTokenCacheKey(this.config.consumerKey, this.config.environment);
       const cached = await this.sharedTokenCache.get(cacheKey);
-      if (cached) {
+      if (cached && generation === this.tokenGeneration) {
         this.tokenCache = { token: cached, expiresAt: new Date(Date.now() + 300000) };
         return cached;
       }
@@ -204,6 +228,15 @@ export class MpesaApiClient {
     });
 
     const data = response.data;
+
+    if (generation !== this.tokenGeneration) {
+      // invalidateToken() ran while this fetch was in flight (e.g. credential
+      // rotation): hand the caller what it fetched but do not install it, so a
+      // token minted from the superseded credentials is never cached.
+      this.logger.debug("Discarding access token from a superseded fetch");
+      return data.access_token;
+    }
+
     this.tokenCache = {
       token: data.access_token,
       expiresAt: new Date(Date.now() + (data.expires_in - 60) * 1000),
@@ -212,6 +245,22 @@ export class MpesaApiClient {
     if (this.sharedTokenCache) {
       const cacheKey = buildTokenCacheKey(this.config.consumerKey, this.config.environment);
       await this.sharedTokenCache.set(cacheKey, data.access_token, data.expires_in - 60);
+      if (generation !== this.tokenGeneration) {
+        // invalidateToken() ran while this write was in flight and its delete
+        // may have landed first, so undo the write: the shared cache must not
+        // keep serving a token minted from the superseded credentials.
+        // Residual window: a post-invalidation flight that wrote the same key
+        // in between (and finished before this point) loses its entry too; the
+        // in-memory cache still holds its token, so the cost is one extra
+        // cross-process fetch. The 3-method cache interface offers no
+        // compare-and-delete to close this.
+        this.logger.debug("Undoing superseded shared-cache token write");
+        try {
+          await this.sharedTokenCache.del?.(cacheKey);
+        } catch {
+          // ignore
+        }
+      }
     }
 
     this.logger.debug("Access token acquired", {
@@ -298,6 +347,11 @@ export class MpesaApiClient {
 
   async invalidateToken(): Promise<void> {
     this.tokenCache = null;
+    // Drop any in-flight fetch too: a call made after invalidation must not be
+    // served the token the caller just discarded, and a fetch already in
+    // flight must not install its result (see tokenGeneration).
+    this.tokenInFlight = null;
+    this.tokenGeneration += 1;
     if (this.sharedTokenCache) {
       try {
         const cacheKey = buildTokenCacheKey(this.config.consumerKey, this.config.environment);

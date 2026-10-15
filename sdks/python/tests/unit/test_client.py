@@ -2,6 +2,9 @@
 wrapper methods, service accessors, and lifecycle."""
 
 
+import time
+from concurrent.futures import ThreadPoolExecutor
+
 import httpx
 import pytest
 import respx
@@ -84,6 +87,37 @@ class TestTokenManager:
             client._token_manager.invalidate()
             assert client._token_manager._token is None
         client.close()
+
+    @respx.mock
+    def test_concurrent_token_requests_coalesce_to_one_fetch(self):
+        """N concurrent callers share a single OAuth round trip (single-flight)."""
+
+        def _slow_auth(request: httpx.Request) -> httpx.Response:
+            # Hold the fetch open so the remaining callers arrive while it is
+            # in flight; without single-flight each of them would call the
+            # OAuth endpoint.
+            time.sleep(0.05)
+            return httpx.Response(
+                200, json={"access_token": "thread-token", "expires_in": 3599}
+            )
+
+        def _fetch(_: int) -> str:
+            return client.get_access_token()
+
+        respx.get(
+            f"{BASE_URL}/oauth/v1/generate",
+            params={"grant_type": "client_credentials"},
+        ).mock(side_effect=_slow_auth)
+
+        client = make_client()
+        try:
+            with ThreadPoolExecutor(max_workers=8) as pool:
+                tokens = list(pool.map(_fetch, range(8)))
+        finally:
+            client.close()
+
+        assert tokens == ["thread-token"] * 8
+        assert respx.calls.call_count == 1
 
 
 class TestRequestPipeline:

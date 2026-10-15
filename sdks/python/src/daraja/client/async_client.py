@@ -118,6 +118,9 @@ class _AsyncTokenManager:
         self._token: str | None = None
         self._expires_at: float = 0.0
         self._lock = asyncio.Lock()
+        # Bumped by invalidate(); a fetch started under an older generation has
+        # been superseded and must not install its token.
+        self._generation = 0
         self._logger = _get_logger(config.logger)
         self._shared_cache: SharedTokenCache | None = None
         if config.shared_token_cache is not None:
@@ -133,10 +136,15 @@ class _AsyncTokenManager:
             if self._token and asyncio.get_event_loop().time() < self._expires_at:
                 return self._token
 
+            generation = self._generation
+
             if self._shared_cache is not None:
                 cache_key = build_token_cache_key(self._config.consumer_key)
                 cached = self._shared_cache.get(cache_key)
                 if cached is not None:
+                    if generation != self._generation:
+                        # invalidate() ran while the cache was being read.
+                        return cached
                     self._token = cached
                     self._expires_at = asyncio.get_event_loop().time() + 300
                     return cached
@@ -151,6 +159,12 @@ class _AsyncTokenManager:
             )
             data = response.raise_for_status().json()
             token_data = AccessTokenResponse(**data)
+            if generation != self._generation:
+                # invalidate() ran while this fetch was in flight (e.g.
+                # credential rotation): hand the caller what it fetched but do
+                # not install it, so a token minted from the superseded
+                # credentials is never cached.
+                return token_data.access_token
             self._token = token_data.access_token
             self._expires_at = asyncio.get_event_loop().time() + token_data.expires_in - 60
 
@@ -162,6 +176,9 @@ class _AsyncTokenManager:
             return self._token
 
     def invalidate(self) -> None:
+        # Cannot take the async lock from a sync method; the generation bump is
+        # what stops an in-flight fetch from installing a superseded token.
+        self._generation += 1
         self._token = None
         self._expires_at = 0.0
         self._logger.warning("Access token invalidated")
