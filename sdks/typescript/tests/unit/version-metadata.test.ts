@@ -20,22 +20,31 @@ describe("single-sourced version", () => {
     expect(pkg.version).toMatch(/^\d+\.\d+\.\d+/);
   });
 
-  it("SECURITY.md supported versions match the manifests", () => {
+  it("SECURITY.md lists every component against its registry", () => {
     const security = read("SECURITY.md");
-    const tsVersion = (JSON.parse(read("sdks/typescript/package.json")) as { version: string })
-      .version;
-    const mcpVersion = (JSON.parse(read("mcp/package.json")) as { version: string }).version;
-    const pyVersion = /^version = "([^"]+)"/m.exec(read("sdks/python/pyproject.toml"))?.[1];
-    expect(pyVersion).toBeTruthy();
+    const tableRows = security.split("\n").filter((line) => line.startsWith("|"));
 
-    const row = (name: string): string =>
-      security
-        .split("\n")
-        .find((line) => line.includes(`\`${name}\``) && /`\d+\.\d+\.\d+`/.test(line)) ?? "";
+    const tsName = (JSON.parse(read("sdks/typescript/package.json")) as { name: string }).name;
+    const mcpName = (JSON.parse(read("mcp/package.json")) as { name: string }).name;
+    const pyName = /^name = "([^"]+)"/m.exec(read("sdks/python/pyproject.toml"))?.[1];
+    expect(pyName).toBeTruthy();
 
-    expect(row("daraja-sdk-ts")).toContain(`\`${tsVersion}\``);
-    expect(row("daraja-sdk-py")).toContain(`\`${pyVersion}\``);
-    expect(row("daraja-mcp")).toContain(`\`${mcpVersion}\``);
+    const componentRows = [tsName, mcpName, pyName as string].map((name) => {
+      const row = tableRows.find((line) => line.includes(`\`${name}\``));
+      expect(row, `SECURITY.md must list ${name}`).toBeTruthy();
+      return row as string;
+    });
+
+    // Each row links to the published artifact of that component.
+    expect(componentRows[0]).toContain(`npmjs.com/package/${tsName}`);
+    expect(componentRows[1]).toContain(`docker.com/r/yourdudeken/${mcpName}`);
+    expect(componentRows[2]).toContain(`pypi.org/project/${pyName}`);
+
+    // The supported-version column must not duplicate a version string; it
+    // reports the registry's live version instead (single source of truth).
+    for (const row of componentRows) {
+      expect(row).not.toMatch(/`\d+\.\d+\.\d+`/);
+    }
   });
 });
 

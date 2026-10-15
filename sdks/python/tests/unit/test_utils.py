@@ -255,6 +255,38 @@ class TestEndpointRateLimiterRouter:
         assert router.try_acquire() is True
         assert router.try_acquire() is False
 
+    def test_matches_full_urls_to_path_overrides(self):
+        config = RateLimiterConfig(
+            tokens_per_second=1,
+            burst_size=1,
+            endpoint_overrides={
+                "/mpesa/stkpush": {"tokens_per_second": 10, "burst_size": 10},
+            },
+        )
+        router = EndpointRateLimiterRouter(config)
+        # The override applies regardless of the environment host in the URL.
+        assert router.try_acquire("https://api.safaricom.co.ke/mpesa/stkpush/v1/processrequest")
+        assert router.try_acquire("https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest")
+        # Unmatched endpoints still fall through to the small default bucket.
+        assert router.try_acquire("https://api.safaricom.co.ke/other") is True
+        assert router.try_acquire("https://api.safaricom.co.ke/other") is False
+
+    def test_host_qualified_override_is_scoped_to_its_origin(self):
+        config = RateLimiterConfig(
+            tokens_per_second=1,
+            burst_size=1,
+            endpoint_overrides={
+                "api.safaricom.co.ke/mpesa/stkpush": {"tokens_per_second": 10, "burst_size": 10},
+            },
+        )
+        router = EndpointRateLimiterRouter(config)
+        assert router.try_acquire("https://api.safaricom.co.ke/mpesa/stkpush/v1/processrequest")
+        assert router.try_acquire("https://api.safaricom.co.ke/mpesa/stkpush/v1/processrequest")
+        # A different origin with the same path uses the default bucket.
+        sandbox_url = "https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/request"
+        assert router.try_acquire(sandbox_url) is True
+        assert router.try_acquire(sandbox_url) is False
+
 
 class TestMetrics:
     def test_base_collector_noop(self):

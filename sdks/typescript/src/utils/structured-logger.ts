@@ -15,11 +15,13 @@ export interface StructuredLoggerConfig {
 
 export class StructuredLogger {
   private minLevel: number;
+  private minLevelName: LogLevel;
   private service: string;
   private pretty: boolean;
 
   constructor(config?: StructuredLoggerConfig) {
-    this.minLevel = config?.minLevel ? LOG_LEVELS[config.minLevel] : LOG_LEVELS.INFO;
+    this.minLevelName = config?.minLevel ?? "INFO";
+    this.minLevel = LOG_LEVELS[this.minLevelName];
     this.service = config?.service ?? "mpesa-sdk";
     this.pretty = config?.prettyPrint ?? false;
   }
@@ -73,7 +75,7 @@ export class StructuredLogger {
 
   child(service: string): StructuredLogger {
     return new StructuredLogger({
-      minLevel: this.minLevel as unknown as LogLevel,
+      minLevel: this.minLevelName,
       service: `${this.service}.${service}`,
       prettyPrint: this.pretty,
     });

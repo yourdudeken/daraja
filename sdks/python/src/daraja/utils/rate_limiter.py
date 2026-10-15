@@ -1,3 +1,4 @@
+import re
 import threading
 import time
 from typing import Any, Protocol
@@ -72,13 +73,29 @@ class EndpointRateLimiterRouter:
         if not endpoint:
             return self._default
         key = _normalize_key(endpoint)
-        if key in self._endpoint_limiters:
-            return self._endpoint_limiters[key]
-        for pattern, limiter in self._endpoint_limiters.items():
-            if key.startswith(pattern):
-                return limiter
+        key_path = _endpoint_path(key)
+        limiter = self._endpoint_limiters.get(key) or self._endpoint_limiters.get(key_path)
+        if limiter is not None:
+            return limiter
+        for pattern, candidate in self._endpoint_limiters.items():
+            # A host-qualified pattern matches that origin only; an absolute
+            # path pattern ("/mpesa/stkpush") matches the endpoint path on any
+            # host, so sandbox and production URLs share the override.
+            if key.startswith(pattern) or key_path.startswith(pattern):
+                return candidate
         return self._default
 
 
 def _normalize_key(key: str) -> str:
-    return key.lower().replace("https://", "").replace("http://", "").rstrip("/")
+    normalized = key.strip().lower()
+    normalized = re.sub(r"^[a-z][a-z0-9+.-]*://", "", normalized)
+    normalized = re.sub(r"[?#].*$", "", normalized)
+    return normalized.rstrip("/")
+
+
+def _endpoint_path(normalized: str) -> str:
+    """Path portion of a normalized key; host-qualified keys lose their origin."""
+    if normalized.startswith("/"):
+        return normalized
+    slash = normalized.find("/")
+    return "" if slash == -1 else normalized[slash:]
