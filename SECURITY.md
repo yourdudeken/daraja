@@ -16,9 +16,9 @@ receives security fixes:
 
 | Component | Registry | Current supported version |
 | --------- | -------- | ------------------------- |
-| `daraja-sdk-ts` (TypeScript SDK) | [npm](https://www.npmjs.com/package/daraja-sdk-ts) | `1.0.1` |
-| `daraja-sdk-py` (Python SDK) | [PyPI](https://pypi.org/project/daraja-sdk-py/) | `1.0.1` |
-| `daraja-mcp` (MCP server) | [Docker Hub](https://hub.docker.com/r/yourdudeken/daraja-mcp) | `1.0.0` |
+| `daraja-sdk-ts` (TypeScript SDK) | [npm](https://www.npmjs.com/package/daraja-sdk-ts) | ![npm version](https://img.shields.io/npm/v/daraja-sdk-ts) |
+| `daraja-sdk-py` (Python SDK) | [PyPI](https://pypi.org/project/daraja-sdk-py/) | ![PyPI version](https://img.shields.io/pypi/v/daraja-sdk-py) |
+| `daraja-mcp` (MCP server) | [Docker Hub](https://hub.docker.com/r/yourdudeken/daraja-mcp) | ![Docker version](https://img.shields.io/docker/v/yourdudeken/daraja-mcp) |
 
 The support window for every component is **the latest release only** — there is
 no back-port or long-term-support branch. When a fix is needed on an older
