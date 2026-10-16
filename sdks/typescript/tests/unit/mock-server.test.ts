@@ -149,7 +149,7 @@ describe("Mock Server Tests (nock)", () => {
     expect(result.ResponseCode).toBe("0");
   });
 
-  it("should not retry non-idempotent (POST) requests", async () => {
+  it("should not retry a POST that carries no idempotency key", async () => {
     mockAuth("no-retry-token");
 
     nock(BASE)
@@ -167,6 +167,9 @@ describe("Mock Server Tests (nock)", () => {
       consumerSecret: "test-secret",
       environment: "sandbox",
       passkey: "test-passkey",
+      // Without idempotency there is no X-Idempotency-Key, so replaying the
+      // payment cannot be made safe and the POST is attempted exactly once.
+      enableIdempotency: false,
       retryConfig: { maxRetries: 2, baseDelayMs: 10, maxDelayMs: 50 },
     } as MpesaConfig);
 
@@ -174,7 +177,7 @@ describe("Mock Server Tests (nock)", () => {
       client.post("/mpesa/stkpush/v1/processrequest", { Amount: 100 }),
     ).rejects.toThrow();
 
-    // The remaining success interceptor must be unused: POST must not be retried.
+    // The remaining success interceptor must be unused: a key-less POST is not retried.
     expect(nock.pendingMocks()).toHaveLength(1);
   });
 

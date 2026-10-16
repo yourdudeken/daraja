@@ -173,7 +173,7 @@ All SDKs include built-in resilience mechanisms configured via `MpesaConfig`:
 
 ### Retries with Exponential Backoff
 
-On transient failures (408, 429, 5xx), the SDK retries the request automatically. Configure via `max_retries`, `retry_config` (Python), or `retry` (TS). Backoff uses exponential delay with jitter up to `maxDelayMs`.
+On transient failures (408, 429, 5xx) and connection/timeout failures, the SDK retries the request automatically. Configure via `max_retries` inside `retry_config` (Python) or `retryConfig` (TypeScript). Backoff uses exponential delay with jitter up to `maxDelayMs`. In TypeScript a `POST` is only retried when it carries an `X-Idempotency-Key` (see [configuration](../getting-started/configuration.md)); other methods are always replayed.
 
 ### Circuit Breaker
 

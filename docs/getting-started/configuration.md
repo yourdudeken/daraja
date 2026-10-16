@@ -50,9 +50,15 @@ backoff envelope. These values are applied by every SDK (`base_delay_ms` /
   (`enable_idempotency`, default `true`). With `enable_idempotency=false` no key
   is sent and a `POST` retry may duplicate the request — avoid it for
   money-moving calls.
-- **Method policy (TypeScript):** only idempotent methods (`GET`, `HEAD`,
-  `OPTIONS`) are retried. `POST` is **not** retried, so a payment can never be
-  blindly re-sent. Do not configure `maxRetries` expecting POST retries.
+- **Method policy (TypeScript):** `GET`, `HEAD` and `OPTIONS` are retried. A `POST`
+  is retried only when it carries a non-empty `X-Idempotency-Key`. The SDK
+  generates that key while `enableIdempotency` is on (default) and overwrites any
+  key you set yourself, so a caller-supplied header only takes effect with
+  `enableIdempotency=false` — use one of the two to opt into `POST` retries. Every
+  attempt reuses that exact key, so a server that honours it sees one logical
+  request. With `enableIdempotency=false` and no key of your own, a `POST` is
+  attempted once however large `maxRetries` is, so a payment is never blindly
+  re-sent.
 
 ### Rate-limiter endpoint overrides
 
