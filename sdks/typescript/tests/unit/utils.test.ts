@@ -33,6 +33,15 @@ import {
 import { StructuredLogger } from "../../src/utils/structured-logger.js";
 import { getCertificate } from "../../src/utils/certificates.js";
 import { CircuitBreaker } from "../../src/utils/circuit-breaker.js";
+import { mapAxiosError } from "../../src/interceptors/retry.js";
+import {
+  APIConnectionError,
+  AuthenticationError,
+  MpesaAPIError,
+  RateLimitError,
+  TimeoutError,
+  ValidationError,
+} from "../../src/errors/index.js";
 import {
   InMemoryIdempotencyStore,
   generateIdempotencyKey,
@@ -622,6 +631,112 @@ describe("CircuitBreaker", () => {
     await expect(breaker.call(async () => { throw new Error("fail"); })).rejects.toThrow();
     await new Promise((r) => setTimeout(r, 20));
     await breaker.call(async () => "ok");
+    expect(breaker.getState()).toBe("closed");
+  });
+
+  it("does not count repeated 4xx validation errors", async () => {
+    const breaker = new CircuitBreaker({ failureThreshold: 2, successThreshold: 1, timeoutMs: 1000 });
+    const fail = async () => {
+      throw new ValidationError("Invalid account number", { statusCode: 400 });
+    };
+
+    for (let i = 0; i < 5; i++) {
+      await expect(breaker.call(fail)).rejects.toThrow("Invalid account number");
+    }
+
+    // Legitimate user errors must not take the whole client down.
+    expect(breaker.getState()).toBe("closed");
+    await expect(breaker.call(async () => "ok")).resolves.toBe("ok");
+  });
+
+  it("does not count repeated authentication errors", async () => {
+    for (const error of [
+      new AuthenticationError("Bad credentials", { statusCode: 401 }),
+      new MpesaAPIError("Forbidden", { statusCode: 403 }),
+    ]) {
+      const breaker = new CircuitBreaker({ failureThreshold: 2, successThreshold: 1, timeoutMs: 1000 });
+
+      for (let i = 0; i < 3; i++) {
+        await expect(breaker.call(async () => { throw error; })).rejects.toThrow();
+      }
+
+      expect(breaker.getState()).toBe("closed");
+    }
+  });
+
+  it("opens on repeated 5xx errors", async () => {
+    const breaker = new CircuitBreaker({ failureThreshold: 2, successThreshold: 1, timeoutMs: 1000 });
+    const fail = async () => {
+      throw new MpesaAPIError("Upstream failure", { statusCode: 503 });
+    };
+
+    await expect(breaker.call(fail)).rejects.toThrow("Upstream failure");
+    await expect(breaker.call(fail)).rejects.toThrow("Upstream failure");
+
+    expect(breaker.getState()).toBe("open");
+  });
+
+  it("counts rate limits and network/timeout failures", async () => {
+    for (const error of [
+      new RateLimitError("Too many requests", { statusCode: 429 }),
+      new APIConnectionError("socket hang up"),
+      new TimeoutError("timed out"),
+    ]) {
+      const breaker = new CircuitBreaker({ failureThreshold: 1, successThreshold: 1, timeoutMs: 1000 });
+      await expect(breaker.call(async () => { throw error; })).rejects.toThrow();
+      expect(breaker.getState()).toBe("open");
+    }
+  });
+
+  it("counts an M-Pesa error with no HTTP status", async () => {
+    // No status means no response was ever received, e.g. a dropped socket.
+    const breaker = new CircuitBreaker({ failureThreshold: 1, successThreshold: 1, timeoutMs: 1000 });
+    await expect(
+      breaker.call(async () => { throw new MpesaAPIError("never got a response"); }),
+    ).rejects.toThrow("never got a response");
+    expect(breaker.getState()).toBe("open");
+  });
+
+  it("counts transport failures the mapping reports without a status", async () => {
+    for (const code of ["ECONNRESET", "EHOSTUNREACH", "EAI_AGAIN"]) {
+      const breaker = new CircuitBreaker({ failureThreshold: 1, successThreshold: 1, timeoutMs: 1000 });
+      const transport = Object.assign(new Error("socket hang up"), {
+        isAxiosError: true,
+        code,
+        config: { headers: {} },
+        toJSON: () => ({}),
+      });
+
+      await expect(
+        breaker.call(async () => { throw mapAxiosError(transport as never); }),
+      ).rejects.toThrow();
+      expect(breaker.getState()).toBe("open");
+    }
+  });
+
+  it("reopens a half-open breaker and requires a fresh run of successes", async () => {
+    const breaker = new CircuitBreaker({ failureThreshold: 1, successThreshold: 2, timeoutMs: 50 });
+
+    await expect(
+      breaker.call(async () => { throw new MpesaAPIError("down", { statusCode: 500 }); }),
+    ).rejects.toThrow("down");
+    expect(breaker.getState()).toBe("open");
+
+    // Probe the half-open window: one success is not enough to close.
+    await new Promise((r) => setTimeout(r, 60));
+    await breaker.call(async () => "probe-1");
+    expect(breaker.getState()).toBe("half-open");
+
+    // A failure reopens it, and the earlier probe success must not be remembered.
+    await expect(
+      breaker.call(async () => { throw new MpesaAPIError("still down", { statusCode: 500 }); }),
+    ).rejects.toThrow("still down");
+    expect(breaker.getState()).toBe("open");
+
+    await new Promise((r) => setTimeout(r, 60));
+    await breaker.call(async () => "probe-2");
+    expect(breaker.getState()).toBe("half-open");
+    await breaker.call(async () => "probe-3");
     expect(breaker.getState()).toBe("closed");
   });
 });

@@ -379,8 +379,11 @@ class TestRequestPipeline:
     @respx.mock
     def test_circuit_breaker_opens_after_failures(self):
         _mock_auth(respx)
-        respx.post(f"{BASE_URL}/mpesa/stkpush/v1/processrequest").respond(400, text="bad")
-        client = make_client(circuit_breaker_config={"failure_threshold": 2, "timeout_ms": 60000})
+        respx.post(f"{BASE_URL}/mpesa/stkpush/v1/processrequest").respond(500, text="boom")
+        client = make_client(
+            circuit_breaker_config={"failure_threshold": 2, "timeout_ms": 60000},
+            retry_config={"max_retries": 0},
+        )
         try:
             req = {
                 "BusinessShortCode": 174379,
@@ -402,6 +405,35 @@ class TestRequestPipeline:
 
             with pytest.raises(CircuitBreakerOpenError):
                 client.stk_push(req)
+        finally:
+            client.close()
+
+    @respx.mock
+    def test_circuit_breaker_ignores_client_errors(self):
+        """A rejected request is the caller's problem, not an outage."""
+        _mock_auth(respx)
+        route = respx.post(f"{BASE_URL}/mpesa/stkpush/v1/processrequest").respond(
+            400, text="bad request"
+        )
+        client = make_client(circuit_breaker_config={"failure_threshold": 2, "timeout_ms": 60000})
+        try:
+            req = {
+                "BusinessShortCode": 174379,
+                "TransactionType": "CustomerPayBillOnline",
+                "Amount": 1,
+                "PartyA": 254708374149,
+                "PartyB": 174379,
+                "PhoneNumber": 254708374149,
+                "CallBackURL": "https://example.com/cb",
+                "AccountReference": "ref",
+                "TransactionDesc": "desc",
+            }
+            for _ in range(4):
+                with pytest.raises(MpesaAPIError):
+                    client.stk_push(req)
+
+            # Every attempt still reached the API instead of failing fast.
+            assert route.call_count == 4
         finally:
             client.close()
 

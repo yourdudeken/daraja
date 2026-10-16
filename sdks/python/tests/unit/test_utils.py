@@ -5,11 +5,23 @@ import asyncio
 import io
 import json
 import logging
+import sys
+import threading
 import time
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
 
 import pytest
 
+from daraja.exceptions import (
+    APIConnectionError,
+    AuthenticationError,
+    MpesaAPIError,
+    MpesaError,
+    RateLimitError,
+    TimeoutError,
+    ValidationError,
+)
 from daraja.utils.audit import AuditLogger
 from daraja.utils.batch import execute_batch, execute_batch_async
 from daraja.utils.circuit_breaker import (
@@ -722,6 +734,163 @@ class TestCircuitBreaker:
         assert config.failure_threshold == 5
         assert config.success_threshold == 2
         assert config.timeout_ms == 30000
+
+    def test_four_xx_errors_do_not_open(self):
+        breaker = CircuitBreaker(failure_threshold=2, success_threshold=1, timeout_ms=1000)
+
+        def fail():
+            raise ValidationError("Invalid account number", status_code=400)
+
+        for _ in range(5):
+            with pytest.raises(ValidationError):
+                breaker.call(fail)
+
+        # Legitimate user errors must not take the whole client down.
+        assert breaker.state == CircuitState.CLOSED
+        assert breaker.call(lambda: "ok") == "ok"
+
+    def test_auth_errors_do_not_open(self):
+        def fail_unauthorized():
+            raise AuthenticationError("Bad credentials", status_code=401)
+
+        def fail_forbidden():
+            raise MpesaAPIError("Forbidden", status_code=403)
+
+        for fail in (fail_unauthorized, fail_forbidden):
+            breaker = CircuitBreaker(failure_threshold=2, success_threshold=1, timeout_ms=1000)
+            for _ in range(5):
+                with pytest.raises(MpesaError):
+                    breaker.call(fail)
+            assert breaker.state == CircuitState.CLOSED
+
+    def test_five_xx_errors_open(self):
+        breaker = CircuitBreaker(failure_threshold=2, success_threshold=1, timeout_ms=1000)
+
+        def fail():
+            raise MpesaAPIError("Upstream failure", status_code=503)
+
+        with pytest.raises(MpesaAPIError):
+            breaker.call(fail)
+        with pytest.raises(MpesaAPIError):
+            breaker.call(fail)
+        assert breaker.state == CircuitState.OPEN
+
+    def test_transient_failures_count(self):
+        errors = [
+            RateLimitError("Too many requests", status_code=429),
+            APIConnectionError("socket hang up"),
+            TimeoutError("timed out"),
+        ]
+        for error in errors:
+            breaker = CircuitBreaker(failure_threshold=1, success_threshold=1, timeout_ms=1000)
+
+            def fail(error=error):
+                raise error
+
+            with pytest.raises(type(error)):
+                breaker.call(fail)
+            assert breaker.state == CircuitState.OPEN
+
+    def test_mpesa_error_without_status_opens(self):
+        # No status means no response was ever received: a lost connection.
+        breaker = CircuitBreaker(failure_threshold=1, success_threshold=1, timeout_ms=1000)
+
+        def fail():
+            raise MpesaAPIError("no response")
+
+        with pytest.raises(MpesaAPIError):
+            breaker.call(fail)
+        assert breaker.state == CircuitState.OPEN
+
+    def test_reopened_breaker_needs_a_fresh_run_of_successes(self):
+        # Mirrors the TypeScript behavior: probing again after a half-open
+        # failure must not reuse successes counted before the last reopen.
+        breaker = CircuitBreaker(failure_threshold=1, success_threshold=2, timeout_ms=50)
+
+        def fail():
+            raise MpesaAPIError("down", status_code=500)
+
+        with pytest.raises(MpesaAPIError):
+            breaker.call(fail)
+        assert breaker.state == CircuitState.OPEN
+
+        time.sleep(0.06)
+        assert breaker.call(lambda: "probe-1") == "probe-1"
+        assert breaker.state == CircuitState.HALF_OPEN
+
+        with pytest.raises(MpesaAPIError):
+            breaker.call(fail)
+        assert breaker.state == CircuitState.OPEN
+
+        time.sleep(0.06)
+        assert breaker.call(lambda: "probe-2") == "probe-2"
+        assert breaker.state == CircuitState.HALF_OPEN
+        assert breaker.call(lambda: "probe-3") == "probe-3"
+        assert breaker.state == CircuitState.CLOSED
+
+    def test_acall_does_not_count_four_xx(self):
+        breaker = CircuitBreaker(failure_threshold=1, success_threshold=1, timeout_ms=1000)
+
+        async def fail():
+            raise ValidationError("bad request", status_code=400)
+
+        for _ in range(3):
+            with pytest.raises(ValidationError):
+                asyncio.run(breaker.acall(fail))
+        assert breaker.state == CircuitState.CLOSED
+
+    def test_concurrent_failures_keep_counts_consistent(self):
+        # Threshold equals the number of calls, so the breaker only opens once the
+        # last failure lands and no caller sees `open` mid-run.
+        breaker = CircuitBreaker(failure_threshold=2000, success_threshold=1, timeout_ms=1000)
+
+        def fail():
+            raise MpesaAPIError("upstream is down", status_code=500)
+
+        def call(_):
+            with pytest.raises(MpesaAPIError):
+                breaker.call(fail)
+
+        # Switch threads as often as possible so an unserialized
+        # read-modify-write of the counters has a real chance to lose an update.
+        previous_interval = sys.getswitchinterval()
+        sys.setswitchinterval(1e-6)
+        try:
+            with ThreadPoolExecutor(max_workers=8) as pool:
+                list(pool.map(call, range(2000)))
+        finally:
+            sys.setswitchinterval(previous_interval)
+
+        # Lost updates would leave a much lower count than were actually seen.
+        assert breaker._failure_count == 2000
+        assert breaker.state == CircuitState.OPEN
+
+    def test_lock_is_not_held_across_the_wrapped_call(self):
+        # A request that itself goes through the same breaker must not deadlock:
+        # the lock may only guard state, never wrap the user's callable. Run it on
+        # a daemon thread so a regression fails after the timeout instead of
+        # hanging the suite.
+        breaker = CircuitBreaker(failure_threshold=5, success_threshold=1, timeout_ms=1000)
+
+        def inner():
+            return breaker.call(lambda: "inner")
+
+        outcome: dict[str, object] = {}
+
+        def run() -> None:
+            try:
+                outcome["value"] = breaker.call(inner)
+            except BaseException as exc:  # noqa: BLE001 - reported via `outcome`
+                outcome["error"] = exc
+
+        worker = threading.Thread(target=run, daemon=True)
+        worker.start()
+        worker.join(timeout=5)
+
+        assert not worker.is_alive(), "the breaker deadlocked: its lock wraps the callable"
+        assert outcome.get("error") is None
+        assert outcome.get("value") == "inner"
+        assert breaker.state == CircuitState.CLOSED
 
 
 class TestIdempotency:
