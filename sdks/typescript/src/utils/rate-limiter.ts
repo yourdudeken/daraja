@@ -87,14 +87,20 @@ export class EndpointRateLimiterRouter implements RateLimiter {
     const keyPath = endpointPath(key);
     const exact = this.endpointLimiters.get(key) ?? this.endpointLimiters.get(keyPath);
     if (exact) return exact;
+    // A host-qualified pattern matches that origin only; an absolute path
+    // pattern ("/mpesa/stkpush") matches the endpoint path on any host. When
+    // several patterns match, the longest (most specific) one wins, so
+    // resolution does not depend on declaration order.
+    let best: TokenBucketRateLimiter | undefined;
+    let bestLength = -1;
     for (const [pattern, limiter] of this.endpointLimiters) {
-      // A host-qualified pattern matches that origin only; an absolute path
-      // pattern ("/mpesa/stkpush") matches the endpoint path on any host.
-      if (key.startsWith(pattern) || keyPath.startsWith(pattern)) {
-        return limiter;
+      if (!matchesPattern(pattern, key) && !matchesPattern(pattern, keyPath)) continue;
+      if (pattern.length > bestLength) {
+        bestLength = pattern.length;
+        best = limiter;
       }
     }
-    return this.defaultLimiter;
+    return best ?? this.defaultLimiter;
   }
 
   acquire(endpoint?: string): Promise<void> {
@@ -141,4 +147,15 @@ function endpointPath(normalized: string): string {
   if (normalized.startsWith("/")) return normalized;
   const slash = normalized.indexOf("/");
   return slash === -1 ? "" : normalized.slice(slash);
+}
+
+/**
+ * Whether a normalized override pattern covers a normalized key.
+ *
+ * Matching is on path-segment boundaries: the pattern matches the key exactly or
+ * matches a leading run of complete segments. `/mpesa/stkpush` therefore matches
+ * `/mpesa/stkpush/v1/processrequest` but **not** `/mpesa/stkpushquery/v1/query`.
+ */
+function matchesPattern(pattern: string, key: string): boolean {
+  return key === pattern || (pattern !== "" && key.startsWith(`${pattern}/`));
 }

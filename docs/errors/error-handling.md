@@ -179,6 +179,10 @@ On transient failures (408, 429, 5xx), the SDK retries the request automatically
 
 After repeated consecutive failures, the circuit breaker opens and short-circuits requests without hitting the network. Configure via `circuit_breaker_config` (Python), or `circuitBreaker` (TS).
 
+Only failures that indicate an unhealthy endpoint count towards the threshold: a `5xx` response, the transient `408`/`429`, and any failure that carries no HTTP status at all — a connection failure, a timeout, or an error the SDK cannot attribute, where counting beats silently ignoring a real outage. Failures that do carry a `4xx` status are not counted, so a burst of bad requests or a wrong credential cannot take the client down for your other traffic. `ValidationError` and `AuthenticationError` are never counted, whatever status they carry.
+
+When the breaker is open, calls fail immediately with `CircuitBreakerOpenError` (Python) / an error with the message `Circuit breaker is open` (TS) until the timeout elapses. It then moves to *half-open*, where requests are passed through again and the outcome is re-evaluated: the breaker closes once `success_threshold` (Python) / `successThreshold` (TS) consecutive successes are seen, and reopens on the next counted failure (successes counted before that reopen do not carry over). Python's breaker serializes its state, so the same instance can be shared across threads.
+
 ### Rate Limiting
 
 The SDK tracks request rates and will surface a `RateLimitError` with the `retryAfter` hint when limits are hit.

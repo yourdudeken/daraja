@@ -33,6 +33,15 @@ import {
 import { StructuredLogger } from "../../src/utils/structured-logger.js";
 import { getCertificate } from "../../src/utils/certificates.js";
 import { CircuitBreaker } from "../../src/utils/circuit-breaker.js";
+import { mapAxiosError } from "../../src/interceptors/retry.js";
+import {
+  APIConnectionError,
+  AuthenticationError,
+  MpesaAPIError,
+  RateLimitError,
+  TimeoutError,
+  ValidationError,
+} from "../../src/errors/index.js";
 import {
   InMemoryIdempotencyStore,
   generateIdempotencyKey,
@@ -131,6 +140,27 @@ describe("InMemorySharedTokenCache", () => {
     expect(await cache.get("key-1")).toBeNull();
   });
 
+  it("getEntry reports the remaining lifetime", async () => {
+    await cache.set("key-1", "token-1", 60);
+    const entry = await cache.getEntry("key-1");
+    expect(entry?.token).toBe("token-1");
+    const remainingMs = (entry?.expiresAt ?? 0) - Date.now();
+    expect(remainingMs).toBeGreaterThan(55_000);
+    expect(remainingMs).toBeLessThanOrEqual(60_000);
+  });
+
+  it("getEntry returns null for missing and expired keys", async () => {
+    expect(await cache.getEntry("missing")).toBeNull();
+    await cache.set("key-1", "token-1", 0);
+    expect(await cache.getEntry("key-1")).toBeNull();
+  });
+
+  it("del removes an entry reported by getEntry", async () => {
+    await cache.set("key-1", "token-1", 60);
+    await cache.del("key-1");
+    expect(await cache.getEntry("key-1")).toBeNull();
+  });
+
   it("deletes tokens", async () => {
     await cache.set("key-1", "token-1", 60);
     await cache.del("key-1");
@@ -159,9 +189,35 @@ describe("RedisTokenCache", () => {
     // Wait for init to fail
     await new Promise((r) => setTimeout(r, 50));
     expect(await cache.get("key")).toBeNull();
+    expect(await cache.getEntry("key")).toBeNull();
     await cache.set("key", "token", 60);
     await cache.del("key");
     await cache.disconnect();
+  });
+
+  it("getEntry reports the entry's remaining lifetime from the Redis TTL", async () => {
+    const cache = new RedisTokenCache("redis://localhost:1");
+    // The `redis` peer dependency is not installed in tests, so hand the cache a
+    // stand-in that answers GET/TTL and check the conversion (seconds → ms).
+    let ttl = 90;
+    const fake = {
+      get: async (key: string) => `token:${key}`,
+      ttl: async () => ttl,
+    };
+    (cache as unknown as { client: typeof fake }).client = fake;
+
+    const entry = await cache.getEntry("k");
+    expect(entry?.token).toBe("token:k");
+    const remainingMs = (entry?.expiresAt ?? 0) - Date.now();
+    expect(remainingMs).toBeGreaterThan(85_000);
+    expect(remainingMs).toBeLessThanOrEqual(90_000);
+
+    // A non-positive TTL (-1 no expiry, -2 gone) leaves the lifetime unknown, so
+    // the caller must not be handed a guessed window: report a miss.
+    ttl = -1;
+    expect(await cache.getEntry("k")).toBeNull();
+    ttl = -2;
+    expect(await cache.getEntry("k")).toBeNull();
   });
 });
 
@@ -396,6 +452,70 @@ describe("RateLimiters", () => {
       "api.safaricom.co.ke/mpesa",
     );
   });
+
+  it("EndpointRateLimiterRouter scopes host-qualified overrides to their origin", () => {
+    const router = new EndpointRateLimiterRouter({
+      tokensPerSecond: 1,
+      burstSize: 1,
+      endpointOverrides: {
+        "api.safaricom.co.ke/mpesa/stkpush": { tokensPerSecond: 10, burstSize: 10 },
+      },
+    });
+    // Same origin: the override's larger bucket applies.
+    expect(
+      router.tryAcquire("https://api.safaricom.co.ke/mpesa/stkpush/v1/processrequest"),
+    ).toBe(true);
+    expect(
+      router.tryAcquire("https://api.safaricom.co.ke/mpesa/stkpush/v1/processrequest"),
+    ).toBe(true);
+    // Same path on a different origin: falls through to the default bucket.
+    expect(
+      router.tryAcquire("https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest"),
+    ).toBe(true);
+    expect(
+      router.tryAcquire("https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest"),
+    ).toBe(false);
+  });
+
+  it("EndpointRateLimiterRouter matches on segment boundaries, not raw prefixes", () => {
+    const router = new EndpointRateLimiterRouter({
+      tokensPerSecond: 1,
+      burstSize: 1,
+      endpointOverrides: {
+        "/mpesa/stkpush": { tokensPerSecond: 10, burstSize: 10 },
+      },
+    });
+    // The sibling STK Push Query endpoint must not inherit the STK Push override.
+    expect(router.tryAcquire("https://api.safaricom.co.ke/mpesa/stkpushquery/v1/query")).toBe(
+      true,
+    );
+    expect(router.tryAcquire("https://api.safaricom.co.ke/mpesa/stkpushquery/v1/query")).toBe(
+      false,
+    );
+    // The STK Push path itself still uses the override's larger bucket.
+    expect(router.tryAcquire("https://api.safaricom.co.ke/mpesa/stkpush/v1/processrequest")).toBe(
+      true,
+    );
+    expect(router.tryAcquire("https://api.safaricom.co.ke/mpesa/stkpush/v1/processrequest")).toBe(
+      true,
+    );
+  });
+
+  it("EndpointRateLimiterRouter prefers the most specific override", () => {
+    const router = new EndpointRateLimiterRouter({
+      tokensPerSecond: 1,
+      burstSize: 1,
+      endpointOverrides: {
+        "/mpesa": { tokensPerSecond: 10, burstSize: 10 },
+        "/mpesa/stkpush": { tokensPerSecond: 10, burstSize: 2 },
+      },
+    });
+    // "/mpesa/stkpush" (burst 2) wins over the broader "/mpesa" (burst 10),
+    // independent of declaration order.
+    expect(router.tryAcquire("/mpesa/stkpush/v1/processrequest")).toBe(true);
+    expect(router.tryAcquire("/mpesa/stkpush/v1/processrequest")).toBe(true);
+    expect(router.tryAcquire("/mpesa/stkpush/v1/processrequest")).toBe(false);
+  });
 });
 
 describe("StructuredLogger", () => {
@@ -511,6 +631,112 @@ describe("CircuitBreaker", () => {
     await expect(breaker.call(async () => { throw new Error("fail"); })).rejects.toThrow();
     await new Promise((r) => setTimeout(r, 20));
     await breaker.call(async () => "ok");
+    expect(breaker.getState()).toBe("closed");
+  });
+
+  it("does not count repeated 4xx validation errors", async () => {
+    const breaker = new CircuitBreaker({ failureThreshold: 2, successThreshold: 1, timeoutMs: 1000 });
+    const fail = async () => {
+      throw new ValidationError("Invalid account number", { statusCode: 400 });
+    };
+
+    for (let i = 0; i < 5; i++) {
+      await expect(breaker.call(fail)).rejects.toThrow("Invalid account number");
+    }
+
+    // Legitimate user errors must not take the whole client down.
+    expect(breaker.getState()).toBe("closed");
+    await expect(breaker.call(async () => "ok")).resolves.toBe("ok");
+  });
+
+  it("does not count repeated authentication errors", async () => {
+    for (const error of [
+      new AuthenticationError("Bad credentials", { statusCode: 401 }),
+      new MpesaAPIError("Forbidden", { statusCode: 403 }),
+    ]) {
+      const breaker = new CircuitBreaker({ failureThreshold: 2, successThreshold: 1, timeoutMs: 1000 });
+
+      for (let i = 0; i < 3; i++) {
+        await expect(breaker.call(async () => { throw error; })).rejects.toThrow();
+      }
+
+      expect(breaker.getState()).toBe("closed");
+    }
+  });
+
+  it("opens on repeated 5xx errors", async () => {
+    const breaker = new CircuitBreaker({ failureThreshold: 2, successThreshold: 1, timeoutMs: 1000 });
+    const fail = async () => {
+      throw new MpesaAPIError("Upstream failure", { statusCode: 503 });
+    };
+
+    await expect(breaker.call(fail)).rejects.toThrow("Upstream failure");
+    await expect(breaker.call(fail)).rejects.toThrow("Upstream failure");
+
+    expect(breaker.getState()).toBe("open");
+  });
+
+  it("counts rate limits and network/timeout failures", async () => {
+    for (const error of [
+      new RateLimitError("Too many requests", { statusCode: 429 }),
+      new APIConnectionError("socket hang up"),
+      new TimeoutError("timed out"),
+    ]) {
+      const breaker = new CircuitBreaker({ failureThreshold: 1, successThreshold: 1, timeoutMs: 1000 });
+      await expect(breaker.call(async () => { throw error; })).rejects.toThrow();
+      expect(breaker.getState()).toBe("open");
+    }
+  });
+
+  it("counts an M-Pesa error with no HTTP status", async () => {
+    // No status means no response was ever received, e.g. a dropped socket.
+    const breaker = new CircuitBreaker({ failureThreshold: 1, successThreshold: 1, timeoutMs: 1000 });
+    await expect(
+      breaker.call(async () => { throw new MpesaAPIError("never got a response"); }),
+    ).rejects.toThrow("never got a response");
+    expect(breaker.getState()).toBe("open");
+  });
+
+  it("counts transport failures the mapping reports without a status", async () => {
+    for (const code of ["ECONNRESET", "EHOSTUNREACH", "EAI_AGAIN"]) {
+      const breaker = new CircuitBreaker({ failureThreshold: 1, successThreshold: 1, timeoutMs: 1000 });
+      const transport = Object.assign(new Error("socket hang up"), {
+        isAxiosError: true,
+        code,
+        config: { headers: {} },
+        toJSON: () => ({}),
+      });
+
+      await expect(
+        breaker.call(async () => { throw mapAxiosError(transport as never); }),
+      ).rejects.toThrow();
+      expect(breaker.getState()).toBe("open");
+    }
+  });
+
+  it("reopens a half-open breaker and requires a fresh run of successes", async () => {
+    const breaker = new CircuitBreaker({ failureThreshold: 1, successThreshold: 2, timeoutMs: 50 });
+
+    await expect(
+      breaker.call(async () => { throw new MpesaAPIError("down", { statusCode: 500 }); }),
+    ).rejects.toThrow("down");
+    expect(breaker.getState()).toBe("open");
+
+    // Probe the half-open window: one success is not enough to close.
+    await new Promise((r) => setTimeout(r, 60));
+    await breaker.call(async () => "probe-1");
+    expect(breaker.getState()).toBe("half-open");
+
+    // A failure reopens it, and the earlier probe success must not be remembered.
+    await expect(
+      breaker.call(async () => { throw new MpesaAPIError("still down", { statusCode: 500 }); }),
+    ).rejects.toThrow("still down");
+    expect(breaker.getState()).toBe("open");
+
+    await new Promise((r) => setTimeout(r, 60));
+    await breaker.call(async () => "probe-2");
+    expect(breaker.getState()).toBe("half-open");
+    await breaker.call(async () => "probe-3");
     expect(breaker.getState()).toBe("closed");
   });
 });

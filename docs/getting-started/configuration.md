@@ -65,6 +65,14 @@ normalization (scheme, query string, fragment, and trailing slash removed):
 - a **host-qualified** key such as `api.safaricom.co.ke/mpesa/stkpush` matches
   only that origin.
 
+Matching is on **path-segment boundaries**, not raw string prefixes:
+`/mpesa/stkpush` matches `/mpesa/stkpush/v1/processrequest` but not the sibling
+endpoint `/mpesa/stkpushquery/v1/query`. A key with a host and no path (for
+example `api.safaricom.co.ke`) matches every path on that host. When several
+keys match, the **longest (most specific)** one wins, regardless of declaration
+order. Keys that differ only by query string or fragment normalize to the same
+key and are not interchangeable.
+
 Requests that match no override use the top-level rate-limiter bucket.
 
 

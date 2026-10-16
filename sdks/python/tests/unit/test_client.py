@@ -2,6 +2,9 @@
 wrapper methods, service accessors, and lifecycle."""
 
 
+import time
+from concurrent.futures import ThreadPoolExecutor
+
 import httpx
 import pytest
 import respx
@@ -76,6 +79,75 @@ class TestTokenManager:
             client.close()
             cache.dispose()
 
+    def test_shared_cache_hit_respects_entry_expiry(self):
+        """A hit carries its own remaining lifetime, not an assumed 5 minutes."""
+        cache = InMemorySharedTokenCache()
+        cache.set("mpesa:token:sandbox:test-key", "cached-token", 0.05)
+        client = make_client(shared_token_cache=cache)
+        try:
+            assert client.get_access_token() == "cached-token"
+            time.sleep(0.1)
+            with respx.mock:
+                _mock_auth(respx)
+                assert client.get_access_token() == "test-token"
+        finally:
+            client.close()
+            cache.dispose()
+
+    def test_expired_shared_cache_entry_is_not_served(self):
+        class ExpiredEntryCache:
+            def get(self, key):
+                return "stale-token"
+
+            def get_entry(self, key):
+                return "stale-token", time.time() - 1
+
+            def set(self, key, token, ttl_sec):
+                pass
+
+        client = make_client(shared_token_cache=ExpiredEntryCache())
+        try:
+            with respx.mock:
+                _mock_auth(respx)
+                assert client.get_access_token() == "test-token"
+        finally:
+            client.close()
+
+    def test_shared_cache_without_get_entry_still_honored(self):
+        """Caches implementing only get() are trusted for the guaranteed floor."""
+
+        class GetSetOnlyCache:
+            def __init__(self):
+                self.token = "cached-token"
+
+            def get(self, key):
+                return self.token
+
+            def set(self, key, token, ttl_sec):
+                self.token = token
+
+        client = make_client(shared_token_cache=GetSetOnlyCache())
+        try:
+            assert client.get_access_token() == "cached-token"
+        finally:
+            client.close()
+
+    def test_invalidate_purges_shared_cache(self):
+        cache = InMemorySharedTokenCache()
+        cache.set("mpesa:token:sandbox:test-key", "cached-token", 300)
+        client = make_client(shared_token_cache=cache)
+        try:
+            assert client.get_access_token() == "cached-token"
+            client._token_manager.invalidate()
+            # The discarded token must not come back out of the shared cache.
+            assert cache.get("mpesa:token:sandbox:test-key") is None
+            with respx.mock:
+                _mock_auth(respx, "fresh-token")
+                assert client.get_access_token() == "fresh-token"
+        finally:
+            client.close()
+            cache.dispose()
+
     def test_invalidate(self):
         client = make_client()
         with respx.mock:
@@ -84,6 +156,37 @@ class TestTokenManager:
             client._token_manager.invalidate()
             assert client._token_manager._token is None
         client.close()
+
+    @respx.mock
+    def test_concurrent_token_requests_coalesce_to_one_fetch(self):
+        """N concurrent callers share a single OAuth round trip (single-flight)."""
+
+        def _slow_auth(request: httpx.Request) -> httpx.Response:
+            # Hold the fetch open so the remaining callers arrive while it is
+            # in flight; without single-flight each of them would call the
+            # OAuth endpoint.
+            time.sleep(0.05)
+            return httpx.Response(
+                200, json={"access_token": "thread-token", "expires_in": 3599}
+            )
+
+        def _fetch(_: int) -> str:
+            return client.get_access_token()
+
+        respx.get(
+            f"{BASE_URL}/oauth/v1/generate",
+            params={"grant_type": "client_credentials"},
+        ).mock(side_effect=_slow_auth)
+
+        client = make_client()
+        try:
+            with ThreadPoolExecutor(max_workers=8) as pool:
+                tokens = list(pool.map(_fetch, range(8)))
+        finally:
+            client.close()
+
+        assert tokens == ["thread-token"] * 8
+        assert respx.calls.call_count == 1
 
 
 class TestRequestPipeline:
@@ -276,8 +379,11 @@ class TestRequestPipeline:
     @respx.mock
     def test_circuit_breaker_opens_after_failures(self):
         _mock_auth(respx)
-        respx.post(f"{BASE_URL}/mpesa/stkpush/v1/processrequest").respond(400, text="bad")
-        client = make_client(circuit_breaker_config={"failure_threshold": 2, "timeout_ms": 60000})
+        respx.post(f"{BASE_URL}/mpesa/stkpush/v1/processrequest").respond(500, text="boom")
+        client = make_client(
+            circuit_breaker_config={"failure_threshold": 2, "timeout_ms": 60000},
+            retry_config={"max_retries": 0},
+        )
         try:
             req = {
                 "BusinessShortCode": 174379,
@@ -299,6 +405,35 @@ class TestRequestPipeline:
 
             with pytest.raises(CircuitBreakerOpenError):
                 client.stk_push(req)
+        finally:
+            client.close()
+
+    @respx.mock
+    def test_circuit_breaker_ignores_client_errors(self):
+        """A rejected request is the caller's problem, not an outage."""
+        _mock_auth(respx)
+        route = respx.post(f"{BASE_URL}/mpesa/stkpush/v1/processrequest").respond(
+            400, text="bad request"
+        )
+        client = make_client(circuit_breaker_config={"failure_threshold": 2, "timeout_ms": 60000})
+        try:
+            req = {
+                "BusinessShortCode": 174379,
+                "TransactionType": "CustomerPayBillOnline",
+                "Amount": 1,
+                "PartyA": 254708374149,
+                "PartyB": 174379,
+                "PhoneNumber": 254708374149,
+                "CallBackURL": "https://example.com/cb",
+                "AccountReference": "ref",
+                "TransactionDesc": "desc",
+            }
+            for _ in range(4):
+                with pytest.raises(MpesaAPIError):
+                    client.stk_push(req)
+
+            # Every attempt still reached the API instead of failing fast.
+            assert route.call_count == 4
         finally:
             client.close()
 

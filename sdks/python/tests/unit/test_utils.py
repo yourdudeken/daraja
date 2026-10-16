@@ -5,11 +5,23 @@ import asyncio
 import io
 import json
 import logging
+import sys
+import threading
 import time
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
 
 import pytest
 
+from daraja.exceptions import (
+    APIConnectionError,
+    AuthenticationError,
+    MpesaAPIError,
+    MpesaError,
+    RateLimitError,
+    TimeoutError,
+    ValidationError,
+)
 from daraja.utils.audit import AuditLogger
 from daraja.utils.batch import execute_batch, execute_batch_async
 from daraja.utils.circuit_breaker import (
@@ -35,9 +47,12 @@ from daraja.utils.rate_limiter import (
 )
 from daraja.utils.structured_logger import StructuredLogger, StructuredLogHandler
 from daraja.utils.token_cache import (
+    SHARED_TOKEN_CACHE_FALLBACK_TTL_SEC,
     InMemorySharedTokenCache,
     RedisTokenCache,
     build_token_cache_key,
+    purge_shared_entry,
+    read_shared_entry,
 )
 from daraja.utils.token_store import EncryptedTokenStore
 from daraja.utils.tracing import (
@@ -79,6 +94,39 @@ class TestInMemorySharedTokenCache:
         cache.dispose()
         assert cache.get("key-1") is None
 
+    def test_get_entry_reports_remaining_lifetime(self):
+        cache = InMemorySharedTokenCache()
+        try:
+            cache.set("key-1", "token-1", 60)
+            entry = cache.get_entry("key-1")
+            assert entry is not None
+            token, expires_at = entry
+            assert token == "token-1"
+            # Only the true remaining lifetime, not an assumed five minutes.
+            assert 55.0 < expires_at - time.time() <= 60.0
+        finally:
+            cache.dispose()
+
+    def test_get_entry_none_for_missing_and_expired(self):
+        cache = InMemorySharedTokenCache()
+        try:
+            assert cache.get_entry("missing") is None
+            cache.set("key-1", "token-1", -1)
+            assert cache.get_entry("key-1") is None
+            assert "key-1" not in cache._cache
+        finally:
+            cache.dispose()
+
+    def test_delete_removes_entry(self):
+        cache = InMemorySharedTokenCache()
+        try:
+            cache.set("key-1", "token-1", 60)
+            cache.delete("key-1")
+            assert cache.get("key-1") is None
+            cache.delete("key-1")  # deleting a missing key is a no-op
+        finally:
+            cache.dispose()
+
     def test_build_token_cache_key(self):
         assert (
             build_token_cache_key("consumer-key", "sandbox")
@@ -94,7 +142,9 @@ class TestRedisTokenCache:
     def test_unavailable_redis_returns_none(self):
         cache = RedisTokenCache("redis://localhost:1")
         assert cache.get("key") is None
+        assert cache.get_entry("key") is None
         cache.set("key", "token", 60)  # should not raise
+        cache.delete("key")  # should not raise
         cache.close()
 
     def test_with_client_get_set_close(self, monkeypatch):
@@ -127,12 +177,68 @@ class TestRedisTokenCache:
         cache.close()
         assert fake.closed
 
+    def test_get_entry_uses_redis_ttl(self, monkeypatch):
+        class FakeRedis:
+            def __init__(self, ttl):
+                self.store = {}
+                self.ttl_value = ttl
+
+            def ping(self):
+                return True
+
+            def get(self, key):
+                return self.store.get(key)
+
+            def ttl(self, key):
+                return self.ttl_value
+
+            def delete(self, key):
+                self.store.pop(key, None)
+
+            def setex(self, key, ttl, value):
+                self.store[key] = value
+
+            def close(self):
+                pass
+
+        fake = FakeRedis(120)
+        monkeypatch.setattr("redis.Redis.from_url", lambda *a, **k: fake)
+        cache = RedisTokenCache("redis://localhost:6379")
+        cache.set("k1", "tok1", 300)
+
+        entry = cache.get_entry("k1")
+        assert entry is not None
+        token, expires_at = entry
+        assert token == "tok1"
+        assert 115.0 < expires_at - time.time() <= 120.0
+
+        # A TTL the SDK cannot interpret (no expiry, or about to expire) says
+        # nothing about the token's remaining life, so it is a miss.
+        fake.ttl_value = -1
+        assert cache.get_entry("k1") is None
+        fake.ttl_value = 0
+        assert cache.get_entry("k1") is None
+
+        # Missing keys report nothing.
+        fake.ttl_value = -2
+        assert cache.get_entry("absent") is None
+
+        cache.delete("k1")
+        assert cache.get("k1") is None
+        cache.close()
+
     def test_client_errors_swallowed(self, monkeypatch):
         class FailingRedis:
             def ping(self):
                 return True
 
             def get(self, key):
+                raise RuntimeError("boom")
+
+            def ttl(self, key):
+                raise RuntimeError("boom")
+
+            def delete(self, key):
                 raise RuntimeError("boom")
 
             def setex(self, key, ttl, value):
@@ -144,8 +250,75 @@ class TestRedisTokenCache:
         monkeypatch.setattr("redis.Redis.from_url", lambda *a, **k: FailingRedis())
         cache = RedisTokenCache("redis://localhost:6379")
         assert cache.get("k") is None
+        assert cache.get_entry("k") is None
         cache.set("k", "t", 60)  # should not raise
+        cache.delete("k")  # should not raise
         cache.close()  # should not raise
+
+
+class TestSharedEntryHelpers:
+    def test_read_shared_entry_prefers_get_entry(self):
+        class CacheWithEntry:
+            def get(self, key):
+                raise AssertionError("get() must not be used when get_entry() exists")
+
+            def get_entry(self, key):
+                return ("tok", 123.0)
+
+            def set(self, key, token, ttl_sec):
+                pass
+
+        assert read_shared_entry(CacheWithEntry(), "k") == ("tok", 123.0)
+
+    def test_read_shared_entry_falls_back_to_floor(self):
+        class GetOnly:
+            def get(self, key):
+                return "tok" if key == "k" else None
+
+            def set(self, key, token, ttl_sec):
+                pass
+
+        entry = read_shared_entry(GetOnly(), "k")
+        assert entry is not None
+        token, expires_at = entry
+        assert token == "tok"
+        assert 55.0 < expires_at - time.time() <= SHARED_TOKEN_CACHE_FALLBACK_TTL_SEC
+        assert read_shared_entry(GetOnly(), "missing") is None
+
+    def test_purge_shared_entry_best_effort(self):
+        deleted: list[str] = []
+
+        class Deletable:
+            def get(self, key):
+                return None
+
+            def set(self, key, token, ttl_sec):
+                pass
+
+            def delete(self, key):
+                deleted.append(key)
+
+        class GetSetOnly:
+            def get(self, key):
+                return None
+
+            def set(self, key, token, ttl_sec):
+                pass
+
+        class Exploding:
+            def get(self, key):
+                return None
+
+            def set(self, key, token, ttl_sec):
+                pass
+
+            def delete(self, key):
+                raise RuntimeError("boom")
+
+        purge_shared_entry(Deletable(), "k")  # type: ignore[arg-type]
+        assert deleted == ["k"]
+        purge_shared_entry(GetSetOnly(), "k")  # type: ignore[arg-type]
+        purge_shared_entry(Exploding(), "k")  # type: ignore[arg-type]  # must not raise
 
 
 class TestInMemorySharedTokenCacheExpiry:
@@ -286,6 +459,40 @@ class TestEndpointRateLimiterRouter:
         sandbox_url = "https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/request"
         assert router.try_acquire(sandbox_url) is True
         assert router.try_acquire(sandbox_url) is False
+
+    def test_matches_on_segment_boundaries_not_raw_prefixes(self):
+        config = RateLimiterConfig(
+            tokens_per_second=1,
+            burst_size=1,
+            endpoint_overrides={
+                "/mpesa/stkpush": {"tokens_per_second": 10, "burst_size": 10},
+            },
+        )
+        router = EndpointRateLimiterRouter(config)
+        # The sibling STK Push Query endpoint must not inherit the STK Push override.
+        query_url = "https://api.safaricom.co.ke/mpesa/stkpushquery/v1/query"
+        assert router.try_acquire(query_url) is True
+        assert router.try_acquire(query_url) is False
+        # The STK Push path itself still uses the override's larger bucket.
+        push_url = "https://api.safaricom.co.ke/mpesa/stkpush/v1/processrequest"
+        assert router.try_acquire(push_url) is True
+        assert router.try_acquire(push_url) is True
+
+    def test_prefers_the_most_specific_override(self):
+        config = RateLimiterConfig(
+            tokens_per_second=1,
+            burst_size=1,
+            endpoint_overrides={
+                "/mpesa": {"tokens_per_second": 10, "burst_size": 10},
+                "/mpesa/stkpush": {"tokens_per_second": 10, "burst_size": 2},
+            },
+        )
+        router = EndpointRateLimiterRouter(config)
+        # "/mpesa/stkpush" (burst 2) wins over the broader "/mpesa" (burst 10),
+        # independent of declaration order.
+        assert router.try_acquire("/mpesa/stkpush/v1/processrequest") is True
+        assert router.try_acquire("/mpesa/stkpush/v1/processrequest") is True
+        assert router.try_acquire("/mpesa/stkpush/v1/processrequest") is False
 
 
 class TestMetrics:
@@ -527,6 +734,163 @@ class TestCircuitBreaker:
         assert config.failure_threshold == 5
         assert config.success_threshold == 2
         assert config.timeout_ms == 30000
+
+    def test_four_xx_errors_do_not_open(self):
+        breaker = CircuitBreaker(failure_threshold=2, success_threshold=1, timeout_ms=1000)
+
+        def fail():
+            raise ValidationError("Invalid account number", status_code=400)
+
+        for _ in range(5):
+            with pytest.raises(ValidationError):
+                breaker.call(fail)
+
+        # Legitimate user errors must not take the whole client down.
+        assert breaker.state == CircuitState.CLOSED
+        assert breaker.call(lambda: "ok") == "ok"
+
+    def test_auth_errors_do_not_open(self):
+        def fail_unauthorized():
+            raise AuthenticationError("Bad credentials", status_code=401)
+
+        def fail_forbidden():
+            raise MpesaAPIError("Forbidden", status_code=403)
+
+        for fail in (fail_unauthorized, fail_forbidden):
+            breaker = CircuitBreaker(failure_threshold=2, success_threshold=1, timeout_ms=1000)
+            for _ in range(5):
+                with pytest.raises(MpesaError):
+                    breaker.call(fail)
+            assert breaker.state == CircuitState.CLOSED
+
+    def test_five_xx_errors_open(self):
+        breaker = CircuitBreaker(failure_threshold=2, success_threshold=1, timeout_ms=1000)
+
+        def fail():
+            raise MpesaAPIError("Upstream failure", status_code=503)
+
+        with pytest.raises(MpesaAPIError):
+            breaker.call(fail)
+        with pytest.raises(MpesaAPIError):
+            breaker.call(fail)
+        assert breaker.state == CircuitState.OPEN
+
+    def test_transient_failures_count(self):
+        errors = [
+            RateLimitError("Too many requests", status_code=429),
+            APIConnectionError("socket hang up"),
+            TimeoutError("timed out"),
+        ]
+        for error in errors:
+            breaker = CircuitBreaker(failure_threshold=1, success_threshold=1, timeout_ms=1000)
+
+            def fail(error=error):
+                raise error
+
+            with pytest.raises(type(error)):
+                breaker.call(fail)
+            assert breaker.state == CircuitState.OPEN
+
+    def test_mpesa_error_without_status_opens(self):
+        # No status means no response was ever received: a lost connection.
+        breaker = CircuitBreaker(failure_threshold=1, success_threshold=1, timeout_ms=1000)
+
+        def fail():
+            raise MpesaAPIError("no response")
+
+        with pytest.raises(MpesaAPIError):
+            breaker.call(fail)
+        assert breaker.state == CircuitState.OPEN
+
+    def test_reopened_breaker_needs_a_fresh_run_of_successes(self):
+        # Mirrors the TypeScript behavior: probing again after a half-open
+        # failure must not reuse successes counted before the last reopen.
+        breaker = CircuitBreaker(failure_threshold=1, success_threshold=2, timeout_ms=50)
+
+        def fail():
+            raise MpesaAPIError("down", status_code=500)
+
+        with pytest.raises(MpesaAPIError):
+            breaker.call(fail)
+        assert breaker.state == CircuitState.OPEN
+
+        time.sleep(0.06)
+        assert breaker.call(lambda: "probe-1") == "probe-1"
+        assert breaker.state == CircuitState.HALF_OPEN
+
+        with pytest.raises(MpesaAPIError):
+            breaker.call(fail)
+        assert breaker.state == CircuitState.OPEN
+
+        time.sleep(0.06)
+        assert breaker.call(lambda: "probe-2") == "probe-2"
+        assert breaker.state == CircuitState.HALF_OPEN
+        assert breaker.call(lambda: "probe-3") == "probe-3"
+        assert breaker.state == CircuitState.CLOSED
+
+    def test_acall_does_not_count_four_xx(self):
+        breaker = CircuitBreaker(failure_threshold=1, success_threshold=1, timeout_ms=1000)
+
+        async def fail():
+            raise ValidationError("bad request", status_code=400)
+
+        for _ in range(3):
+            with pytest.raises(ValidationError):
+                asyncio.run(breaker.acall(fail))
+        assert breaker.state == CircuitState.CLOSED
+
+    def test_concurrent_failures_keep_counts_consistent(self):
+        # Threshold equals the number of calls, so the breaker only opens once the
+        # last failure lands and no caller sees `open` mid-run.
+        breaker = CircuitBreaker(failure_threshold=2000, success_threshold=1, timeout_ms=1000)
+
+        def fail():
+            raise MpesaAPIError("upstream is down", status_code=500)
+
+        def call(_):
+            with pytest.raises(MpesaAPIError):
+                breaker.call(fail)
+
+        # Switch threads as often as possible so an unserialized
+        # read-modify-write of the counters has a real chance to lose an update.
+        previous_interval = sys.getswitchinterval()
+        sys.setswitchinterval(1e-6)
+        try:
+            with ThreadPoolExecutor(max_workers=8) as pool:
+                list(pool.map(call, range(2000)))
+        finally:
+            sys.setswitchinterval(previous_interval)
+
+        # Lost updates would leave a much lower count than were actually seen.
+        assert breaker._failure_count == 2000
+        assert breaker.state == CircuitState.OPEN
+
+    def test_lock_is_not_held_across_the_wrapped_call(self):
+        # A request that itself goes through the same breaker must not deadlock:
+        # the lock may only guard state, never wrap the user's callable. Run it on
+        # a daemon thread so a regression fails after the timeout instead of
+        # hanging the suite.
+        breaker = CircuitBreaker(failure_threshold=5, success_threshold=1, timeout_ms=1000)
+
+        def inner():
+            return breaker.call(lambda: "inner")
+
+        outcome: dict[str, object] = {}
+
+        def run() -> None:
+            try:
+                outcome["value"] = breaker.call(inner)
+            except BaseException as exc:  # noqa: BLE001 - reported via `outcome`
+                outcome["error"] = exc
+
+        worker = threading.Thread(target=run, daemon=True)
+        worker.start()
+        worker.join(timeout=5)
+
+        assert not worker.is_alive(), "the breaker deadlocked: its lock wraps the callable"
+        assert outcome.get("error") is None
+        assert outcome.get("value") == "inner"
+        assert breaker.state == CircuitState.CLOSED
 
 
 class TestIdempotency:

@@ -102,7 +102,13 @@ from daraja.utils.rate_limiter import (
     RateLimiterConfig,
     TokenBucketRateLimiter,
 )
-from daraja.utils.token_cache import RedisTokenCache, SharedTokenCache, build_token_cache_key
+from daraja.utils.token_cache import (
+    RedisTokenCache,
+    SharedTokenCache,
+    build_token_cache_key,
+    purge_shared_entry,
+    read_shared_entry,
+)
 
 RETRYABLE_STATUS_CODES = {408, 429, 500, 502, 503, 504}
 
@@ -118,6 +124,9 @@ class _AsyncTokenManager:
         self._token: str | None = None
         self._expires_at: float = 0.0
         self._lock = asyncio.Lock()
+        # Bumped by invalidate(); a fetch started under an older generation has
+        # been superseded and must not install its token.
+        self._generation = 0
         self._logger = _get_logger(config.logger)
         self._shared_cache: SharedTokenCache | None = None
         if config.shared_token_cache is not None:
@@ -126,19 +135,29 @@ class _AsyncTokenManager:
             self._shared_cache = RedisTokenCache(config.redis_url)
 
     async def get_token(self) -> str:
-        if self._token and asyncio.get_event_loop().time() < self._expires_at:
+        if self._token and time.time() < self._expires_at:
             return self._token
 
         async with self._lock:
-            if self._token and asyncio.get_event_loop().time() < self._expires_at:
+            if self._token and time.time() < self._expires_at:
                 return self._token
 
+            generation = self._generation
+
             if self._shared_cache is not None:
-                cache_key = build_token_cache_key(self._config.consumer_key)
-                cached = self._shared_cache.get(cache_key)
-                if cached is not None:
+                cache_key = build_token_cache_key(
+                    self._config.consumer_key, self._config.environment
+                )
+                entry = read_shared_entry(self._shared_cache, cache_key)
+                # A shared entry reports when it expires, so a nearly-spent token
+                # is refetched instead of being served for another assumed 5 min.
+                if entry is not None and time.time() < entry[1]:
+                    cached, expires_at = entry
+                    if generation != self._generation:
+                        # invalidate() ran while the cache was being read.
+                        return cached
                     self._token = cached
-                    self._expires_at = asyncio.get_event_loop().time() + 300
+                    self._expires_at = expires_at
                     return cached
 
             self._logger.debug("Fetching new access token")
@@ -151,19 +170,37 @@ class _AsyncTokenManager:
             )
             data = response.raise_for_status().json()
             token_data = AccessTokenResponse(**data)
+            if generation != self._generation:
+                # invalidate() ran while this fetch was in flight (e.g.
+                # credential rotation): hand the caller what it fetched but do
+                # not install it, so a token minted from the superseded
+                # credentials is never cached.
+                return token_data.access_token
             self._token = token_data.access_token
-            self._expires_at = asyncio.get_event_loop().time() + token_data.expires_in - 60
+            self._expires_at = time.time() + token_data.expires_in - 60
 
             if self._shared_cache is not None:
-                cache_key = build_token_cache_key(self._config.consumer_key)
+                cache_key = build_token_cache_key(
+                    self._config.consumer_key, self._config.environment
+                )
                 self._shared_cache.set(cache_key, self._token, token_data.expires_in - 60)
 
             self._logger.debug("Access token acquired", extra={"expires_in": token_data.expires_in})
             return self._token
 
     def invalidate(self) -> None:
+        # Cannot take the async lock from a sync method; the generation bump is
+        # what stops an in-flight fetch from installing a superseded token.
+        self._generation += 1
         self._token = None
         self._expires_at = 0.0
+        # Drop the shared copy too: otherwise the next get_token() would read the
+        # token this call just discarded straight back out of the cache.
+        if self._shared_cache is not None:
+            purge_shared_entry(
+                self._shared_cache,
+                build_token_cache_key(self._config.consumer_key, self._config.environment),
+            )
         self._logger.warning("Access token invalidated")
 
 

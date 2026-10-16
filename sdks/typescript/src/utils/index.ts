@@ -245,7 +245,7 @@ export {
   InMemoryIdempotencyStore,
   generateIdempotencyKey,
 } from "./idempotency.js";
-export type { SharedTokenCache } from "./token-cache.js";
+export type { SharedTokenCache, SharedTokenCacheEntry } from "./token-cache.js";
 export {
   InMemorySharedTokenCache,
   RedisTokenCache,

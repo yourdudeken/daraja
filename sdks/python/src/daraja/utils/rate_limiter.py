@@ -77,13 +77,20 @@ class EndpointRateLimiterRouter:
         limiter = self._endpoint_limiters.get(key) or self._endpoint_limiters.get(key_path)
         if limiter is not None:
             return limiter
+        # A host-qualified pattern matches that origin only; an absolute path
+        # pattern ("/mpesa/stkpush") matches the endpoint path on any host, so
+        # sandbox and production URLs share the override. When several patterns
+        # match, the longest (most specific) one wins, so resolution does not
+        # depend on declaration order.
+        best: TokenBucketRateLimiter | None = None
+        best_length = -1
         for pattern, candidate in self._endpoint_limiters.items():
-            # A host-qualified pattern matches that origin only; an absolute
-            # path pattern ("/mpesa/stkpush") matches the endpoint path on any
-            # host, so sandbox and production URLs share the override.
-            if key.startswith(pattern) or key_path.startswith(pattern):
-                return candidate
-        return self._default
+            if not _matches_pattern(pattern, key) and not _matches_pattern(pattern, key_path):
+                continue
+            if len(pattern) > best_length:
+                best_length = len(pattern)
+                best = candidate
+        return best if best is not None else self._default
 
 
 def _normalize_key(key: str) -> str:
@@ -99,3 +106,14 @@ def _endpoint_path(normalized: str) -> str:
         return normalized
     slash = normalized.find("/")
     return "" if slash == -1 else normalized[slash:]
+
+
+def _matches_pattern(pattern: str, key: str) -> bool:
+    """Whether a normalized override pattern covers a normalized key.
+
+    Matching is on path-segment boundaries: the pattern matches the key exactly
+    or matches a leading run of complete segments. ``/mpesa/stkpush`` therefore
+    matches ``/mpesa/stkpush/v1/processrequest`` but **not**
+    ``/mpesa/stkpushquery/v1/query``.
+    """
+    return key == pattern or (pattern != "" and key.startswith(pattern + "/"))

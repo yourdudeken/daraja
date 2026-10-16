@@ -1,6 +1,10 @@
 """Tests for the async Mpesa client: wrapper methods, token manager, and lifecycle."""
 
+import asyncio
+
+import httpx
 import pytest
+import respx
 
 from daraja.client.async_client import AsyncMpesa
 from daraja.models import (
@@ -554,3 +558,129 @@ async def test_async_token_manager_shared_cache():
     finally:
         await client.close()
         cache.dispose()
+
+
+@pytest.mark.anyio
+async def test_async_shared_cache_hit_respects_entry_expiry():
+    """A hit carries its own remaining lifetime, not an assumed 5 minutes."""
+    cache = InMemorySharedTokenCache()
+    cache.set("mpesa:token:sandbox:test-key", "cached-token", 0.05)
+    client = AsyncMpesa(make_config(shared_token_cache=cache))
+    try:
+        assert await client._token_manager.get_token() == "cached-token"
+        await asyncio.sleep(0.1)
+        with respx.mock:
+            respx.get(
+                "https://sandbox.safaricom.co.ke/oauth/v1/generate",
+                params={"grant_type": "client_credentials"},
+            ).respond(200, json={"access_token": "fresh-token", "expires_in": 3599})
+            assert await client._token_manager.get_token() == "fresh-token"
+    finally:
+        await client.close()
+        cache.dispose()
+
+
+@pytest.mark.anyio
+async def test_async_shared_cache_key_includes_environment():
+    """Entries written by another environment must not be reused."""
+    cache = InMemorySharedTokenCache()
+    cache.set("mpesa:token:production:test-key", "prod-token", 300)
+    client = AsyncMpesa(make_config(environment="production", shared_token_cache=cache))
+    try:
+        assert await client._token_manager.get_token() == "prod-token"
+        assert cache.get("mpesa:token:sandbox:test-key") is None
+    finally:
+        await client.close()
+        cache.dispose()
+
+
+@pytest.mark.anyio
+async def test_async_invalidate_purges_shared_cache():
+    cache = InMemorySharedTokenCache()
+    cache.set("mpesa:token:sandbox:test-key", "cached-token", 300)
+    client = AsyncMpesa(make_config(shared_token_cache=cache))
+    try:
+        assert await client._token_manager.get_token() == "cached-token"
+        client._token_manager.invalidate()
+        # The discarded token must not come back out of the shared cache.
+        assert cache.get("mpesa:token:sandbox:test-key") is None
+        with respx.mock:
+            respx.get(
+                "https://sandbox.safaricom.co.ke/oauth/v1/generate",
+                params={"grant_type": "client_credentials"},
+            ).respond(200, json={"access_token": "fresh-token", "expires_in": 3599})
+            assert await client._token_manager.get_token() == "fresh-token"
+    finally:
+        await client.close()
+        cache.dispose()
+
+
+@pytest.mark.anyio
+async def test_async_concurrent_token_requests_coalesce_to_one_fetch():
+    """N concurrent callers share a single OAuth round trip (single-flight)."""
+
+    async def _slow_auth(request: httpx.Request) -> httpx.Response:
+        # Hold the fetch open so the remaining callers arrive while it is in
+        # flight; without single-flight each of them would call the endpoint.
+        await asyncio.sleep(0.05)
+        return httpx.Response(
+            200, json={"access_token": "async-token", "expires_in": 3599}
+        )
+
+    with respx.mock:
+        respx.get(
+            "https://sandbox.safaricom.co.ke/oauth/v1/generate",
+            params={"grant_type": "client_credentials"},
+        ).mock(side_effect=_slow_auth)
+
+        client = AsyncMpesa(make_config())
+        try:
+            tokens = await asyncio.gather(
+                *(client._token_manager.get_token() for _ in range(8))
+            )
+        finally:
+            await client.close()
+
+        assert list(tokens) == ["async-token"] * 8
+        assert respx.calls.call_count == 1
+
+
+@pytest.mark.anyio
+async def test_async_invalidate_discards_a_token_fetched_before_it():
+    """A fetch superseded by invalidate() hands back its token but never caches it."""
+
+    calls = {"count": 0}
+    started = asyncio.Event()
+
+    async def _slow_auth(request: httpx.Request) -> httpx.Response:
+        calls["count"] += 1
+        attempt = calls["count"]
+        started.set()
+        await asyncio.sleep(0.05)
+        return httpx.Response(
+            200, json={"access_token": f"token-{attempt}", "expires_in": 3599}
+        )
+
+    with respx.mock:
+        respx.get(
+            "https://sandbox.safaricom.co.ke/oauth/v1/generate",
+            params={"grant_type": "client_credentials"},
+        ).mock(side_effect=_slow_auth)
+
+        client = AsyncMpesa(make_config())
+        try:
+            task = asyncio.create_task(client._token_manager.get_token())
+            # The fetch signals from inside the lock, so by the time we
+            # invalidate it has already captured its generation.
+            await started.wait()
+            client._token_manager.invalidate()
+
+            # The in-flight caller still receives the token it fetched...
+            assert await task == "token-1"
+            assert client._token_manager._token is None
+            # ...but it was not installed, so the next acquisition refetches.
+            assert await client._token_manager.get_token() == "token-2"
+        finally:
+            await client.close()
+
+        assert calls["count"] == 2

@@ -384,7 +384,7 @@ From `daraja-sdk-ts`:
 | `noopLogger` | `Logger` | Silent logger |
 | `createConsoleLogger(name?)` | `(): Logger` | Console-based logger |
 
-Also exports: `Validation` class (static methods: `requiredString`, `requiredNumber`, `positiveNumber`, `optionalString`, `validUrl`, `phoneNumber`, `maxLength`, `oneOf`, `amount`), `StructuredLogger`, `StructuredLoggerConfig`, `LogLevel`, `getCertificate`, `MetricsCollector`, `MpesaMetrics`, `NoopMetricsCollector`, `PrometheusMetricsCollector`, `createMpesaMetrics`, `Tracer`, `TelemetrySpan`, `NoopTracer`, `NoopSpan`, `OpenTelemetryTracer`, `createTracer`, `withSpan`, `withSpanSync`, `IdempotencyStore`, `InMemoryIdempotencyStore`, `generateIdempotencyKey`, `SharedTokenCache`, `InMemorySharedTokenCache`, `RedisTokenCache`, `buildTokenCacheKey`.
+Also exports: `Validation` class (static methods: `requiredString`, `requiredNumber`, `positiveNumber`, `optionalString`, `validUrl`, `phoneNumber`, `maxLength`, `oneOf`, `amount`), `StructuredLogger`, `StructuredLoggerConfig`, `LogLevel`, `getCertificate`, `MetricsCollector`, `MpesaMetrics`, `NoopMetricsCollector`, `PrometheusMetricsCollector`, `createMpesaMetrics`, `Tracer`, `TelemetrySpan`, `NoopTracer`, `NoopSpan`, `OpenTelemetryTracer`, `createTracer`, `withSpan`, `withSpanSync`, `IdempotencyStore`, `InMemoryIdempotencyStore`, `generateIdempotencyKey`, `SharedTokenCache`, `SharedTokenCacheEntry`, `InMemorySharedTokenCache`, `RedisTokenCache`, `buildTokenCacheKey`.
 
 ---
 
