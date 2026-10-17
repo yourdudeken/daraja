@@ -160,6 +160,14 @@ contain customer data (MSISDN, account numbers, amounts).
   50 ms, `flushIntervalMs`) instead of rewriting the file per event, and flushes
   on `close()`. At most a few milliseconds of undelivered state can be lost in a
   hard crash; Python commits each mutation immediately.
+- **Schema version:** each queue file records its own schema version
+  (`PRAGMA user_version`) so a future release can migrate the file in place when
+  it is opened. A file written by a *newer* SDK version is refused with an error
+  rather than read with an older understanding of its schema.
+- **Best-effort state:** the queue file is local, ephemeral state. No
+  backup/restore tooling is provided and events lost to a crash or a wiped disk
+  are not recovered, so treat the DLQ as a review queue to drain or purge rather
+  than a system of record.
 
 ### Token store encryption
 

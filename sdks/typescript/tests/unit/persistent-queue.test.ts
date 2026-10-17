@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import initSqlJs from "sql.js";
 import * as fs from "node:fs";
 import { mkdtempSync, rmSync } from "node:fs";
 import { homedir, tmpdir } from "node:os";
@@ -6,7 +7,10 @@ import { join } from "node:path";
 import { WebhookManager } from "../../src/webhooks/index.js";
 import {
   PersistentWebhookRetryQueue,
+  SCHEMA_VERSION,
+  applySchemaMigrations,
   defaultQueuePath,
+  readSchemaVersion,
 } from "../../src/webhooks/persistent-queue.js";
 
 /** Swap `process.platform` for the duration of a test (restored by the caller). */
@@ -211,7 +215,7 @@ describe("PersistentWebhookRetryQueue persistence", () => {
         join(dir, "localappdata", "mpesa-sdk", "mpesa-webhook-queue.db"),
       );
 
-      // The point of FR-23: an implicit CWD file is never used.
+      // An implicit CWD file is never used.
       setPlatformForTest("linux");
       process.env.XDG_DATA_HOME = join(dir, "xdg");
       expect(defaultQueuePath()).not.toBe(join(process.cwd(), "mpesa-webhook-queue.db"));
@@ -245,5 +249,111 @@ describe("PersistentWebhookRetryQueue persistence", () => {
       if (originalXdg === undefined) delete process.env.XDG_DATA_HOME;
       else process.env.XDG_DATA_HOME = originalXdg;
     }
+  });
+
+  /** Write the pre-versioning file: the current tables, `user_version` 0. */
+  async function writeUnversionedDatabase(dbPath: string): Promise<void> {
+    const SQL = await initSqlJs();
+    const db = new SQL.Database();
+    db.run(`
+      CREATE TABLE webhook_queue (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        event TEXT NOT NULL,
+        payload TEXT NOT NULL,
+        attempts INTEGER NOT NULL DEFAULT 0,
+        max_retries INTEGER NOT NULL DEFAULT 3,
+        last_error TEXT,
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        next_retry_at TEXT NOT NULL DEFAULT (datetime('now'))
+      )
+    `);
+    db.run(`
+      CREATE TABLE webhook_dlq (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        event TEXT NOT NULL,
+        payload TEXT NOT NULL,
+        attempts INTEGER NOT NULL DEFAULT 0,
+        last_error TEXT,
+        created_at TEXT NOT NULL,
+        failed_at TEXT NOT NULL DEFAULT (datetime('now'))
+      )
+    `);
+    db.run(
+      `INSERT INTO webhook_queue (event, payload, next_retry_at)
+       VALUES ('legacy', '{"n":1}', datetime('now', '+1 hour'))`,
+    );
+    fs.writeFileSync(dbPath, Buffer.from(db.export()));
+    db.close();
+  }
+
+  /** Open a queue file directly, to inspect it without the queue class. */
+  async function openRawDatabase(dbPath: string) {
+    const SQL = await initSqlJs();
+    return new SQL.Database(fs.readFileSync(dbPath));
+  }
+
+  it("stamps a fresh queue file with the schema version", async () => {
+    const dbPath = join(dir, "queue.db");
+    const queue = new PersistentWebhookRetryQueue(frozenManager(), { dbPath });
+    await queue.init();
+    queue.close();
+
+    const raw = await openRawDatabase(dbPath);
+    expect(readSchemaVersion(raw)).toBe(SCHEMA_VERSION);
+    raw.close();
+  });
+
+  it("stamps an unversioned file and keeps its rows", async () => {
+    const dbPath = join(dir, "queue.db");
+    await writeUnversionedDatabase(dbPath);
+
+    const queue = new PersistentWebhookRetryQueue(frozenManager(), { dbPath });
+    await queue.init();
+    // The event survived (it is not due for another hour, so it stays queued).
+    expect(queue.getQueueSize()).toBe(1);
+    queue.close();
+
+    const raw = await openRawDatabase(dbPath);
+    expect(readSchemaVersion(raw)).toBe(SCHEMA_VERSION);
+    raw.close();
+  });
+
+  it("refuses a queue file written by a newer schema", async () => {
+    const dbPath = join(dir, "queue.db");
+    await writeUnversionedDatabase(dbPath);
+    const stamped = await openRawDatabase(dbPath);
+    stamped.run(`PRAGMA user_version = ${SCHEMA_VERSION + 1}`);
+    fs.writeFileSync(dbPath, Buffer.from(stamped.export()));
+    stamped.close();
+
+    const queue = new PersistentWebhookRetryQueue(frozenManager(), { dbPath });
+    await expect(queue.init()).rejects.toThrow(/upgrade the SDK/);
+    // A refused file must not be left behind a half-initialized instance.
+    await expect(queue.init()).rejects.toThrow(/upgrade the SDK/);
+
+    // Nothing was appended to the file this build cannot read.
+    const raw = await openRawDatabase(dbPath);
+    expect(raw.exec("SELECT COUNT(*) FROM webhook_queue")[0].values[0][0]).toBe(1);
+    raw.close();
+  });
+
+  it("runs recorded migration steps in order and bumps the version", async () => {
+    const SQL = await initSqlJs();
+    const db = new SQL.Database();
+    const applied: number[] = [];
+    const migrations = {
+      1: () => applied.push(1),
+      2: () => applied.push(2),
+      3: () => applied.push(3),
+    };
+
+    applySchemaMigrations(db, 0, 3, migrations);
+    expect(applied).toStrictEqual([1, 2, 3]);
+    expect(readSchemaVersion(db)).toBe(3);
+
+    // Re-running from the current version applies nothing.
+    applySchemaMigrations(db, 3, 3, migrations);
+    expect(applied).toStrictEqual([1, 2, 3]);
+    db.close();
   });
 });

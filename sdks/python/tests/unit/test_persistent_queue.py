@@ -1,14 +1,16 @@
 """Concurrency and serialization tests for the persistent webhook queue.
 
-Regression coverage for DB-001 / REL-003: a single SQLite connection was shared
-between the enqueue caller and the background worker while the lock guarded only
-the ``_processing`` flag, so interleaved ``execute``/``commit`` pairs could raise
-``sqlite3.OperationalError`` and lose events.
+The queue used to share a single SQLite connection between the enqueue caller and
+the background worker while the lock guarded only the ``_processing`` flag, so
+interleaved ``execute``/``commit`` pairs could raise ``sqlite3.OperationalError``
+and lose events.
 """
 
 import sqlite3
 import threading
 import time
+
+import pytest
 
 import daraja.webhooks.persistent_queue as persistent_queue_module
 from daraja.webhooks import PersistentWebhookRetryQueue
@@ -161,7 +163,7 @@ class _OverlapDetector:
 
 
 def test_sqlite_access_is_serialized_across_threads(tmp_path, monkeypatch):
-    """DM-01: no two threads may be inside ``execute``/``commit`` at once.
+    """No two threads may be inside ``execute``/``commit`` at once.
 
     The connection is replaced with a subclass that flags concurrent entry and
     widens each call, so an unserialized implementation overlaps reliably.
@@ -333,7 +335,7 @@ class FailOnceManager:
 
 class TestTimestampScheduling:
     def test_due_later_item_does_not_block_an_earlier_due_item(self, tmp_path):
-        """PERF-003: the worker must wait on the deadline, not sleep in delivery."""
+        """The worker must wait on the deadline, not sleep in delivery."""
         manager = FailOnceManager()
         queue = PersistentWebhookRetryQueue(
             manager, db_path=str(tmp_path / "queue.db"), max_retries=3
@@ -380,3 +382,120 @@ class TestHandlerReentrancy:
         assert sorted(received) == ["first", "second"]
         assert queue.get_queue_size() == 0
         queue.close()
+
+
+def _write_unversioned_database(path: str) -> None:
+    """Create the pre-versioning file: the current tables, ``user_version`` 0."""
+    db = sqlite3.connect(path)
+    db.execute("""
+        CREATE TABLE webhook_queue (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            event TEXT NOT NULL,
+            payload TEXT NOT NULL,
+            attempts INTEGER NOT NULL DEFAULT 0,
+            max_retries INTEGER NOT NULL DEFAULT 3,
+            last_error TEXT,
+            created_at TEXT NOT NULL DEFAULT (datetime('now')),
+            next_retry_at TEXT NOT NULL DEFAULT (datetime('now'))
+        )
+    """)
+    db.execute("""
+        CREATE TABLE webhook_dlq (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            event TEXT NOT NULL,
+            payload TEXT NOT NULL,
+            attempts INTEGER NOT NULL DEFAULT 0,
+            last_error TEXT,
+            created_at TEXT NOT NULL,
+            failed_at TEXT NOT NULL DEFAULT (datetime('now'))
+        )
+    """)
+    db.execute(
+        "INSERT INTO webhook_queue (event, payload, next_retry_at) "
+        "VALUES ('legacy', '{\"n\": 1}', datetime('now', '+1 hour'))"
+    )
+    db.commit()
+    db.close()
+
+
+def _schema_version(path: str) -> int:
+    """Read ``PRAGMA user_version`` directly from a queue file."""
+    db = sqlite3.connect(path)
+    try:
+        return int(db.execute("PRAGMA user_version").fetchone()[0])
+    finally:
+        db.close()
+
+
+class TestSchemaVersioning:
+    """The queue file records its schema version so future changes can migrate."""
+
+    def test_fresh_database_is_stamped_with_the_schema_version(self, tmp_path):
+        path = str(tmp_path / "queue.db")
+        queue = PersistentWebhookRetryQueue(RecordingManager(), db_path=path)
+        assert queue.get_queue_size() == 0
+
+        assert _schema_version(path) == persistent_queue_module.SCHEMA_VERSION
+        queue.close()
+
+    def test_unversioned_database_is_stamped_and_keeps_its_rows(self, tmp_path):
+        path = str(tmp_path / "queue.db")
+        _write_unversioned_database(path)
+
+        queue = PersistentWebhookRetryQueue(RecordingManager(), db_path=path)
+
+        # The event survived (it is not due yet, so it is still queued)...
+        assert queue.get_queue_size() == 1
+        # ...and the file was stamped by the migration hook.
+        assert _schema_version(path) == persistent_queue_module.SCHEMA_VERSION
+        queue.close()
+
+    def test_newer_schema_is_refused(self, tmp_path):
+        path = str(tmp_path / "queue.db")
+        _write_unversioned_database(path)
+        db = sqlite3.connect(path)
+        db.execute(f"PRAGMA user_version = {persistent_queue_module.SCHEMA_VERSION + 1}")
+        db.commit()
+        db.close()
+
+        queue = PersistentWebhookRetryQueue(RecordingManager(), db_path=path)
+        with pytest.raises(RuntimeError, match="upgrade the SDK"):
+            queue.enqueue("evt", {"n": 1})
+        # A refused connection must not be cached behind the error.
+        with pytest.raises(RuntimeError, match="upgrade the SDK"):
+            queue.enqueue("evt", {"n": 2})
+        # Nothing was appended to the file this SDK cannot read.
+        db = sqlite3.connect(path)
+        try:
+            assert db.execute("SELECT COUNT(*) FROM webhook_queue").fetchone()[0] == 1
+        finally:
+            db.close()
+        queue.close()
+
+    def test_migration_steps_run_in_order_and_bump_the_version(self, tmp_path):
+        path = str(tmp_path / "queue.db")
+        applied: list[int] = []
+
+        def record(step: int):
+            def migration(conn: sqlite3.Connection) -> None:
+                applied.append(step)
+
+            return migration
+
+        migrations = {step: record(step) for step in (1, 2, 3)}
+
+        db = sqlite3.connect(path)
+        try:
+            persistent_queue_module._apply_schema_migrations(
+                db, 0, target_version=3, migrations=migrations
+            )
+            assert applied == [1, 2, 3]
+            assert db.execute("PRAGMA user_version").fetchone()[0] == 3
+
+            # Already at the target: replaying must not re-run a step.
+            persistent_queue_module._apply_schema_migrations(
+                db, 3, target_version=3, migrations=migrations
+            )
+            assert applied == [1, 2, 3]
+        finally:
+            db.close()

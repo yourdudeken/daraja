@@ -3,6 +3,7 @@ import os
 import sqlite3
 import sys
 import threading
+from collections.abc import Callable, Mapping
 from datetime import UTC, datetime
 from typing import Any
 
@@ -17,6 +18,52 @@ DEFAULT_MAX_DLQ_SIZE = 10_000
 APP_DIR_NAME = "mpesa-sdk"
 #: Queue file name used for the default path.
 QUEUE_DB_FILENAME = "mpesa-webhook-queue.db"
+#: Schema version recorded in ``PRAGMA user_version``.
+SCHEMA_VERSION = 1
+#: Forward-migration steps, keyed by the version they produce. A future release
+#: registers e.g. ``2: _migrate_to_2`` and bumps :data:`SCHEMA_VERSION`; existing
+#: files are then upgraded in order the next time they are opened.
+SCHEMA_MIGRATIONS: dict[int, Callable[[sqlite3.Connection], None]] = {}
+
+
+def _read_schema_version(db: sqlite3.Connection) -> int:
+    row = db.execute("PRAGMA user_version").fetchone()
+    return int(row[0]) if row else 0
+
+
+def _require_schema_supported(db: sqlite3.Connection, label: str) -> int:
+    """Return the file's schema version, refusing one this SDK cannot read.
+
+    The queue holds undelivered events, so opening a file written by a newer SDK
+    is refused rather than attempted: reading a schema this release does not know
+    could corrupt it (or silently discard columns it cannot see).
+    """
+    version = _read_schema_version(db)
+    if version > SCHEMA_VERSION:
+        raise RuntimeError(
+            f"{label} uses schema version {version}, but this SDK supports "
+            f"{SCHEMA_VERSION}; upgrade the SDK before using it."
+        )
+    return version
+
+
+def _apply_schema_migrations(
+    db: sqlite3.Connection,
+    version: int,
+    *,
+    target_version: int = SCHEMA_VERSION,
+    migrations: Mapping[int, Callable[[sqlite3.Connection], None]] = SCHEMA_MIGRATIONS,
+) -> None:
+    """Run the recorded migration steps from ``version`` up to ``target_version``.
+
+    Each step is followed by a ``user_version`` bump, so a failure part-way
+    through leaves the file at the last version that was fully applied.
+    """
+    for step in range(version + 1, target_version + 1):
+        migration = migrations.get(step)
+        if migration is not None:
+            migration(db)
+        db.execute(f"PRAGMA user_version = {step}")
 
 
 def default_queue_path() -> str:
@@ -98,33 +145,47 @@ class PersistentWebhookRetryQueue:
                 # application-data directory owner-only (best effort — umask
                 # still applies).
                 os.makedirs(directory, mode=0o700, exist_ok=True)
-            self._db = sqlite3.connect(self._db_path, check_same_thread=False)
-            self._db.row_factory = sqlite3.Row
-            self._db.execute("PRAGMA journal_mode=WAL")
-            self._db.execute("""
-                CREATE TABLE IF NOT EXISTS webhook_queue (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    event TEXT NOT NULL,
-                    payload TEXT NOT NULL,
-                    attempts INTEGER NOT NULL DEFAULT 0,
-                    max_retries INTEGER NOT NULL DEFAULT 3,
-                    last_error TEXT,
-                    created_at TEXT NOT NULL DEFAULT (datetime('now')),
-                    next_retry_at TEXT NOT NULL DEFAULT (datetime('now'))
+            db = sqlite3.connect(self._db_path, check_same_thread=False)
+            db.row_factory = sqlite3.Row
+            db.execute("PRAGMA journal_mode=WAL")
+            try:
+                # Refuse a schema this SDK cannot read before touching anything,
+                # then create the tables the current version expects and apply any
+                # pending migration step, recording the resulting version. The
+                # connection is published only once the file is consistent, so a
+                # refusal is not swallowed by a later call finding `_db` set.
+                version = _require_schema_supported(
+                    db, f"queue database {self._db_path}"
                 )
-            """)
-            self._db.execute("""
-                CREATE TABLE IF NOT EXISTS webhook_dlq (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    event TEXT NOT NULL,
-                    payload TEXT NOT NULL,
-                    attempts INTEGER NOT NULL DEFAULT 0,
-                    last_error TEXT,
-                    created_at TEXT NOT NULL,
-                    failed_at TEXT NOT NULL DEFAULT (datetime('now'))
-                )
-            """)
-            self._db.commit()
+                db.execute("""
+                    CREATE TABLE IF NOT EXISTS webhook_queue (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        event TEXT NOT NULL,
+                        payload TEXT NOT NULL,
+                        attempts INTEGER NOT NULL DEFAULT 0,
+                        max_retries INTEGER NOT NULL DEFAULT 3,
+                        last_error TEXT,
+                        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+                        next_retry_at TEXT NOT NULL DEFAULT (datetime('now'))
+                    )
+                """)
+                db.execute("""
+                    CREATE TABLE IF NOT EXISTS webhook_dlq (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        event TEXT NOT NULL,
+                        payload TEXT NOT NULL,
+                        attempts INTEGER NOT NULL DEFAULT 0,
+                        last_error TEXT,
+                        created_at TEXT NOT NULL,
+                        failed_at TEXT NOT NULL DEFAULT (datetime('now'))
+                    )
+                """)
+                _apply_schema_migrations(db, version)
+                db.commit()
+            except BaseException:
+                db.close()
+                raise
+            self._db = db
             self._logger.info("Persistent queue initialized", extra={"path": self._db_path})
         return self._db
 

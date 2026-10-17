@@ -28,6 +28,39 @@ const DEFAULT_FLUSH_INTERVAL_MS = 50;
 const APP_DIR_NAME = "mpesa-sdk";
 /** Queue file name used for the default path. */
 const QUEUE_DB_FILENAME = "mpesa-webhook-queue.db";
+/** Schema version recorded in `PRAGMA user_version`. */
+export const SCHEMA_VERSION = 1;
+
+/**
+ * Forward-migration steps, keyed by the version they produce. A future release
+ * registers e.g. `2: migrateTo2` and bumps {@link SCHEMA_VERSION}; existing files
+ * are then upgraded in order the next time they are opened.
+ */
+export const schemaMigrations: Record<number, (db: SqlJsDatabase) => void> = {};
+
+/** Read `PRAGMA user_version` (0 for a file written before versioning). */
+export function readSchemaVersion(db: SqlJsDatabase): number {
+  const value = db.exec("PRAGMA user_version")[0]?.values?.[0]?.[0];
+  return typeof value === "number" ? value : 0;
+}
+
+/**
+ * Run the recorded migration steps from `version` up to `targetVersion`.
+ *
+ * Each step is followed by a `user_version` bump, so a failure part-way through
+ * leaves the file at the last version that was fully applied.
+ */
+export function applySchemaMigrations(
+  db: SqlJsDatabase,
+  version: number,
+  targetVersion = SCHEMA_VERSION,
+  migrations: Record<number, (db: SqlJsDatabase) => void> = schemaMigrations,
+): void {
+  for (let step = version + 1; step <= targetVersion; step += 1) {
+    migrations[step]?.(db);
+    db.run(`PRAGMA user_version = ${step}`);
+  }
+}
 
 /**
  * Default location for the queue DB file: a per-user application-data
@@ -102,11 +135,22 @@ export class PersistentWebhookRetryQueue {
     const SQL = await initSqlJs();
     const loadExisting = fs.existsSync(this.dbPath);
     const buffer = loadExisting ? fs.readFileSync(this.dbPath) : undefined;
-    this.db = new SQL.Database(buffer);
+    const db = new SQL.Database(buffer);
     if (!loadExisting) {
-      this.db.run("PRAGMA journal_mode=WAL");
+      db.run("PRAGMA journal_mode=WAL");
     }
-    this.db.run(`
+    // Refuse a schema this SDK cannot read before touching anything: the queue
+    // holds undelivered events, so opening a newer file could corrupt it. The
+    // connection is published only once the file is consistent.
+    const version = readSchemaVersion(db);
+    if (version > SCHEMA_VERSION) {
+      db.close();
+      throw new Error(
+        `Queue database ${this.dbPath} uses schema version ${version}, but this ` +
+          `SDK supports ${SCHEMA_VERSION}; upgrade the SDK before using it.`,
+      );
+    }
+    db.run(`
       CREATE TABLE IF NOT EXISTS webhook_queue (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         event TEXT NOT NULL,
@@ -118,7 +162,7 @@ export class PersistentWebhookRetryQueue {
         next_retry_at TEXT NOT NULL DEFAULT (datetime('now'))
       )
     `);
-    this.db.run(`
+    db.run(`
       CREATE TABLE IF NOT EXISTS webhook_dlq (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         event TEXT NOT NULL,
@@ -129,6 +173,8 @@ export class PersistentWebhookRetryQueue {
         failed_at TEXT NOT NULL DEFAULT (datetime('now'))
       )
     `);
+    applySchemaMigrations(db, version);
+    this.db = db;
     this.persistNow();
     this.logger.info("Database initialized", { path: this.dbPath });
   }
