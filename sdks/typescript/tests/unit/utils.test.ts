@@ -1,5 +1,14 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { mkdtempSync, writeFileSync, existsSync, rmSync, readFileSync, statSync } from "node:fs";
+import {
+  mkdtempSync,
+  writeFileSync,
+  existsSync,
+  rmSync,
+  readFileSync,
+  statSync,
+  linkSync,
+  readdirSync,
+} from "node:fs";
 import { createCipheriv, createDecipheriv, randomBytes } from "node:crypto";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -349,6 +358,27 @@ describe("EncryptedTokenStore", () => {
     // A failed read must not migrate (or damage) the file.
     expect(readFileSync(filePath, "utf8")).toBe(original);
     expect(existsSync(`${filePath}.v1.bak`)).toBe(false);
+  });
+
+  it("replaces the token file instead of rewriting it in place", () => {
+    const filePath = join(dir, "token.json");
+    const store = new EncryptedTokenStore({ filePath, encryptionKey: "secret-key" });
+    const expiresAt = new Date(Date.now() + 3600_000);
+    store.save("first-token", expiresAt);
+    const original = readFileSync(filePath, "utf8");
+
+    // A hard link pins the first file's inode: rewriting it in place would change
+    // what the link sees, while an atomic replace leaves the old file untouched.
+    const linked = join(dir, "first-token.json");
+    linkSync(filePath, linked);
+
+    store.save("second-token", expiresAt);
+
+    expect(readFileSync(linked, "utf8")).toBe(original);
+    expect(store.load()).toStrictEqual({ token: "second-token", expiresAt });
+    expect(statSync(filePath).mode & 0o777).toBe(0o600);
+    // The temp file is renamed into place, so a crash leaves no debris behind.
+    expect(readdirSync(dir).sort()).toStrictEqual(["first-token.json", "token.json"]);
   });
 });
 

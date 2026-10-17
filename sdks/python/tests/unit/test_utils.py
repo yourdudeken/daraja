@@ -456,6 +456,39 @@ class TestEncryptedTokenStore:
         assert file_path.read_text() == original
         assert not (tmp_path / "token.json.v1.bak").exists()
 
+    def test_save_creates_the_file_owner_only_without_chmod(self, tmp_path, monkeypatch):
+        # The file must be owner-only from creation; needing a follow-up chmod is
+        # what left a window where a permissive umask made it readable.
+        def forbid_chmod(*args, **kwargs):
+            raise OSError("owner-only permissions must come from creation")
+
+        monkeypatch.setattr(os, "chmod", forbid_chmod)
+        file_path = tmp_path / "token.json"
+        EncryptedTokenStore(str(file_path), "secret-key").save(
+            "my-token", datetime.now() + timedelta(hours=1)
+        )
+        assert stat.S_IMODE(file_path.stat().st_mode) == 0o600
+
+    def test_failed_write_leaves_the_previous_file_intact(self, tmp_path, monkeypatch):
+        file_path = tmp_path / "token.json"
+        store = EncryptedTokenStore(str(file_path), "secret-key")
+        expires_at = datetime.now() + timedelta(hours=1)
+        store.save("first-token", expires_at)
+        original = file_path.read_text()
+
+        def crash_before_replace(*args, **kwargs):
+            raise OSError("simulated crash")
+
+        monkeypatch.setattr(os, "replace", crash_before_replace)
+        with pytest.raises(OSError):
+            store.save("second-token", expires_at)
+
+        monkeypatch.undo()
+        assert file_path.read_text() == original
+        assert store.load() == ("first-token", expires_at)
+        # The temporary file is cleaned up, so a crash leaves no debris.
+        assert [entry.name for entry in tmp_path.iterdir()] == ["token.json"]
+
 
 class TestTokenBucketRateLimiter:
     def test_burst_then_block(self):

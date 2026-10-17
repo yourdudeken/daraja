@@ -1,5 +1,7 @@
+import contextlib
 import json
 import os
+import tempfile
 from datetime import datetime
 from typing import Any
 
@@ -42,8 +44,6 @@ class EncryptedTokenStore:
         encryptor = cipher.encryptor()
         encrypted = encryptor.update(token.encode()) + encryptor.finalize()
 
-        os.makedirs(os.path.dirname(self._file_path) or ".", exist_ok=True)
-
         data = {
             "token": encrypted.hex(),
             "expires_at": expires_at.isoformat(),
@@ -52,12 +52,32 @@ class EncryptedTokenStore:
             "salt": salt.hex(),
             "version": VERSION,
         }
-        with open(self._file_path, "w") as f:
-            json.dump(data, f)
+        self._write_atomically(data)
+
+    def _write_atomically(self, data: dict[str, Any]) -> None:
+        """Write the envelope owner-only, replacing the file in one step.
+
+        The previous implementation wrote the file and then ``chmod 600``-ed it,
+        which left the token briefly readable through a permissive umask, and
+        truncated the existing file before the new content was flushed, so a crash
+        mid-write destroyed the token. ``mkstemp`` creates the temporary file
+        owner-only from the start and ``os.replace`` swaps it in atomically.
+        """
+        directory = os.path.dirname(self._file_path) or "."
+        os.makedirs(directory, exist_ok=True)
+        descriptor, temp_path = tempfile.mkstemp(
+            dir=directory, prefix=".mpesa-token-", suffix=".tmp"
+        )
         try:
-            os.chmod(self._file_path, 0o600)
-        except Exception:
-            pass
+            with os.fdopen(descriptor, "w") as handle:
+                json.dump(data, handle)
+                handle.flush()
+                os.fsync(handle.fileno())
+            os.replace(temp_path, self._file_path)
+        except BaseException:
+            with contextlib.suppress(OSError):
+                os.unlink(temp_path)
+            raise
 
     def load(self) -> tuple[str, datetime] | None:
         """Read the stored token, upgrading a legacy (v1) file to v2.

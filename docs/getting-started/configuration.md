@@ -165,8 +165,10 @@ contain customer data (MSISDN, account numbers, amounts).
 
 `EncryptedTokenStore` (both SDKs) keeps the OAuth token in a local file encrypted
 with **AES-256-GCM**; the key is derived from your encryption key with
-**PBKDF2-SHA256** (200 000 iterations) and a per-file random salt, and the file
-is written with mode `0600`.
+**PBKDF2-SHA256** (200 000 iterations) and a per-file random salt. The file is
+created owner-only (mode `0600`) and replaced atomically — written to a sibling
+temp file and renamed into place — so it is never briefly world-readable and a
+crash mid-write leaves the previous file intact.
 
 Releases before 1.0.2 derived the key by padding/truncating the encryption key to
 32 bytes, which was only as strong as the key itself. Reading such a file now

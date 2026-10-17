@@ -1,5 +1,16 @@
 import { createCipheriv, createDecipheriv, randomBytes, pbkdf2Sync } from "node:crypto";
-import { readFileSync, writeFileSync, existsSync, mkdirSync, chmodSync, unlinkSync } from "node:fs";
+import {
+  readFileSync,
+  writeFileSync,
+  existsSync,
+  mkdirSync,
+  unlinkSync,
+  openSync,
+  closeSync,
+  writeSync,
+  fsyncSync,
+  renameSync,
+} from "node:fs";
 import { dirname } from "node:path";
 import type { Logger } from "../types/index.js";
 
@@ -67,12 +78,38 @@ export class EncryptedTokenStore {
       salt: salt.toString("hex"),
       version: VERSION,
     };
+    this.writeAtomically(JSON.stringify(stored));
+  }
 
-    writeFileSync(this.filePath, JSON.stringify(stored), { mode: 0o600 });
+  /**
+   * Write the envelope to a sibling temp file (created owner-only) and rename it
+   * over the target, so the token file is never briefly world-readable through
+   * the umask and a crash mid-write leaves the previous file intact.
+   */
+  private writeAtomically(payload: string): void {
+    const tempPath = `${this.filePath}.${process.pid}.${randomBytes(6).toString("hex")}.tmp`;
+    let descriptor: number | null = null;
     try {
-      chmodSync(this.filePath, 0o600);
-    } catch {
-      /* ignore chmod failures on platforms/filesystems without POSIX permissions */
+      descriptor = openSync(tempPath, "wx", 0o600);
+      writeSync(descriptor, payload, null, "utf8");
+      fsyncSync(descriptor);
+      closeSync(descriptor);
+      descriptor = null;
+      renameSync(tempPath, this.filePath);
+    } catch (error) {
+      if (descriptor !== null) {
+        try {
+          closeSync(descriptor);
+        } catch {
+          /* ignore: the descriptor may already be closed */
+        }
+      }
+      try {
+        unlinkSync(tempPath);
+      } catch {
+        /* ignore: a failed write may have left no temp file */
+      }
+      throw error;
     }
   }
 
