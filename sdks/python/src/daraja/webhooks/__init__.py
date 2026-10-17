@@ -133,7 +133,11 @@ class WebhookManager:
         return self.verify_signature(raw_body, signature, secret)
 
 
-from daraja.webhooks.persistent_queue import PersistentDeliveryRecord, PersistentWebhookRetryQueue
+from daraja.webhooks.persistent_queue import (
+    PersistentDeliveryRecord,
+    PersistentWebhookRetryQueue,
+    default_queue_path,
+)
 from daraja.webhooks.retry import DeliveryRecord, WebhookRetryQueue
 
 __all__ = [
@@ -143,4 +147,5 @@ __all__ = [
     "DeliveryRecord",
     "PersistentWebhookRetryQueue",
     "PersistentDeliveryRecord",
+    "default_queue_path",
 ]

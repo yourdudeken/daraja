@@ -2,6 +2,8 @@
 
 import json
 import os
+import stat
+import sys
 import time
 
 import pytest
@@ -11,6 +13,7 @@ from daraja.webhooks import (
     PersistentWebhookRetryQueue,
     WebhookManager,
     WebhookRetryQueue,
+    default_queue_path,
 )
 from tests.fixtures.callback_payloads import STK_CALLBACK_FAILED, STK_CALLBACK_SUCCESS
 
@@ -166,11 +169,31 @@ class TestPersistentWebhookRetryQueue:
         assert dlq[0].last_error == "boom"
         queue.close()
 
-    def test_default_db_path(self, tmp_path, monkeypatch):
+    def test_default_db_path_is_app_data_not_cwd(self, tmp_path, monkeypatch):
+        # No explicit path: use the documented application-data directory, never
+        # an implicit CWD file.
         monkeypatch.chdir(tmp_path)
+        monkeypatch.setattr(sys, "platform", "linux")
+        monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path / "xdg"))
         manager = WebhookManager()
         queue = PersistentWebhookRetryQueue(manager, max_retries=1)
-        assert queue._db_path == os.path.join(str(tmp_path), "mpesa-webhook-queue.db")
+        assert queue._db_path == os.path.join(
+            str(tmp_path / "xdg"), "mpesa-sdk", "mpesa-webhook-queue.db"
+        )
+        assert default_queue_path() == queue._db_path
+        assert os.path.dirname(queue._db_path) != str(tmp_path)
+        queue.close()
+
+    def test_default_db_path_creates_owner_only_directory(self, tmp_path, monkeypatch):
+        monkeypatch.setattr(sys, "platform", "linux")
+        monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path / "xdg"))
+        manager = WebhookManager()
+        queue = PersistentWebhookRetryQueue(manager, max_retries=1)
+        # Touching the queue creates the file (and its directory) on demand.
+        queue.get_queue_size()
+        directory = os.path.dirname(queue._db_path)
+        assert os.path.isdir(directory)
+        assert stat.S_IMODE(os.stat(directory).st_mode) == 0o700
         queue.close()
 
 

@@ -1,5 +1,6 @@
 import initSqlJs, { Database as SqlJsDatabase } from "sql.js";
 import * as fs from "node:fs";
+import * as os from "node:os";
 import * as path from "node:path";
 import type { Logger } from "../types/index.js";
 import { noopLogger, calculateBackoff } from "../utils/index.js";
@@ -23,6 +24,31 @@ const DEFAULT_MAX_QUEUE_SIZE = 10_000;
 const DEFAULT_MAX_DLQ_SIZE = 10_000;
 /** Mutations coalesce inside this window; the DB file is rewritten at most once. */
 const DEFAULT_FLUSH_INTERVAL_MS = 50;
+/** Application-data directory that holds the queue file by default. */
+const APP_DIR_NAME = "mpesa-sdk";
+/** Queue file name used for the default path. */
+const QUEUE_DB_FILENAME = "mpesa-webhook-queue.db";
+
+/**
+ * Default location for the queue DB file: a per-user application-data
+ * directory, never the current working directory. An implicit CWD file put the
+ * persisted queue (which holds customer payloads) wherever the process happened
+ * to start.
+ */
+export function defaultQueuePath(): string {
+  return path.join(defaultAppDataDir(), QUEUE_DB_FILENAME);
+}
+
+function defaultAppDataDir(): string {
+  if (process.platform === "win32") {
+    return path.join(process.env.LOCALAPPDATA ?? os.homedir(), APP_DIR_NAME);
+  }
+  if (process.platform === "darwin") {
+    return path.join(os.homedir(), "Library", "Application Support", APP_DIR_NAME);
+  }
+  const base = process.env.XDG_DATA_HOME ?? path.join(os.homedir(), ".local", "share");
+  return path.join(base, APP_DIR_NAME);
+}
 
 /** UTC `YYYY-MM-DD HH:MM:SS.sss`, the same shape SQLite's `datetime()` emits. */
 function utcTimestamp(offsetMs = 0): string {
@@ -68,7 +94,7 @@ export class PersistentWebhookRetryQueue {
     this.maxQueueSize = options?.maxQueueSize ?? DEFAULT_MAX_QUEUE_SIZE;
     this.maxDlqSize = options?.maxDlqSize ?? DEFAULT_MAX_DLQ_SIZE;
     this.flushIntervalMs = options?.flushIntervalMs ?? DEFAULT_FLUSH_INTERVAL_MS;
-    this.dbPath = options?.dbPath ?? path.join(process.cwd(), "mpesa-webhook-queue.db");
+    this.dbPath = options?.dbPath ?? defaultQueuePath();
     this.logger.info("PersistentWebhookRetryQueue initialized", { dbPath: this.dbPath });
   }
 
@@ -127,7 +153,9 @@ export class PersistentWebhookRetryQueue {
   private flush(): void {
     if (!this.dirty) return;
     const buffer = Buffer.from(this.db.export());
-    fs.mkdirSync(path.dirname(this.dbPath), { recursive: true });
+    // The queue and DLQ hold customer payloads; keep the default
+    // application-data directory owner-only (best effort — umask still applies).
+    fs.mkdirSync(path.dirname(this.dbPath), { recursive: true, mode: 0o700 });
     fs.writeFileSync(this.dbPath, buffer);
     this.dirty = false;
   }

@@ -313,7 +313,7 @@ manager.verification_enabled          # -> bool
 missing signature, missing secret, or missing raw body returns `False` (they
 never re-serialize a parsed body).
 
-Also exports: `WebhookHandler` (type alias), `WebhookRetryQueue`, `DeliveryRecord`, `PersistentWebhookRetryQueue`, `PersistentDeliveryRecord`.
+Also exports: `WebhookHandler` (type alias), `WebhookRetryQueue`, `DeliveryRecord`, `PersistentWebhookRetryQueue`, `PersistentDeliveryRecord`, `default_queue_path()` (the documented queue DB location — never the working directory).
 
 ---
 

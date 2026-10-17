@@ -1,10 +1,18 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import * as fs from "node:fs";
 import { mkdtempSync, rmSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
 import { WebhookManager } from "../../src/webhooks/index.js";
-import { PersistentWebhookRetryQueue } from "../../src/webhooks/persistent-queue.js";
+import {
+  PersistentWebhookRetryQueue,
+  defaultQueuePath,
+} from "../../src/webhooks/persistent-queue.js";
+
+/** Swap `process.platform` for the duration of a test (restored by the caller). */
+function setPlatformForTest(platform: string): void {
+  Object.defineProperty(process, "platform", { value: platform, configurable: true });
+}
 
 function frozenManager(): WebhookManager {
   const manager = new WebhookManager();
@@ -171,5 +179,71 @@ describe("PersistentWebhookRetryQueue persistence", () => {
     expect(reopened.getQueueSize()).toBe(2);
     expect(reopened.getDeadLetterQueue()).toHaveLength(0);
     reopened.close();
+  });
+
+  it("resolves the default queue path from application data, not the cwd", async () => {
+    // process.platform is a configurable value property, so it can be swapped
+    // to exercise every branch on any CI platform.
+    const platformDescriptor = Object.getOwnPropertyDescriptor(process, "platform")!;
+    const originalXdg = process.env.XDG_DATA_HOME;
+    const originalLocalAppData = process.env.LOCALAPPDATA;
+    try {
+      setPlatformForTest("linux");
+      process.env.XDG_DATA_HOME = join(dir, "xdg");
+      expect(defaultQueuePath()).toBe(
+        join(dir, "xdg", "mpesa-sdk", "mpesa-webhook-queue.db"),
+      );
+
+      setPlatformForTest("darwin");
+      expect(defaultQueuePath()).toBe(
+        join(
+          homedir(),
+          "Library",
+          "Application Support",
+          "mpesa-sdk",
+          "mpesa-webhook-queue.db",
+        ),
+      );
+
+      setPlatformForTest("win32");
+      process.env.LOCALAPPDATA = join(dir, "localappdata");
+      expect(defaultQueuePath()).toBe(
+        join(dir, "localappdata", "mpesa-sdk", "mpesa-webhook-queue.db"),
+      );
+
+      // The point of FR-23: an implicit CWD file is never used.
+      setPlatformForTest("linux");
+      process.env.XDG_DATA_HOME = join(dir, "xdg");
+      expect(defaultQueuePath()).not.toBe(join(process.cwd(), "mpesa-webhook-queue.db"));
+
+      const queue = new PersistentWebhookRetryQueue(frozenManager());
+      await queue.init();
+      expect(fs.existsSync(join(dir, "xdg", "mpesa-sdk", "mpesa-webhook-queue.db"))).toBe(true);
+      queue.close();
+    } finally {
+      Object.defineProperty(process, "platform", platformDescriptor);
+      if (originalXdg === undefined) delete process.env.XDG_DATA_HOME;
+      else process.env.XDG_DATA_HOME = originalXdg;
+      if (originalLocalAppData === undefined) delete process.env.LOCALAPPDATA;
+      else process.env.LOCALAPPDATA = originalLocalAppData;
+    }
+  });
+
+  it("creates the default queue directory owner-only", async () => {
+    const platformDescriptor = Object.getOwnPropertyDescriptor(process, "platform")!;
+    const originalXdg = process.env.XDG_DATA_HOME;
+    try {
+      setPlatformForTest("linux");
+      process.env.XDG_DATA_HOME = join(dir, "xdg");
+      const queue = new PersistentWebhookRetryQueue(frozenManager());
+      await queue.init();
+      const queueDir = join(dir, "xdg", "mpesa-sdk");
+      expect(fs.statSync(queueDir).mode & 0o777).toBe(0o700);
+      queue.close();
+    } finally {
+      Object.defineProperty(process, "platform", platformDescriptor);
+      if (originalXdg === undefined) delete process.env.XDG_DATA_HOME;
+      else process.env.XDG_DATA_HOME = originalXdg;
+    }
   });
 });

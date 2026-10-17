@@ -126,9 +126,23 @@ contain customer data (MSISDN, account numbers, amounts).
 
 | Option | Default | Purpose |
 | ------ | ------- | ------- |
+| `db_path` / `dbPath` | application-data directory (below) | Queue DB location |
 | `max_queue_size` / `maxQueueSize` | 10 000 | Maximum events held for delivery |
 | `max_dlq_size` / `maxDlqSize` | 10 000 | Maximum dead-lettered events retained |
 
+- **Default location:** the path is never taken from the current working
+  directory. Pass `db_path` / `dbPath` to choose it, or read the documented
+  default from `default_queue_path()` (Python) / `defaultQueuePath()`
+  (TypeScript):
+  - Linux/other: `$XDG_DATA_HOME/mpesa-sdk/mpesa-webhook-queue.db`, falling back
+    to `~/.local/share/mpesa-sdk/mpesa-webhook-queue.db`
+  - macOS: `~/Library/Application Support/mpesa-sdk/mpesa-webhook-queue.db`
+  - Windows: `%LOCALAPPDATA%\mpesa-sdk\mpesa-webhook-queue.db`
+
+  The directory is created on demand with owner-only permissions (`0700`).
+  Earlier releases wrote `./mpesa-webhook-queue.db` in the working directory; if
+  you are upgrading and want events still sitting in that file to be delivered,
+  point `db_path` / `dbPath` at it.
 - **Overflow policy:** when the live queue is full the incoming event is moved to
   the DLQ intact (with `last_error = "queue overflow"`); events are never
   silently dropped. The already-queued backlog keeps its original order.

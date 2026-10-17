@@ -1,6 +1,7 @@
 import json
 import os
 import sqlite3
+import sys
 import threading
 from datetime import UTC, datetime
 from typing import Any
@@ -12,6 +13,35 @@ DEFAULT_MAX_RETRIES = 3
 DEFAULT_MAX_QUEUE_SIZE = 10_000
 #: Bound on DLQ rows; the oldest dead letters are evicted past this.
 DEFAULT_MAX_DLQ_SIZE = 10_000
+#: Application-data directory that holds the queue file by default.
+APP_DIR_NAME = "mpesa-sdk"
+#: Queue file name used for the default path.
+QUEUE_DB_FILENAME = "mpesa-webhook-queue.db"
+
+
+def default_queue_path() -> str:
+    """Return the documented default queue DB path.
+
+    The default is a per-user application-data location (see
+    :func:`_default_app_data_dir`), never the current working directory: an
+    implicit CWD file made the persisted queue (which holds customer payloads)
+    land in whatever directory the process happened to start in.
+    """
+    return os.path.join(_default_app_data_dir(), QUEUE_DB_FILENAME)
+
+
+def _default_app_data_dir() -> str:
+    if sys.platform == "win32":
+        base = os.environ.get("LOCALAPPDATA") or os.path.expanduser("~")
+        return os.path.join(base, APP_DIR_NAME)
+    if sys.platform == "darwin":
+        return os.path.join(
+            os.path.expanduser("~"), "Library", "Application Support", APP_DIR_NAME
+        )
+    base = os.environ.get("XDG_DATA_HOME") or os.path.join(
+        os.path.expanduser("~"), ".local", "share"
+    )
+    return os.path.join(base, APP_DIR_NAME)
 
 
 class PersistentDeliveryRecord:
@@ -40,7 +70,7 @@ class PersistentWebhookRetryQueue:
         self._max_retries = max_retries
         self._max_queue_size = max_queue_size
         self._max_dlq_size = max_dlq_size
-        self._db_path = db_path or os.path.join(os.getcwd(), "mpesa-webhook-queue.db")
+        self._db_path = db_path or default_queue_path()
         # Two locks with different jobs, deliberately kept separate:
         #  - ``_db_lock`` (re-entrant) serializes *every* SQLite access, so the
         #    enqueue caller, the worker and status readers can never interleave
@@ -62,6 +92,12 @@ class PersistentWebhookRetryQueue:
         Callers must hold ``_db_lock``; every code path here does.
         """
         if self._db is None:
+            directory = os.path.dirname(self._db_path)
+            if directory:
+                # The queue and DLQ hold customer payloads; keep the default
+                # application-data directory owner-only (best effort — umask
+                # still applies).
+                os.makedirs(directory, mode=0o700, exist_ok=True)
             self._db = sqlite3.connect(self._db_path, check_same_thread=False)
             self._db.row_factory = sqlite3.Row
             self._db.execute("PRAGMA journal_mode=WAL")
