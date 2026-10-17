@@ -2,7 +2,6 @@ import json
 import os
 import sqlite3
 import threading
-import time
 from datetime import UTC, datetime
 from typing import Any
 
@@ -51,6 +50,9 @@ class PersistentWebhookRetryQueue:
         #    (which re-enters ``_db_lock``) without deadlocking.
         self._lock = threading.Lock()
         self._db_lock = threading.RLock()
+        # Wakes a worker that is waiting for a later retry deadline when a new
+        # event arrives, so a due event is never delayed behind that deadline.
+        self._wake = threading.Event()
         self._processing = False
         self._db: sqlite3.Connection | None = None
 
@@ -117,6 +119,10 @@ class PersistentWebhookRetryQueue:
             if not self._processing:
                 self._processing = True
                 threading.Thread(target=self._process_queue, daemon=True).start()
+            else:
+                # A worker may be parked on a later retry deadline; wake it so
+                # this (due-now) event is not delayed behind that deadline.
+                self._wake.set()
 
     @staticmethod
     def _count(db: sqlite3.Connection, table: str) -> int:
@@ -207,19 +213,44 @@ class PersistentWebhookRetryQueue:
             db.commit()
             return record
 
+    def _seconds_until_next_due(self) -> float | None:
+        """Seconds until the earliest queued retry, or ``None`` if queue is empty.
+
+        The delay is computed by SQLite against ``datetime('now')``, so it uses
+        the same clock and parsing as the claim query.
+        """
+        with self._db_lock:
+            db = self._get_db()
+            row = db.execute(
+                "SELECT (julianday(MIN(next_retry_at)) - julianday('now')) * 86400.0 "
+                "AS wait_seconds FROM webhook_queue"
+            ).fetchone()
+            if row is None or row["wait_seconds"] is None:
+                return None
+            return max(0.01, float(row["wait_seconds"]))
+
     def _process_queue(self) -> None:
         while True:
             with self._lock:
                 record = self._claim_next_due()
-                if record is None:
-                    # No due row. Because the claim and this flag write are under
-                    # the same lock, an ``enqueue`` that lands after the claim
-                    # either sets ``_processing`` back to True (spawning a fresh
-                    # worker) or is claimed by the loop below — it can never be
-                    # left unprocessed.
+                wait_seconds = (
+                    None if record is not None else self._seconds_until_next_due()
+                )
+                if record is None and wait_seconds is None:
+                    # Queue is empty. Because the claim and this flag write share
+                    # the lock, an ``enqueue`` that lands after the claim either
+                    # sets ``_processing`` back to True (spawning a fresh worker)
+                    # or is claimed by the loop below — it can never be lost.
                     self._processing = False
                     return
-            self._deliver(record)
+            if record is not None:
+                self._deliver(record)
+                continue
+            # Nothing is due yet: wait for the retry deadline, or for an enqueue
+            # that arrives sooner. Waiting here (rather than inside the failure
+            # path) is what keeps a due-later item from blocking a due one.
+            self._wake.wait(wait_seconds)
+            self._wake.clear()
 
     def _deliver(self, record: PersistentDeliveryRecord) -> None:
         new_attempts = record.attempts + 1
@@ -231,22 +262,21 @@ class PersistentWebhookRetryQueue:
             error_msg = str(e)
             if new_attempts < self._max_retries:
                 backoff_ms = min(1000 * (2 ** (new_attempts - 1)), 30000)
-                next_retry = datetime.fromtimestamp(
-                    time.time() + backoff_ms / 1000.0
-                ).strftime("%Y-%m-%d %H:%M:%S")
+                # Schedule via SQLite so the deadline shares the claim query's
+                # clock, and return immediately instead of sleeping the worker.
                 with self._db_lock:
                     db = self._get_db()
                     db.execute(
                         "INSERT INTO webhook_queue "
                         "(event, payload, attempts, last_error, max_retries, next_retry_at) "
-                        "VALUES (?, ?, ?, ?, ?, ?)",
+                        "VALUES (?, ?, ?, ?, ?, datetime('now', ?))",
                         [
                             record.event,
                             json.dumps(record.payload),
                             new_attempts,
                             error_msg,
                             self._max_retries,
-                            next_retry,
+                            f"+{backoff_ms / 1000:.3f} seconds",
                         ],
                     )
                     db.commit()
@@ -258,7 +288,6 @@ class PersistentWebhookRetryQueue:
                         "backoff_ms": backoff_ms,
                     },
                 )
-                time.sleep(backoff_ms / 1000.0)
             else:
                 with self._db_lock:
                     self._archive_to_dlq(

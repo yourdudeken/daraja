@@ -310,6 +310,49 @@ class TestQueueBoundsAndRetention:
         queue.close()
 
 
+class FailOnceManager:
+    """Fails the first delivery of ``a`` once, then records deliveries in order."""
+
+    def __init__(self) -> None:
+        self.first_failure = threading.Event()
+        self.delivered: list[str] = []
+        self.times: dict[str, float] = {}
+        self._lock = threading.Lock()
+        self._attempts = 0
+
+    def emit(self, event_type: str, payload: object) -> None:
+        with self._lock:
+            if event_type == "a":
+                self._attempts += 1
+                if self._attempts == 1:
+                    self.first_failure.set()
+                    raise RuntimeError("transient")
+            self.delivered.append(event_type)
+            self.times.setdefault(event_type, time.monotonic())
+
+
+class TestTimestampScheduling:
+    def test_due_later_item_does_not_block_an_earlier_due_item(self, tmp_path):
+        """PERF-003: the worker must wait on the deadline, not sleep in delivery."""
+        manager = FailOnceManager()
+        queue = PersistentWebhookRetryQueue(
+            manager, db_path=str(tmp_path / "queue.db"), max_retries=3
+        )
+        queue.enqueue("a", {"n": 1})
+        assert manager.first_failure.wait(10), "first delivery never failed"
+        # ``a`` now waits out its ~1s backoff. ``b`` is due immediately and must
+        # not be held behind that deadline.
+        enqueued_b_at = time.monotonic()
+        queue.enqueue("b", {"n": 2})
+
+        assert _wait_until(lambda: list(manager.delivered) == ["b"], timeout=5)
+        assert manager.times["b"] - enqueued_b_at < 0.5
+
+        assert _wait_until(lambda: "a" in manager.delivered, timeout=10)
+        assert list(manager.delivered) == ["b", "a"]
+        queue.close()
+
+
 class TestHandlerReentrancy:
 
     def test_handler_can_enqueue_without_deadlock(self, tmp_path):
