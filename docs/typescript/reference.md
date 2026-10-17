@@ -350,6 +350,7 @@ Also exports:
 - `createWebhookManager(options?)` -- factory returning a `WebhookManager`
 - `WebhookEvent` / `WebhookHandler` -- named event and handler types
 - `WebhookRetryQueue`, `PersistentWebhookRetryQueue`
+- `defaultQueuePath()` -- the documented queue DB location (never the working directory)
 
 ### Event Types
 

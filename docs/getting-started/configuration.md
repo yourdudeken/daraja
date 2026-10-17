@@ -117,6 +117,78 @@ key and are not interchangeable.
 
 Requests that match no override use the top-level rate-limiter bucket.
 
+### Webhook queue persistence & retention
+
+The persistent webhook retry queues (Python and TypeScript) spool callbacks to a
+local SQLite file and hold events that could not be delivered. Both queues and
+their dead-letter queue (DLQ) are **bounded**, and both payload stores may
+contain customer data (MSISDN, account numbers, amounts).
+
+| Option | Default | Purpose |
+| ------ | ------- | ------- |
+| `db_path` / `dbPath` | application-data directory (below) | Queue DB location |
+| `max_queue_size` / `maxQueueSize` | 10 000 | Maximum events held for delivery |
+| `max_dlq_size` / `maxDlqSize` | 10 000 | Maximum dead-lettered events retained |
+
+- **Default location:** the path is never taken from the current working
+  directory. Pass `db_path` / `dbPath` to choose it, or read the documented
+  default from `default_queue_path()` (Python) / `defaultQueuePath()`
+  (TypeScript):
+  - Linux/other: `$XDG_DATA_HOME/mpesa-sdk/mpesa-webhook-queue.db`, falling back
+    to `~/.local/share/mpesa-sdk/mpesa-webhook-queue.db`
+  - macOS: `~/Library/Application Support/mpesa-sdk/mpesa-webhook-queue.db`
+  - Windows: `%LOCALAPPDATA%\mpesa-sdk\mpesa-webhook-queue.db`
+
+  The directory is created on demand with owner-only permissions (`0700`).
+  Earlier releases wrote `./mpesa-webhook-queue.db` in the working directory; if
+  you are upgrading and want events still sitting in that file to be delivered,
+  point `db_path` / `dbPath` at it.
+- **Overflow policy:** when the live queue is full the incoming event is moved to
+  the DLQ intact (with `last_error = "queue overflow"`); events are never
+  silently dropped. The already-queued backlog keeps its original order.
+- **DLQ retention:** once the DLQ is at its bound, the oldest dead letters are
+  evicted first. Purge on demand with `purge_dlq(max_age_seconds=…)` /
+  `purgeDlq({ maxAgeMs: … })` — pass an age to delete only older entries, or no
+  argument to empty the DLQ. Call it from a scheduled job to enforce your own
+  retention window.
+- **PII:** queued and dead-lettered payloads are stored **unencrypted** in the
+  queue file, because they are delivered as-is. Treat the file as customer data:
+  restrict its permissions, place it on a protected volume, and purge the DLQ on
+  a schedule that matches your privacy policy. The OAuth token store is
+  encrypted separately and is not affected by these bounds.
+- **Durability:** TypeScript persists mutations with a short debounce (default
+  50 ms, `flushIntervalMs`) instead of rewriting the file per event, and flushes
+  on `close()`. At most a few milliseconds of undelivered state can be lost in a
+  hard crash; Python commits each mutation immediately.
+- **Schema version:** each queue file records its own schema version
+  (`PRAGMA user_version`) so a future release can migrate the file in place when
+  it is opened. A file written by a *newer* SDK version is refused with an error
+  rather than read with an older understanding of its schema.
+- **Best-effort state:** the queue file is local, ephemeral state. No
+  backup/restore tooling is provided and events lost to a crash or a wiped disk
+  are not recovered, so treat the DLQ as a review queue to drain or purge rather
+  than a system of record.
+
+### Token store encryption
+
+`EncryptedTokenStore` (both SDKs) keeps the OAuth token in a local file encrypted
+with **AES-256-GCM**; the key is derived from your encryption key with
+**PBKDF2-SHA256** (200 000 iterations) and a per-file random salt. The file is
+created owner-only (mode `0600`) and replaced atomically — written to a sibling
+temp file and renamed into place — so it is never briefly world-readable and a
+crash mid-write leaves the previous file intact.
+
+Releases before 1.0.2 derived the key by padding/truncating the encryption key to
+32 bytes, which was only as strong as the key itself. Reading such a file now
+**migrates it in place**: the token is re-encrypted with the PBKDF2 derivation,
+and the original envelope is kept beside it as `<file>.v1.bak` (mode `0600`,
+never overwritten).
+
+The migration is **one-way** — a migrated file can no longer be read by those
+older releases — so keep the backup until you have confirmed the upgrade, then
+delete it. Use a high-entropy encryption key, since it ultimately protects the
+token in both formats.
+
 
 ## Language specifics
 

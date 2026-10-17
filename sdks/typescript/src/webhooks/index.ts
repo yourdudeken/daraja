@@ -165,4 +165,11 @@ export function createWebhookManager(options?: WebhookManagerOptions): WebhookMa
 }
 
 export { WebhookRetryQueue } from "./retry.js";
-export { PersistentWebhookRetryQueue } from "./persistent-queue.js";
+export {
+  PersistentWebhookRetryQueue,
+  defaultQueuePath,
+  SCHEMA_VERSION,
+  applySchemaMigrations,
+  readSchemaVersion,
+} from "./persistent-queue.js";
+export type { PersistentWebhookQueueOptions } from "./persistent-queue.js";
