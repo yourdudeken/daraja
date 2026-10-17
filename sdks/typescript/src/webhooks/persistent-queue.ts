@@ -17,28 +17,43 @@ interface PersistentDeliveryRecord {
 }
 
 const DEFAULT_MAX_RETRIES = 3;
+/** Bounded, but generous enough to absorb a transient backlog. */
+const DEFAULT_MAX_QUEUE_SIZE = 10_000;
+/** Mutations coalesce inside this window; the DB file is rewritten at most once. */
+const DEFAULT_FLUSH_INTERVAL_MS = 50;
+
+export interface PersistentWebhookQueueOptions {
+  dbPath?: string;
+  logger?: Logger;
+  maxRetries?: number;
+  /** Maximum rows kept in the live queue; overflow is archived to the DLQ. */
+  maxQueueSize?: number;
+  /** Debounce window (ms) for persisting mutations. */
+  flushIntervalMs?: number;
+  pollIntervalMs?: number;
+}
 
 export class PersistentWebhookRetryQueue {
   private db!: SqlJsDatabase;
   private processing = false;
   private readonly logger: Logger;
   private readonly maxRetries: number;
+  private readonly maxQueueSize: number;
+  private readonly flushIntervalMs: number;
   private readonly webhookManager: WebhookManager;
   private readonly dbPath: string;
-  private pollTimer: ReturnType<typeof setInterval> | null = null;
+  private dirty = false;
+  private flushTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(
     webhookManager: WebhookManager,
-    options?: {
-      dbPath?: string;
-      logger?: Logger;
-      maxRetries?: number;
-      pollIntervalMs?: number;
-    },
+    options?: PersistentWebhookQueueOptions,
   ) {
     this.webhookManager = webhookManager;
     this.logger = options?.logger ?? noopLogger;
     this.maxRetries = options?.maxRetries ?? DEFAULT_MAX_RETRIES;
+    this.maxQueueSize = options?.maxQueueSize ?? DEFAULT_MAX_QUEUE_SIZE;
+    this.flushIntervalMs = options?.flushIntervalMs ?? DEFAULT_FLUSH_INTERVAL_MS;
     this.dbPath = options?.dbPath ?? path.join(process.cwd(), "mpesa-webhook-queue.db");
     this.logger.info("PersistentWebhookRetryQueue initialized", { dbPath: this.dbPath });
   }
@@ -74,23 +89,80 @@ export class PersistentWebhookRetryQueue {
         failed_at TEXT NOT NULL DEFAULT (datetime('now'))
       )
     `);
-    this.save();
+    this.persistNow();
     this.logger.info("Database initialized", { path: this.dbPath });
   }
 
-  private save(): void {
-    const data = this.db.export();
-    const buffer = Buffer.from(data);
+  /**
+   * Mark the in-memory database dirty and persist it at most once per
+   * {@link flushIntervalMs}. Every mutation used to rewrite the entire file
+   * synchronously, so N webhooks cost N full-database exports on the event loop.
+   */
+  private markDirty(): void {
+    this.dirty = true;
+    if (this.flushTimer !== null) return;
+    this.flushTimer = setTimeout(() => {
+      this.flushTimer = null;
+      this.flush();
+    }, this.flushIntervalMs);
+    // A pending flush must not keep the process alive on its own.
+    this.flushTimer.unref?.();
+  }
+
+  /** Write the database to disk if there is anything to write. */
+  private flush(): void {
+    if (!this.dirty) return;
+    const buffer = Buffer.from(this.db.export());
     fs.mkdirSync(path.dirname(this.dbPath), { recursive: true });
     fs.writeFileSync(this.dbPath, buffer);
+    this.dirty = false;
+  }
+
+  /** Persist synchronously (schema setup and shutdown only). */
+  private persistNow(): void {
+    this.dirty = true;
+    this.flush();
+  }
+
+  private queryRows<T>(sql: string, params: unknown[] = []): T[] {
+    const stmt = this.db.prepare(sql);
+    try {
+      if (params.length > 0) stmt.bind(params as never);
+      const rows: T[] = [];
+      while (stmt.step()) {
+        rows.push(stmt.getAsObject() as unknown as T);
+      }
+      return rows;
+    } finally {
+      stmt.free();
+    }
+  }
+
+  /**
+   * Archive an event that does not fit in the bounded queue. The payload is
+   * kept intact in the DLQ (never silently dropped), and the *new* event is the
+   * one archived, so the queued backlog keeps its original order.
+   */
+  private archiveOverflow(event: string, payload: string): void {
+    this.db.run(
+      `INSERT INTO webhook_dlq (event, payload, attempts, last_error, created_at)
+       VALUES (?, ?, ?, ?, ?)`,
+      [event, payload, 0, "queue overflow", new Date().toISOString()],
+    );
+    this.markDirty();
+    this.logger.warn("Webhook queue is full, event archived to DLQ", { event });
   }
 
   enqueue(event: string, payload: unknown): void {
+    if (this.getQueueSize() >= this.maxQueueSize) {
+      this.archiveOverflow(event, JSON.stringify(payload));
+      return;
+    }
     this.db.run(
       "INSERT INTO webhook_queue (event, payload, max_retries) VALUES (?, ?, ?)",
       [event, JSON.stringify(payload), this.maxRetries],
     );
-    this.save();
+    this.markDirty();
     this.logger.warn("Webhook enqueued for retry", { event });
     if (!this.processing) {
       this.processing = true;
@@ -120,7 +192,7 @@ export class PersistentWebhookRetryQueue {
       }
 
       this.db.run("DELETE FROM webhook_queue WHERE id = ?", [row.id]);
-      this.save();
+      this.markDirty();
 
       const newAttempts = row.attempts + 1;
 
@@ -146,7 +218,7 @@ export class PersistentWebhookRetryQueue {
              VALUES (?, ?, ?, ?, ?, ?)`,
             [row.event, row.payload, newAttempts, errorMsg, this.maxRetries, nextRetry],
           );
-          this.save();
+          this.markDirty();
           this.logger.warn("Webhook retry failed, re-enqueued", {
             event: row.event,
             attempt: newAttempts,
@@ -158,7 +230,7 @@ export class PersistentWebhookRetryQueue {
              VALUES (?, ?, ?, ?, ?)`,
             [row.event, row.payload, newAttempts, errorMsg, row.created_at],
           );
-          this.save();
+          this.markDirty();
           this.logger.error("Webhook delivery failed, moved to DLQ", {
             event: row.event,
             attempts: newAttempts,
@@ -169,29 +241,22 @@ export class PersistentWebhookRetryQueue {
   }
 
   getDeadLetterQueue(): PersistentDeliveryRecord[] {
-    const stmt = this.db.prepare("SELECT * FROM webhook_dlq ORDER BY id ASC");
-    const results: PersistentDeliveryRecord[] = [];
-    while (stmt.step()) {
-      results.push(stmt.getAsObject() as unknown as PersistentDeliveryRecord);
-    }
-    stmt.free();
-    return results;
+    return this.queryRows<PersistentDeliveryRecord>("SELECT * FROM webhook_dlq ORDER BY id ASC");
   }
 
   getQueueSize(): number {
-    const stmt = this.db.prepare("SELECT COUNT(*) as count FROM webhook_queue");
-    stmt.step();
-    const result = stmt.getAsObject() as unknown as { count: number };
-    stmt.free();
-    return result.count;
+    const rows = this.queryRows<{ count: number }>(
+      "SELECT COUNT(*) as count FROM webhook_queue",
+    );
+    return rows[0]?.count ?? 0;
   }
 
   close(): void {
-    if (this.pollTimer) {
-      clearInterval(this.pollTimer);
-      this.pollTimer = null;
+    if (this.flushTimer !== null) {
+      clearTimeout(this.flushTimer);
+      this.flushTimer = null;
     }
-    this.save();
+    this.flush();
     this.db.close();
   }
 }
