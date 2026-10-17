@@ -55,6 +55,13 @@ export class MpesaApiClient {
   private readonly endpoints: Record<string, string>;
   private readonly tracer: Tracer;
   private readonly idempotencyStore: IdempotencyStore | null;
+  /**
+   * Submissions currently in flight, keyed by idempotency key. Concurrent
+   * identical requests share one promise instead of being sent twice; the entry
+   * is dropped once it settles (success or failure), so a failed submission can
+   * still be retried by the caller.
+   */
+  private readonly idempotencyInFlight = new Map<string, Promise<unknown>>();
   private readonly sharedTokenCache: SharedTokenCache | null;
 
   constructor(config: MpesaConfig) {
@@ -299,19 +306,40 @@ export class MpesaApiClient {
   async request<T>(config: AxiosRequestConfig, operationName?: string): Promise<T> {
     const spanName = `mpesa.http.${(config.method ?? "get").toLowerCase()}`;
 
+    // The key is derived from the payload while ignoring the fields the SDK fills
+    // in per call (Timestamp, Password, requestID) — otherwise no two calls would
+    // ever share a key — and is namespaced by credential so a shared store cannot
+    // hand one account another account's response.
     const idempotencyKey = this.idempotencyStore && config.method?.toUpperCase() === "POST"
-      ? generateIdempotencyKey(config.method ?? "POST", config.url ?? "", config.data)
+      ? generateIdempotencyKey(config.method ?? "POST", config.url ?? "", config.data, {
+          namespace: this.config.consumerKey,
+        })
       : null;
 
     if (idempotencyKey) {
-      const cached = await this.idempotencyStore!.get(idempotencyKey);
-      if (cached !== null) {
-        this.logger.debug("Idempotency cache hit", { key: idempotencyKey, url: config.url });
-        return cached as T;
+      const inFlight = this.idempotencyInFlight.get(idempotencyKey);
+      if (inFlight) {
+        this.logger.debug("Idempotency dedup: joining in-flight request", {
+          key: idempotencyKey,
+          url: config.url,
+        });
+        return inFlight as Promise<T>;
       }
     }
 
-    return withSpan(this.tracer, spanName, async () => {
+    const request = withSpan(this.tracer, spanName, async () => {
+      // The store is read inside the in-flight window: the promise below is
+      // registered before the request's first await, so a lookup that resolves
+      // late — the normal case for a remote store — cannot let a second
+      // submission through, and a completed first submission is always found.
+      if (idempotencyKey) {
+        const cached = await this.idempotencyStore!.get(idempotencyKey);
+        if (cached !== null) {
+          this.logger.debug("Idempotency cache hit", { key: idempotencyKey, url: config.url });
+          return cached as T;
+        }
+      }
+
       await this.rateLimiter.acquire(config.url);
 
       return this.circuitBreaker.call<T>(async () => {
@@ -350,6 +378,21 @@ export class MpesaApiClient {
       "mpesa.operation": operationName ?? "",
       "rpc.system": "mpesa",
     });
+
+    if (idempotencyKey) {
+      // Registered synchronously — there is no await above — so a second
+      // identical submission joins this promise instead of hitting the API,
+      // even while the store lookup inside it is still pending.
+      this.idempotencyInFlight.set(idempotencyKey, request);
+      const release = (): void => {
+        if (this.idempotencyInFlight.get(idempotencyKey) === request) {
+          this.idempotencyInFlight.delete(idempotencyKey);
+        }
+      };
+      request.then(release, release);
+    }
+
+    return request;
   }
 
   async post<T>(url: string, data?: unknown, operationName?: string): Promise<T> {

@@ -60,6 +60,42 @@ backoff envelope. These values are applied by every SDK (`base_delay_ms` /
   attempted once however large `maxRetries` is, so a payment is never blindly
   re-sent.
 
+### Idempotency keys
+
+While idempotency is enabled (the default) every `POST` carries an
+`X-Idempotency-Key` derived from the request itself:
+
+- The key covers the credential, the method, the URL and the body with object
+  keys sorted, so key ordering does not change it.
+- The fields that carry a fresh value on every call are excluded, whatever their
+  casing and nesting depth: `Timestamp` and `Password` on STK requests, and
+  `timestamp` plus `requestID` inside the Daraja header objects. Two submissions
+  of the same payment therefore share a key even though each carries a new
+  timestamp (and, for B2C Hakikisha, a new `requestID`).
+- The calling credential is part of the key, so accounts sharing one store (a
+  Redis cache, for example) never read each other's responses.
+
+What that means in practice:
+
+- **Concurrent duplicates collapse.** Only one of the identical submissions in
+  flight at the same time is sent; the others wait and receive its response
+  instead of moving money twice. This holds within one client instance. Across
+  processes the shared store answers a repeat once the first submission has
+  completed.
+- **Successes are remembered for 24 hours.** A repeat within that window is
+  served from the store without calling the API again.
+- **Failures are never stored.** A retry after a network error, a timeout or an
+  API rejection still reaches M-Pesa. If the submission others are waiting on
+  fails, TypeScript hands those callers the same error while Python lets each
+  waiter attempt for itself — either way every attempt carries the same key.
+- Setting `enableIdempotency` / `enable_idempotency` to `false` with no store of
+  your own turns all of this off: no key is generated, nothing is stored and
+  repeats are sent as-is.
+
+Keys are derived per SDK: a store shared by a Python and a TypeScript client
+keeps each one's entries separate (they never collide, and they do not
+de-duplicate across languages).
+
 ### Rate-limiter endpoint overrides
 
 `endpoint_overrides` / `endpointOverrides` selects a dedicated token bucket for

@@ -240,7 +240,7 @@ export {
   withSpan,
   withSpanSync,
 } from "./tracing.js";
-export type { IdempotencyStore } from "./idempotency.js";
+export type { IdempotencyKeyOptions, IdempotencyStore } from "./idempotency.js";
 export {
   InMemoryIdempotencyStore,
   generateIdempotencyKey,

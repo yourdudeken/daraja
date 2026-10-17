@@ -46,10 +46,69 @@ export class InMemoryIdempotencyStore implements IdempotencyStore {
   }
 }
 
-export function generateIdempotencyKey(method: string, url: string, body?: unknown): string {
-  const bodyStr = body ? JSON.stringify(body) : "";
-  const hash = simpleHash(`${method}:${url}:${bodyStr}`);
+/**
+ * Names of the fields that get a fresh value on every call, matched
+ * case-insensitively at any depth: `Timestamp`/`Password` on STK requests and
+ * `timestamp`/`requestID` in the Daraja header objects. They identify one
+ * *submission*, not the request itself, so they are excluded when a key is
+ * derived from the body — otherwise a repeated payment could never be
+ * recognised as a duplicate.
+ */
+const GENERATED_FIELDS = new Set(["timestamp", "password", "requestid"]);
+
+export interface IdempotencyKeyOptions {
+  /**
+   * Stable identity of the calling credential (the consumer key). Clients that
+   * share one store therefore derive disjoint key spaces, so a key can never
+   * resolve to another account's response.
+   */
+  namespace?: string;
+}
+
+export function generateIdempotencyKey(
+  method: string,
+  url: string,
+  body?: unknown,
+  options: IdempotencyKeyOptions = {},
+): string {
+  const hash = simpleHash(
+    `${options.namespace ?? ""}\u0000${method.toUpperCase()}\u0000${url}\u0000${canonicalize(body, new WeakSet())}`,
+  );
   return `mpesa-idem-${hash}`;
+}
+
+/**
+ * Canonical form of a request body: object keys sorted, `undefined` entries and
+ * per-call generated fields (`Timestamp`, `Password`, `requestID`) dropped at any
+ * depth. Two submissions that differ only in those generated fields therefore
+ * share one identity, which is what lets the store de-duplicate a repeat.
+ */
+function canonicalize(value: unknown, seen: WeakSet<object>): string {
+  if (value === null || typeof value !== "object") {
+    return JSON.stringify(value) ?? "null";
+  }
+  if (seen.has(value)) {
+    throw new TypeError("Cannot derive an idempotency key from a circular request body.");
+  }
+  seen.add(value);
+  try {
+    if (Array.isArray(value)) {
+      return `[${value.map((entry) => canonicalize(entry, seen)).join(",")}]`;
+    }
+    if (typeof (value as { toJSON?: unknown }).toJSON === "function") {
+      // Date and friends serialise through toJSON; without this every Date would
+      // canonicalise to "{}" and two different requests would collide.
+      return JSON.stringify(value) ?? "null";
+    }
+    const entries = Object.entries(value as Record<string, unknown>)
+      .filter(([name, entry]) => entry !== undefined && !GENERATED_FIELDS.has(name.toLowerCase()))
+      .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
+    return `{${entries
+      .map(([name, entry]) => `${JSON.stringify(name)}:${canonicalize(entry, seen)}`)
+      .join(",")}}`;
+  } finally {
+    seen.delete(value);
+  }
 }
 
 function simpleHash(str: string): string {

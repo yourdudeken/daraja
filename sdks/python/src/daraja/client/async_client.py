@@ -3,6 +3,7 @@ import time
 import uuid
 from typing import Any, cast
 from urllib.parse import urlencode
+from weakref import WeakValueDictionary
 
 import httpx
 
@@ -219,6 +220,7 @@ class AsyncMpesa:
             if config.enable_idempotency
             else None
         )
+        self._idempotency_locks: WeakValueDictionary[str, asyncio.Lock] = WeakValueDictionary()
 
         cb_cfg = config.circuit_breaker_config or {}
         self._circuit_breaker = CircuitBreaker(
@@ -295,15 +297,62 @@ class AsyncMpesa:
         request_id = _generate_request_id()
 
         idempotency_store = self._idempotency_store
-        idempotency_key: str | None = None
-        if idempotency_store is not None and method.upper() == "POST":
-            idempotency_key = generate_idempotency_key(method, url, json_data)
+        if idempotency_store is None or method.upper() != "POST":
+            return await self._send(method, url, json_data, operation_name, request_id, None)
+
+        # The key ignores the fields generated for every call (Timestamp,
+        # Password) — otherwise no two calls would ever share a key — and is
+        # namespaced by credential so a store shared between accounts cannot hand
+        # one account another's response.
+        idempotency_key = generate_idempotency_key(
+            method, url, json_data, namespace=self._config.consumer_key
+        )
+        cached = idempotency_store.get(idempotency_key)
+        if cached is not None:
+            self._logger.debug(
+                "Idempotency cache hit", extra={"key": idempotency_key, "url": url}
+            )
+            return cached
+
+        # One submission at a time per key: a concurrent identical call waits here
+        # and is then served the stored response instead of being sent again.
+        # The registry needs no lock of its own — it is only touched from the
+        # event loop, between awaits.
+        async with self._idempotency_lock(idempotency_key):
             cached = idempotency_store.get(idempotency_key)
             if cached is not None:
                 self._logger.debug(
-                    "Idempotency cache hit", extra={"key": idempotency_key, "url": url}
+                    "Idempotency dedup: serving the in-flight result",
+                    extra={"key": idempotency_key, "url": url},
                 )
                 return cached
+            return await self._send(
+                method, url, json_data, operation_name, request_id, idempotency_key
+            )
+
+    def _idempotency_lock(self, key: str) -> asyncio.Lock:
+        """The lock that serialises submissions sharing one idempotency key.
+
+        The registry holds weak references, so it stays bounded: an entry is gone
+        once no task holds or waits on it, and a task inside the critical section
+        keeps its own lock alive for as long as it needs it.
+        """
+        lock = self._idempotency_locks.get(key)
+        if lock is None:
+            lock = asyncio.Lock()
+            self._idempotency_locks[key] = lock
+        return lock
+
+    async def _send(
+        self,
+        method: str,
+        url: str,
+        json_data: dict[str, Any] | list[Any] | None,
+        operation_name: str | None,
+        request_id: str,
+        idempotency_key: str | None,
+    ) -> dict[str, Any]:
+        idempotency_store = self._idempotency_store
 
         while not self._rate_limiter.try_acquire(url):
             await asyncio.sleep(0.01)

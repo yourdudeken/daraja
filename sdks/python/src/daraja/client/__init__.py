@@ -6,6 +6,7 @@ import time
 import uuid
 from typing import TYPE_CHECKING, Any, cast
 from urllib.parse import urlencode
+from weakref import WeakValueDictionary
 
 import httpx
 
@@ -271,6 +272,8 @@ class Mpesa:
             if config.enable_idempotency
             else None
         )
+        self._idempotency_locks: WeakValueDictionary[str, threading.Lock] = WeakValueDictionary()
+        self._idempotency_locks_guard = threading.Lock()
 
         cb_cfg = config.circuit_breaker_config or {}
         self._circuit_breaker = CircuitBreaker(
@@ -347,15 +350,59 @@ class Mpesa:
         request_id = _generate_request_id()
 
         idempotency_store = self._idempotency_store
-        idempotency_key: str | None = None
-        if idempotency_store is not None and method.upper() == "POST":
-            idempotency_key = generate_idempotency_key(method, url, json_data)
+        if idempotency_store is None or method.upper() != "POST":
+            return self._send(method, url, json_data, operation_name, request_id, None)
+
+        # The key ignores the fields generated for every call (Timestamp,
+        # Password) — otherwise no two calls would ever share a key — and is
+        # namespaced by credential, so a store shared between accounts cannot hand
+        # one account another account's response.
+        idempotency_key = generate_idempotency_key(
+            method, url, json_data, namespace=self._config.consumer_key
+        )
+        cached = idempotency_store.get(idempotency_key)
+        if cached is not None:
+            self._logger.debug(
+                "Idempotency cache hit", extra={"key": idempotency_key, "url": url}
+            )
+            return cached
+
+        # One submission at a time per key: a concurrent identical call waits here
+        # and is then served the stored response instead of being sent again.
+        with self._idempotency_lock(idempotency_key):
             cached = idempotency_store.get(idempotency_key)
             if cached is not None:
                 self._logger.debug(
-                    "Idempotency cache hit", extra={"key": idempotency_key, "url": url}
+                    "Idempotency dedup: serving the in-flight result",
+                    extra={"key": idempotency_key, "url": url},
                 )
                 return cached
+            return self._send(method, url, json_data, operation_name, request_id, idempotency_key)
+
+    def _idempotency_lock(self, key: str) -> threading.Lock:
+        """The lock that serialises submissions sharing one idempotency key.
+
+        The registry holds weak references, so it stays bounded: an entry is gone
+        once no thread holds or waits on it, and a thread inside the critical
+        section keeps its own lock alive for as long as it needs it.
+        """
+        with self._idempotency_locks_guard:
+            lock = self._idempotency_locks.get(key)
+            if lock is None:
+                lock = threading.Lock()
+                self._idempotency_locks[key] = lock
+            return lock
+
+    def _send(
+        self,
+        method: str,
+        url: str,
+        json_data: dict[str, Any] | list[Any] | None,
+        operation_name: str | None,
+        request_id: str,
+        idempotency_key: str | None,
+    ) -> dict[str, Any]:
+        idempotency_store = self._idempotency_store
 
         self._rate_limiter.acquire(url)
 

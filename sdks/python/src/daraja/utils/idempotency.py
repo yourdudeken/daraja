@@ -52,8 +52,45 @@ class InMemoryIdempotencyStore(IdempotencyStore):
             self._cache.clear()
 
 
-def generate_idempotency_key(method: str, url: str, body: Any | None = None) -> str:
-    body_str = json.dumps(body, sort_keys=True) if body is not None else ""
-    raw = f"{method}:{url}:{body_str}"
-    h = hashlib.sha256(raw.encode()).hexdigest()[:16]
-    return f"mpesa-idem-{h}"
+_GENERATED_FIELDS = frozenset({"timestamp", "password", "requestid"})
+
+
+def _strip_generated(body: Any) -> Any:
+    """Drop the fields that get a fresh value on every call.
+
+    ``Timestamp``/``Password`` on STK requests and ``timestamp``/``requestID`` in
+    the Daraja header objects identify one submission, not the request itself, so
+    they must not take part in the identity of a request — otherwise two
+    identical payments would never look like duplicates. Matched
+    case-insensitively at any depth, like the TypeScript SDK.
+    """
+    if isinstance(body, dict):
+        return {
+            key: _strip_generated(value)
+            for key, value in body.items()
+            if not (isinstance(key, str) and key.lower() in _GENERATED_FIELDS)
+        }
+    if isinstance(body, list):
+        return [_strip_generated(item) for item in body]
+    return body
+
+
+def generate_idempotency_key(
+    method: str, url: str, body: Any | None = None, *, namespace: str | None = None
+) -> str:
+    """Derive a stable key for a request.
+
+    The key is a digest of the credential namespace, the method, the URL and the
+    canonical form of the body (object keys sorted, generated fields removed), so
+    the same logical request produces the same key on every call while two
+    different requests — or the same request from two accounts sharing one store —
+    stay distinct.
+    """
+    payload = {
+        "namespace": namespace or "",
+        "method": method.upper(),
+        "url": url,
+        "body": _strip_generated(body),
+    }
+    encoded = json.dumps(payload, sort_keys=True, separators=(",", ":"), default=str)
+    return f"mpesa-idem-{hashlib.sha256(encoded.encode()).hexdigest()[:16]}"
