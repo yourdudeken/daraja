@@ -7,7 +7,7 @@ name = "daraja-sdk-py"
 # Single source of truth for the Python SDK version. The runtime reads this
 # value back (see src/daraja/_version.py) and the release workflow reads it to
 # decide what to publish, so never duplicate the string anywhere else.
-version = "1.0.1"
+version = "1.0.2"
 description = "Production-grade Python SDK for Safaricom M-Pesa Daraja API"
 readme = "README.md"
 license = { text = "MIT" }

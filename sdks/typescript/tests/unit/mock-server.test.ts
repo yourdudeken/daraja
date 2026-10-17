@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import nock from "nock";
 import { MpesaApiClient } from "../../src/client/client.js";
+import { AuthenticationError } from "../../src/errors/index.js";
 import type { MpesaConfig } from "../../src/types/index.js";
 
 const BASE = "https://sandbox.safaricom.co.ke";
@@ -149,7 +150,7 @@ describe("Mock Server Tests (nock)", () => {
     expect(result.ResponseCode).toBe("0");
   });
 
-  it("should not retry non-idempotent (POST) requests", async () => {
+  it("should not retry a POST that carries no idempotency key", async () => {
     mockAuth("no-retry-token");
 
     nock(BASE)
@@ -167,6 +168,9 @@ describe("Mock Server Tests (nock)", () => {
       consumerSecret: "test-secret",
       environment: "sandbox",
       passkey: "test-passkey",
+      // Without idempotency there is no X-Idempotency-Key, so replaying the
+      // payment cannot be made safe and the POST is attempted exactly once.
+      enableIdempotency: false,
       retryConfig: { maxRetries: 2, baseDelayMs: 10, maxDelayMs: 50 },
     } as MpesaConfig);
 
@@ -174,7 +178,7 @@ describe("Mock Server Tests (nock)", () => {
       client.post("/mpesa/stkpush/v1/processrequest", { Amount: 100 }),
     ).rejects.toThrow();
 
-    // The remaining success interceptor must be unused: POST must not be retried.
+    // The remaining success interceptor must be unused: a key-less POST is not retried.
     expect(nock.pendingMocks()).toHaveLength(1);
   });
 
@@ -241,5 +245,32 @@ describe("Mock Server Tests (nock)", () => {
     await expect(
       badClient.post("/mpesa/stkpush/v1/processrequest", {}),
     ).rejects.toThrow();
+  });
+
+  it("should surface a 401 from an API call instead of re-authenticating", async () => {
+    let authCalls = 0;
+    nock(BASE)
+      .get("/oauth/v1/generate")
+      .query({ grant_type: "client_credentials" })
+      .reply(() => {
+        authCalls += 1;
+        return [200, { access_token: "expiring-token", expires_in: 3599 }];
+      });
+
+    const api = nock(BASE)
+      .post("/mpesa/stkpush/v1/processrequest")
+      .reply(401, { errorMessage: "Invalid access token" });
+
+    const client = createClient();
+
+    await expect(
+      client.post("/mpesa/stkpush/v1/processrequest", { Amount: 100 }),
+    ).rejects.toBeInstanceOf(AuthenticationError);
+
+    // The 401 is reported as-is: exactly one token fetch (the one the call
+    // needed) and one API attempt. Refreshing on a 401 is not wired, so a
+    // hidden re-auth would show up here as a second call to either endpoint.
+    expect(authCalls).toBe(1);
+    expect(api.isDone()).toBe(true);
   });
 });
