@@ -271,36 +271,42 @@ describe("MpesaApiClient with mocks", () => {
     expect(mockReq.headers["X-Request-ID"]).toMatch(/^mpesa-/);
   });
 
-  it("should invalidate token on 401 and refresh", async () => {
+  it("should report a 401 and refresh the token only after it is invalidated", async () => {
     const client = createTestClient();
 
-    mockAxiosInstance.get.mockResolvedValueOnce({
-      data: { access_token: "expired-token", expires_in: 3600 },
+    mockAxiosInstance.get
+      .mockResolvedValueOnce({
+        data: { access_token: "expired-token", expires_in: 3600 },
+      })
+      .mockResolvedValueOnce({
+        data: { access_token: "fresh-token", expires_in: 3600 },
+      });
+
+    mockAxiosInstance.request
+      .mockRejectedValueOnce({
+        response: { status: 401, data: {} },
+        config: { headers: {} },
+        isAxiosError: true,
+      })
+      .mockResolvedValueOnce({ data: { ResponseCode: "0" } });
+
+    // The failure reaches the caller — it is not swallowed — and the 401 does
+    // not by itself fetch another token: only the call's own auth did.
+    await expect(client.post("/test", {})).rejects.toMatchObject({
+      response: { status: 401 },
     });
+    expect(mockAxiosInstance.get).toHaveBeenCalledTimes(1);
+    expect(mockAxiosInstance.request).toHaveBeenCalledTimes(1);
 
-    mockAxiosInstance.request.mockRejectedValueOnce({
-      response: { status: 401, data: {} },
-      config: { headers: {} },
-      isAxiosError: true,
-    });
-
-    mockAxiosInstance.get.mockResolvedValueOnce({
-      data: { access_token: "fresh-token", expires_in: 3600 },
-    });
-
-    mockAxiosInstance.request.mockResolvedValueOnce({
-      data: { ResponseCode: "0" },
-    });
-
-    try {
-      await client.post("/test", {});
-    } catch {
-      // expected auth error on first call
-    }
-
-    client.invalidateToken();
-    const freshToken = await client.getAccessToken();
-    expect(freshToken).toBe("fresh-token");
+    // What the client does own: once the token is invalidated, the next request
+    // authenticates again and carries the new token.
+    await client.invalidateToken();
+    await expect(client.post("/test", {})).resolves.toEqual({ ResponseCode: "0" });
+    expect(mockAxiosInstance.get).toHaveBeenCalledTimes(2);
+    const retried = mockAxiosInstance.request.mock.calls[1][0] as {
+      headers: Record<string, string>;
+    };
+    expect(retried.headers.Authorization).toBe("Bearer fresh-token");
   });
 
   it("should generate request ID with correct prefix", async () => {
