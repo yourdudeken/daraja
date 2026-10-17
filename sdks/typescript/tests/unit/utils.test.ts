@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { mkdtempSync, writeFileSync, existsSync, rmSync } from "node:fs";
+import { mkdtempSync, writeFileSync, existsSync, rmSync, readFileSync, statSync } from "node:fs";
+import { createCipheriv, createDecipheriv, randomBytes } from "node:crypto";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
@@ -232,6 +233,32 @@ describe("EncryptedTokenStore", () => {
     rmSync(dir, { recursive: true, force: true });
   });
 
+  /**
+   * Write the v1 envelope this release has to migrate: key derived by
+   * padding/truncating the password to 32 bytes, no version or salt field.
+   */
+  function writeLegacyFile(
+    filePath: string,
+    token: string,
+    expiresAt: Date,
+    password: string,
+  ): void {
+    const key = Buffer.from(password.padEnd(32, "x").slice(0, 32));
+    const iv = randomBytes(16);
+    const cipher = createCipheriv("aes-256-gcm", key, iv);
+    let encrypted = cipher.update(token, "utf8", "hex");
+    encrypted += cipher.final("hex");
+    writeFileSync(
+      filePath,
+      JSON.stringify({
+        token: encrypted,
+        expiresAt: expiresAt.toISOString(),
+        iv: iv.toString("hex"),
+        tag: cipher.getAuthTag().toString("hex"),
+      }),
+    );
+  }
+
   it("saves and loads a token round-trip", () => {
     const filePath = join(dir, "token.json");
     const store = new EncryptedTokenStore({ filePath, encryptionKey: "secret-key" });
@@ -273,6 +300,55 @@ describe("EncryptedTokenStore", () => {
       encryptionKey: "secret-key",
     });
     expect(() => store.clear()).not.toThrow();
+  });
+
+  it("migrates a legacy file to v2 on read", () => {
+    const filePath = join(dir, "token.json");
+    const expiresAt = new Date(Date.now() + 3600_000);
+    writeLegacyFile(filePath, "legacy-token", expiresAt, "secret-key");
+    const original = readFileSync(filePath, "utf8");
+    expect(JSON.parse(original).version).toBeUndefined();
+
+    const store = new EncryptedTokenStore({ filePath, encryptionKey: "secret-key" });
+    expect(store.load()).toStrictEqual({ token: "legacy-token", expiresAt });
+
+    const rewritten = JSON.parse(readFileSync(filePath, "utf8"));
+    expect(rewritten.version).toBe(2);
+    expect(rewritten.salt).toBeDefined();
+    // Still readable through the v2 path...
+    expect(store.load()).toStrictEqual({ token: "legacy-token", expiresAt });
+    // ...and no longer readable with the weak v1 derivation.
+    const weakKey = Buffer.from("secret-key".padEnd(32, "x").slice(0, 32));
+    const decipher = createDecipheriv("aes-256-gcm", weakKey, Buffer.from(rewritten.iv, "hex"));
+    decipher.setAuthTag(Buffer.from(rewritten.tag, "hex"));
+    expect(() => {
+      decipher.update(rewritten.token, "hex", "utf8");
+      decipher.final("utf8");
+    }).toThrow();
+  });
+
+  it("keeps a v1 backup when migrating", () => {
+    const filePath = join(dir, "token.json");
+    writeLegacyFile(filePath, "legacy-token", new Date(Date.now() + 3600_000), "secret-key");
+    const original = readFileSync(filePath, "utf8");
+
+    new EncryptedTokenStore({ filePath, encryptionKey: "secret-key" }).load();
+
+    const backupPath = `${filePath}.v1.bak`;
+    expect(readFileSync(backupPath, "utf8")).toBe(original);
+    expect(statSync(backupPath).mode & 0o777).toBe(0o600);
+  });
+
+  it("leaves a legacy file alone when the password is wrong", () => {
+    const filePath = join(dir, "token.json");
+    writeLegacyFile(filePath, "legacy-token", new Date(), "the-real-key");
+    const original = readFileSync(filePath, "utf8");
+
+    const store = new EncryptedTokenStore({ filePath, encryptionKey: "wrong-key" });
+    expect(store.load()).toBeNull();
+    // A failed read must not migrate (or damage) the file.
+    expect(readFileSync(filePath, "utf8")).toBe(original);
+    expect(existsSync(`${filePath}.v1.bak`)).toBe(false);
   });
 });
 

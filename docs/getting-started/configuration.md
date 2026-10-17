@@ -161,6 +161,24 @@ contain customer data (MSISDN, account numbers, amounts).
   on `close()`. At most a few milliseconds of undelivered state can be lost in a
   hard crash; Python commits each mutation immediately.
 
+### Token store encryption
+
+`EncryptedTokenStore` (both SDKs) keeps the OAuth token in a local file encrypted
+with **AES-256-GCM**; the key is derived from your encryption key with
+**PBKDF2-SHA256** (200 000 iterations) and a per-file random salt, and the file
+is written with mode `0600`.
+
+Releases before 1.0.2 derived the key by padding/truncating the encryption key to
+32 bytes, which was only as strong as the key itself. Reading such a file now
+**migrates it in place**: the token is re-encrypted with the PBKDF2 derivation,
+and the original envelope is kept beside it as `<file>.v1.bak` (mode `0600`,
+never overwritten).
+
+The migration is **one-way** — a migrated file can no longer be read by those
+older releases — so keep the backup until you have confirmed the upgrade, then
+delete it. Use a high-entropy encryption key, since it ultimately protects the
+token in both formats.
+
 
 ## Language specifics
 

@@ -5,6 +5,8 @@ import asyncio
 import io
 import json
 import logging
+import os
+import stat
 import sys
 import threading
 import time
@@ -12,6 +14,9 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
 
 import pytest
+from cryptography.exceptions import InvalidTag
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
 from daraja.exceptions import (
     APIConnectionError,
@@ -344,6 +349,30 @@ class TestInMemorySharedTokenCacheExpiry:
 
 
 class TestEncryptedTokenStore:
+    @staticmethod
+    def _write_legacy_file(path, token, expires_at, password):
+        """Write the pre-1.0.2 (v1) envelope this release has to migrate.
+
+        The key was the password padded/truncated to 32 bytes, with no version or
+        salt field.
+        """
+        key = password.encode("utf-8").ljust(32, b"x")[:32]
+        iv = os.urandom(16)
+        encryptor = Cipher(
+            algorithms.AES(key), modes.GCM(iv), backend=default_backend()
+        ).encryptor()
+        encrypted = encryptor.update(token.encode()) + encryptor.finalize()
+        path.write_text(
+            json.dumps(
+                {
+                    "token": encrypted.hex(),
+                    "expires_at": expires_at.isoformat(),
+                    "iv": iv.hex(),
+                    "tag": encryptor.tag.hex(),
+                }
+            )
+        )
+
     def test_save_load_roundtrip(self, tmp_path):
         file_path = str(tmp_path / "token.json")
         store = EncryptedTokenStore(file_path, "secret-key")
@@ -376,6 +405,56 @@ class TestEncryptedTokenStore:
     def test_clear_missing_file_no_error(self, tmp_path):
         store = EncryptedTokenStore(str(tmp_path / "missing.json"), "secret-key")
         store.clear()  # should not raise
+
+    def test_load_migrates_legacy_file_to_v2(self, tmp_path):
+        file_path = tmp_path / "token.json"
+        expires_at = datetime.now() + timedelta(hours=1)
+        self._write_legacy_file(file_path, "legacy-token", expires_at, "secret-key")
+        original = file_path.read_text()
+        assert "version" not in json.loads(original)
+
+        store = EncryptedTokenStore(str(file_path), "secret-key")
+        assert store.load() == ("legacy-token", expires_at)
+
+        rewritten = json.loads(file_path.read_text())
+        assert rewritten["version"] == 2
+        assert "salt" in rewritten
+        # The token is still readable through the v2 path, and no longer
+        # readable with the weak v1 derivation.
+        assert store.load() == ("legacy-token", expires_at)
+        weak_key = b"secret-key".ljust(32, b"x")[:32]
+        decryptor = Cipher(
+            algorithms.AES(weak_key),
+            modes.GCM(bytes.fromhex(rewritten["iv"]), bytes.fromhex(rewritten["tag"])),
+            backend=default_backend(),
+        ).decryptor()
+        with pytest.raises(InvalidTag):
+            decryptor.update(bytes.fromhex(rewritten["token"])) + decryptor.finalize()
+
+    def test_migration_keeps_a_v1_backup(self, tmp_path):
+        file_path = tmp_path / "token.json"
+        expires_at = datetime.now() + timedelta(hours=1)
+        self._write_legacy_file(file_path, "legacy-token", expires_at, "secret-key")
+        original = file_path.read_text()
+
+        EncryptedTokenStore(str(file_path), "secret-key").load()
+
+        backup = tmp_path / "token.json.v1.bak"
+        assert backup.read_text() == original
+        assert stat.S_IMODE(backup.stat().st_mode) == 0o600
+
+    def test_legacy_file_with_wrong_password_is_left_alone(self, tmp_path):
+        file_path = tmp_path / "token.json"
+        self._write_legacy_file(
+            file_path, "legacy-token", datetime.now(), "the-real-key"
+        )
+        original = file_path.read_text()
+
+        store = EncryptedTokenStore(str(file_path), "wrong-key")
+        assert store.load() is None
+        # A failed read must not migrate (or damage) the file.
+        assert file_path.read_text() == original
+        assert not (tmp_path / "token.json.v1.bak").exists()
 
 
 class TestTokenBucketRateLimiter:
