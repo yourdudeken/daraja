@@ -19,8 +19,18 @@ interface PersistentDeliveryRecord {
 const DEFAULT_MAX_RETRIES = 3;
 /** Bounded, but generous enough to absorb a transient backlog. */
 const DEFAULT_MAX_QUEUE_SIZE = 10_000;
+/** Bound on dead-lettered rows; the oldest are evicted past this. */
+const DEFAULT_MAX_DLQ_SIZE = 10_000;
 /** Mutations coalesce inside this window; the DB file is rewritten at most once. */
 const DEFAULT_FLUSH_INTERVAL_MS = 50;
+
+/** UTC `YYYY-MM-DD HH:MM:SS.sss`, the same shape SQLite's `datetime()` emits. */
+function utcTimestamp(offsetMs = 0): string {
+  return new Date(Date.now() + offsetMs)
+    .toISOString()
+    .replace("T", " ")
+    .replace("Z", "");
+}
 
 export interface PersistentWebhookQueueOptions {
   dbPath?: string;
@@ -28,6 +38,8 @@ export interface PersistentWebhookQueueOptions {
   maxRetries?: number;
   /** Maximum rows kept in the live queue; overflow is archived to the DLQ. */
   maxQueueSize?: number;
+  /** Maximum rows kept in the DLQ; the oldest are evicted past this. */
+  maxDlqSize?: number;
   /** Debounce window (ms) for persisting mutations. */
   flushIntervalMs?: number;
   pollIntervalMs?: number;
@@ -39,6 +51,7 @@ export class PersistentWebhookRetryQueue {
   private readonly logger: Logger;
   private readonly maxRetries: number;
   private readonly maxQueueSize: number;
+  private readonly maxDlqSize: number;
   private readonly flushIntervalMs: number;
   private readonly webhookManager: WebhookManager;
   private readonly dbPath: string;
@@ -53,6 +66,7 @@ export class PersistentWebhookRetryQueue {
     this.logger = options?.logger ?? noopLogger;
     this.maxRetries = options?.maxRetries ?? DEFAULT_MAX_RETRIES;
     this.maxQueueSize = options?.maxQueueSize ?? DEFAULT_MAX_QUEUE_SIZE;
+    this.maxDlqSize = options?.maxDlqSize ?? DEFAULT_MAX_DLQ_SIZE;
     this.flushIntervalMs = options?.flushIntervalMs ?? DEFAULT_FLUSH_INTERVAL_MS;
     this.dbPath = options?.dbPath ?? path.join(process.cwd(), "mpesa-webhook-queue.db");
     this.logger.info("PersistentWebhookRetryQueue initialized", { dbPath: this.dbPath });
@@ -144,13 +158,71 @@ export class PersistentWebhookRetryQueue {
    * one archived, so the queued backlog keeps its original order.
    */
   private archiveOverflow(event: string, payload: string): void {
+    this.archiveToDlq(event, payload, 0, "queue overflow", utcTimestamp());
+    this.logger.warn("Webhook queue is full, event archived to DLQ", { event });
+  }
+
+  /**
+   * Insert a dead letter and enforce the DLQ retention bound. Oldest evicted
+   * first, so the bound is deterministic.
+   */
+  private archiveToDlq(
+    event: string,
+    payload: string,
+    attempts: number,
+    lastError: string,
+    createdAt: string,
+  ): void {
     this.db.run(
       `INSERT INTO webhook_dlq (event, payload, attempts, last_error, created_at)
        VALUES (?, ?, ?, ?, ?)`,
-      [event, payload, 0, "queue overflow", new Date().toISOString()],
+      [event, payload, attempts, lastError, createdAt],
     );
+    const overflow = this.getDlqSize() - this.maxDlqSize;
+    if (overflow > 0) {
+      this.db.run(
+        `DELETE FROM webhook_dlq WHERE id IN
+         (SELECT id FROM webhook_dlq ORDER BY id ASC LIMIT ?)`,
+        [overflow],
+      );
+      this.logger.warn("DLQ retention bound reached, evicted oldest dead letters", {
+        evicted: overflow,
+      });
+    }
     this.markDirty();
-    this.logger.warn("Webhook queue is full, event archived to DLQ", { event });
+  }
+
+  /** Number of dead-lettered events awaiting retention. */
+  getDlqSize(): number {
+    const rows = this.queryRows<{ count: number }>("SELECT COUNT(*) as count FROM webhook_dlq");
+    return rows[0]?.count ?? 0;
+  }
+
+  /**
+   * Delete dead-lettered events and return how many were removed.
+   *
+   * `maxAgeMs` limits the purge to events dead-lettered longer ago than that;
+   * omitting it empties the DLQ. Dead-lettered payloads may contain customer
+   * data (MSISDN, account numbers), so this is the retention hook.
+   */
+  purgeDlq(options?: { maxAgeMs?: number }): number {
+    const before = this.getDlqSize();
+    if (options?.maxAgeMs === undefined) {
+      this.db.run("DELETE FROM webhook_dlq");
+    } else {
+      // SQLite has no "milliseconds" modifier; fractional seconds are accepted
+      // and compared at the stored second resolution.
+      const seconds = Math.max(0, options.maxAgeMs) / 1000;
+      this.db.run("DELETE FROM webhook_dlq WHERE failed_at <= datetime('now', ?)", [
+        `-${seconds} seconds`,
+      ]);
+    }
+    const removed = before - this.getDlqSize();
+    if (removed > 0) {
+      this.markDirty();
+      this.logger.info("Dead letter queue purged", { removed });
+    }
+    return removed;
   }
 
   enqueue(event: string, payload: unknown): void {
@@ -209,10 +281,7 @@ export class PersistentWebhookRetryQueue {
         const errorMsg = String(err);
         if (newAttempts < this.maxRetries) {
           const backoffMs = calculateBackoff(newAttempts - 1, 1000, 30000);
-          const nextRetry = new Date(Date.now() + backoffMs)
-            .toISOString()
-            .replace("T", " ")
-            .replace("Z", "");
+          const nextRetry = utcTimestamp(backoffMs);
           this.db.run(
             `INSERT INTO webhook_queue (event, payload, attempts, last_error, max_retries, next_retry_at)
              VALUES (?, ?, ?, ?, ?, ?)`,
@@ -225,12 +294,7 @@ export class PersistentWebhookRetryQueue {
             backoffMs,
           });
         } else {
-          this.db.run(
-            `INSERT INTO webhook_dlq (event, payload, attempts, last_error, created_at)
-             VALUES (?, ?, ?, ?, ?)`,
-            [row.event, row.payload, newAttempts, errorMsg, row.created_at],
-          );
-          this.markDirty();
+          this.archiveToDlq(row.event, row.payload, newAttempts, errorMsg, row.created_at);
           this.logger.error("Webhook delivery failed, moved to DLQ", {
             event: row.event,
             attempts: newAttempts,

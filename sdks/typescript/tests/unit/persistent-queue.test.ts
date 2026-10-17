@@ -14,6 +14,25 @@ function frozenManager(): WebhookManager {
   return manager;
 }
 
+function failingManager(): WebhookManager {
+  const manager = new WebhookManager();
+  manager.on("evt", () => {
+    throw new Error("boom");
+  });
+  return manager;
+}
+
+async function waitFor(predicate: () => boolean, timeoutMs = 5000): Promise<void> {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    if (predicate()) return;
+    await new Promise((resolve) => setTimeout(resolve, 10));
+  }
+  if (!predicate()) {
+    throw new Error("condition was not met before the timeout");
+  }
+}
+
 describe("PersistentWebhookRetryQueue persistence", () => {
   let dir: string;
 
@@ -86,6 +105,51 @@ describe("PersistentWebhookRetryQueue persistence", () => {
     expect(dlq).toHaveLength(enqueued - 1 - maxQueueSize);
     expect(dlq.every((row) => row.last_error === "queue overflow")).toBe(true);
     expect(dlq.map((row) => JSON.parse(row.payload).i)).toEqual([4, 5, 6, 7, 8, 9]);
+    queue.close();
+  });
+
+  it("bounds the DLQ and evicts the oldest dead letters", async () => {
+    const queue = new PersistentWebhookRetryQueue(failingManager(), {
+      dbPath: join(dir, "queue.db"),
+      maxRetries: 1,
+      maxDlqSize: 3,
+      flushIntervalMs: 10,
+    });
+    await queue.init();
+    for (let i = 0; i < 10; i += 1) {
+      queue.enqueue("evt", { i });
+    }
+
+    // The bound is already reached after three failures, so wait for the newest
+    // event to be dead-lettered instead of waiting for the size to reach ten.
+    await waitFor(() =>
+      queue.getDeadLetterQueue().some((row) => JSON.parse(row.payload).i === 9),
+    );
+    const dlq = queue.getDeadLetterQueue();
+    expect(dlq).toHaveLength(3);
+    expect(dlq.map((row) => JSON.parse(row.payload).i)).toEqual([7, 8, 9]);
+    queue.close();
+  });
+
+  it("purges the DLQ on demand, with an age cutoff", async () => {
+    const queue = new PersistentWebhookRetryQueue(failingManager(), {
+      dbPath: join(dir, "queue.db"),
+      maxRetries: 1,
+      flushIntervalMs: 10,
+    });
+    await queue.init();
+    for (let i = 0; i < 4; i += 1) {
+      queue.enqueue("evt", { i });
+    }
+    await waitFor(() => queue.getDlqSize() === 4);
+
+    // Nothing is an hour old yet.
+    expect(queue.purgeDlq({ maxAgeMs: 3_600_000 })).toBe(0);
+    expect(queue.getDlqSize()).toBe(4);
+    // Everything dead-lettered up to now is past a zero cutoff.
+    expect(queue.purgeDlq({ maxAgeMs: 0 })).toBe(4);
+    expect(queue.getDlqSize()).toBe(0);
+    expect(queue.purgeDlq()).toBe(0);
     queue.close();
   });
 

@@ -117,6 +117,36 @@ key and are not interchangeable.
 
 Requests that match no override use the top-level rate-limiter bucket.
 
+### Webhook queue persistence & retention
+
+The persistent webhook retry queues (Python and TypeScript) spool callbacks to a
+local SQLite file and hold events that could not be delivered. Both queues and
+their dead-letter queue (DLQ) are **bounded**, and both payload stores may
+contain customer data (MSISDN, account numbers, amounts).
+
+| Option | Default | Purpose |
+| ------ | ------- | ------- |
+| `max_queue_size` / `maxQueueSize` | 10 000 | Maximum events held for delivery |
+| `max_dlq_size` / `maxDlqSize` | 10 000 | Maximum dead-lettered events retained |
+
+- **Overflow policy:** when the live queue is full the incoming event is moved to
+  the DLQ intact (with `last_error = "queue overflow"`); events are never
+  silently dropped. The already-queued backlog keeps its original order.
+- **DLQ retention:** once the DLQ is at its bound, the oldest dead letters are
+  evicted first. Purge on demand with `purge_dlq(max_age_seconds=…)` /
+  `purgeDlq({ maxAgeMs: … })` — pass an age to delete only older entries, or no
+  argument to empty the DLQ. Call it from a scheduled job to enforce your own
+  retention window.
+- **PII:** queued and dead-lettered payloads are stored **unencrypted** in the
+  queue file, because they are delivered as-is. Treat the file as customer data:
+  restrict its permissions, place it on a protected volume, and purge the DLQ on
+  a schedule that matches your privacy policy. The OAuth token store is
+  encrypted separately and is not affected by these bounds.
+- **Durability:** TypeScript persists mutations with a short debounce (default
+  50 ms, `flushIntervalMs`) instead of rewriting the file per event, and flushes
+  on `close()`. At most a few milliseconds of undelivered state can be lost in a
+  hard crash; Python commits each mutation immediately.
+
 
 ## Language specifics
 

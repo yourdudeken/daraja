@@ -217,6 +217,99 @@ def test_sqlite_access_is_serialized_across_threads(tmp_path, monkeypatch):
     queue.close()
 
 
+class BlockingManager:
+    """Parks the worker inside a delivery so queued rows stay observable."""
+
+    def __init__(self) -> None:
+        self.started = threading.Event()
+        self.release = threading.Event()
+
+    def emit(self, event_type: str, payload: object) -> None:
+        self.started.set()
+        self.release.wait(10)
+
+
+class TestQueueBoundsAndRetention:
+    def test_queue_bound_archives_overflow_to_dlq(self, tmp_path):
+        manager = BlockingManager()
+        queue = PersistentWebhookRetryQueue(
+            manager,
+            db_path=str(tmp_path / "queue.db"),
+            max_retries=1,
+            max_queue_size=3,
+        )
+        queue.enqueue("evt", {"i": 0})
+        assert manager.started.wait(10), "worker never started"
+
+        for index in range(1, 10):
+            queue.enqueue("evt", {"i": index})
+
+        assert queue.get_queue_size() == 3
+        dlq = queue.get_dead_letter_queue()
+        assert len(dlq) == 6
+        assert all(record.last_error == "queue overflow" for record in dlq)
+        # Newest-first overflow: the queued backlog keeps its original order and
+        # the newest events that no longer fit are the ones archived.
+        assert [record.payload["i"] for record in dlq] == [4, 5, 6, 7, 8, 9]
+
+        manager.release.set()
+        queue.close()
+
+    def test_dlq_retention_bound_evicts_oldest(self, tmp_path):
+        manager = AlwaysFailingManager()
+        queue = PersistentWebhookRetryQueue(
+            manager,
+            db_path=str(tmp_path / "queue.db"),
+            max_retries=1,
+            max_dlq_size=3,
+        )
+        for index in range(10):
+            queue.enqueue("evt", {"i": index})
+
+        # The bound is already reached after three failures, so wait for the
+        # newest event to be dead-lettered instead of waiting for a size change.
+        assert _wait_until(
+            lambda: any(record.payload["i"] == 9 for record in queue.get_dead_letter_queue())
+        )
+        dlq = queue.get_dead_letter_queue()
+        assert len(dlq) == 3
+        assert [record.payload["i"] for record in dlq] == [7, 8, 9]
+        queue.close()
+
+    def test_purge_dlq_empties_the_queue(self, tmp_path):
+        queue = PersistentWebhookRetryQueue(
+            AlwaysFailingManager(),
+            db_path=str(tmp_path / "queue.db"),
+            max_retries=1,
+        )
+        for index in range(5):
+            queue.enqueue("evt", {"i": index})
+        assert _wait_until(lambda: len(queue.get_dead_letter_queue()) == 5)
+
+        assert queue.purge_dlq() == 5
+        assert queue.get_dead_letter_queue() == []
+        assert queue.purge_dlq() == 0
+        queue.close()
+
+    def test_purge_dlq_respects_max_age(self, tmp_path):
+        queue = PersistentWebhookRetryQueue(
+            AlwaysFailingManager(),
+            db_path=str(tmp_path / "queue.db"),
+            max_retries=1,
+        )
+        for index in range(3):
+            queue.enqueue("evt", {"i": index})
+        assert _wait_until(lambda: len(queue.get_dead_letter_queue()) == 3)
+
+        # Nothing is an hour old yet.
+        assert queue.purge_dlq(max_age_seconds=3600) == 0
+        assert len(queue.get_dead_letter_queue()) == 3
+        # Everything dead-lettered up to now is past the cutoff.
+        assert queue.purge_dlq(max_age_seconds=0) == 3
+        assert queue.get_dead_letter_queue() == []
+        queue.close()
+
+
 class TestHandlerReentrancy:
 
     def test_handler_can_enqueue_without_deadlock(self, tmp_path):
