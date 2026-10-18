@@ -195,8 +195,9 @@ never overwritten).
 
 The migration is **one-way** — a migrated file can no longer be read by those
 older releases — so keep the backup until you have confirmed the upgrade, then
-delete it. Use a high-entropy encryption key, since it ultimately protects the
-token in both formats.
+delete it. `clear()` deletes the token file *and* its `.v1.bak` backup, so a
+rotation or logout does not leave the old envelope behind. Use a high-entropy
+encryption key, since it ultimately protects the token in both formats.
 
 
 ## Language specifics

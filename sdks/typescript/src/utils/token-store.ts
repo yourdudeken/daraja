@@ -167,10 +167,17 @@ export class EncryptedTokenStore {
     const backupPath = `${this.filePath}.v1.bak`;
     try {
       if (!existsSync(backupPath)) {
-        writeFileSync(backupPath, readFileSync(this.filePath, "utf8"), {
-          mode: 0o600,
-          flag: "wx",
-        });
+        try {
+          writeFileSync(backupPath, readFileSync(this.filePath, "utf8"), {
+            mode: 0o600,
+            flag: "wx",
+          });
+        } catch (error) {
+          // A backup that appeared between the check and the write is still a
+          // backup: keep it and continue migrating rather than leaving the weak
+          // file in place.
+          if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
+        }
       }
       this.save(token, expiresAt);
     } catch {
@@ -183,16 +190,20 @@ export class EncryptedTokenStore {
   }
 
   clear(): void {
-    try {
-      if (existsSync(this.filePath)) {
-        try {
-          unlinkSync(this.filePath);
-        } catch {
-          writeFileSync(this.filePath, "", { mode: 0o600 });
+    // The migration backup is a second copy of the token, so deleting the token
+    // must delete it too.
+    for (const target of [this.filePath, `${this.filePath}.v1.bak`]) {
+      try {
+        if (existsSync(target)) {
+          try {
+            unlinkSync(target);
+          } catch {
+            writeFileSync(target, "", { mode: 0o600 });
+          }
         }
+      } catch {
+        // ignore
       }
-    } catch {
-      // ignore
     }
   }
 }
