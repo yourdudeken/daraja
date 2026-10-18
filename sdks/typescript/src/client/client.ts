@@ -6,7 +6,7 @@ import { generateSecurityCredential, getCertificate } from "../utils/index.js";
 import type { MpesaConfig, ResolvedConfig, Logger, LoggingHook, AccessTokenResponse, TokenCache, Tracer, ConnectionPoolConfig } from "../types/index.js";
 import { maskSensitiveData, noopLogger, generateRequestId, createTracer, withSpan } from "../utils/index.js";
 import { setupRetryInterceptor, mapAxiosError } from "../interceptors/retry.js";
-import { AuthenticationError } from "../errors/index.js";
+import { AuthenticationError, ValidationError } from "../errors/index.js";
 import { CircuitBreaker } from "../utils/circuit-breaker.js";
 import { TokenBucketRateLimiter, NoopRateLimiter, EndpointRateLimiterRouter } from "../utils/rate-limiter.js";
 import { IdempotencyStore, InMemoryIdempotencyStore, generateIdempotencyKey } from "../utils/idempotency.js";
@@ -411,7 +411,16 @@ export class MpesaApiClient {
   }
 
   getEndpoint(name: string): string {
-    return this.endpoints[name] ?? "";
+    // An unknown key used to resolve to "" and the request went to the base URL
+    // instead of the intended path. Fail loudly instead. `Object.hasOwn` (not a
+    // truthiness check) keeps inherited names such as "constructor" unknown.
+    const url = Object.hasOwn(this.endpoints, name) ? this.endpoints[name] : undefined;
+    if (url === undefined) {
+      throw new ValidationError(
+        `Unknown endpoint: "${name}". Known endpoints: ${Object.keys(this.endpoints).sort().join(", ")}`,
+      );
+    }
+    return url;
   }
 
   async invalidateToken(): Promise<void> {
