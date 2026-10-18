@@ -376,16 +376,14 @@ describe("PullTransactionsService", () => {
     expect(client.post).toHaveBeenCalledWith("/endpoint/PULL_TRANSACTIONS_REGISTER", request);
   });
 
-  it("query GETs PULL_TRANSACTIONS_QUERY endpoint with the request body", async () => {
+  it("query posts the request body to PULL_TRANSACTIONS_QUERY endpoint", async () => {
     const client = createFakeClient();
     const service = new PullTransactionsService(client);
     const request = { startDate: "2024-01-01" };
     await service.query(request as never);
-    expect(client.request).toHaveBeenCalledWith({
-      method: "GET",
-      url: "/endpoint/PULL_TRANSACTIONS_QUERY",
-      data: request,
-    });
+    // The documented contract is POST for both endpoints — a GET with a body
+    // was the deviation this asserts against.
+    expect(client.post).toHaveBeenCalledWith("/endpoint/PULL_TRANSACTIONS_QUERY", request);
   });
 
   it("register parses the spaced wire keys (Response Status / Response Description)", async () => {

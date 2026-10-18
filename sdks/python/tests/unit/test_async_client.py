@@ -388,7 +388,9 @@ async def test_async_pull_transactions_query(monkeypatch):
         "ShortCode": "600984", "StartDate": "2024-01-01", "EndDate": "2024-01-02",
     })
     assert result.ResponseCode == "0"
-    assert captured["method"] == "GET"
+    # The documented contract is POST for both pull-transactions endpoints.
+    assert captured["method"] == "POST"
+    assert captured["url"].endswith("/pulltransactions/v1/query")
     assert captured["data"]["ShortCode"] == "600984"
     await client.close()
 

@@ -1,3 +1,5 @@
+import json
+
 import httpx
 import pytest
 import respx
@@ -294,3 +296,57 @@ class TestErrorMock:
         from daraja.exceptions import MpesaAPIError
         with pytest.raises(MpesaAPIError):
             client._request("POST", f"{BASE_URL}/nonexistent", {})
+
+
+class TestPullTransactionsContract:
+    @respx.mock
+    def test_query_is_post_with_json_body(self, client: Mpesa) -> None:
+        """FR-30 / BUG-012 / API-001: the query endpoint is POST, per the docs.
+
+        Asserted on the wire (method + body), not on the internal helper the call
+        happens to use, so a revert to the undocumented GET-with-body fails here.
+        """
+        _mock_auth(respx, "pull-token")
+        route = respx.post(f"{BASE_URL}/pulltransactions/v1/query").respond(
+            200, json={
+                "ResponseRefID": "r1",
+                "ResponseCode": "0",
+                "ResponseMessage": "ok",
+                "Response": [],
+            },
+        )
+
+        result = client.pull_transactions_query({
+            "ShortCode": "600984",
+            "StartDate": "2024-01-01",
+            "EndDate": "2024-01-02",
+        })
+
+        assert result.ResponseCode == "0"
+        request = route.calls.last.request
+        assert request.method == "POST"
+        assert json.loads(request.content)["ShortCode"] == "600984"
+
+    @respx.mock
+    def test_register_is_post_with_json_body(self, client: Mpesa) -> None:
+        """The register half of the same contract (unchanged, pinned as a guard)."""
+        _mock_auth(respx, "pull-token")
+        route = respx.post(f"{BASE_URL}/pulltransactions/v1/register").respond(
+            200, json={
+                "ResponseRefID": "r1",
+                "ResponseStatus": "1001",
+                "ShortCode": "600984",
+                "ResponseDescription": "success",
+            },
+        )
+
+        result = client.pull_transactions_register({
+            "ShortCode": "600984",
+            "NominatedNumber": "254708374149",
+            "CallBackURL": "https://example.com/callback",
+        })
+
+        assert result.ResponseRefID == "r1"
+        request = route.calls.last.request
+        assert request.method == "POST"
+        assert json.loads(request.content)["ShortCode"] == "600984"

@@ -499,7 +499,7 @@ class TestPullTransactionsService:
             "ShortCode": "600984",
             "ResponseDescription": "success",
         })
-        service = PullTransactionsService(post, FakeGet())
+        service = PullTransactionsService(post)
         result = service.register({
             "ShortCode": "600984",
             "NominatedNumber": "254708374149",
@@ -509,22 +509,22 @@ class TestPullTransactionsService:
         assert post.calls[0][0] == "PULL_TRANSACTIONS_REGISTER"
 
     def test_query(self):
-        post = FakePost()
-        get = FakeGet({
+        post = FakePost({
             "ResponseRefID": "r1",
             "ResponseCode": "0",
             "ResponseMessage": "ok",
             "Response": [],
         })
-        service = PullTransactionsService(post, get)
+        service = PullTransactionsService(post)
         result = service.query({
             "ShortCode": "600984",
             "StartDate": "2024-01-01",
             "EndDate": "2024-01-02",
         })
         assert result.ResponseCode == "0"
-        assert get.calls[0][0] == "PULL_TRANSACTIONS_QUERY"
-        assert post.calls == []
+        # The documented contract is POST for both endpoints.
+        assert post.calls[0][0] == "PULL_TRANSACTIONS_QUERY"
+        assert post.calls[0][1]["ShortCode"] == "600984"
 
     def test_register_parses_spaced_wire_keys(self):
         # The sandbox returns "Response Status" / "Response Description"
@@ -535,7 +535,7 @@ class TestPullTransactionsService:
             "ShortCode": "174379",
             "Response Description": "Shortcode already Registered!",
         })
-        service = PullTransactionsService(post, FakeGet())
+        service = PullTransactionsService(post)
         result = service.register({
             "ShortCode": "174379",
             "NominatedNumber": "254708374149",
@@ -546,13 +546,13 @@ class TestPullTransactionsService:
 
     def test_query_tolerates_echo_body(self):
         # The sandbox echoes the request body back for the query endpoint.
-        get = FakeGet({
+        post = FakePost({
             "ShortCode": "174379",
             "StartDate": "2026-01-01",
             "EndDate": "2026-06-18",
             "OffSetValue": "0",
         })
-        service = PullTransactionsService(FakePost(), get)
+        service = PullTransactionsService(post)
         result = service.query({
             "ShortCode": "174379",
             "StartDate": "2026-01-01",

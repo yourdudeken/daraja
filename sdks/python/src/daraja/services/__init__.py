@@ -554,9 +554,8 @@ class LipaNaBongaService:
 
 
 class PullTransactionsService:
-    def __init__(self, post: PostFn, get: GetFn) -> None:
+    def __init__(self, post: PostFn) -> None:
         self._post = post
-        self._get = get
 
     def register(
         self, request: PullTransactionsRegisterRequest | dict[str, Any]
@@ -573,7 +572,7 @@ class PullTransactionsService:
     ) -> PullTransactionsQueryResponse:
         if isinstance(request, dict):
             request = PullTransactionsQueryRequest(**request)
-        result = self._get("PULL_TRANSACTIONS_QUERY", request.model_dump())
+        result = self._post("PULL_TRANSACTIONS_QUERY", request.model_dump())
         return PullTransactionsQueryResponse(**result)
 
 
