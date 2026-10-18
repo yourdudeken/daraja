@@ -1,4 +1,5 @@
 import logging
+from decimal import Decimal
 from typing import Any, Literal, Protocol, runtime_checkable
 
 from pydantic import AliasChoices, BaseModel, ConfigDict, Field
@@ -255,9 +256,9 @@ class AccountBalanceResponse(BaseModel):
 class AccountInfo(BaseModel):
     accountName: str = ""
     currency: str = ""
-    availableBalance: float = 0.0
-    unclearedFunds: float = 0.0
-    reservedFunds: float = 0.0
+    availableBalance: Decimal = Decimal("0")
+    unclearedFunds: Decimal = Decimal("0")
+    reservedFunds: Decimal = Decimal("0")
 
 
 class AccountBalanceResult(BaseModel):

@@ -32,7 +32,7 @@ export class TransactionStatusService {
     resultCode: number;
     resultDescription: string;
     transactionStatus?: string;
-    amount?: number;
+    amount?: string;
     receiptNumber?: string;
   } {
     const result = payload.Result;
@@ -49,7 +49,8 @@ export class TransactionStatusService {
       resultCode: result.ResultCode,
       resultDescription: result.ResultDesc,
       transactionStatus: details["TransactionStatus"] as string,
-      amount: details["Amount"] as number,
+      // Money is exposed as an exact decimal string, never a JS number.
+      amount: details["Amount"] === undefined ? undefined : String(details["Amount"]),
       receiptNumber: details["ReceiptNo"] as string,
     };
   }

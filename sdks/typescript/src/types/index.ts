@@ -163,7 +163,7 @@ export interface STKCallbackResult {
   checkoutRequestId: string;
   resultCode: number;
   resultDescription: string;
-  amount?: number;
+  amount?: string;
   receiptNumber?: string;
   transactionDate?: string;
   phoneNumber?: string;

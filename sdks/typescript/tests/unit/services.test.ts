@@ -712,7 +712,7 @@ describe("STKPushService", () => {
     };
     const result = STKPushService.parseCallback(payload);
     expect(result.success).toBe(true);
-    expect(result.amount).toBe(1);
+    expect(result.amount).toBe("1");
     expect(result.receiptNumber).toBe("NLJ7RT61SV");
     expect(result.transactionDate).toBe("20191219102015");
     expect(result.phoneNumber).toBe("254708374149");
@@ -758,11 +758,41 @@ describe("AccountBalanceService.parseCallback", () => {
     };
     const result = AccountBalanceService.parseCallback(payload);
     expect(result.success).toBe(true);
-    expect(result.balances?.workingAccount?.availableBalance).toBe(1000);
-    expect(result.balances?.utilityAccount?.availableBalance).toBe(2000);
-    expect(result.balances?.chargesPaidAccount?.availableBalance).toBe(3000);
-    expect(result.balances?.organizationSettlementAccount?.availableBalance).toBe(4000);
-    expect(result.balances?.floatAccount?.availableBalance).toBe(5000);
+    expect(result.balances?.workingAccount?.availableBalance).toBe("1000.00");
+    expect(result.balances?.utilityAccount?.availableBalance).toBe("2000.00");
+    expect(result.balances?.chargesPaidAccount?.availableBalance).toBe("3000.00");
+    expect(result.balances?.organizationSettlementAccount?.availableBalance).toBe("4000.00");
+    expect(result.balances?.floatAccount?.availableBalance).toBe("5000.00");
+  });
+
+  it("keeps balance digits exactly as M-Pesa sent them", () => {
+    // FR-31 / API-005: `parseFloat("100.10")` returns 100.1 and loses the exact
+    // cents, so balances are exposed as strings instead.
+    const payload: MpesaResult = {
+      Result: {
+        ResultType: 0,
+        ResultCode: 0,
+        ResultDesc: "Success",
+        OriginatorConversationID: "orig-1",
+        ConversationID: "conv-1",
+        TransactionID: "txn-1",
+        ResultParameters: {
+          ResultParameter: [
+            {
+              Key: "AccountBalance",
+              Value: "Working Account|KES|100.10|0.005|0.00|0.00",
+            },
+          ],
+        },
+      },
+    };
+
+    const result = AccountBalanceService.parseCallback(payload);
+    const working = result.balances?.workingAccount;
+
+    expect(working?.availableBalance).toBe("100.10");
+    expect(working?.unclearedFunds).toBe("0.005");
+    expect(typeof working?.availableBalance).toBe("string");
   });
 
   it("returns no balances when AccountBalance param missing", () => {

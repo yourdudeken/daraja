@@ -5,6 +5,7 @@ import os
 import stat
 import sys
 import time
+from decimal import Decimal
 
 import pytest
 
@@ -63,10 +64,24 @@ class TestWebhookManager:
         assert result["merchant_request_id"] == "29115-34620561-1"
         assert result["checkout_request_id"] == "ws_CO_191220191020363925"
         assert result["result_code"] == 0
-        assert result["amount"] == 1.0
+        assert result["amount"] == Decimal("1")
         assert result["receipt_number"] == "NLJ7RT61SV"
         assert result["transaction_date"] == "20191219102115"
         assert result["phone_number"] == "254708374149"
+
+    def test_parse_stk_callback_amount_is_exact_decimal(self):
+        """FR-31 / BUG-013: the parsed amount must not go through a float.
+
+        `Decimal("100.10") == 100.10` is False, so this fails if the amount is
+        parsed with `float()`.
+        """
+        payload = json.loads(json.dumps(STK_CALLBACK_SUCCESS))
+        payload["Body"]["stkCallback"]["CallbackMetadata"]["Item"][0]["Value"] = 100.10
+
+        result = WebhookManager().parse_stk_callback(payload)
+
+        assert isinstance(result["amount"], Decimal)
+        assert result["amount"] == Decimal("100.10")
 
     def test_parse_stk_callback_failed(self):
         manager = WebhookManager()
