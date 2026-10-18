@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import nock from "nock";
 import { MpesaApiClient } from "../../src/client/client.js";
-import { AuthenticationError } from "../../src/errors/index.js";
+import { AuthenticationError, MpesaAPIError } from "../../src/errors/index.js";
 import { PullTransactionsService } from "../../src/services/pull-transactions.js";
 import type { MpesaConfig } from "../../src/types/index.js";
 
@@ -327,5 +327,38 @@ describe("Mock Server Tests (nock)", () => {
     expect(register.isDone()).toBe(true);
     expect(queryResult.ResponseCode).toBe("0");
     expect(registerResult.ResponseRefID).toBe("r1");
+  });
+
+  it("should expose the documented error shape for a Daraja failure", async () => {
+    mockAuth("err-token");
+    nock(BASE).post("/mpesa/stkpush/v1/processrequest").reply(400, {
+      requestId: "req-400-1",
+      errorCode: "400.002.02",
+      errorMessage: "Bad Request - Invalid Amount",
+    });
+
+    const client = createClient();
+    const error = await client
+      .post("/mpesa/stkpush/v1/processrequest", {})
+      .then(() => null)
+      .catch((e: unknown) => e);
+
+    expect(error).toBeInstanceOf(MpesaAPIError);
+    const apiError = error as MpesaAPIError;
+    expect(apiError.message).toBe("Bad Request - Invalid Amount");
+    expect(apiError.statusCode).toBe(400);
+    expect(apiError.errorCode).toBe("400.002.02");
+    expect(apiError.requestId).toBe("req-400-1");
+    expect(apiError.rawResponse).toEqual({
+      requestId: "req-400-1",
+      errorCode: "400.002.02",
+      errorMessage: "Bad Request - Invalid Amount",
+    });
+    // The transport error is chained on `cause`. The axios shape (`response`) is
+    // deliberately not part of the SDK error — see docs/errors/error-handling.md.
+    expect(apiError.cause).toBeDefined();
+    const cause = apiError.cause as { response?: { status?: number } } | undefined;
+    expect(cause?.response?.status).toBe(400);
+    expect((apiError as unknown as Record<string, unknown>)["response"]).toBeUndefined();
   });
 });

@@ -21,14 +21,51 @@ MpesaError (base)
 |---|---|---|---|
 | Message | `.message` | `.message` | Human-readable error description |
 | Status Code | `.status_code` | `.statusCode` | HTTP status code (if applicable) |
-| Request ID | `.request_id` | `.requestId` | Unique request identifier from Safaricom |
-| Raw Response | `.raw_response` | `.rawResponse` | The unparsed API response body |
-| Cause | `.cause` | `.cause` (via `Error.cause`) | Underlying error |
+| Request ID | `.request_id` | `.requestId` | Python: the `X-Request-ID` the SDK generated and sent with the call. TypeScript: the body's `requestId` when the response carries one |
+| Raw Response | `.raw_response` | `.rawResponse` | The API response body — raw text in Python, the parsed body in TypeScript |
+| Cause | `.cause` (and `__context__`) | `.cause` (via `Error.cause`) | Underlying error. Python sets `.cause` on timeout/connection failures; for a mapped HTTP error the transport exception is on `__context__` |
 
 **Additional fields on specific error types:**
 
 - `RateLimitError` — `.retry_after` (Python), `.retryAfter` (TS): seconds to wait before retrying.
-- `MpesaAPIError` — `.error_code` (Python), `.errorCode` (TS): the Daraja-specific error code string.
+- `MpesaAPIError` — `.error_code` (Python: `None` for errors the SDK maps itself — read the code from `.raw_response`) / `.errorCode` (TS: taken from the Daraja body).
+
+### What a mapped API failure looks like
+
+When Daraja answers with a non-2xx status, the SDK raises a typed error, puts the
+response body on `rawResponse`, and chains the transport error that caused it onto
+`cause` (in Python the mapped `httpx.HTTPStatusError` lands on `__context__`). The
+SDK error has **no `response` property** — that shape belongs to the underlying
+HTTP client (`httpx`, `axios`), so `err.response.data` does not exist on what your
+`catch` receives:
+
+```typescript
+import { MpesaAPIError } from "daraja-sdk-ts";
+
+try {
+  await mpesa.stkPush.initiate(request);
+} catch (err) {
+  if (err instanceof MpesaAPIError) {
+    err.statusCode;  // 400
+    err.errorCode;   // "400.002.02" — from the Daraja body
+    err.requestId;   // the body's requestId
+    err.rawResponse; // { requestId, errorCode, errorMessage } — parsed body
+    err.cause;       // the AxiosError, whose .response holds the raw HTTP response
+  }
+}
+```
+
+```python
+from daraja.exceptions import MpesaAPIError
+
+try:
+    mpesa.stk_push_service.initiate(request)
+except MpesaAPIError as e:
+    e.status_code   # 400
+    e.request_id    # the X-Request-ID the SDK sent with the call
+    e.raw_response  # the response body as text — parse it for errorCode/errorMessage
+    e.__context__   # the httpx.HTTPStatusError that was mapped (`.cause` is None here)
+```
 
 ## Typed Errors
 
@@ -107,7 +144,11 @@ try {
 
 ### MpesaAPIError
 
-Raised when the Daraja API returns a non-zero response code. Includes the Daraja `errorCode` string.
+Raised when Daraja answers with a non-2xx HTTP status, or when a request still
+fails after the configured retries are exhausted. A `200` response whose body
+carries a non-zero `ResponseCode` is returned to your code unchanged — check
+`ResponseCode`/`ResponseDescription` yourself. TypeScript also copies the Daraja
+`errorCode` string.
 
 ```python
 from daraja.exceptions import MpesaAPIError
@@ -115,7 +156,7 @@ from daraja.exceptions import MpesaAPIError
 try:
     result = mpesa.b2c_service.send(request)
 except MpesaAPIError as e:
-    print(e.error_code, e.message)
+    print(e.message, e.status_code, e.raw_response)
 ```
 
 ```typescript
@@ -227,8 +268,9 @@ try:
 except RateLimitError as e:
     print(f"Rate limited. Retry after {e.retry_after}s")
 except MpesaAPIError as e:
-    print(f"API error {e.error_code}: {e.message}")
+    print(f"API error: {e.message}")
     print(f"Status: {e.status_code}, Request: {e.request_id}")
+    print(f"Body: {e.raw_response}")
 except AuthenticationError:
     print("Check your consumer key and secret")
 except ValidationError as e:

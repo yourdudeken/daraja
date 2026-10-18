@@ -350,3 +350,37 @@ class TestPullTransactionsContract:
         request = route.calls.last.request
         assert request.method == "POST"
         assert json.loads(request.content)["ShortCode"] == "600984"
+
+
+class TestMappedErrorShape:
+    @respx.mock
+    def test_api_error_exposes_the_documented_fields(self, client: Mpesa) -> None:
+        """FR-32 / API-006: the mapped error carries the documented fields.
+
+        The body is on `raw_response` (text) and the transport error is chained on
+        `__cause__`; the SDK error deliberately has no `response` attribute.
+        """
+        from daraja.exceptions import MpesaAPIError
+
+        _mock_auth(respx, "err-token")
+        respx.post(f"{BASE_URL}/mpesa/stkpush/v1/processrequest").respond(
+            400,
+            json={
+                "requestId": "req-400-1",
+                "errorCode": "400.002.02",
+                "errorMessage": "Bad Request - Invalid Amount",
+            },
+        )
+
+        with pytest.raises(MpesaAPIError) as excinfo:
+            client._request("POST", f"{BASE_URL}/mpesa/stkpush/v1/processrequest", {})
+
+        err = excinfo.value
+        assert err.status_code == 400
+        assert err.request_id
+        assert json.loads(err.raw_response)["errorCode"] == "400.002.02"
+        # The transport error that was mapped is chained implicitly; `.cause` is
+        # only set where the SDK attaches it explicitly (timeout/connection).
+        assert isinstance(err.__context__, httpx.HTTPStatusError)
+        assert err.cause is None
+        assert not hasattr(err, "response")
