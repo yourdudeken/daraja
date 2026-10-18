@@ -32,6 +32,28 @@ class RecordingManager:
             return len(self.received)
 
 
+class RecordingLogger:
+    """Captures log records, so tests can assert a failure was surfaced."""
+
+    def __init__(self) -> None:
+        self.records: list[tuple[str, str]] = []
+
+    def debug(self, msg: str, *args: object, **kwargs: object) -> None:
+        self.records.append(("debug", msg))
+
+    def info(self, msg: str, *args: object, **kwargs: object) -> None:
+        self.records.append(("info", msg))
+
+    def warning(self, msg: str, *args: object, **kwargs: object) -> None:
+        self.records.append(("warning", msg))
+
+    def error(self, msg: str, *args: object, **kwargs: object) -> None:
+        self.records.append(("error", msg))
+
+    def messages(self, level: str) -> list[str]:
+        return [msg for recorded_level, msg in self.records if recorded_level == level]
+
+
 class AlwaysFailingManager:
     def emit(self, event_type: str, payload: object) -> None:
         raise RuntimeError("boom")
@@ -499,3 +521,63 @@ class TestSchemaVersioning:
             assert applied == [1, 2, 3]
         finally:
             db.close()
+
+
+class TestQueueFilePermissions:
+    """The queue file holds customer payloads, so it must not be world-readable."""
+
+    def test_new_queue_file_is_owner_only(self, tmp_path):
+        path = tmp_path / "queue.db"
+        queue = PersistentWebhookRetryQueue(RecordingManager(), db_path=str(path))
+        assert queue.get_queue_size() == 0
+
+        assert path.stat().st_mode & 0o777 == 0o600
+        queue.close()
+
+    def test_existing_permissive_file_is_tightened(self, tmp_path):
+        path = tmp_path / "queue.db"
+        path.write_bytes(b"")
+        path.chmod(0o644)
+        assert path.stat().st_mode & 0o777 == 0o644
+
+        queue = PersistentWebhookRetryQueue(RecordingManager(), db_path=str(path))
+        assert queue.get_queue_size() == 0
+
+        assert path.stat().st_mode & 0o777 == 0o600
+        queue.close()
+
+
+class TestWorkerFailureRecovery:
+    def test_storage_error_stops_the_worker_without_wedging_the_queue(
+        self, tmp_path, monkeypatch
+    ):
+        """A DB error must not leave a dead worker holding the processing flag."""
+        logger = RecordingLogger()
+        manager = RecordingManager()
+        queue = PersistentWebhookRetryQueue(
+            manager, db_path=str(tmp_path / "queue.db"), logger=logger
+        )
+        original_claim = PersistentWebhookRetryQueue._claim_next_due
+        claims = {"count": 0}
+
+        def flaky_claim(self):
+            claims["count"] += 1
+            if claims["count"] == 1:
+                raise sqlite3.OperationalError("database is locked")
+            return original_claim(self)
+
+        monkeypatch.setattr(PersistentWebhookRetryQueue, "_claim_next_due", flaky_claim)
+
+        queue.enqueue("first", {"n": 1})
+        assert _wait_until(lambda: claims["count"] == 1)
+        assert _wait_until(lambda: not queue._processing)
+        assert logger.messages("error") == [
+            "Persistent queue worker stopped after an error"
+        ]
+
+        # The worker is gone but the flag was released, so the next enqueue starts
+        # a fresh worker which delivers both events (the first was never claimed).
+        queue.enqueue("second", {"n": 2})
+        assert _wait_until(lambda: manager.count() == 2)
+        assert queue.get_queue_size() == 0
+        queue.close()

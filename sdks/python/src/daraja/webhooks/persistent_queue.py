@@ -1,3 +1,4 @@
+import contextlib
 import json
 import os
 import sqlite3
@@ -141,10 +142,18 @@ class PersistentWebhookRetryQueue:
         if self._db is None:
             directory = os.path.dirname(self._db_path)
             if directory:
-                # The queue and DLQ hold customer payloads; keep the default
-                # application-data directory owner-only (best effort — umask
-                # still applies).
+                # The default is a per-user application-data directory; create it
+                # owner-only so the queue file is not reachable through it.
                 os.makedirs(directory, mode=0o700, exist_ok=True)
+            # The queue holds customer payloads (MSISDN, account numbers), so create
+            # the file owner-only instead of leaving it to the process umask, and
+            # tighten a file an earlier release created. SQLite creates its
+            # -wal/-shm sidecars with the database file's mode, so this covers
+            # those too.
+            if self._db_path not in ("", ":memory:"):
+                os.close(os.open(self._db_path, os.O_RDWR | os.O_CREAT, 0o600))
+                with contextlib.suppress(OSError):
+                    os.chmod(self._db_path, 0o600)
             db = sqlite3.connect(self._db_path, check_same_thread=False)
             db.row_factory = sqlite3.Row
             db.execute("PRAGMA journal_mode=WAL")
@@ -328,26 +337,42 @@ class PersistentWebhookRetryQueue:
 
     def _process_queue(self) -> None:
         while True:
-            with self._lock:
-                record = self._claim_next_due()
-                wait_seconds = (
-                    None if record is not None else self._seconds_until_next_due()
+            try:
+                with self._lock:
+                    record = self._claim_next_due()
+                    wait_seconds = (
+                        None if record is not None else self._seconds_until_next_due()
+                    )
+                    if record is None and wait_seconds is None:
+                        # Queue is empty. Because the claim and this flag write share
+                        # the lock, an ``enqueue`` that lands after the claim either
+                        # sets ``_processing`` back to True (spawning a fresh worker)
+                        # or is claimed by the loop below — it can never be lost.
+                        self._processing = False
+                        return
+                if record is not None:
+                    self._deliver(record)
+                    continue
+                # Nothing is due yet: wait for the retry deadline, or for an enqueue
+                # that arrives sooner. Waiting here (rather than inside the failure
+                # path) is what keeps a due-later item from blocking a due one.
+                self._wake.wait(wait_seconds)
+                self._wake.clear()
+            except Exception:
+                # An unhandled storage error (locked, corrupt, full disk, an
+                # unreadable schema version) would otherwise kill this thread with
+                # ``_processing`` still True, and no later ``enqueue`` would start
+                # another worker — a silent, permanent delivery outage. Report it,
+                # release the flag and stop: queued events stay on disk and the next
+                # ``enqueue`` starts a fresh worker.
+                self._logger.error(
+                    "Persistent queue worker stopped after an error",
+                    extra={"path": self._db_path},
+                    exc_info=True,
                 )
-                if record is None and wait_seconds is None:
-                    # Queue is empty. Because the claim and this flag write share
-                    # the lock, an ``enqueue`` that lands after the claim either
-                    # sets ``_processing`` back to True (spawning a fresh worker)
-                    # or is claimed by the loop below — it can never be lost.
+                with self._lock:
                     self._processing = False
-                    return
-            if record is not None:
-                self._deliver(record)
-                continue
-            # Nothing is due yet: wait for the retry deadline, or for an enqueue
-            # that arrives sooner. Waiting here (rather than inside the failure
-            # path) is what keeps a due-later item from blocking a due one.
-            self._wake.wait(wait_seconds)
-            self._wake.clear()
+                return
 
     def _deliver(self, record: PersistentDeliveryRecord) -> None:
         new_attempts = record.attempts + 1
