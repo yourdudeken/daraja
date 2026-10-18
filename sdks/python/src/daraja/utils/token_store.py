@@ -149,8 +149,14 @@ class EncryptedTokenStore:
         )
 
     def clear(self) -> None:
-        try:
-            if os.path.exists(self._file_path):
-                os.remove(self._file_path)
-        except Exception:
-            pass
+        """Delete the token file and the v1 backup kept by a migration.
+
+        The backup is the same token under the weaker v1 derivation, so deleting
+        the token has to delete it too.
+        """
+        for target in (self._file_path, f"{self._file_path}.v1.bak"):
+            try:
+                if os.path.exists(target):
+                    os.remove(target)
+            except Exception:
+                pass

@@ -7,6 +7,8 @@ import {
   readFileSync,
   statSync,
   linkSync,
+  lstatSync,
+  symlinkSync,
   readdirSync,
 } from "node:fs";
 import { createCipheriv, createDecipheriv, randomBytes } from "node:crypto";
@@ -358,6 +360,60 @@ describe("EncryptedTokenStore", () => {
     // A failed read must not migrate (or damage) the file.
     expect(readFileSync(filePath, "utf8")).toBe(original);
     expect(existsSync(`${filePath}.v1.bak`)).toBe(false);
+  });
+
+  it("finishes the migration when a v1 backup already exists", () => {
+    const filePath = join(dir, "token.json");
+    writeLegacyFile(filePath, "legacy-token", new Date(Date.now() + 3600_000), "secret-key");
+    const backupPath = `${filePath}.v1.bak`;
+    writeFileSync(backupPath, "previous backup", { mode: 0o600 });
+
+    const store = new EncryptedTokenStore({ filePath, encryptionKey: "secret-key" });
+    expect(store.load()!.token).toBe("legacy-token");
+
+    const rewritten = JSON.parse(readFileSync(filePath, "utf8"));
+    // A backup that already existed must not stop the rewrite.
+    expect(rewritten.version).toBe(2);
+    expect(rewritten.salt).toBeTruthy();
+    // ...and the existing backup is never replaced.
+    expect(readFileSync(backupPath, "utf8")).toBe("previous backup");
+  });
+
+  it("still migrates when the backup write fails with EEXIST", () => {
+    const filePath = join(dir, "token.json");
+    writeLegacyFile(filePath, "legacy-token", new Date(Date.now() + 3600_000), "secret-key");
+    // A dangling symlink is invisible to existsSync but makes the exclusive
+    // backup write fail with EEXIST — the same shape as a backup appearing
+    // between the check and the write.
+    const backupPath = `${filePath}.v1.bak`;
+    symlinkSync(join(dir, "absent"), backupPath);
+
+    const store = new EncryptedTokenStore({ filePath, encryptionKey: "secret-key" });
+    expect(store.load()!.token).toBe("legacy-token");
+
+    // The rewrite must not be skipped as a failed migration.
+    const rewritten = JSON.parse(readFileSync(filePath, "utf8"));
+    expect(rewritten.version).toBe(2);
+    expect(rewritten.salt).toBeTruthy();
+    // Whatever is already at the backup path is left untouched.
+    expect(lstatSync(backupPath).isSymbolicLink()).toBe(true);
+  });
+
+  it("clear removes the v1 backup as well as the token file", () => {
+    const filePath = join(dir, "token.json");
+    const backupPath = `${filePath}.v1.bak`;
+    writeLegacyFile(filePath, "legacy-token", new Date(Date.now() + 3600_000), "secret-key");
+    const store = new EncryptedTokenStore({ filePath, encryptionKey: "secret-key" });
+    expect(store.load()!.token).toBe("legacy-token");
+    expect(existsSync(backupPath)).toBe(true);
+
+    store.clear();
+
+    // Deleting the token must delete every copy of it: the backup holds the same
+    // token under the weaker v1 derivation.
+    expect(existsSync(filePath)).toBe(false);
+    expect(existsSync(backupPath)).toBe(false);
+    expect(store.load()).toBeNull();
   });
 
   it("replaces the token file instead of rewriting it in place", () => {

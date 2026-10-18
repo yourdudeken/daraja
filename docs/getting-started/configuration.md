@@ -139,10 +139,13 @@ contain customer data (MSISDN, account numbers, amounts).
   - macOS: `~/Library/Application Support/mpesa-sdk/mpesa-webhook-queue.db`
   - Windows: `%LOCALAPPDATA%\mpesa-sdk\mpesa-webhook-queue.db`
 
-  The directory is created on demand with owner-only permissions (`0700`).
+  The directory is created on demand with owner-only permissions (`0700`), and
+  the queue file (with its SQLite `-wal`/`-shm` sidecar files) with `0600`, so a
+  permissive `umask` cannot expose it. On Windows these modes are not enforced the
+  same way — keep the file on an ACL-protected path.
   Earlier releases wrote `./mpesa-webhook-queue.db` in the working directory; if
   you are upgrading and want events still sitting in that file to be delivered,
-  point `db_path` / `dbPath` at it.
+  point `db_path` / `dbPath` at it (its mode is tightened to `0600` on open).
 - **Overflow policy:** when the live queue is full the incoming event is moved to
   the DLQ intact (with `last_error = "queue overflow"`); events are never
   silently dropped. The already-queued backlog keeps its original order.
@@ -152,14 +155,20 @@ contain customer data (MSISDN, account numbers, amounts).
   argument to empty the DLQ. Call it from a scheduled job to enforce your own
   retention window.
 - **PII:** queued and dead-lettered payloads are stored **unencrypted** in the
-  queue file, because they are delivered as-is. Treat the file as customer data:
-  restrict its permissions, place it on a protected volume, and purge the DLQ on
-  a schedule that matches your privacy policy. The OAuth token store is
-  encrypted separately and is not affected by these bounds.
+  queue file, because they are delivered as-is. The SDK keeps the file owner-only,
+  but treat it as customer data: place it on a protected volume and purge the DLQ
+  on a schedule that matches your privacy policy. `DELETE` (including a purge)
+  removes rows from the database, but SQLite can retain the deleted bytes in the
+  `-wal` sidecar file or in freed pages until it checkpoints, so wipe the file (or
+  run `PRAGMA wal_checkpoint(TRUNCATE)` / `VACUUM`) if you need erasure rather than
+  deletion. The OAuth token store is encrypted separately and is not affected by
+  these bounds.
 - **Durability:** TypeScript persists mutations with a short debounce (default
   50 ms, `flushIntervalMs`) instead of rewriting the file per event, and flushes
-  on `close()`. At most a few milliseconds of undelivered state can be lost in a
-  hard crash; Python commits each mutation immediately.
+  on `close()`; Python commits each mutation immediately. The TypeScript flush
+  rewrites the whole file and a pending flush is allowed to be dropped on exit, so
+  a crash or a killed process can lose the events queued since the last flush, and
+  a crash mid-rewrite can leave a truncated file for the next `init()` to read.
 - **Schema version:** each queue file records its own schema version
   (`PRAGMA user_version`) so a future release can migrate the file in place when
   it is opened. A file written by a *newer* SDK version is refused with an error
@@ -186,8 +195,9 @@ never overwritten).
 
 The migration is **one-way** — a migrated file can no longer be read by those
 older releases — so keep the backup until you have confirmed the upgrade, then
-delete it. Use a high-entropy encryption key, since it ultimately protects the
-token in both formats.
+delete it. `clear()` deletes the token file *and* its `.v1.bak` backup, so a
+rotation or logout does not leave the old envelope behind. Use a high-entropy
+encryption key, since it ultimately protects the token in both formats.
 
 
 ## Language specifics

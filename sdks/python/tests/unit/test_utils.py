@@ -443,6 +443,23 @@ class TestEncryptedTokenStore:
         assert backup.read_text() == original
         assert stat.S_IMODE(backup.stat().st_mode) == 0o600
 
+    def test_clear_removes_the_v1_backup_too(self, tmp_path):
+        file_path = tmp_path / "token.json"
+        self._write_legacy_file(
+            file_path, "legacy-token", datetime.now() + timedelta(hours=1), "secret-key"
+        )
+        store = EncryptedTokenStore(str(file_path), "secret-key")
+        assert store.load() is not None
+        assert (tmp_path / "token.json.v1.bak").exists()
+
+        store.clear()
+
+        # Deleting the token must delete every copy of it: the backup is the same
+        # token under the weaker v1 derivation.
+        assert not file_path.exists()
+        assert not (tmp_path / "token.json.v1.bak").exists()
+        assert store.load() is None
+
     def test_legacy_file_with_wrong_password_is_left_alone(self, tmp_path):
         file_path = tmp_path / "token.json"
         self._write_legacy_file(

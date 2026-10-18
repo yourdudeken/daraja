@@ -135,6 +135,14 @@ export class PersistentWebhookRetryQueue {
     const SQL = await initSqlJs();
     const loadExisting = fs.existsSync(this.dbPath);
     const buffer = loadExisting ? fs.readFileSync(this.dbPath) : undefined;
+    if (loadExisting) {
+      // Tighten a file an earlier release created with the umask's default mode.
+      try {
+        fs.chmodSync(this.dbPath, 0o600);
+      } catch {
+        // Best effort: file modes are not meaningful on every platform.
+      }
+    }
     const db = new SQL.Database(buffer);
     if (!loadExisting) {
       db.run("PRAGMA journal_mode=WAL");
@@ -189,7 +197,18 @@ export class PersistentWebhookRetryQueue {
     if (this.flushTimer !== null) return;
     this.flushTimer = setTimeout(() => {
       this.flushTimer = null;
-      this.flush();
+      try {
+        this.flush();
+      } catch (error) {
+        // The write now happens on the event loop rather than in the caller's
+        // stack, so an unwritable destination (full disk, permissions) would
+        // otherwise be an uncaught exception that terminates the process. The
+        // database stays dirty and is retried by the next mutation or close().
+        this.logger.error("Failed to persist webhook queue", {
+          path: this.dbPath,
+          error: String(error),
+        });
+      }
     }, this.flushIntervalMs);
     // A pending flush must not keep the process alive on its own.
     this.flushTimer.unref?.();
@@ -202,7 +221,10 @@ export class PersistentWebhookRetryQueue {
     // The queue and DLQ hold customer payloads; keep the default
     // application-data directory owner-only (best effort — umask still applies).
     fs.mkdirSync(path.dirname(this.dbPath), { recursive: true, mode: 0o700 });
-    fs.writeFileSync(this.dbPath, buffer);
+    // Create the file owner-only instead of leaving it to the process umask. An
+    // existing file keeps its mode, so `init` tightens one written 0o644 by an
+    // earlier release.
+    fs.writeFileSync(this.dbPath, buffer, { mode: 0o600 });
     this.dirty = false;
   }
 

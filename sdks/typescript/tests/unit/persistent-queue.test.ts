@@ -80,20 +80,76 @@ describe("PersistentWebhookRetryQueue persistence", () => {
     expect(fs.statSync(dbPath).mtimeMs).toBeGreaterThan(baselineMtime);
   });
 
-  it("flush interval elapses and the pending state reaches disk", async () => {
+  it("flushes a debounced mutation to disk without waiting for close", async () => {
     const dbPath = join(dir, "queue.db");
-    const queue = new PersistentWebhookRetryQueue(frozenManager(), {
+    const queue = new PersistentWebhookRetryQueue(failingManager(), {
       dbPath,
       flushIntervalMs: 10,
     });
     await queue.init();
     queue.enqueue("evt", { hello: "world" });
 
-    await new Promise((resolve) => setTimeout(resolve, 60));
+    // The delivery fails, so the event is re-queued with a backoff deadline; the
+    // debounce timer is what persists it (`init()` wrote an empty queue file).
+    let persisted = 0;
+    const deadline = Date.now() + 3000;
+    while (Date.now() < deadline && persisted === 0) {
+      await new Promise((resolve) => setTimeout(resolve, 25));
+      persisted = await queuedRowsInFile(dbPath);
+    }
 
-    expect(fs.existsSync(dbPath)).toBe(true);
-    expect(fs.statSync(dbPath).size).toBeGreaterThan(0);
+    expect(persisted).toBe(1);
     queue.close();
+  });
+
+  it("creates the queue file owner-only", async () => {
+    const dbPath = join(dir, "queue.db");
+    const queue = new PersistentWebhookRetryQueue(frozenManager(), { dbPath });
+    await queue.init();
+
+    expect(fs.statSync(dbPath).mode & 0o777).toBe(0o600);
+    queue.close();
+  });
+
+  it("tightens a queue file an earlier release created world-readable", async () => {
+    const dbPath = join(dir, "queue.db");
+    await writeUnversionedDatabase(dbPath);
+    fs.chmodSync(dbPath, 0o644);
+    expect(fs.statSync(dbPath).mode & 0o777).toBe(0o644);
+
+    const queue = new PersistentWebhookRetryQueue(frozenManager(), { dbPath });
+    await queue.init();
+
+    expect(fs.statSync(dbPath).mode & 0o777).toBe(0o600);
+    queue.close();
+  });
+
+  it("reports a persistence failure instead of failing the process", async () => {
+    const reported: string[] = [];
+    const logger = {
+      debug: () => {},
+      info: () => {},
+      warn: () => {},
+      error: (msg: string) => {
+        reported.push(msg);
+      },
+    };
+    const dbPath = join(dir, "queue.db");
+    const queue = new PersistentWebhookRetryQueue(failingManager(), {
+      dbPath,
+      flushIntervalMs: 10,
+      logger,
+    });
+    await queue.init();
+
+    // Make the destination unwritable: a directory cannot be replaced by a file.
+    fs.rmSync(dbPath);
+    fs.mkdirSync(dbPath);
+
+    queue.enqueue("evt", { n: 1 });
+
+    await waitFor(() => reported.length > 0);
+    expect(reported).toStrictEqual(["Failed to persist webhook queue"]);
   });
 
   it("bounds the live queue and archives overflow to the DLQ intact", async () => {
@@ -290,6 +346,17 @@ describe("PersistentWebhookRetryQueue persistence", () => {
   async function openRawDatabase(dbPath: string) {
     const SQL = await initSqlJs();
     return new SQL.Database(fs.readFileSync(dbPath));
+  }
+
+  /** How many rows the on-disk queue file holds (0 when it does not exist yet). */
+  async function queuedRowsInFile(dbPath: string): Promise<number> {
+    if (!fs.existsSync(dbPath)) return 0;
+    const raw = await openRawDatabase(dbPath);
+    try {
+      return raw.exec("SELECT COUNT(*) FROM webhook_queue")[0].values[0][0] as number;
+    } finally {
+      raw.close();
+    }
   }
 
   it("stamps a fresh queue file with the schema version", async () => {
