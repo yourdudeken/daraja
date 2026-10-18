@@ -17,9 +17,10 @@ export interface AccountBalanceResult {
 export interface AccountInfo {
   accountName: string;
   currency: string;
-  availableBalance: number;
-  unclearedFunds: number;
-  reservedFunds: number;
+  /** Exact decimal string — never a JS number (see docs on money handling). */
+  availableBalance: string;
+  unclearedFunds: string;
+  reservedFunds: string;
 }
 
 export class AccountBalanceService {
@@ -80,9 +81,9 @@ export class AccountBalanceService {
         const info: AccountInfo = {
           accountName: parts[0]!,
           currency: parts[1]!,
-          availableBalance: parseFloat(parts[2]!),
-          unclearedFunds: parseFloat(parts[3]!),
-          reservedFunds: parseFloat(parts[4]!),
+          availableBalance: parts[2]!,
+          unclearedFunds: parts[3]!,
+          reservedFunds: parts[4]!,
         };
 
         const name = info.accountName.toLowerCase().replace(/\s+/g, "");

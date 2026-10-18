@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { MpesaApiClient } from "../../src/client/client.js";
+import { ValidationError } from "../../src/errors/index.js";
 import type { MpesaConfig } from "../../src/types/index.js";
 import type { SharedTokenCache } from "../../src/utils/token-cache.js";
 
@@ -403,5 +404,37 @@ describe("MpesaApiClient with mocks", () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+
+  describe("getEndpoint", () => {
+    it("should resolve a known key to the full environment URL", () => {
+      const client = createTestClient();
+
+      expect(client.getEndpoint("STK_PUSH")).toBe(
+        "https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest",
+      );
+    });
+
+    it("should throw on an unknown key instead of resolving to the base URL", () => {
+      const client = createTestClient();
+
+      // "" made the request go to the base URL, so a typo silently hit the
+      // wrong path; the failure must name the key instead.
+      expect(() => client.getEndpoint("STK_PUSHH")).toThrow(ValidationError);
+      expect(() => client.getEndpoint("STK_PUSHH")).toThrow('Unknown endpoint: "STK_PUSHH"');
+    });
+
+    it("should treat inherited object names as unknown keys", () => {
+      const client = createTestClient();
+
+      expect(() => client.getEndpoint("constructor")).toThrow(ValidationError);
+      expect(() => client.getEndpoint("toString")).toThrow(ValidationError);
+    });
+
+    it("should list the known keys in the error so a typo is self-diagnosing", () => {
+      const client = createTestClient();
+
+      expect(() => client.getEndpoint("NOPE")).toThrow(/Known endpoints: .*STK_PUSH/);
+    });
   });
 });

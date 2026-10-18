@@ -36,10 +36,12 @@ export class PullTransactionsService {
   async query(
     request: PullTransactionsQueryRequest,
   ): Promise<PullTransactionsQueryResponse> {
-    return this.client.request<PullTransactionsQueryResponse>({
-      method: "GET",
-      url: this.client.getEndpoint("PULL_TRANSACTIONS_QUERY"),
-      data: request,
-    });
+    // The documented contract is POST for both pull-transactions endpoints
+    // (`docs/apis/pull-transaction.md`); a GET carrying a body was neither
+    // documented nor portable across HTTP clients.
+    return this.client.post<PullTransactionsQueryResponse>(
+      this.client.getEndpoint("PULL_TRANSACTIONS_QUERY"),
+      request,
+    );
   }
 }

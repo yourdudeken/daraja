@@ -125,6 +125,10 @@ const balanceParsed = mpesa.webhooks.parseAccountBalanceCallback(balancePayload)
 // All return a normalized result from MpesaResult
 ```
 
+Monetary values returned by these parsers (`amount`, and the `AccountInfo`
+balances) are exact decimal strings, never numbers — see
+[Money & Decimal Precision](../money.md).
+
 The `MpesaResult` interface:
 
 ```typescript

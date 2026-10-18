@@ -618,7 +618,7 @@ class TestWrapperMethods:
 
     def test_pull_transactions_query(self, client, monkeypatch):
         captured = {}
-        monkeypatch.setattr(client, "_get_with_body", lambda k, d: captured.update(
+        monkeypatch.setattr(client, "_post", lambda k, d: captured.update(
             {"endpoint": k, "data": d}
         ) or {
             "ResponseRefID": "r1", "ResponseCode": "0",

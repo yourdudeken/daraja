@@ -3,6 +3,7 @@ import { TransactionStatusService } from "../../src/services/transaction-status.
 import { MpesaApiClient } from "../../src/client/client.js";
 import { ValidationError } from "../../src/errors/index.js";
 import type {
+  MpesaResult,
   TransactionStatusRequest,
   TransactionStatusResponse,
 } from "../../src/types/index.js";
@@ -69,6 +70,46 @@ describe("TransactionStatusService", () => {
       await expect(service.query(baseRequest())).rejects.toThrow(ValidationError);
 
       expect(client.post).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("parseCallback", () => {
+    function resultPayload(parameters: Array<{ Key: string; Value: string | number }>) {
+      return {
+        Result: {
+          ResultType: 0,
+          ResultCode: 0,
+          ResultDesc: "Success",
+          OriginatorConversationID: "orig-1",
+          ConversationID: "conv-1",
+          TransactionID: "txn-1",
+          ResultParameters: { ResultParameter: parameters },
+        },
+      } as unknown as MpesaResult;
+    }
+
+    it("should expose the amount as an exact decimal string", () => {
+      // FR-31 / API-005: the amount keeps the digits M-Pesa sent; it is never
+      // converted to a JS number.
+      const result = TransactionStatusService.parseCallback(
+        resultPayload([
+          { Key: "TransactionStatus", Value: "Completed" },
+          { Key: "Amount", Value: 100.1 },
+          { Key: "ReceiptNo", Value: "QHK31B9Z1U" },
+        ]),
+      );
+
+      expect(result.amount).toBe("100.1");
+      expect(result.transactionStatus).toBe("Completed");
+      expect(result.receiptNumber).toBe("QHK31B9Z1U");
+    });
+
+    it("should leave the amount undefined when the callback omits it", () => {
+      const result = TransactionStatusService.parseCallback(
+        resultPayload([{ Key: "TransactionStatus", Value: "Completed" }]),
+      );
+
+      expect(result.amount).toBeUndefined();
     });
   });
 });

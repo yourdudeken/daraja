@@ -94,7 +94,8 @@ export class STKPushService {
       for (const item of callback.CallbackMetadata.Item) {
         switch (item.Name) {
           case "Amount":
-            result.amount = Number(item.Value);
+            // Money is exposed as an exact decimal string — never a JS number.
+            result.amount = String(item.Value);
             break;
           case "MpesaReceiptNumber":
             result.receiptNumber = String(item.Value);

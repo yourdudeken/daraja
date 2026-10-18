@@ -3,6 +3,7 @@ import secrets
 import time
 import uuid
 from collections.abc import Callable
+from decimal import Decimal
 from typing import Any
 
 from daraja.exceptions import ValidationError
@@ -299,9 +300,9 @@ class AccountBalanceService:
                 info = AccountInfo(
                     accountName=parts[0],
                     currency=parts[1],
-                    availableBalance=float(parts[2]),
-                    unclearedFunds=float(parts[3]),
-                    reservedFunds=float(parts[4]),
+                    availableBalance=Decimal(parts[2]),
+                    unclearedFunds=Decimal(parts[3]),
+                    reservedFunds=Decimal(parts[4]),
                 )
                 name = info.accountName.lower().replace(" ", "")
                 if "working" in name:
@@ -554,9 +555,8 @@ class LipaNaBongaService:
 
 
 class PullTransactionsService:
-    def __init__(self, post: PostFn, get: GetFn) -> None:
+    def __init__(self, post: PostFn) -> None:
         self._post = post
-        self._get = get
 
     def register(
         self, request: PullTransactionsRegisterRequest | dict[str, Any]
@@ -573,7 +573,7 @@ class PullTransactionsService:
     ) -> PullTransactionsQueryResponse:
         if isinstance(request, dict):
             request = PullTransactionsQueryRequest(**request)
-        result = self._get("PULL_TRANSACTIONS_QUERY", request.model_dump())
+        result = self._post("PULL_TRANSACTIONS_QUERY", request.model_dump())
         return PullTransactionsQueryResponse(**result)
 
 

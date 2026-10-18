@@ -30,10 +30,33 @@ describe("STKPushService", () => {
       expect(result.merchantRequestId).toBe("29115-34620561-1");
       expect(result.checkoutRequestId).toBe("ws_CO_191220191020363925");
       expect(result.resultCode).toBe(0);
-      expect(result.amount).toBe(1.0);
+      expect(result.amount).toBe("1");
       expect(result.receiptNumber).toBe("NLJ7RT61SV");
       expect(result.transactionDate).toBe("20191219102115");
       expect(result.phoneNumber).toBe("254708374149");
+    });
+
+    it("should expose the amount as an exact decimal string", () => {
+      // FR-31 / API-005: money is never a JS number, so the digits M-Pesa sent
+      // survive the round-trip unchanged.
+      const payload: STKCallbackPayload = {
+        Body: {
+          stkCallback: {
+            MerchantRequestID: "29115-34620561-1",
+            CheckoutRequestID: "ws_CO_191220191020363925",
+            ResultCode: 0,
+            ResultDesc: "ok",
+            CallbackMetadata: {
+              Item: [{ Name: "Amount", Value: "100.10" }],
+            },
+          },
+        },
+      };
+
+      const result: STKCallbackResult = STKPushService.parseCallback(payload);
+
+      expect(result.amount).toBe("100.10");
+      expect(typeof result.amount).toBe("string");
     });
 
     it("should parse an unsuccessful callback", () => {

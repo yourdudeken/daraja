@@ -75,4 +75,5 @@ const response = await mpesa.accountBalance.query({
 - `Initiator` and `SecurityCredential` are auto-filled from the SDK configuration when omitted.
 - The balance is not returned synchronously — it arrives via the `ResultURL` callback as an `MpesaResult` payload.
 - The callback's `ResultParameters` contains an `AccountBalance` field with a pipe-delimited string describing working, utility, charges paid, settlement, and float accounts.
+- Parsed balances are exact: `Decimal` in Python and `string` in TypeScript — never `float`/`number` (see [Money & Decimal Precision](../money.md)).
 - `IdentifierType` defaults to `4` (organization short code).

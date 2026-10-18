@@ -54,7 +54,7 @@ manager.on("stk:callback", lambda event, payload: handle_stk(payload))
 
 parsed = manager.parse_stk_callback(raw_body)
 # Returns: {"success": True, "merchant_request_id": "…", "checkout_request_id": "…",
-#           "result_code": 0, "result_description": "…", "amount": 100.0,
+#           "result_code": 0, "result_description": "…", "amount": Decimal("100"),
 #           "receipt_number": "QHK31B9Z1U", "transaction_date": "20231019150028",
 #           "phone_number": "254712345678"}
 ```
@@ -77,7 +77,7 @@ mpesa.webhooks.on("stk:callback", (event) => {
 // Option 2: use the static parser directly
 const parsed = mpesa.webhooks.parseSTKCallback(rawBody);
 // Returns: { success: true, merchantRequestId: "…", checkoutRequestId: "…",
-//            resultCode: 0, resultDescription: "…", amount: 100,
+//            resultCode: 0, resultDescription: "…", amount: "100",
 //            receiptNumber: "QHK31B9Z1U", transactionDate: "…", phoneNumber: "…" }
 ```
 

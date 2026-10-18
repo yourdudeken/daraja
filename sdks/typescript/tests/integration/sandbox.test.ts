@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeAll } from "vitest";
 import { MpesaApiClient } from "../../src/client/client.js";
+import { isMpesaError } from "../../src/errors/index.js";
 import type { MpesaConfig } from "../../src/types/index.js";
 
 const CONSUMER_KEY = process.env.MPESA_CONSUMER_KEY || "";
@@ -25,6 +26,24 @@ function createClient(): MpesaApiClient {
     initiatorPassword: INITIATOR_PWD || undefined,
   };
   return new MpesaApiClient(config);
+}
+
+/**
+ * A failed call rejects with a typed SDK error whose body is on `rawResponse`.
+ * There is no `err.response` — that is the underlying axios shape, which the SDK
+ * deliberately does not expose (see `docs/errors/error-handling.md`).
+ *
+ * Sandbox calls may legitimately fail with a Daraja error body, so this returns
+ * that body when it carries a `ResponseCode` and otherwise rethrows.
+ */
+function darajaErrorBody(err: unknown): Record<string, unknown> {
+  if (isMpesaError(err)) {
+    const body = err.rawResponse as Record<string, unknown> | undefined;
+    if (body?.ResponseCode) {
+      return body;
+    }
+  }
+  throw err;
 }
 
 describeIf("M-Pesa Sandbox Integration", hasCredentials(), () => {
@@ -65,12 +84,8 @@ describeIf("M-Pesa Sandbox Integration", hasCredentials(), () => {
         });
         expect(result).toHaveProperty("ResponseCode");
         expect(result).toHaveProperty("MerchantRequestID");
-      } catch (err: any) {
-        if (err?.response?.data?.ResponseCode) {
-          expect(err.response.data.ResponseCode).toBeDefined();
-        } else {
-          throw err;
-        }
+      } catch (err) {
+        expect(darajaErrorBody(err)).toHaveProperty("ResponseCode");
       }
     });
 
@@ -83,12 +98,8 @@ describeIf("M-Pesa Sandbox Integration", hasCredentials(), () => {
           CheckoutRequestID: "test-checkout-id",
         });
         expect(result).toHaveProperty("ResponseCode");
-      } catch (err: any) {
-        if (err?.response?.data?.ResponseCode) {
-          expect(err.response.data).toHaveProperty("ResponseCode");
-        } else {
-          throw err;
-        }
+      } catch (err) {
+        expect(darajaErrorBody(err)).toHaveProperty("ResponseCode");
       }
     });
   });
@@ -103,12 +114,8 @@ describeIf("M-Pesa Sandbox Integration", hasCredentials(), () => {
           ValidationURL: "https://example.com/validate",
         });
         expect(result).toHaveProperty("ResponseCode");
-      } catch (err: any) {
-        if (err?.response?.data?.ResponseCode) {
-          expect(err.response.data).toHaveProperty("ResponseCode");
-        } else {
-          throw err;
-        }
+      } catch (err) {
+        expect(darajaErrorBody(err)).toHaveProperty("ResponseCode");
       }
     });
 
@@ -122,12 +129,8 @@ describeIf("M-Pesa Sandbox Integration", hasCredentials(), () => {
           BillRefNumber: "test",
         });
         expect(result).toHaveProperty("ResponseCode");
-      } catch (err: any) {
-        if (err?.response?.data?.ResponseCode) {
-          expect(err.response.data).toHaveProperty("ResponseCode");
-        } else {
-          throw err;
-        }
+      } catch (err) {
+        expect(darajaErrorBody(err)).toHaveProperty("ResponseCode");
       }
     });
   });
@@ -147,12 +150,8 @@ describeIf("M-Pesa Sandbox Integration", hasCredentials(), () => {
           ResultURL: "https://example.com/result",
         });
         expect(result).toHaveProperty("ResponseCode");
-      } catch (err: any) {
-        if (err?.response?.data?.ResponseCode) {
-          expect(err.response.data).toHaveProperty("ResponseCode");
-        } else {
-          throw err;
-        }
+      } catch (err) {
+        expect(darajaErrorBody(err)).toHaveProperty("ResponseCode");
       }
     });
   });
@@ -172,12 +171,8 @@ describeIf("M-Pesa Sandbox Integration", hasCredentials(), () => {
           ResultURL: "https://example.com/result",
         });
         expect(result).toHaveProperty("ResponseCode");
-      } catch (err: any) {
-        if (err?.response?.data?.ResponseCode) {
-          expect(err.response.data).toHaveProperty("ResponseCode");
-        } else {
-          throw err;
-        }
+      } catch (err) {
+        expect(darajaErrorBody(err)).toHaveProperty("ResponseCode");
       }
     });
   });
@@ -196,12 +191,8 @@ describeIf("M-Pesa Sandbox Integration", hasCredentials(), () => {
           ResultURL: "https://example.com/result",
         });
         expect(result).toHaveProperty("ResponseCode");
-      } catch (err: any) {
-        if (err?.response?.data?.ResponseCode) {
-          expect(err.response.data).toHaveProperty("ResponseCode");
-        } else {
-          throw err;
-        }
+      } catch (err) {
+        expect(darajaErrorBody(err)).toHaveProperty("ResponseCode");
       }
     });
   });
@@ -220,12 +211,8 @@ describeIf("M-Pesa Sandbox Integration", hasCredentials(), () => {
           ResultURL: "https://example.com/result",
         });
         expect(result).toHaveProperty("ResponseCode");
-      } catch (err: any) {
-        if (err?.response?.data?.ResponseCode) {
-          expect(err.response.data).toHaveProperty("ResponseCode");
-        } else {
-          throw err;
-        }
+      } catch (err) {
+        expect(darajaErrorBody(err)).toHaveProperty("ResponseCode");
       }
     });
   });
@@ -245,12 +232,8 @@ describeIf("M-Pesa Sandbox Integration", hasCredentials(), () => {
           ResultURL: "https://example.com/result",
         });
         expect(result).toHaveProperty("ResponseCode");
-      } catch (err: any) {
-        if (err?.response?.data?.ResponseCode) {
-          expect(err.response.data).toHaveProperty("ResponseCode");
-        } else {
-          throw err;
-        }
+      } catch (err) {
+        expect(darajaErrorBody(err)).toHaveProperty("ResponseCode");
       }
     });
   });
@@ -268,12 +251,8 @@ describeIf("M-Pesa Sandbox Integration", hasCredentials(), () => {
         });
         expect(result).toHaveProperty("ResponseCode");
         expect(result).toHaveProperty("QRCode");
-      } catch (err: any) {
-        if (err?.response?.data?.ResponseCode) {
-          expect(err.response.data).toHaveProperty("ResponseCode");
-        } else {
-          throw err;
-        }
+      } catch (err) {
+        expect(darajaErrorBody(err)).toHaveProperty("ResponseCode");
       }
     });
   });
@@ -289,12 +268,8 @@ describeIf("M-Pesa Sandbox Integration", hasCredentials(), () => {
           BillRefNumber: "test",
         });
         expect(result).toHaveProperty("ResponseCode");
-      } catch (err: any) {
-        if (err?.response?.data?.ResponseCode) {
-          expect(err.response.data).toHaveProperty("ResponseCode");
-        } else {
-          throw err;
-        }
+      } catch (err) {
+        expect(darajaErrorBody(err)).toHaveProperty("ResponseCode");
       }
     });
 
@@ -308,12 +283,8 @@ describeIf("M-Pesa Sandbox Integration", hasCredentials(), () => {
           BillRefNumber: "test",
         });
         expect(result).toHaveProperty("ResponseCode");
-      } catch (err: any) {
-        if (err?.response?.data?.ResponseCode) {
-          expect(err.response.data).toHaveProperty("ResponseCode");
-        } else {
-          throw err;
-        }
+      } catch (err) {
+        expect(darajaErrorBody(err)).toHaveProperty("ResponseCode");
       }
     });
   });
@@ -323,12 +294,8 @@ describeIf("M-Pesa Sandbox Integration", hasCredentials(), () => {
       try {
         const result = await client.post("/mpesa/queryorginfo/v1/query", {});
         expect(result).toHaveProperty("ResponseCode");
-      } catch (err: any) {
-        if (err?.response?.data?.ResponseCode) {
-          expect(err.response.data).toHaveProperty("ResponseCode");
-        } else {
-          throw err;
-        }
+      } catch (err) {
+        expect(darajaErrorBody(err)).toHaveProperty("ResponseCode");
       }
     });
   });
@@ -351,12 +318,8 @@ describeIf("M-Pesa Sandbox Integration", hasCredentials(), () => {
           ResultURL: "https://example.com/result",
         });
         expect(result).toHaveProperty("ResponseCode");
-      } catch (err: any) {
-        if (err?.response?.data?.ResponseCode) {
-          expect(err.response.data).toHaveProperty("ResponseCode");
-        } else {
-          throw err;
-        }
+      } catch (err) {
+        expect(darajaErrorBody(err)).toHaveProperty("ResponseCode");
       }
     });
   });
@@ -364,23 +327,15 @@ describeIf("M-Pesa Sandbox Integration", hasCredentials(), () => {
   describe("Pull Transactions", () => {
     it("should pull transactions", async () => {
       try {
-        const result = await client.request({
-          method: "GET",
-          url: "/mpesa/pulltransactions/v1/query",
-          data: {
-            ShortCode: String(SHORTCODE),
-            StartDate: "2026-01-01 00:00:00",
-            EndDate: "2026-06-01 00:00:00",
-            OffSetValue: "0",
-          },
+        const result = await client.post("/pulltransactions/v1/query", {
+          ShortCode: String(SHORTCODE),
+          StartDate: "2026-01-01 00:00:00",
+          EndDate: "2026-06-01 00:00:00",
+          OffSetValue: "0",
         });
         expect(result).toHaveProperty("ResponseCode");
-      } catch (err: any) {
-        if (err?.response?.data?.ResponseCode) {
-          expect(err.response.data).toHaveProperty("ResponseCode");
-        } else {
-          throw err;
-        }
+      } catch (err) {
+        expect(darajaErrorBody(err)).toHaveProperty("ResponseCode");
       }
     });
   });

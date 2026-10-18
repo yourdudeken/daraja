@@ -65,6 +65,10 @@ Shared documentation for the Daraja SDKs (Python, TypeScript).
 
 - [Error Handling](errors/error-handling.md)
 
+## Conventions
+
+- [Money & Decimal Precision](money.md)
+
 ## MCP Server
 
 - [Using the MCP Server](mcp/README.md)
