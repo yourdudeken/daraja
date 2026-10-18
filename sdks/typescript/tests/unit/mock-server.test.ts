@@ -3,6 +3,7 @@ import nock from "nock";
 import { MpesaApiClient } from "../../src/client/client.js";
 import { AuthenticationError, MpesaAPIError } from "../../src/errors/index.js";
 import { PullTransactionsService } from "../../src/services/pull-transactions.js";
+import { STKPushService } from "../../src/services/stk-push.js";
 import type { MpesaConfig } from "../../src/types/index.js";
 
 const BASE = "https://sandbox.safaricom.co.ke";
@@ -327,6 +328,43 @@ describe("Mock Server Tests (nock)", () => {
     expect(register.isDone()).toBe(true);
     expect(queryResult.ResponseCode).toBe("0");
     expect(registerResult.ResponseRefID).toBe("r1");
+  });
+
+  it("should keep request amounts as JSON numbers", async () => {
+    // FR-31 / API-005: exact decimals apply to money parsed *from* M-Pesa only.
+    // Request amounts keep the JSON-number wire form Daraja accepts, so the
+    // money change must not stringify them on the way out.
+    mockAuth("money-token");
+
+    const sentBodies: Record<string, unknown>[] = [];
+    const stkPush = nock(BASE)
+      .post("/mpesa/stkpush/v1/processrequest", (body: Record<string, unknown>) => {
+        sentBodies.push(body);
+        return body["Amount"] === 100 && typeof body["Amount"] === "number";
+      })
+      .reply(200, {
+        MerchantRequestID: "mri-1",
+        CheckoutRequestID: "cri-1",
+        ResponseCode: "0",
+        ResponseDescription: "Success",
+        CustomerMessage: "Success",
+      });
+
+    await new STKPushService(createClient()).initiate({
+      BusinessShortCode: 174379,
+      TransactionType: "CustomerPayBillOnline",
+      Amount: 100,
+      PartyA: 254722000000,
+      PartyB: 174379,
+      PhoneNumber: 254722000000,
+      CallBackURL: "https://example.com/callback",
+      AccountReference: "ref",
+      TransactionDesc: "desc",
+    });
+
+    expect(stkPush.isDone()).toBe(true);
+    expect(sentBodies[0]?.["Amount"]).toBe(100);
+    expect(typeof sentBodies[0]?.["Amount"]).toBe("number");
   });
 
   it("should expose the documented error shape for a Daraja failure", async () => {

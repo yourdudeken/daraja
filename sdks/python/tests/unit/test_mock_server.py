@@ -384,3 +384,42 @@ class TestMappedErrorShape:
         assert isinstance(err.__context__, httpx.HTTPStatusError)
         assert err.cause is None
         assert not hasattr(err, "response")
+
+
+class TestMoneyWireForm:
+    @respx.mock
+    def test_request_amount_stays_a_json_number(self, client: Mpesa) -> None:
+        """FR-31 / API-005: only money parsed *from* M-Pesa is decimal.
+
+        Request amounts must keep the JSON-number wire form Daraja accepts, so the
+        money change must not stringify them on the way out.
+        """
+        _mock_auth(respx, "money-token")
+        route = respx.post(f"{BASE_URL}/mpesa/stkpush/v1/processrequest").respond(
+            200,
+            json={
+                "MerchantRequestID": "mri-1",
+                "CheckoutRequestID": "cri-1",
+                "ResponseCode": "0",
+                "ResponseDescription": "Success",
+                "CustomerMessage": "Success",
+            },
+        )
+
+        client.stk_push(
+            {
+                "BusinessShortCode": 174379,
+                "TransactionType": "CustomerPayBillOnline",
+                "Amount": 100,
+                "PartyA": 254722000000,
+                "PartyB": 174379,
+                "PhoneNumber": 254722000000,
+                "CallBackURL": "https://example.com/callback",
+                "AccountReference": "ref",
+                "TransactionDesc": "desc",
+            }
+        )
+
+        body = json.loads(route.calls.last.request.content)
+        assert body["Amount"] == 100
+        assert not isinstance(body["Amount"], str)
