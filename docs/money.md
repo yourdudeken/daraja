@@ -65,3 +65,25 @@ await mpesa.stkPush.initiate({ Amount: 100, ... });  // number — sent as a JSO
 Some callbacks (B2B Express, and the `ResultParameters` of any `MpesaResult`)
 carry monetary values that the SDK does not interpret. Those are returned exactly
 as they arrived — a string stays a string — and are never converted to a float.
+
+## Upgrading from an earlier release
+
+The values were previously exposed as binary floating-point numbers, so callers
+that did arithmetic on them need one change:
+
+| Value | Was | Now |
+|---|---|---|
+| STK callback `amount` | `float` (Python) / `number` (TypeScript) | `Decimal` / `string` |
+| `AccountInfo.availableBalance`, `.unclearedFunds`, `.reservedFunds` | `float` / `number` | `Decimal` / `string` |
+| Transaction status `amount` (`TransactionStatusService.parseCallback`) | `number` (TypeScript) | `string` |
+
+- **TypeScript:** wrap the string for arithmetic (`new Decimal(result.amount)`)
+  or pass it through to the ledger unchanged. The values are plain decimal
+  strings, so `JSON.stringify` output is unaffected.
+- **Python:** use `Decimal` for arithmetic and comparisons. `Decimal("100.10") ==
+  100.10` is `False`, so compare against `Decimal("100.10")`; `json.dumps` needs
+  `default=str` or `model_dump_json()` (see above).
+- **Requests need no changes.** `Amount` on the way in is still a JSON number.
+
+No rounding is applied anywhere: an amount the SDK parsed is either exact or the
+request that carried it failed.

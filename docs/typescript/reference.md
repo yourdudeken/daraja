@@ -480,7 +480,7 @@ client.getAccessToken()         // Promise<string>
 client.post<T>(url, body)       // Promise<T> — performs OAuth refresh automatically
 client.get<T>(url, params?)     // Promise<T>
 client.rotateCredentials(ck, cs) // void — invalidates cached token
-client.getEndpoint(key)         // string — full URL for an endpoint key; throws ValidationError on unknown
+client.getEndpoint(key)         // string — full URL for an endpoint key; throws ValidationError on unknown (previously returned "")
 client.invalidateToken()        // void
 ```
 
