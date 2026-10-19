@@ -1,7 +1,7 @@
 import http from "node:http";
 import https from "node:https";
 import axios, { type AxiosInstance, type AxiosRequestConfig } from "axios";
-import { getBaseUrl, getEndpoints } from "../environment.js";
+import { getBaseUrl, getEndpoints, READ_STYLE_ENDPOINTS, SANDBOX_ENDPOINTS } from "../environment.js";
 import { generateSecurityCredential, getCertificate } from "../utils/index.js";
 import type { MpesaConfig, ResolvedConfig, Logger, LoggingHook, AccessTokenResponse, TokenCache, Tracer, ConnectionPoolConfig } from "../types/index.js";
 import { maskSensitiveData, noopLogger, generateRequestId, createTracer, withSpan } from "../utils/index.js";
@@ -53,6 +53,15 @@ export class MpesaApiClient {
   private readonly circuitBreaker: CircuitBreaker;
   private readonly rateLimiter: TokenBucketRateLimiter | NoopRateLimiter;
   private readonly endpoints: Record<string, string>;
+  /**
+   * Paths of the read-style operations (see `READ_STYLE_ENDPOINTS`), matched as
+   * a suffix so both a `getEndpoint()` URL and a bare path are recognised. Their
+   * POST responses are never cached: a repeated query must be able to observe
+   * new server state.
+   */
+  private readonly readStylePaths: readonly string[] = READ_STYLE_ENDPOINTS.map(
+    (key) => SANDBOX_ENDPOINTS[key],
+  );
   private readonly tracer: Tracer;
   private readonly idempotencyStore: IdempotencyStore | null;
   /**
@@ -303,18 +312,32 @@ export class MpesaApiClient {
     return data.access_token;
   }
 
+  /**
+   * Whether a request targets a read-style operation. Endpoint URLs built by
+   * `getEndpoint()` and bare paths both match, so the exclusion holds however
+   * the caller addressed the endpoint.
+   */
+  private isReadStyleUrl(url: string): boolean {
+    return this.readStylePaths.some((path) => url === path || url.endsWith(path));
+  }
+
   async request<T>(config: AxiosRequestConfig, operationName?: string): Promise<T> {
     const spanName = `mpesa.http.${(config.method ?? "get").toLowerCase()}`;
 
     // The key is derived from the payload while ignoring the fields the SDK fills
     // in per call (Timestamp, Password, requestID) — otherwise no two calls would
     // ever share a key — and is namespaced by credential so a shared store cannot
-    // hand one account another account's response.
-    const idempotencyKey = this.idempotencyStore && config.method?.toUpperCase() === "POST"
-      ? generateIdempotencyKey(config.method ?? "POST", config.url ?? "", config.data, {
-          namespace: this.config.consumerKey,
-        })
-      : null;
+    // hand one account another account's response. Read-style POSTs (queries,
+    // balances, status checks) are excluded: their response must not be served
+    // from the cache, because the same query has to see new server state.
+    const idempotencyKey =
+      this.idempotencyStore &&
+      config.method?.toUpperCase() === "POST" &&
+      !this.isReadStyleUrl(config.url ?? "")
+        ? generateIdempotencyKey(config.method ?? "POST", config.url ?? "", config.data, {
+            namespace: this.config.consumerKey,
+          })
+        : null;
 
     if (idempotencyKey) {
       const inFlight = this.idempotencyInFlight.get(idempotencyKey);

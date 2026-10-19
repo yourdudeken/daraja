@@ -230,7 +230,7 @@ The SDK tracks request rates and will surface a `RateLimitError` with the `retry
 
 ### Idempotency
 
-Enabled by default (`enable_idempotency=True`). Each `POST` carries a deterministic `X-Idempotency-Key` derived from the credential, method, URL and body — ignoring the fields generated per call (`Timestamp`, `Password`, and the header `timestamp`/`requestID`) — so duplicate submissions are recognised. Concurrent identical submissions are sent once, and a successful response is reused for 24 hours; failures are never stored. Configure via `idempotency_store` (Python), or `idempotencyStore` (TS), and see [configuration](../getting-started/configuration.md#idempotency-keys).
+Enabled by default (`enable_idempotency=True`). Each state-changing `POST` carries a deterministic `X-Idempotency-Key` derived from the credential, method, URL and body — ignoring the fields generated per call (`Timestamp`, `Password`, and the header `timestamp`/`requestID`) — so duplicate submissions are recognised. Concurrent identical submissions are sent once, and a successful response is reused for 24 hours; failures are never stored. Read-style POSTs (queries, status checks, balances, validations, calculations) are never cached, so a repeated query observes the current server state. Configure via `idempotency_store` (Python), or `idempotencyStore` (TS), and see [configuration](../getting-started/configuration.md#idempotency-keys).
 
 ### Connection Pooling
 
