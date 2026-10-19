@@ -3,7 +3,6 @@ import secrets
 import time
 import uuid
 from collections.abc import Callable
-from decimal import Decimal
 from typing import Any
 
 from daraja.exceptions import ValidationError
@@ -95,6 +94,7 @@ from daraja.models import (
     TaxRemittanceResponse,
     TransactionStatusRequest,
     TransactionStatusResponse,
+    _parse_decimal,
 )
 from daraja.utils import (
     generate_password,
@@ -300,9 +300,9 @@ class AccountBalanceService:
                 info = AccountInfo(
                     accountName=parts[0],
                     currency=parts[1],
-                    availableBalance=Decimal(parts[2]),
-                    unclearedFunds=Decimal(parts[3]),
-                    reservedFunds=Decimal(parts[4]),
+                    availableBalance=_parse_decimal(parts[2]),
+                    unclearedFunds=_parse_decimal(parts[3]),
+                    reservedFunds=_parse_decimal(parts[4]),
                 )
                 name = info.accountName.lower().replace(" ", "")
                 if "working" in name:

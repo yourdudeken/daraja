@@ -1,3 +1,4 @@
+import decimal
 import logging
 from decimal import Decimal
 from typing import Any, Literal, Protocol, runtime_checkable
@@ -17,6 +18,20 @@ def _get_logger(logger: Logger | None = None) -> Logger:
     if logger is not None:
         return logger
     return logging.getLogger("mpesa")
+
+
+def _parse_decimal(value: Any) -> Decimal:
+    """Parse an exact decimal for a money field.
+
+    ``Decimal`` raises ``InvalidOperation`` (an ``ArithmeticError``) on
+    non-numeric input, where the ``float`` parsing this replaced raised
+    ``ValueError``. Re-raise as ``ValueError`` so callers that catch that
+    keep working; the original error stays chained.
+    """
+    try:
+        return Decimal(str(value))
+    except decimal.InvalidOperation as exc:
+        raise ValueError(f"not a valid decimal amount: {value!r}") from exc
 
 
 class RetryConfig(BaseModel):

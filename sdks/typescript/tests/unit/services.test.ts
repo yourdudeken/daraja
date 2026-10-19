@@ -766,7 +766,7 @@ describe("AccountBalanceService.parseCallback", () => {
   });
 
   it("keeps balance digits exactly as M-Pesa sent them", () => {
-    // FR-31 / API-005: `parseFloat("100.10")` returns 100.1 and loses the exact
+    // `parseFloat("100.10")` returns 100.1 and loses the exact
     // cents, so balances are exposed as strings instead.
     const payload: MpesaResult = {
       Result: {

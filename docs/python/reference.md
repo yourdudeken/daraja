@@ -157,6 +157,10 @@ B2CHakikishaService
 
 Each service class wraps a group of operations. Instances are created internally; consumers usually access them via the `Mpesa` service properties named above.
 
+If you construct a service yourself, note that `PullTransactionsService` now takes
+only the POST callable (`query` is a POST), where it previously took a POST and a GET
+callable.
+
 | Service | Methods |
 |---------|---------|
 | `STKPushService` | `initiate(req)`, `query(req)` |

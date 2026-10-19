@@ -2,10 +2,9 @@
 import hashlib
 import hmac
 from collections.abc import Callable
-from decimal import Decimal
 from typing import Any
 
-from daraja.models import Logger, STKCallbackPayload, _get_logger
+from daraja.models import Logger, STKCallbackPayload, _get_logger, _parse_decimal
 
 WebhookHandler = Callable[[str, Any], None]
 
@@ -86,7 +85,9 @@ class WebhookManager:
         if callback.CallbackMetadata:
             for item in callback.CallbackMetadata.Item:
                 if item.Name == "Amount":
-                    result["amount"] = Decimal(str(item.Value)) if item.Value else None
+                    result["amount"] = (
+                        _parse_decimal(item.Value) if item.Value else None
+                    )
                 elif item.Name == "MpesaReceiptNumber":
                     result["receipt_number"] = str(item.Value) if item.Value else None
                 elif item.Name == "TransactionDate":

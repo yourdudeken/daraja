@@ -89,7 +89,7 @@ describe("TransactionStatusService", () => {
     }
 
     it("should expose the amount as an exact decimal string", () => {
-      // FR-31 / API-005: the amount keeps the digits M-Pesa sent; it is never
+      // The amount keeps the digits M-Pesa sent; it is never
       // converted to a JS number.
       const result = TransactionStatusService.parseCallback(
         resultPayload([

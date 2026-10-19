@@ -29,7 +29,7 @@ class TestAccountBalanceParseBalanceString:
         assert result.organizationSettlementAccount.accountName == "Organization Settlement Account"
 
     def test_balances_are_exact_decimals(self):
-        """FR-31 / BUG-013: balances must not round-trip through binary floats.
+        """Balances must not round-trip through binary floats.
 
         `Decimal("100.10") == 100.10` is False, so this fails if the field is
         parsed with `float()`.

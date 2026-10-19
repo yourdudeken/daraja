@@ -70,7 +70,7 @@ class TestWebhookManager:
         assert result["phone_number"] == "254708374149"
 
     def test_parse_stk_callback_amount_is_exact_decimal(self):
-        """FR-31 / BUG-013: the parsed amount must not go through a float.
+        """The parsed amount must not go through a float.
 
         `Decimal("100.10") == 100.10` is False, so this fails if the amount is
         parsed with `float()`.
@@ -82,6 +82,14 @@ class TestWebhookManager:
 
         assert isinstance(result["amount"], Decimal)
         assert result["amount"] == Decimal("100.10")
+
+    def test_parse_stk_callback_non_numeric_amount_raises_value_error(self):
+        """A malformed amount stays a `ValueError`, like the `float()` parsing it replaced."""
+        payload = json.loads(json.dumps(STK_CALLBACK_SUCCESS))
+        payload["Body"]["stkCallback"]["CallbackMetadata"]["Item"][0]["Value"] = "not-a-number"
+
+        with pytest.raises(ValueError, match="not a valid decimal amount"):
+            WebhookManager().parse_stk_callback(payload)
 
     def test_parse_stk_callback_failed(self):
         manager = WebhookManager()

@@ -49,8 +49,12 @@ export class TransactionStatusService {
       resultCode: result.ResultCode,
       resultDescription: result.ResultDesc,
       transactionStatus: details["TransactionStatus"] as string,
-      // Money is exposed as an exact decimal string, never a JS number.
-      amount: details["Amount"] === undefined ? undefined : String(details["Amount"]),
+      // Money is exposed as an exact decimal string, never a JS number; an
+      // absent value stays undefined instead of becoming "undefined".
+      amount:
+        details["Amount"] === undefined || details["Amount"] === null
+          ? undefined
+          : String(details["Amount"]),
       receiptNumber: details["ReceiptNo"] as string,
     };
   }
