@@ -24,6 +24,12 @@ const DEFAULT_MAX_QUEUE_SIZE = 10_000;
 const DEFAULT_MAX_DLQ_SIZE = 10_000;
 /** Mutations coalesce inside this window; the DB file is rewritten at most once. */
 const DEFAULT_FLUSH_INTERVAL_MS = 50;
+
+/**
+ * Floor for the wait before the worker re-claims a retry. A row that came due
+ * between the claim and the deadline query must not spin the event loop.
+ */
+const MIN_RETRY_WAIT_MS = 10;
 /** Application-data directory that holds the queue file by default. */
 const APP_DIR_NAME = "mpesa-sdk";
 /** Queue file name used for the default path. */
@@ -116,6 +122,11 @@ export class PersistentWebhookRetryQueue {
   private readonly dbPath: string;
   private dirty = false;
   private flushTimer: ReturnType<typeof setTimeout> | null = null;
+  /** Set by `close()`: a parked worker must exit instead of touching a closed db. */
+  private closed = false;
+  /** Resolver of the parked worker's wait, or null while it is busy. */
+  private wake: (() => void) | null = null;
+  private retryTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(
     webhookManager: WebhookManager,
@@ -334,29 +345,64 @@ export class PersistentWebhookRetryQueue {
     this.logger.warn("Webhook enqueued for retry", { event });
     if (!this.processing) {
       this.processing = true;
-      this.processQueue();
+      void this.processQueue();
+    } else {
+      // The worker may be parked on a later retry deadline; wake it so this
+      // (due-now) event is not delayed behind that deadline.
+      this.wake?.();
     }
   }
 
   private async processQueue(): Promise<void> {
     for (;;) {
-      const stmt = this.db.prepare(`
-        SELECT * FROM webhook_queue
-        WHERE next_retry_at <= datetime('now')
-        ORDER BY id ASC
-        LIMIT 1
-      `);
-
-      let row: PersistentDeliveryRecord | null = null;
-      while (stmt.step()) {
-        const r = stmt.getAsObject() as unknown as PersistentDeliveryRecord;
-        row = r;
-      }
-      stmt.free();
-
-      if (!row) {
+      if (this.closed) {
         this.processing = false;
         return;
+      }
+
+      let row: PersistentDeliveryRecord | null = null;
+      try {
+        const stmt = this.db.prepare(`
+          SELECT * FROM webhook_queue
+          WHERE next_retry_at <= datetime('now')
+          ORDER BY id ASC
+          LIMIT 1
+        `);
+
+        while (stmt.step()) {
+          const r = stmt.getAsObject() as unknown as PersistentDeliveryRecord;
+          row = r;
+        }
+        stmt.free();
+      } catch (error) {
+        // An unhandled storage error (locked, corrupt, full disk) would
+        // otherwise reject this promise with `processing` still true, and no
+        // later `enqueue` would start another worker — a silent, permanent
+        // delivery outage. Report it, release the flag and stop: queued events
+        // stay on disk and the next `enqueue` starts a fresh worker.
+        this.logger.error("Persistent queue worker stopped after an error", {
+          path: this.dbPath,
+          error: String(error),
+        });
+        this.processing = false;
+        return;
+      }
+
+      if (!row) {
+        const waitMs = this.msUntilNextDue();
+        if (waitMs === null) {
+          // Queue is empty. The claim and this flag write happen in one
+          // synchronous stretch, so an `enqueue` landing after the claim either
+          // starts a fresh worker or is claimed by the loop — it cannot be lost.
+          this.processing = false;
+          return;
+        }
+        // Nothing is due yet: wait for the retry deadline, or for an enqueue
+        // that arrives sooner. Waiting here — rather than returning as soon as
+        // no row is due — is what makes a scheduled retry fire without new
+        // traffic to restart the worker.
+        await this.waitForRetryDeadline(waitMs);
+        continue;
       }
 
       this.db.run("DELETE FROM webhook_queue WHERE id = ?", [row.id]);
@@ -369,7 +415,7 @@ export class PersistentWebhookRetryQueue {
           type: row.event,
           payload: JSON.parse(row.payload),
         } as unknown as WebhookEvent);
-        this.logger.info("Retrying webhook delivery", {
+        this.logger.info("Webhook delivered", {
           event: row.event,
           attempt: newAttempts,
         });
@@ -411,11 +457,54 @@ export class PersistentWebhookRetryQueue {
     return rows[0]?.count ?? 0;
   }
 
+  /**
+   * Milliseconds until the earliest queued retry, or `null` when the queue is
+   * empty. The delay is computed by SQLite against `datetime('now')`, so it uses
+   * the same clock and parsing as the claim query.
+   */
+  private msUntilNextDue(): number | null {
+    const rows = this.queryRows<{ wait_ms: number | null }>(
+      "SELECT (julianday(MIN(next_retry_at)) - julianday('now')) * 86400000.0 AS wait_ms FROM webhook_queue",
+    );
+    const waitMs = rows[0]?.wait_ms;
+    if (waitMs === null || waitMs === undefined) return null;
+    // A row that came due between the claim and this query must not spin the
+    // loop; a floor of a few milliseconds costs nothing.
+    return Math.max(MIN_RETRY_WAIT_MS, waitMs);
+  }
+
+  /**
+   * Park the worker until the retry deadline, or until {@link wake} resolves it
+   * early because an event was enqueued. There is at most one parked worker, so
+   * a single resolver is enough.
+   */
+  private waitForRetryDeadline(waitMs: number): Promise<void> {
+    return new Promise((resolve) => {
+      const finish = (): void => {
+        if (this.retryTimer !== null) {
+          clearTimeout(this.retryTimer);
+          this.retryTimer = null;
+        }
+        this.wake = null;
+        resolve();
+      };
+      this.wake = finish;
+      this.retryTimer = setTimeout(finish, waitMs);
+      // Like the flush timer, a pending retry deadline must not hold an
+      // otherwise-finished process open.
+      this.retryTimer.unref?.();
+    });
+  }
+
   close(): void {
     if (this.flushTimer !== null) {
       clearTimeout(this.flushTimer);
       this.flushTimer = null;
     }
+    // Wake a parked worker so it exits through its own check instead of touching
+    // the database we are about to close.
+    this.closed = true;
+    this.wake?.();
     this.flush();
     this.db.close();
   }

@@ -155,6 +155,11 @@ contain customer data (MSISDN, account numbers, amounts).
 - **Overflow policy:** when the live queue is full the incoming event is moved to
   the DLQ intact (with `last_error = "queue overflow"`); events are never
   silently dropped. The already-queued backlog keeps its original order.
+- **Retries:** a failed delivery is re-queued with an exponential backoff
+  deadline (base 1 s, capped at 30 s) and the worker waits for that deadline, so
+  a scheduled retry is attempted with no new traffic to trigger it. An event
+  that becomes due sooner is delivered first, ahead of an earlier failure's
+  backoff. Past `max_retries` the event moves to the DLQ.
 - **DLQ retention:** once the DLQ is at its bound, the oldest dead letters are
   evicted first. Purge on demand with `purge_dlq(max_age_seconds=…)` /
   `purgeDlq({ maxAgeMs: … })` — pass an age to delete only older entries, or no
