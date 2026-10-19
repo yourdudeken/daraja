@@ -37,7 +37,7 @@ privately via GitHub's Security Advisories:
 
 ### What to include
 
-- **Component and version** affected (e.g. `daraja-sdk-ts` 1.0.1, `daraja-sdk-py` 1.0.1, `daraja-mcp` 1.0.0)
+- **Component and version** affected (the package name and the exact version you were running, e.g. `daraja-sdk-ts`, `daraja-sdk-py` or `daraja-mcp`)
 - **Impact** — what an attacker can do and under which conditions
 - **Reproduction steps** (or a minimal proof of concept)
 - Whether the issue affects **sandbox** or **production** usage
