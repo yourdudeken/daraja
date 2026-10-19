@@ -199,7 +199,11 @@ class PersistentWebhookRetryQueue:
         return self._db
 
     def enqueue(self, event: str, payload: Any) -> None:
-        payload_json = json.dumps(payload)
+        # ``default=str``: parsed callback payloads carry exact money types
+        # (``decimal.Decimal``), which are not JSON-serialisable. Every delivery
+        # — first as well as retried — is the JSON round-trip of what was
+        # stored, so money reaches the handler as the exact decimal string.
+        payload_json = json.dumps(payload, default=str)
         with self._db_lock:
             db = self._get_db()
             if self._count(db, "webhook_queue") >= self._max_queue_size:

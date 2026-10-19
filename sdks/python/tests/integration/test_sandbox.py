@@ -379,8 +379,10 @@ class TestB2Pochi:
 class TestPullTransactions:
     def test_pull_transactions(self, client: Mpesa) -> None:
         try:
+            # POST with a JSON body, per docs/apis/pull-transaction.md — the
+            # undocumented GET-with-body form is not what Daraja accepts.
             result = client._request(
-                "GET",
+                "POST",
                 _url("PULL_TRANSACTIONS_QUERY"),
                 {
                     "ShortCode": str(SHORTCODE),

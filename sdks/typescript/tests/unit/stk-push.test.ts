@@ -37,7 +37,7 @@ describe("STKPushService", () => {
     });
 
     it("should expose the amount as an exact decimal string", () => {
-      // FR-31 / API-005: money is never a JS number, so the digits M-Pesa sent
+      // Money is never a JS number, so the digits M-Pesa sent
       // survive the round-trip unchanged.
       const payload: STKCallbackPayload = {
         Body: {
@@ -57,6 +57,28 @@ describe("STKPushService", () => {
 
       expect(result.amount).toBe("100.10");
       expect(typeof result.amount).toBe("string");
+    });
+
+    it("leaves the amount absent when the metadata carries no value", () => {
+      // An absent Value must stay absent rather than becoming the string
+      // "undefined".
+      const payload: STKCallbackPayload = {
+        Body: {
+          stkCallback: {
+            MerchantRequestID: "29115-34620561-1",
+            CheckoutRequestID: "ws_CO_191220191020363925",
+            ResultCode: 0,
+            ResultDesc: "ok",
+            CallbackMetadata: {
+              Item: [{ Name: "Amount" }],
+            },
+          },
+        },
+      };
+
+      const result: STKCallbackResult = STKPushService.parseCallback(payload);
+
+      expect(result.amount).toBeUndefined();
     });
 
     it("should parse an unsuccessful callback", () => {

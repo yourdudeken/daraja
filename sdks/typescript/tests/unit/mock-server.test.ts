@@ -331,7 +331,7 @@ describe("Mock Server Tests (nock)", () => {
   });
 
   it("should keep request amounts as JSON numbers", async () => {
-    // FR-31 / API-005: exact decimals apply to money parsed *from* M-Pesa only.
+    // Exact decimals apply to money parsed *from* M-Pesa only.
     // Request amounts keep the JSON-number wire form Daraja accepts, so the
     // money change must not stringify them on the way out.
     mockAuth("money-token");

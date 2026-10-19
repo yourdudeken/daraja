@@ -29,21 +29,23 @@ const parsed = mpesa.webhooks.parseSTKCallback(rawBody);
 parsed.amount;                  // "100.10"
 typeof parsed.amount;           // "string"
 
-const balances = AccountBalanceService.parseCallback(payload);
-balances.workingAccount.availableBalance; // "728037.10"
+const result = AccountBalanceService.parseCallback(payload);
+result.balances?.workingAccount?.availableBalance; // "728037.10"
 ```
 
-The digits are passed through exactly as M-Pesa sent them: `"100.10"` stays
-`"100.10"` and never becomes `100.1`. Use a decimal library
-(`decimal.js`, `big.js`) for arithmetic in TypeScript, and `decimal.Decimal` in
-Python.
+The **value** is always exact: `Decimal("100.1")` and `"100.1"` in TypeScript
+carry no binary-floating-point error. Trailing-zero *formatting* is preserved only
+when the callback carried the value as a string — a JSON number has already lost it
+by the time either SDK parses the body (`100.10` arrives as `100.1`). Use a decimal
+library (`decimal.js`, `big.js`) for arithmetic in TypeScript, and
+`decimal.Decimal` in Python.
 
 `Decimal` is not JSON-serialisable by default, so use Pydantic's JSON mode when
 persisting parsed results:
 
 ```python
-balances.model_dump_json()                          # {"availableBalance":"728037.10", ...}
-json.dumps(balances.model_dump(), default=str)      # or an explicit encoder
+balances.workingAccount.model_dump_json()  # {"accountName":"Working Account", …, "availableBalance":"728037.10"}
+json.dumps(balances.model_dump(), default=str)   # or an explicit encoder
 ```
 
 ## Request payloads still use JSON numbers
@@ -65,6 +67,13 @@ await mpesa.stkPush.initiate({ Amount: 100, ... });  // number — sent as a JSO
 Some callbacks (B2B Express, and the `ResultParameters` of any `MpesaResult`)
 carry monetary values that the SDK does not interpret. Those are returned exactly
 as they arrived — a string stays a string — and are never converted to a float.
+
+## Through the persistent retry queue
+
+`PersistentWebhookRetryQueue` is a JSON store, so a payload it buffers is delivered
+as its JSON round-trip. An amount enqueued as `Decimal("100.10")` therefore reaches
+the handler as the string `"100.10"` on every delivery — the first one included. The
+digits are exact either way; only the type differs.
 
 ## Upgrading from an earlier release
 

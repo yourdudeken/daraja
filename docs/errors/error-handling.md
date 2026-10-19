@@ -11,7 +11,7 @@ MpesaError (base)
 ├── TimeoutError           — request exceeded the configured timeout
 ├── APIConnectionError     — network error connecting to Safaricom
 ├── RateLimitError         — too many requests (includes retryAfter)
-├── MpesaAPIError          — Daraja returned an error response code
+├── MpesaAPIError          — Daraja answered with a non-2xx status, or retries were exhausted
 └── WebhookVerificationError — HMAC signature verification failed
 ```
 

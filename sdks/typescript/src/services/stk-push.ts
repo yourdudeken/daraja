@@ -95,7 +95,10 @@ export class STKPushService {
         switch (item.Name) {
           case "Amount":
             // Money is exposed as an exact decimal string — never a JS number.
-            result.amount = String(item.Value);
+            // An absent Value stays absent rather than becoming "undefined".
+            if (item.Value !== undefined && item.Value !== null && item.Value !== "") {
+              result.amount = String(item.Value);
+            }
             break;
           case "MpesaReceiptNumber":
             result.receiptNumber = String(item.Value);

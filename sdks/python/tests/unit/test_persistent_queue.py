@@ -6,14 +6,17 @@ interleaved ``execute``/``commit`` pairs could raise ``sqlite3.OperationalError`
 and lose events.
 """
 
+import json
 import sqlite3
 import threading
 import time
+from decimal import Decimal
 
 import pytest
 
 import daraja.webhooks.persistent_queue as persistent_queue_module
-from daraja.webhooks import PersistentWebhookRetryQueue
+from daraja.webhooks import PersistentWebhookRetryQueue, WebhookManager
+from tests.fixtures.callback_payloads import STK_CALLBACK_SUCCESS
 
 
 class RecordingManager:
@@ -402,6 +405,30 @@ class TestHandlerReentrancy:
 
         assert _wait_until(lambda: len(received) >= 2)
         assert sorted(received) == ["first", "second"]
+        assert queue.get_queue_size() == 0
+        queue.close()
+
+    def test_handler_can_enqueue_a_parsed_callback_with_decimal_money(self, tmp_path):
+        """A handler enqueueing what it was handed must not hit a Decimal TypeError.
+
+        Money parsed from a callback is ``decimal.Decimal``, which a bare
+        ``json.dumps`` cannot serialise. The queue stores — and delivers — the
+        exact decimal string instead.
+        """
+        payload = json.loads(json.dumps(STK_CALLBACK_SUCCESS))
+        payload["Body"]["stkCallback"]["CallbackMetadata"]["Item"][0]["Value"] = "100.10"
+        parsed = WebhookManager().parse_stk_callback(payload)
+        assert isinstance(parsed["amount"], Decimal)
+
+        manager = RecordingManager()
+        queue = PersistentWebhookRetryQueue(manager, db_path=str(tmp_path / "queue.db"))
+        queue.enqueue("stk:callback", parsed)
+
+        assert _wait_until(lambda: manager.count() == 1, timeout=5)
+        event_type, delivered = manager.received[0]
+        assert event_type == "stk:callback"
+        # JSON has no Decimal, so the handler gets the exact digits back.
+        assert delivered["amount"] == "100.10"
         assert queue.get_queue_size() == 0
         queue.close()
 

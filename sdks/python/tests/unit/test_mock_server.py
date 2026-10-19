@@ -301,7 +301,7 @@ class TestErrorMock:
 class TestPullTransactionsContract:
     @respx.mock
     def test_query_is_post_with_json_body(self, client: Mpesa) -> None:
-        """FR-30 / BUG-012 / API-001: the query endpoint is POST, per the docs.
+        """The query endpoint is POST, per the docs.
 
         Asserted on the wire (method + body), not on the internal helper the call
         happens to use, so a revert to the undocumented GET-with-body fails here.
@@ -355,7 +355,7 @@ class TestPullTransactionsContract:
 class TestMappedErrorShape:
     @respx.mock
     def test_api_error_exposes_the_documented_fields(self, client: Mpesa) -> None:
-        """FR-32 / API-006: the mapped error carries the documented fields.
+        """The mapped error carries the documented fields.
 
         The body is on `raw_response` (text) and the transport error is chained on
         `__cause__`; the SDK error deliberately has no `response` attribute.
@@ -377,7 +377,10 @@ class TestMappedErrorShape:
 
         err = excinfo.value
         assert err.status_code == 400
-        assert err.request_id
+        # The request id is the SDK-generated `X-Request-ID` header, not the
+        # `requestId` in the error body.
+        sent = respx.calls.last.request
+        assert err.request_id == sent.headers["X-Request-ID"]
         assert json.loads(err.raw_response)["errorCode"] == "400.002.02"
         # The transport error that was mapped is chained implicitly; `.cause` is
         # only set where the SDK attaches it explicitly (timeout/connection).
@@ -389,7 +392,7 @@ class TestMappedErrorShape:
 class TestMoneyWireForm:
     @respx.mock
     def test_request_amount_stays_a_json_number(self, client: Mpesa) -> None:
-        """FR-31 / API-005: only money parsed *from* M-Pesa is decimal.
+        """Only money parsed *from* M-Pesa is decimal.
 
         Request amounts must keep the JSON-number wire form Daraja accepts, so the
         money change must not stringify them on the way out.
