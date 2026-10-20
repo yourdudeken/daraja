@@ -5,10 +5,11 @@ import { loadConfig } from "./config.js";
 import { startHttpTransport } from "./transport.js";
 
 const isDirectExecution =
-  process.argv[1] &&
+  Boolean(process.argv[1]) &&
   (import.meta.url.endsWith(process.argv[1]) ||
     process.argv[1].endsWith("index.js") ||
-    process.argv[1].endsWith("daraja-mcp"));
+    process.argv[1].endsWith("daraja-mcp") ||
+    process.argv[1].includes("daraja-mcp"));
 
 import { loadMcpServerConfig, loadToolPolicy } from "./config.js";
 
@@ -33,6 +34,8 @@ if (isDirectExecution || process.env.DARAJA_MCP_MODE) {
       maxSessions: mcpConfig.maxSessions,
       sessionIdleTimeoutMs: mcpConfig.sessionIdleTimeoutMs,
       trustProxy: mcpConfig.trustProxy,
+      allowedOrigins: mcpConfig.allowedOrigins,
+      allowedHosts: mcpConfig.allowedHosts,
     });
   } else {
     console.error("Daraja MCP server running over stdio");

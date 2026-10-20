@@ -29,7 +29,8 @@ const SECRET_NAMES = "password|secret|credential|token|api[-_]?key|authorization
 const SECRET_KEY_RE = new RegExp(SECRET_NAMES, "i");
 
 /** Keys whose values are personal data (phone numbers, government IDs). */
-const PII_KEY_RE = /(phone|msisdn|customer|receiver|idnumber|id_number|idtype|id_type)/i;
+const PII_KEY_RE =
+  /(phone|msisdn|customer|receiver|idnumber|id_number|idtype|id_type|account|accountnumber|account_no|accountholder|email|emailaddress|nationalid|passport|transaction|transactionid|transid|mpesareceipt|receipt|referencenumber|referenceno|shortcode|businessshortcode|paybill|till|organization|orgname|merchant|party|partya|partyb)/i;
 
 // JS `$` does not match before a trailing newline, and the Python side uses
 // `\A...\Z`, so both agree on newline-terminated input. `[0-9]` (not `\d`) keeps

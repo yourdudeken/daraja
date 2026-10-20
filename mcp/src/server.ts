@@ -17,12 +17,14 @@ export interface CreateServerOptions {
 }
 
 export function createServer(client: Mpesa, options: CreateServerOptions = {}): Server {
+  // FR-44: sandbox tools withheld by default when environment omitted -> production-safe
+  const environment = options.environment ?? "production";
   const server = new Server(
     { name: "daraja", version: VERSION },
     { capabilities: { tools: {} } }
   );
 
-  const tools: Tool[] = applyToolPolicy(getAllTools(), options.policy, options.environment);
+  const tools: Tool[] = applyToolPolicy(getAllTools(), options.policy, environment);
   const toolMap = new Map(tools.map((t) => [t.name, t]));
 
   server.setRequestHandler(ListToolsRequestSchema, async () => ({

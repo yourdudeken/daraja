@@ -136,6 +136,8 @@ docker build -t daraja-mcp ./mcp
 | `MCP_MAX_SESSIONS` | No | `100` | Max concurrent MCP sessions (`0` disables the cap) |
 | `MCP_SESSION_IDLE_TIMEOUT_MS` | No | `1800000` | Close/evict a session after this idle time in ms (`0` disables) |
 | `MCP_TRUST_PROXY` | No | - | Reverse-proxy trust: a hop count or address/keyword (e.g. `1`, `loopback`, `10.0.0.0/8`); `true` is rejected as unsafe |
+| `MCP_ALLOWED_ORIGINS` | No | - | Comma-separated allowed origins for Streamable HTTP |
+| `MCP_ALLOWED_HOSTS` | No | - | Comma-separated allowed Host headers for Streamable HTTP |
 | `MCP_READONLY_MODE` | No | `false` | Expose only read-only tools (no payments/reversals/C2B registration) |
 | `MCP_ALLOWED_TOOLS` | No | - | Comma-separated tool allowlist (intersected with read-only mode) |
 
@@ -150,15 +152,24 @@ These map directly onto the TypeScript SDK's `MpesaConfig` (see
   is parsed.
 - **Per-IP rate limiting** (`MCP_RATE_LIMIT_MAX` / `MCP_RATE_LIMIT_WINDOW_MS`)
   protects the auth endpoints against brute force; the health probe is exempt
-  from auth (but not from rate limiting).
+  from auth (but not from rate limiting). Rate limiting cannot be silently
+  disabled — set `MCP_RATE_LIMIT_MAX=0` explicitly if you need to disable it.
 - **Session binding**: when multiple credentials are configured, a MCP session
   can only be driven by the credential that created it.
 - **Bounded sessions**: `MCP_MAX_SESSIONS` caps concurrent sessions (rejecting
   new ones with `503`), and `MCP_SESSION_IDLE_TIMEOUT_MS` evicts and closes
   sessions that go idle — so half-open or abandoned streams cannot exhaust
   memory.
+- **Origin/Host validation**: configure `MCP_ALLOWED_ORIGINS` and/or
+  `MCP_ALLOWED_HOSTS` to restrict cross-origin/host access (enforced on the
+  Streamable HTTP endpoints). When auth is disabled, origin validation is
+  especially important.
+- **Redaction**: tool arguments and error strings are redacted before logging;
+  secret keys redact entire subtrees, PII is masked/removed, and inline
+  secrets/credentials and embedded MSISDNs are scrubbed in free text.
 - **Sandbox-only tools**: `c2b_simulate` is not registered when
-  `MPESA_ENVIRONMENT=production`, even if it is allowlisted.
+  `MPESA_ENVIRONMENT=production`, even if it is allowlisted. When the environment
+  is omitted, it defaults to production (sandbox tools are withheld).
 - **Input validation**: handlers validate amounts (e.g. STK Push `1–250000`),
   Kenyan MSISDNs (`254XXXXXXXXX`), and callback URLs before calling the SDK;
   invalid input fails fast as a tool error instead of reaching the M-Pesa API.
