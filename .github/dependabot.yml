@@ -1,5 +1,21 @@
 version: 2
 updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      actions:
+        patterns: ["*"]
+
+  - package-ecosystem: "docker"
+    directory: "/mcp"
+    schedule:
+      interval: "weekly"
+    groups:
+      docker:
+        patterns: ["*"]
+
   - package-ecosystem: "npm"
     directory: "/mcp"
     schedule:

@@ -9,6 +9,9 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 jobs:
   python:
     name: Python SDK
@@ -16,11 +19,14 @@ jobs:
     defaults:
       run:
         working-directory: sdks/python
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: ${{ matrix.python-version }}
           cache: pip
       - name: Install
         run: pip install -e ".[all]" pytest hypothesis respx ruff mypy pytest-cov
@@ -46,7 +52,7 @@ jobs:
           node-version: 22
           cache: npm
           cache-dependency-path: sdks/typescript/package-lock.json
-      - run: npm install
+      - run: npm ci
       - run: npm run lint
       - run: npm run test:coverage
       - run: npm run build
@@ -62,7 +68,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: npm install
+          cache: npm
+          cache-dependency-path: mcp/package-lock.json
+      - run: npm ci
       - run: npm run lint
       - run: npm run test:coverage
       - run: npm run build

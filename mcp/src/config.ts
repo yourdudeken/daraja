@@ -23,6 +23,10 @@ export interface McpServerConfig {
   sessionIdleTimeoutMs: number;
   /** Express `trust proxy` setting; undefined leaves it unset. */
   trustProxy?: boolean | number | string;
+  /** Allowlist of origins/hosts for CORS/origin checks; empty means allow all (only when safe). */
+  allowedOrigins?: string[];
+  /** Allowlist of hosts for Host header validation. */
+  allowedHosts?: string[];
 }
 
 const TRUST_PROXY_KEYWORDS = new Set(["loopback", "linklocal", "uniquelocal"]);
@@ -63,6 +67,15 @@ function parseTrustProxy(value: string | undefined): false | number | string | u
     `MCP_TRUST_PROXY value "${v}" is invalid. Use "false", a non-negative hop count, ` +
       `or an address/keyword such as "loopback" or "10.0.0.0/8".`,
   );
+}
+
+function parseStringList(value: string | undefined): string[] | undefined {
+  if (value === undefined || value.trim() === "") return undefined;
+  const entries = value
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  return entries.length > 0 ? entries : undefined;
 }
 
 function parseNonNegativeInt(value: string | undefined, fallback: number): number {
@@ -152,6 +165,8 @@ export function loadMcpServerConfig(): McpServerConfig {
     30 * 60_000,
   );
   const trustProxy = parseTrustProxy(process.env.MCP_TRUST_PROXY);
+  const allowedOrigins = parseStringList(process.env.MCP_ALLOWED_ORIGINS);
+  const allowedHosts = parseStringList(process.env.MCP_ALLOWED_HOSTS);
 
   return {
     port,
@@ -164,6 +179,8 @@ export function loadMcpServerConfig(): McpServerConfig {
     maxSessions,
     sessionIdleTimeoutMs,
     trustProxy,
+    allowedOrigins,
+    allowedHosts,
   };
 }
 

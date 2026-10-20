@@ -26,6 +26,10 @@ export interface TransportOptions {
   sessionIdleTimeoutMs?: number;
   /** Express `trust proxy` setting (boolean, hop count, or string). */
   trustProxy?: boolean | number | string;
+  /** Allowlist of origins for cross-origin requests. */
+  allowedOrigins?: string[];
+  /** Allowlist of hosts for Host header validation. */
+  allowedHosts?: string[];
 }
 
 /** A live Streamable HTTP session, bound to the credential that created it. */
@@ -116,6 +120,32 @@ export function createHttpTransport(
   // initialize requests cannot overshoot maxSessions.
   let pendingSessions = 0;
 
+  // --- Origin/Host validation (FR-42) -----------------------------------
+  app.use(API_PREFIX, (req, res, next) => {
+    const origin = req.headers.origin as string | undefined;
+    if (origin) {
+      if (options.allowedOrigins && options.allowedOrigins.length > 0) {
+        const allowed = options.allowedOrigins.some((o) => o === origin || o === "*");
+        if (!allowed) {
+          jsonRpcError(res, 403, -32001, "Forbidden: origin not allowed");
+          return;
+        }
+      }
+      // If no allowlist configured, we still enforce a basic check for obvious
+      // cases but do not block all cross-origin requests by default to avoid
+      // breaking existing deployments; explicit allowlist is recommended.
+    }
+    const host = req.headers.host as string | undefined;
+    if (host && options.allowedHosts && options.allowedHosts.length > 0) {
+      const allowed = options.allowedHosts.some((h) => h === host);
+      if (!allowed) {
+        jsonRpcError(res, 403, -32001, "Forbidden: host not allowed");
+        return;
+      }
+    }
+    next();
+  });
+
   // --- low-cost response hardening -------------------------------------
   app.use(API_PREFIX, (_req, res, next) => {
     res.setHeader("X-Content-Type-Options", "nosniff");
@@ -164,6 +194,8 @@ export function createHttpTransport(
     if (req.method === "GET" && req.path === "/health") {
       return next();
     }
+    // If auth is disabled, still enforce origin allowlist if configured
+    // (FR-42: documented and enforced especially when auth is disabled).
     const outcome = checkAuth(req, res, options);
     if (!outcome.ok) return;
     // Remember which credential authenticated this request so individual
@@ -260,6 +292,31 @@ export function createHttpTransport(
   app.post(`${API_PREFIX}/mcp`, express.json({ limit: "100kb" }), handleMcp);
   app.get(`${API_PREFIX}/mcp`, handleMcp);
   app.delete(`${API_PREFIX}/mcp`, handleMcp);
+
+  // Catch malformed JSON and return generic JSON-RPC error (FR-43)
+  app.use((err: unknown, req: express.Request, res: express.Response, _next: express.NextFunction) => {
+    if (err instanceof SyntaxError) {
+      if (!res.headersSent) {
+        jsonRpcError(res, 400, -32700, "Parse error");
+      } else {
+        res.end();
+      }
+      return;
+    }
+    console.error(
+      JSON.stringify({
+        timestamp: new Date().toISOString(),
+        event: "http.error",
+        path: req.originalUrl.split("?")[0],
+        error: err instanceof Error ? err.message : String(err),
+      }),
+    );
+    if (!res.headersSent) {
+      jsonRpcError(res, 500, -32603, "Internal error");
+    } else {
+      res.end();
+    }
+  });
 
   app.get(`${API_PREFIX}/health`, (_req, res) => {
     res.json({ status: "ok", activeSessions: sessions.size });

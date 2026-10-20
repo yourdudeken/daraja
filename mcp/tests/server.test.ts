@@ -29,7 +29,7 @@ describe("createServer", () => {
   });
 
   it("lists all tools with schema", async () => {
-    const { client } = await connectClient({} as never);
+    const { client } = await connectClient({} as never, { environment: "sandbox" });
 
     const result = await client.listTools();
     expect(result.tools).toHaveLength(22);
