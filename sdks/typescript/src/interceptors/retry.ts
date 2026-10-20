@@ -146,7 +146,7 @@ export function setupRetryInterceptor(
 export function mapAxiosError(error: AxiosError): Error {
   const status = error.response?.status;
   const data = error.response?.data as Record<string, unknown> | undefined;
-  const requestId = (data?.requestId as string) ?? error.config?.headers?.["X-Request-Id"] as string;
+  const requestId = (data?.requestId as string) ?? (error.config?.headers?.["X-Request-ID"] as string);
 
   if (error.code === "ECONNABORTED" || error.code === "ETIMEDOUT") {
     return new TimeoutError("Request to M-Pesa API timed out.", {

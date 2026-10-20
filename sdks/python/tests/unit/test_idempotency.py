@@ -14,10 +14,15 @@ import respx
 from daraja.client import Mpesa
 from daraja.client.async_client import AsyncMpesa
 from daraja.exceptions import MpesaAPIError
-from daraja.utils.idempotency import InMemoryIdempotencyStore, generate_idempotency_key
+from daraja.utils.idempotency import (
+    READ_STYLE_OPERATIONS,
+    InMemoryIdempotencyStore,
+    generate_idempotency_key,
+)
 
 BASE_URL = "https://sandbox.safaricom.co.ke"
 STK_PATH = "/mpesa/stkpush/v1/processrequest"
+BALANCE_PATH = "/mpesa/accountbalance/v1/query"
 
 _STK_RESPONSE = {
     "MerchantRequestID": "mri-1",
@@ -37,6 +42,14 @@ STK_REQUEST: dict[str, Any] = {
     "CallBackURL": "https://example.com/cb",
     "AccountReference": "ref",
     "TransactionDesc": "desc",
+}
+
+BALANCE_REQUEST: dict[str, Any] = {
+    "CommandID": "AccountBalance",
+    "PartyA": 254708374149,
+    "Remarks": "Balance",
+    "QueueTimeOutURL": "https://example.com/timeout",
+    "ResultURL": "https://example.com/result",
 }
 
 
@@ -246,6 +259,43 @@ class TestSyncIdempotency:
         finally:
             client.close()
 
+    @respx.mock
+    def test_a_repeated_read_style_post_observes_new_server_state(self):
+        """A balance query must see the new state, not a cached response."""
+        _mock_auth(respx)
+        route = respx.post(f"{BASE_URL}{BALANCE_PATH}")
+        route.side_effect = [
+            httpx.Response(
+                200,
+                json={
+                    "OriginatorConversationID": "oci-1",
+                    "ConversationID": "convo-1",
+                    "ResponseCode": "0",
+                    "ResponseDescription": "Success",
+                },
+            ),
+            httpx.Response(
+                200,
+                json={
+                    "OriginatorConversationID": "oci-2",
+                    "ConversationID": "convo-2",
+                    "ResponseCode": "0",
+                    "ResponseDescription": "Success",
+                },
+            ),
+        ]
+        client = make_client(enable_idempotency=True, idempotency_store=InMemoryIdempotencyStore())
+        try:
+            first = client.account_balance_service.query(dict(BALANCE_REQUEST))
+            second = client.account_balance_service.query(dict(BALANCE_REQUEST))
+
+            # Both calls reached the wire and the second saw the changed state.
+            assert first.ConversationID == "convo-1"
+            assert second.ConversationID == "convo-2"
+            assert route.call_count == 2
+        finally:
+            client.close()
+
 
 @pytest.mark.anyio
 @respx.mock
@@ -305,3 +355,48 @@ async def test_async_failed_submission_is_not_cached():
         assert route.call_count == 2
     finally:
         await client.close()
+
+
+@pytest.mark.anyio
+@respx.mock
+async def test_async_repeated_read_style_post_observes_new_server_state():
+    _mock_auth(respx)
+    route = respx.post(f"{BASE_URL}{BALANCE_PATH}")
+    route.side_effect = [
+        httpx.Response(
+            200,
+            json={
+                "OriginatorConversationID": "oci-1",
+                "ConversationID": "convo-1",
+                "ResponseCode": "0",
+                "ResponseDescription": "Success",
+            },
+        ),
+        httpx.Response(
+            200,
+            json={
+                "OriginatorConversationID": "oci-2",
+                "ConversationID": "convo-2",
+                "ResponseCode": "0",
+                "ResponseDescription": "Success",
+            },
+        ),
+    ]
+    store = InMemoryIdempotencyStore()
+    client = make_async_client(enable_idempotency=True, idempotency_store=store)
+    try:
+        first = await client.account_balance(dict(BALANCE_REQUEST))
+        second = await client.account_balance(dict(BALANCE_REQUEST))
+
+        assert first.ConversationID == "convo-1"
+        assert second.ConversationID == "convo-2"
+        assert route.call_count == 2
+    finally:
+        await client.close()
+
+
+def test_read_style_operations_are_all_real_endpoint_keys():
+    """The exclusion set cannot drift away from the endpoint map."""
+    from daraja.environment import ENDPOINTS
+
+    assert READ_STYLE_OPERATIONS <= set(ENDPOINTS)

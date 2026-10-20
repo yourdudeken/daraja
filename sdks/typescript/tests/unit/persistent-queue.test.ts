@@ -5,6 +5,7 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
 import { WebhookManager } from "../../src/webhooks/index.js";
+import type { Logger } from "../../src/types/index.js";
 import {
   PersistentWebhookRetryQueue,
   SCHEMA_VERSION,
@@ -422,5 +423,94 @@ describe("PersistentWebhookRetryQueue persistence", () => {
     applySchemaMigrations(db, 3, 3, migrations);
     expect(applied).toStrictEqual([1, 2, 3]);
     db.close();
+  });
+
+  it("retries a failed delivery at the backoff deadline, with no new traffic", async () => {
+    const attempts: number[] = [];
+    const manager = new WebhookManager();
+    manager.on("evt", () => {
+      attempts.push(attempts.length + 1);
+      if (attempts.length === 1) throw new Error("boom");
+    });
+
+    const queue = new PersistentWebhookRetryQueue(manager, {
+      dbPath: join(dir, "queue.db"),
+      flushIntervalMs: 10,
+    });
+    await queue.init();
+    queue.enqueue("evt", { hello: "world" });
+
+    // The first attempt fails, so the retry is scheduled at the backoff
+    // deadline (base 1000ms). Nothing else is enqueued: the worker has to park
+    // on that deadline and wake up to deliver, or the event never leaves the
+    // queue.
+    await waitFor(() => attempts.length === 2, 4_000);
+
+    expect(attempts).toEqual([1, 2]);
+    expect(queue.getQueueSize()).toBe(0);
+    expect(queue.getDlqSize()).toBe(0);
+    queue.close();
+  });
+
+  it("does not hold a due-now event behind an earlier failure's deadline", async () => {
+    const delivered: string[] = [];
+    let attempts = 0;
+    const manager = new WebhookManager();
+    manager.on("a", () => {
+      attempts += 1;
+      if (attempts === 1) throw new Error("transient");
+      delivered.push("a");
+    });
+    manager.on("b", () => {
+      delivered.push("b");
+    });
+
+    const queue = new PersistentWebhookRetryQueue(manager, {
+      dbPath: join(dir, "queue.db"),
+      maxRetries: 3,
+    });
+    await queue.init();
+    queue.enqueue("a", { n: 1 });
+    await waitFor(() => attempts === 1);
+
+    // `a` now waits out its ~1s backoff. `b` is due immediately and must not be
+    // held behind that deadline: the enqueue has to wake the parked worker.
+    const enqueuedBAt = Date.now();
+    queue.enqueue("b", { n: 2 });
+
+    await waitFor(() => delivered.includes("b"), 4_000);
+    expect(Date.now() - enqueuedBAt).toBeLessThan(500);
+
+    await waitFor(() => delivered.includes("a"), 4_000);
+    expect(delivered).toEqual(["b", "a"]);
+    queue.close();
+  });
+
+  it("exits a worker parked on a retry deadline when the queue is closed", async () => {
+    const logged: string[] = [];
+    const logger: Logger = {
+      debug: () => {},
+      info: (msg: string) => logged.push(msg),
+      warn: (msg: string) => logged.push(msg),
+      error: (msg: string) => logged.push(msg),
+    };
+
+    const queue = new PersistentWebhookRetryQueue(failingManager(), {
+      dbPath: join(dir, "queue.db"),
+      maxRetries: 5,
+      flushIntervalMs: 10,
+      logger,
+    });
+    await queue.init();
+    queue.enqueue("evt", { hello: "world" });
+
+    // Wait until the failure has been re-queued with a future deadline, i.e.
+    // the worker is parked on it, then close under it. A worker that came back
+    // for the deadline would find a closed database and report a worker error.
+    await waitFor(() => queue.getQueueSize() === 1);
+    queue.close();
+    await new Promise((resolve) => setTimeout(resolve, 2_000));
+
+    expect(logged).not.toContain("Persistent queue worker stopped after an error");
   });
 });

@@ -92,6 +92,7 @@ from daraja.utils.circuit_breaker import (
     CircuitBreaker,
 )
 from daraja.utils.idempotency import (
+    READ_STYLE_OPERATIONS,
     IdempotencyStore,
     InMemoryIdempotencyStore,
     generate_idempotency_key,
@@ -297,7 +298,14 @@ class AsyncMpesa:
         request_id = _generate_request_id()
 
         idempotency_store = self._idempotency_store
-        if idempotency_store is None or method.upper() != "POST":
+        if (
+            idempotency_store is None
+            or method.upper() != "POST"
+            # Read-style POSTs (queries, balances, status checks) are never
+            # cached: the same query must be able to observe new server state
+            # on the next call.
+            or operation_name in READ_STYLE_OPERATIONS
+        ):
             return await self._send(method, url, json_data, operation_name, request_id, None)
 
         # The key ignores the fields generated for every call (Timestamp,
@@ -507,7 +515,7 @@ class AsyncMpesa:
         self, endpoint_key: str, data: dict[str, Any] | list[Any]
     ) -> dict[str, Any]:
         url = get_full_url(self._config.environment, ENDPOINTS[endpoint_key])
-        return await self._request("POST", url, data)
+        return await self._request("POST", url, data, endpoint_key)
 
     async def _get(self, endpoint_key: str, params: dict[str, Any]) -> dict[str, Any]:
         url = get_full_url(self._config.environment, ENDPOINTS[endpoint_key])

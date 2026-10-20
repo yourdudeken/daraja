@@ -54,6 +54,38 @@ class InMemoryIdempotencyStore(IdempotencyStore):
 
 _GENERATED_FIELDS = frozenset({"timestamp", "password", "requestid"})
 
+# Endpoint keys for operations that only read server state — queries, status
+# checks, balances, validations, calculations. A POST to one of these changes
+# nothing at Daraja, so its response must never be served from the idempotency
+# cache: a repeated query has to be able to observe new server state (a balance
+# moved, a status advanced). Mutation operations keep the cache.
+READ_STYLE_OPERATIONS = frozenset(
+    {
+        "ACCOUNT_BALANCE",
+        "AGE_ON_NETWORK",
+        "B2C_HAKIKISHA",
+        "BILL_MANAGER_RECONCILIATION",
+        "DYNAMIC_QR",
+        "IMSI",
+        "IOT_ACTIVATION_TRENDS",
+        "IOT_ALL_MESSAGES",
+        "IOT_ALLSIMS",
+        "IOT_FILTER_MESSAGES",
+        "IOT_QUERY_CUSTOMER_INFO",
+        "IOT_QUERY_LIFECYCLE",
+        "IOT_SEARCH_MESSAGES",
+        "LIPA_NA_BONGA_CALCULATE",
+        "MOBILE_CENTER_FETCH_OFFERS",
+        "MOBILE_CENTER_STATUS",
+        "MOBILE_NUMBER_VALIDATION",
+        "PULL_TRANSACTIONS_QUERY",
+        "QUERY_ORG_INFO",
+        "STK_QUERY",
+        "SWAP",
+        "TRANSACTION_STATUS",
+    }
+)
+
 
 def _strip_generated(body: Any) -> Any:
     """Drop the fields that get a fresh value on every call.

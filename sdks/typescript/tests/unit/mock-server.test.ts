@@ -399,4 +399,33 @@ describe("Mock Server Tests (nock)", () => {
     expect(cause?.response?.status).toBe(400);
     expect((apiError as unknown as Record<string, unknown>)["response"]).toBeUndefined();
   });
+
+  it("should report the request ID it sent when the failure body omits one", async () => {
+    mockAuth("rid-fallback-token");
+
+    let sent = "";
+    nock(BASE)
+      .post("/mpesa/stkpush/v1/processrequest")
+      .reply(function () {
+        const value = this.req.getHeaders()["x-request-id"];
+        sent = Array.isArray(value) ? String(value[0]) : String(value ?? "");
+        // A Daraja server error carries no `requestId` in the body, so the only
+        // request ID left to report is the one the client stamped on the request.
+        return [500, {}];
+      });
+
+    const client = new MpesaApiClient({
+      consumerKey: "test-key",
+      consumerSecret: "test-secret",
+      environment: "sandbox",
+      retryConfig: { maxRetries: 0, baseDelayMs: 1, maxDelayMs: 5 },
+    } as MpesaConfig);
+    const error = await client
+      .post("/mpesa/stkpush/v1/processrequest", { Amount: 1 })
+      .then(() => null)
+      .catch((e: unknown) => e);
+
+    expect(sent).toMatch(/^mpesa-/);
+    expect((error as MpesaAPIError).requestId).toBe(sent);
+  });
 });

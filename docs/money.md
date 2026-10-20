@@ -77,6 +77,9 @@ digits are exact either way; only the type differs.
 
 ## Upgrading from an earlier release
 
+Version 2.0 changed the money types. For the other 2.0 changes, see
+[Upgrading](getting-started/upgrading.md).
+
 The values were previously exposed as binary floating-point numbers, so callers
 that did arithmetic on them need one change:
 

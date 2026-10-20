@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import nock from "nock";
 import { MpesaApiClient } from "../../src/client/client.js";
 import { STKPushService } from "../../src/services/stk-push.js";
+import { AccountBalanceService } from "../../src/services/account-balance.js";
 import {
   InMemoryIdempotencyStore,
   generateIdempotencyKey,
@@ -61,6 +62,27 @@ function mockStk(): { count: () => number } {
           MerchantRequestID: `m-${count}`,
           CheckoutRequestID: `c-${count}`,
           ResponseCode: "0",
+        },
+      ];
+    });
+  return { count: () => count };
+}
+
+/** Counts balance-query POSTs and answers each one with a distinct conversation. */
+function mockBalance(): { count: () => number } {
+  let count = 0;
+  nock(BASE)
+    .post("/mpesa/accountbalance/v1/query")
+    .times(10)
+    .reply(() => {
+      count += 1;
+      return [
+        200,
+        {
+          OriginatorConversationID: `oci-${count}`,
+          ConversationID: `convo-${count}`,
+          ResponseCode: "0",
+          ResponseDescription: "Success",
         },
       ];
     });
@@ -331,6 +353,45 @@ describe("Idempotency de-duplication", () => {
       client.post<Record<string, unknown>>(STK_PATH, STK_REQUEST),
       client.post<Record<string, unknown>>(STK_PATH, STK_REQUEST),
     ]);
+
+    expect(requests.count()).toBe(2);
+  });
+
+  it("does not serve a repeated read-style query from the cache", async () => {
+    mockAuth("read-token");
+    const requests = mockBalance();
+    const client = createClient({
+      enableIdempotency: true,
+      idempotencyStore: new InMemoryIdempotencyStore(),
+    });
+    const service = new AccountBalanceService(client);
+    const request = {
+      CommandID: "AccountBalance" as const,
+      PartyA: 254708374149,
+      Remarks: "Balance",
+      QueueTimeOutURL: "https://example.com/timeout",
+      ResultURL: "https://example.com/result",
+    };
+
+    const first = await service.query(request);
+    const second = await service.query(request);
+
+    // Both queries reached the wire and the second observed the new state.
+    expect(first.ConversationID).toBe("convo-1");
+    expect(second.ConversationID).toBe("convo-2");
+    expect(requests.count()).toBe(2);
+  });
+
+  it("recognises a read-style operation addressed by path", async () => {
+    mockAuth("path-token");
+    const requests = mockBalance();
+    const client = createClient({
+      enableIdempotency: true,
+      idempotencyStore: new InMemoryIdempotencyStore(),
+    });
+
+    await client.post("/mpesa/accountbalance/v1/query", { CommandID: "AccountBalance" });
+    await client.post("/mpesa/accountbalance/v1/query", { CommandID: "AccountBalance" });
 
     expect(requests.count()).toBe(2);
   });

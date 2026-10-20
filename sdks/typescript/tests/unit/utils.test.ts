@@ -938,6 +938,38 @@ describe("Idempotency", () => {
   });
 });
 
+describe("mapAxiosError", () => {
+  it("reports the request ID the SDK sent when the response body carries none", () => {
+    // A transport failure has no response body, so the only request ID left is
+    // the header the client stamped on the outgoing request.
+    const transport = Object.assign(new Error("connection refused"), {
+      isAxiosError: true,
+      code: "ECONNREFUSED",
+      config: { headers: { "X-Request-ID": "mpesa-abc" } },
+      toJSON: () => ({}),
+    });
+
+    const mapped = mapAxiosError(transport as never);
+
+    expect(mapped).toBeInstanceOf(APIConnectionError);
+    expect((mapped as APIConnectionError).requestId).toBe("mpesa-abc");
+  });
+
+  it("prefers the request ID in the response body over the header", () => {
+    const rejected = Object.assign(new Error("bad request"), {
+      isAxiosError: true,
+      code: "ERR_BAD_REQUEST",
+      config: { headers: { "X-Request-ID": "mpesa-abc" } },
+      response: { status: 400, data: { requestId: "body-id" } },
+      toJSON: () => ({}),
+    });
+
+    const mapped = mapAxiosError(rejected as never);
+
+    expect((mapped as MpesaAPIError).requestId).toBe("body-id");
+  });
+});
+
 describe("Tracing", () => {
   it("NoopTracer returns NoopSpan", () => {
     const tracer = new NoopTracer();

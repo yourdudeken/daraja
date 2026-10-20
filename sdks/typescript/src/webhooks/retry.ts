@@ -48,7 +48,7 @@ export class WebhookRetryQueue {
           type: record.event,
           payload: record.payload,
         } as unknown as WebhookEvent);
-        this.logger.info("Retrying webhook delivery", {
+        this.logger.info("Webhook delivered", {
           event: record.event,
           attempt: record.attempts,
         });

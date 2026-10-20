@@ -98,15 +98,23 @@ class WebhookVerificationError(MpesaError):
 
 
 def is_mpesa_error(err: Any) -> bool:
-    if err is None:
-        return False
-    if isinstance(err, MpesaError):
-        return True
-    cause = getattr(err, "__cause__", None)
-    while cause is not None:
-        if isinstance(cause, MpesaError):
+    """Whether ``err`` is, or wraps, an M-Pesa SDK error.
+
+    Both links Python uses are followed: ``__cause__`` (an explicit
+    ``raise ... from ...``) and ``__context__`` (the error being handled when a
+    new one was raised — how application code that catches an SDK error and
+    raises its own wraps it). A chain that doubles back on itself stops at the
+    repeated error instead of looping.
+    """
+    seen: set[int] = set()
+    current: Any = err
+    while current is not None and id(current) not in seen:
+        if isinstance(current, MpesaError):
             return True
-        cause = getattr(cause, "__cause__", None)
+        seen.add(id(current))
+        current = getattr(current, "__cause__", None) or getattr(
+            current, "__context__", None
+        )
     return False
 
 

@@ -8,6 +8,7 @@ Shared documentation for the Daraja SDKs (Python, TypeScript).
 - [Installation](getting-started/installation.md)
 - [Configuration](getting-started/configuration.md)
 - [Authentication](getting-started/authentication.md)
+- [Upgrading](getting-started/upgrading.md)
 
 ## API Reference
 

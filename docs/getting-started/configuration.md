@@ -62,8 +62,8 @@ backoff envelope. These values are applied by every SDK (`base_delay_ms` /
 
 ### Idempotency keys
 
-While idempotency is enabled (the default) every `POST` carries an
-`X-Idempotency-Key` derived from the request itself:
+While idempotency is enabled (the default) every state-changing `POST` carries
+an `X-Idempotency-Key` derived from the request itself:
 
 - The key covers the credential, the method, the URL and the body with object
   keys sorted, so key ordering does not change it.
@@ -84,6 +84,12 @@ What that means in practice:
   completed.
 - **Successes are remembered for 24 hours.** A repeat within that window is
   served from the store without calling the API again.
+- **Read-style POSTs are never cached.** Queries, status checks, balance
+  lookups, validations and calculations change nothing at Daraja, so their
+  response is not stored: a repeated query reaches the API and observes the new
+  server state (a balance that moved, a status that advanced). Only
+  state-changing operations — payments, reversals, registrations, invoices —
+  are cached, which is what makes a repeat of those safe.
 - **Failures are never stored.** A retry after a network error, a timeout or an
   API rejection still reaches M-Pesa. If the submission others are waiting on
   fails, TypeScript hands those callers the same error while Python lets each
@@ -149,6 +155,11 @@ contain customer data (MSISDN, account numbers, amounts).
 - **Overflow policy:** when the live queue is full the incoming event is moved to
   the DLQ intact (with `last_error = "queue overflow"`); events are never
   silently dropped. The already-queued backlog keeps its original order.
+- **Retries:** a failed delivery is re-queued with an exponential backoff
+  deadline (base 1 s, capped at 30 s) and the worker waits for that deadline, so
+  a scheduled retry is attempted with no new traffic to trigger it. An event
+  that becomes due sooner is delivered first, ahead of an earlier failure's
+  backoff. Past `max_retries` the event moves to the DLQ.
 - **DLQ retention:** once the DLQ is at its bound, the oldest dead letters are
   evicted first. Purge on demand with `purge_dlq(max_age_seconds=…)` /
   `purgeDlq({ maxAgeMs: … })` — pass an age to delete only older entries, or no

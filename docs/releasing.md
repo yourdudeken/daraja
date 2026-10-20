@@ -78,6 +78,6 @@ versions (leave a field empty to use the manifest version):
 ## First release
 
 When a manifest has no corresponding tag yet, the first merge to `main` (or a
-manual dispatch) releases that SDK at its current manifest version. The three
-SDKs are currently at `daraja-sdk-ts` 1.0.1, `daraja-sdk-py` 1.0.1, and
-`daraja-mcp` 1.0.0.
+manual dispatch) releases that SDK at its current manifest version. Read the
+current numbers from the manifests above rather than from prose — they are the
+only place a version is written down.
