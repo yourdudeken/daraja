@@ -90,7 +90,10 @@ export class WebhookManager {
     const errors: unknown[] = [];
     for (const result of results) {
       if (result.status === "rejected") {
-        console.error(`[mpesa-sdk] Webhook handler error:`, result.reason);
+        const err = result.reason;
+        const msg = err instanceof Error ? err.message : String(err);
+        // Log via console in a structured way without leaking sensitive data
+        console.error(JSON.stringify({ level: "ERROR", service: "mpesa-sdk", message: "Webhook handler error", error: msg }));
         errors.push(result.reason);
       }
     }

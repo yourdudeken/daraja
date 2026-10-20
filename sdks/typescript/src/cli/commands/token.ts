@@ -17,7 +17,7 @@ export const tokenCommand = new Command("token")
       console.log(JSON.stringify({ access_token: token, environment: opts.env }, null, 2));
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
-      console.error("Failed to acquire token:", msg);
+      console.error(JSON.stringify({ level: "ERROR", service: "mpesa-sdk", message: "Failed to acquire token", error: msg }));
       process.exit(1);
     }
   });

@@ -44,7 +44,7 @@ export const stkPushCommand = new Command("stk-push")
       console.log(JSON.stringify(result, null, 2));
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
-      console.error("STK Push failed:", msg);
+      console.error(JSON.stringify({ level: "ERROR", service: "mpesa-sdk", message: "STK Push failed", error: msg }));
       process.exit(1);
     }
   });
@@ -79,7 +79,7 @@ export const stkQueryCommand = new Command("stk-query")
       console.log(JSON.stringify(result, null, 2));
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
-      console.error("STK Query failed:", msg);
+      console.error(JSON.stringify({ level: "ERROR", service: "mpesa-sdk", message: "STK Query failed", error: msg }));
       process.exit(1);
     }
   });

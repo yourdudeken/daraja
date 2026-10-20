@@ -40,7 +40,7 @@ export const transactionStatusCommand = new Command("transaction-status")
       console.log(JSON.stringify(result, null, 2));
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
-      console.error("Transaction status query failed:", msg);
+      console.error(JSON.stringify({ level: "ERROR", service: "mpesa-sdk", message: "Transaction status query failed", error: msg }));
       process.exit(1);
     }
   });

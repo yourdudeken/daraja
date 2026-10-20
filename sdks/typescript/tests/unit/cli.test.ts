@@ -68,7 +68,10 @@ describe("CLI commands", () => {
   it("token command handles errors", async () => {
     mockGetAccessToken.mockRejectedValue(new Error("auth failed"));
     await tokenCommand.parseAsync(["node", "test", "--consumer-key", "k", "--consumer-secret", "s"]);
-    expect(errorSpy).toHaveBeenCalledWith("Failed to acquire token:", "auth failed");
+    expect(errorSpy).toHaveBeenCalled();
+    const call = errorSpy.mock.calls[0][0];
+    expect(typeof call).toBe("string");
+    expect(call).toContain("Failed to acquire token");
     expect(exitSpy).toHaveBeenCalledWith(1);
   });
 
@@ -111,7 +114,10 @@ describe("CLI commands", () => {
       "--shortcode", "174379", "--passkey", "pk",
       "--phone", "254708374149", "--amount", "100",
     ]);
-    expect(errorSpy).toHaveBeenCalledWith("STK Push failed:", "stk failed");
+    expect(errorSpy).toHaveBeenCalled();
+    const call = errorSpy.mock.calls[0][0];
+    expect(typeof call).toBe("string");
+    expect(call).toContain("STK Push failed");
     expect(exitSpy).toHaveBeenCalledWith(1);
   });
 
