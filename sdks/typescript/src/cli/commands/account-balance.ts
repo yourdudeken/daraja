@@ -38,7 +38,7 @@ export const accountBalanceCommand = new Command("account-balance")
       console.log(JSON.stringify(result, null, 2));
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
-      console.error("Account balance query failed:", msg);
+      console.error(JSON.stringify({ level: "ERROR", service: "mpesa-sdk", message: "Account balance query failed", error: msg }));
       process.exit(1);
     }
   });
