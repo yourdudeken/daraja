@@ -1,5 +1,5 @@
 # Build stage
-FROM node:22-alpine AS builder
+FROM node:26-alpine AS builder
 WORKDIR /app
 
 # npm 10.x (shipped with node:22) hits an arborist bug resolving this
@@ -22,7 +22,7 @@ RUN npm run build
 RUN npm prune --omit=dev
 
 # Runtime stage
-FROM node:22-alpine
+FROM node:26-alpine
 WORKDIR /app
 RUN apk add --no-cache tini
 
