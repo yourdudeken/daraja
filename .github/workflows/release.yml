@@ -55,11 +55,11 @@ jobs:
       mcp_version: ${{ steps.mcp.outputs.version }}
       mcp_release: ${{ steps.mcp.outputs.release }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
 
@@ -127,8 +127,8 @@ jobs:
       run:
         working-directory: sdks/typescript
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
           registry-url: "https://registry.npmjs.org"
@@ -143,7 +143,7 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       - name: Create tag and GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: typescript-v${{ needs.detect.outputs.typescript_version }}
           name: TypeScript SDK v${{ needs.detect.outputs.typescript_version }}
@@ -162,8 +162,8 @@ jobs:
       run:
         working-directory: sdks/python
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
       - name: Set distribution version
@@ -187,7 +187,7 @@ jobs:
         with:
           packages-dir: sdks/python/dist
       - name: Create tag and GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: python-v${{ needs.detect.outputs.python_version }}
           name: Python SDK v${{ needs.detect.outputs.python_version }}
@@ -203,13 +203,13 @@ jobs:
       id-token: write
     environment: docker-publish
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Log in to Docker Hub
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
@@ -217,7 +217,7 @@ jobs:
       # Builds from the committed package.json + package-lock.json, which pin
       # the published daraja-sdk-ts version (npm ci).
       - name: Build and push Docker image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: mcp/
           push: true
@@ -226,7 +226,7 @@ jobs:
             ${{ secrets.DOCKERHUB_USERNAME }}/daraja-mcp:latest
 
       - name: Create tag and GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: mcp-v${{ needs.detect.outputs.mcp_version }}
           name: MCP Server v${{ needs.detect.outputs.mcp_version }}
